@@ -1,0 +1,2 @@
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.4") // https://github.com/scalacenter/sbt-scalafix/releases
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.0") // https://github.com/scalameta/sbt-scalafmt/releases

@@ -1,0 +1,9 @@
+# InteliJ IDEA
+.idea/
+
+# sbt
+.bsp/
+
+# scala compile
+target/
+project/target/
