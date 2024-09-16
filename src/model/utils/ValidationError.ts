@@ -54,6 +54,17 @@ export class Validator {
     this.data = data;
   }
 
+  private getValueFromPath(path: string[]): any {
+    let value = this.data;
+    for (const key of path) {
+      value = value[key];
+      if (value === undefined) {
+        return undefined;
+      }
+    }
+    return value;
+  }
+
   getFirstError(): FieldValidationError | null {
     return this.errors[0] || null;
   }
@@ -62,19 +73,24 @@ export class Validator {
     const value = this.data[field];
     if (value === undefined || value === null) {
     } else if (typeof value !== "string") {
-      this.errors.push(new StringValidationError(this.data, field));
+      this.errors.push(new StringValidationError(field, this.data));
     }
   }
 
   requiredString(field: string): void {
     const value = this.data[field];
     if (typeof value !== "string") {
-      this.errors.push(new StringValidationError(this.data, field));
+      this.errors.push(new StringValidationError(field, this.data));
     }
   }
 
   optionalNumber(field: string): void {
-    const value = this.data[field];
+    let value = this.data[field];
+
+    if (typeof value === "string") {
+      value = parseFloat(value);
+    }
+
     if (value === undefined || value === null) {
     } else if (typeof value !== "number") {
       this.errors.push(new NumberValidationError(this.data, field));
@@ -83,9 +99,14 @@ export class Validator {
   }
 
   requiredNumber(field: string): void {
-    const value = this.data[field];
-    if (typeof value !== "number") {
-      this.errors.push(new NumberValidationError(this.data, field));
+    let value = this.data[field];
+
+    if (typeof value === "string") {
+      value = parseFloat(value);
+    }
+
+    if (typeof value !== "number" || isNaN(value)) {
+      this.errors.push(new NumberValidationError(field, this.data));
     }
   }
 
@@ -116,6 +137,21 @@ export class Validator {
     if (value === undefined || value === null) {
     } else if (!Array.isArray(value)) {
       this.errors.push(new ArrayValidationError(field, this.data));
+    }
+  }
+
+  requiredArray(path: string | string[]): void {
+    let value: any;
+
+    if (typeof path === "string") {
+      value = this.data[path];
+    } else if (Array.isArray(path)) {
+      value = this.getValueFromPath(path);
+    }
+
+    if (!Array.isArray(value)) {
+      const p = typeof path === "string" ? path : path.join(".");
+      this.errors.push(new ArrayValidationError(p, this.data));
     }
   }
 

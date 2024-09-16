@@ -8,6 +8,10 @@ export class CompanyId {
   constructor(id: number) {
     this.id = id;
   }
+
+  toString(): string {
+    return this.id.toString();
+  }
 }
 
 export class Company {

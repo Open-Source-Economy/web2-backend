@@ -17,15 +17,19 @@ export class Migration {
 
   public async drop(): Promise<void> {
     await this.pool.query(`
-      DROP TABLE IF EXISTS user_session CASCADE;
-      DROP TABLE IF EXISTS company CASCADE;
-      DROP TABLE IF EXISTS temp_company_address CASCADE;
-      DROP TABLE IF EXISTS github_issue CASCADE;
-      DROP TABLE IF EXISTS github_repository CASCADE;
-      DROP TABLE IF EXISTS github_owner CASCADE;
-      DROP TABLE IF EXISTS user_company CASCADE;
-      DROP TABLE IF EXISTS third_party_user_company CASCADE;
-      DROP TABLE IF EXISTS app_user CASCADE;
+        DROP TABLE IF EXISTS user_session CASCADE;
+        DROP TABLE IF EXISTS company CASCADE;
+        DROP TABLE IF EXISTS temp_company_address CASCADE;
+        DROP TABLE IF EXISTS github_issue CASCADE;
+        DROP TABLE IF EXISTS github_repository CASCADE;
+        DROP TABLE IF EXISTS github_owner CASCADE;
+        DROP TABLE IF EXISTS user_company CASCADE;
+        DROP TABLE IF EXISTS third_party_user_company CASCADE;
+        DROP TABLE IF EXISTS app_user CASCADE;
+        DROP TABLE IF EXISTS stripe_invoice_line CASCADE;
+        DROP TABLE IF EXISTS stripe_invoice CASCADE;
+        DROP TABLE IF EXISTS stripe_customer CASCADE;
+        DROP TABLE IF EXISTS stripe_product CASCADE;
     `);
   }
 }

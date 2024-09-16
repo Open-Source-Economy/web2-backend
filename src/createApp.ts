@@ -24,6 +24,17 @@ export function createApp() {
   app.use(cors(corsOptions));
 
   app.use(express.json());
+  // Use JSON parser for all non-webhook routes.
+  app.use((req, res, next) => {
+    console.log(req.originalUrl);
+    if (req.originalUrl === "/api/v1/shop/webhook") {
+      // TODO refactor
+      next();
+    } else {
+      express.json()(req, res, next);
+    }
+  });
+
   app.use(
     session({
       secret: "anson the dev", // TODO: process.env.FOO_COOKIE_SECRET

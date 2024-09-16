@@ -6,3 +6,4 @@ export * from "./FinancialIssue";
 export * from "./Company";
 export * from "./user";
 export * from "./Address";
+export * from "./stripe";

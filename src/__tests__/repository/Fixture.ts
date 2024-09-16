@@ -13,6 +13,13 @@ import {
   Provider,
   Repository,
   RepositoryId,
+  StripeCustomerId,
+  StripeInvoice,
+  StripeInvoiceId,
+  StripeInvoiceLine,
+  StripeInvoiceLineId,
+  StripeProduct,
+  StripeProductId,
   ThirdPartyUser,
   ThirdPartyUserId,
 } from "../../model";
@@ -125,6 +132,46 @@ export const Fixture = {
       dto.name ?? null,
       dto.contactPersonId ?? null,
       dto.addressId ?? null,
+    );
+  },
+
+  stripeProduct(productId: string): StripeProduct {
+    return new StripeProduct(new StripeProductId(productId), "DoW", 1);
+  },
+
+  stripeInvoice(
+    invoiceId: string,
+    customerId: string,
+    lines: StripeInvoiceLine[],
+  ): StripeInvoice {
+    return new StripeInvoice(
+      new StripeInvoiceId(invoiceId),
+      new StripeCustomerId(customerId),
+      true,
+      "US",
+      lines,
+      "USD",
+      1000,
+      900,
+      800,
+      700,
+      "https://hosted_invoice_url.com",
+      "https://invoice_pdf.com",
+    );
+  },
+  stripeInvoiceLine(
+    stripeId: string,
+    invoiceId: string,
+    customerId: string,
+    productId: string,
+  ): StripeInvoiceLine {
+    return new StripeInvoiceLine(
+      new StripeInvoiceLineId(stripeId),
+      new StripeInvoiceId(invoiceId),
+      new StripeCustomerId(customerId),
+      new StripeProductId(productId),
+      "100",
+      100,
     );
   },
 };
