@@ -1,4 +1,4 @@
-import {CompanyId, UserId} from "../model";
+import { CompanyId, UserId } from "../model";
 
 export interface CreateCustomerDto {
   userId: UserId;
