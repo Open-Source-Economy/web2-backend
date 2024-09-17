@@ -1,8 +1,7 @@
-import { StripeCustomerId, UserId } from "../model";
+import { StripeCustomerId } from "../model";
+import { PriceItem } from "./stripe";
 
 export interface CreateSubscriptionDto {
-  userId: UserId;
   stripeCustomerId: StripeCustomerId;
-  paymentMethodId: string; // TODO: real type
-  priceId: string; // TODO: real type
+  priceItems: PriceItem[];
 }

@@ -7,7 +7,12 @@ import {
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
 import { CreateCustomerDto } from "../dtos/CreateCustomer.dto";
-import { StripeCustomer, StripeCustomerId, StripeInvoice } from "../model";
+import {
+  StripeCustomer,
+  StripeCustomerId,
+  StripeInvoice,
+  UserId,
+} from "../model";
 import { ValidationError } from "express-validator";
 import { CreateSubscriptionDto } from "../dtos/CreateSubscription.dto";
 import { CreatePaymentIntentDto } from "../dtos/CreatePaymentIntent.dto";
@@ -59,13 +64,12 @@ export class ShopController {
     res: Response<StripeCustomer | ValidationError[]>,
   ) {
     const customer = await stripe.customers.create({
-      description: req.body.userId.toString(),
-      email: req.body.email,
+      // description: req.body.userId.toString(),
+      // email: req.body.email,
       // /**
       //  * Tax details about the customer.
       //  */
       // tax?: CustomerCreateParams.Tax;
-
       // /**
       //  * The customer's tax exemption. One of `none`, `exempt`, or `reverse`.
       //  */
@@ -77,17 +81,22 @@ export class ShopController {
       // tax_id_data?: Array<CustomerCreateParams.TaxIdDatum>;
     });
 
+    // const stripeCustomer = new StripeCustomer(
+    //   new StripeCustomerId(customer.id),
+    //   req.body.userId,
+    //   req.body.companyId,
+    // );
+
     const stripeCustomer = new StripeCustomer(
       new StripeCustomerId(customer.id),
-      req.body.userId,
-      req.body.companyId,
+      new UserId(1),
     );
 
-    await stripeCustomerRepo.insert(stripeCustomer);
+    // await stripeCustomerRepo.insert(stripeCustomer);
 
     // Create a SetupIntent to set up our payment methods recurring usage
     const setupIntent = await stripe.setupIntents.create({
-      payment_method_types: ["card", "au_becs_debit"], // TODO: lolo
+      payment_method_types: ["card"], // TODO: lolo
       customer: customer.id,
     });
 
@@ -131,29 +140,40 @@ export class ShopController {
     req: Request<{}, {}, CreateSubscriptionDto, {}>,
     res: Response<Stripe.Subscription | ValidationError[]>,
   ) {
-    // Set the default payment method on the customer
-    try {
-      await stripe.paymentMethods.attach(req.body.paymentMethodId, {
-        customer: req.body.stripeCustomerId.toString(),
-      });
-    } catch (error) {
-      console.log(error);
-      return res.status(StatusCodes.PAYMENT_REQUIRED);
+    // TODO: Is that necessary?
+    // try {
+    //   await stripe.paymentMethods.attach(req.body.paymentMethodId, {
+    //     customer: req.body.stripeCustomerId.toString()
+    //   });
+    // } catch (error) {
+    //   console.log("attach")
+    //   console.log(error);
+    //   return res.status(StatusCodes.PAYMENT_REQUIRED);
+    // }
+    //
+    // // Set the default payment method on the customer
+    // await stripe.customers.update(req.body.stripeCustomerId.toString(), {
+    //   invoice_settings: {
+    //     default_payment_method: req.body.paymentMethodId,
+    //   },
+    // });
+
+    const items = [];
+    for (const item of req.body.priceItems) {
+      items.push({ price: item.priceId, quantity: item.quantity });
     }
 
-    // Set the default payment method on the customer
-    await stripe.customers.update(req.body.stripeCustomerId.toString(), {
-      invoice_settings: {
-        default_payment_method: req.body.paymentMethodId,
-      },
-    });
-
-    // Create the subscription
+    // Create the subscription.
+    // Note we're expanding the Subscription's latest invoice and that invoice's payment_intent so we can pass it to the front end to confirm the payment
     const subscription = await stripe.subscriptions.create({
       customer: req.body.stripeCustomerId.toString(),
-      items: [{ price: process.env[req.body.priceId] }],
-      // expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
+      items: items,
+      payment_behavior: "default_incomplete",
+      payment_settings: { save_default_payment_method: "on_subscription" },
+      expand: ["latest_invoice.payment_intent"],
     });
+
+    // At this point the Subscription is inactive and awaiting payment.
 
     res.send(subscription);
   }
@@ -177,7 +197,7 @@ export class ShopController {
           customer: req.body.stripeCustomerId.toString(),
         });
 
-      for (const item of req.body.invoiceItems) {
+      for (const item of req.body.priceItems) {
         await stripe.invoiceItems.create({
           customer: req.body.stripeCustomerId.toString(),
           invoice: invoice.id,

@@ -1,14 +1,7 @@
-import { StripeCustomerId, UserId } from "../model";
-
-interface InvoiceItem {
-  priceId: string;
-  quantity: number;
-}
+import { StripeCustomerId } from "../model";
+import { PriceItem } from "./stripe";
 
 export interface CreatePaymentIntentDto {
-  userId: UserId;
   stripeCustomerId: StripeCustomerId;
-  paymentMethodId: string; // TODO: real type
-
-  invoiceItems: InvoiceItem[];
+  priceItems: PriceItem[];
 }
