@@ -1,13 +1,25 @@
 import { setupTestDB } from "../jest.setup";
-import { AddressId } from "../../model";
+import { AddressId, CompanyId, UserId } from "../../model";
 import { Fixture } from "./Fixture";
-import { getAddressRepository } from "../../db/";
-import { CreateAddressDto } from "../../dtos";
+import {
+  getAddressRepository,
+  getCompanyRepository,
+  getUserRepository,
+} from "../../db/";
+import { CreateAddressDto, CreateCompanyDto } from "../../dtos";
 
 describe("AddressRepository", () => {
+  const userRepo = getUserRepository();
+  const companyRepo = getCompanyRepository();
   const addressRepo = getAddressRepository();
 
   setupTestDB();
+  let validUserId: UserId;
+
+  beforeEach(async () => {
+    const validUser = await userRepo.insertLocal(Fixture.createUserDto());
+    validUserId = validUser.id;
+  });
 
   describe("create", () => {
     it("should create a new company address", async () => {
@@ -37,7 +49,7 @@ describe("AddressRepository", () => {
 
       // Update the address
       const updatedAddressDto = {
-        name: null,
+        name: "Updated Company Name",
       } as CreateAddressDto;
 
       const updated = await addressRepo.update(
@@ -60,6 +72,80 @@ describe("AddressRepository", () => {
       const found = await addressRepo.getById(nonExistentAddressId);
 
       expect(found).toBeNull();
+    });
+  });
+
+  describe("getByCompanyId", () => {
+    it("should return the address for a given company ID", async () => {
+      const addressDto = {
+        name: "Company Name",
+      } as CreateAddressDto;
+
+      // First create the address
+      const created = await addressRepo.create(addressDto);
+
+      // Create a company with an associated address
+      const companyDto = {
+        name: "Test Company",
+        taxId: "1234",
+        addressId: created.id,
+      } as CreateCompanyDto;
+
+      const company = await companyRepo.insert(companyDto);
+      const companyId = new CompanyId(company.id.id);
+
+      // Fetch the address using getByCompanyId
+      const address = await addressRepo.getByCompanyId(companyId);
+
+      expect(address).toEqual(created);
+    });
+
+    it("should return null if the company has no associated address", async () => {
+      // Create a company without an associated address
+      const companyDto = {
+        name: "Test Company",
+        taxId: "1234",
+      } as CreateCompanyDto;
+
+      const company = await companyRepo.insert(companyDto);
+      const companyId = new CompanyId(company.id.id);
+
+      // Fetch the address
+      const address = await addressRepo.getByCompanyId(companyId);
+
+      expect(address).toBeNull();
+    });
+  });
+
+  describe("getCompanyUserAddress", () => {
+    it("should return the address associated with the user's company", async () => {
+      const addressDto = {
+        name: "Company Name",
+      } as CreateAddressDto;
+
+      // First create the address
+      const created = await addressRepo.create(addressDto);
+
+      const companyDto = {
+        name: "Test Company",
+        taxId: "12345",
+        contactPersonId: validUserId,
+        addressId: created.id,
+      } as CreateCompanyDto;
+
+      await companyRepo.insert(companyDto);
+
+      // Fetch the address using the user ID
+      const address = await addressRepo.getCompanyUserAddress(validUserId);
+
+      expect(address).toEqual(created);
+    });
+
+    it("should return null if the user is not linked to any company", async () => {
+      // Fetch the address
+      const address = await addressRepo.getCompanyUserAddress(validUserId);
+
+      expect(address).toBeNull();
     });
   });
 

@@ -29,7 +29,7 @@ export class StripeCustomerId {
 export class StripeCustomer {
   stripeId: StripeCustomerId;
   userId: UserId;
-  companyId?: CompanyId;
+  companyId?: CompanyId; // TODO: lolo to delete?
 
   constructor(
     stripeId: StripeCustomerId,

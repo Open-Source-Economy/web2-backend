@@ -59,7 +59,7 @@ export class Address {
   static fromBackend(row: any): Address | ValidationError {
     const validator = new Validator(row);
     validator.requiredNumber("id");
-    validator.optionalString("company_name");
+    validator.optionalString("name");
     validator.optionalString("line_1");
     validator.optionalString("line_2");
     validator.optionalString("city");
@@ -74,7 +74,7 @@ export class Address {
 
     return new Address(
       new AddressId(row.id),
-      row.company_name ?? null,
+      row.name ?? null,
       row.line_1 ?? null,
       row.line_2 ?? null,
       row.city ?? null,

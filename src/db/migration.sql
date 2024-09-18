@@ -76,16 +76,16 @@ CREATE TABLE IF NOT EXISTS "app_user"
         )
 );
 
-CREATE TABLE IF NOT EXISTS temp_company_address
+CREATE TABLE IF NOT EXISTS address
 (
-    id               SERIAL PRIMARY KEY,
-    company_name     VARCHAR(255),
-    line_1 VARCHAR(255),
-    line_2 VARCHAR(255),
-    city             VARCHAR(100),
-    state   VARCHAR(100),
-    postal_code      VARCHAR(20),
-    country          VARCHAR(100)
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(255),
+    line_1      VARCHAR(255),
+    line_2      VARCHAR(255),
+    city        VARCHAR(100),
+    state       VARCHAR(100),
+    postal_code VARCHAR(20),
+    country     VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS company
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS company
     name              VARCHAR(255),
     contact_person_id INTEGER,
     address_id        INTEGER,
-    CONSTRAINT fk_address FOREIGN KEY (address_id) REFERENCES temp_company_address (id) ON DELETE RESTRICT
+    CONSTRAINT fk_address FOREIGN KEY (address_id) REFERENCES address (id) ON DELETE RESTRICT
     -- Foreign key constraints for contact persons will be added later
 );
 
@@ -133,8 +133,8 @@ CREATE TABLE IF NOT EXISTS stripe_product
 (
     id          SERIAL,
     stripe_id   VARCHAR(50) PRIMARY KEY,
-    unit        VARCHAR(50)   NOT NULL, -- 'DoW'
-    unit_amount INTEGER NOT NULL,
+    unit        VARCHAR(50) NOT NULL, -- 'DoW'
+    unit_amount INTEGER     NOT NULL,
 
     CONSTRAINT positive_quantity CHECK (unit_amount > 0)
 );

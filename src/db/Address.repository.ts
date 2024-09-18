@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { Address, AddressId } from "../model";
+import { Address, AddressId, CompanyId, UserId } from "../model";
 import { getPool } from "../dbPool";
 import { CreateAddressDto } from "../dtos/CreateAddressDto";
 
@@ -11,6 +11,8 @@ export interface AddressRepository {
   create(address: CreateAddressDto): Promise<Address>;
   update(address: Address): Promise<Address>;
   getById(id: AddressId): Promise<Address | null>;
+  getByCompanyId(id: CompanyId): Promise<Address | null>;
+  getCompanyUserAddress(id: UserId): Promise<Address | null>;
   getAll(): Promise<Address[]>;
 }
 
@@ -54,10 +56,39 @@ class AddressRepositoryImpl implements AddressRepository {
     });
   }
 
+  async getByCompanyId(id: CompanyId): Promise<Address | null> {
+    const result = await this.pool.query(
+      `
+      SELECT a.id, a.name, a.line_1, a.line_2, a.city, a.state, a.postal_code, a.country
+      FROM address a
+      JOIN company c ON a.id = c.address_id
+      WHERE c.id = $1
+      `,
+      [id.toString()],
+    );
+
+    return this.getOptionalAddress(result.rows);
+  }
+
+  async getCompanyUserAddress(id: UserId): Promise<Address | null> {
+    const result = await this.pool.query(
+      `
+      SELECT a.id, a.name, a.line_1, a.line_2, a.city, a.state, a.postal_code, a.country
+      FROM user_company uc
+      JOIN company c ON uc.company_id = c.id
+      JOIN address a ON c.address_id = a.id
+      WHERE uc.user_id = $1
+      `,
+      [id.toString()],
+    );
+
+    return this.getOptionalAddress(result.rows);
+  }
+
   async getAll(): Promise<Address[]> {
     const result = await this.pool.query(`
-      SELECT id, company_name, line_1, line_2, city, state, postal_code, country
-      FROM temp_company_address
+      SELECT id, name, line_1, line_2, city, state, postal_code, country
+      FROM address
     `);
 
     return this.getAddressList(result.rows);
@@ -66,8 +97,8 @@ class AddressRepositoryImpl implements AddressRepository {
   async getById(id: AddressId): Promise<Address | null> {
     const result = await this.pool.query(
       `
-      SELECT id, company_name, line_1, line_2, city, state, postal_code, country
-      FROM temp_company_address
+      SELECT id, name, line_1, line_2, city, state, postal_code, country
+      FROM address
       WHERE id = $1
       `,
       [id.id],
@@ -82,10 +113,10 @@ class AddressRepositoryImpl implements AddressRepository {
     try {
       const result = await client.query(
         `
-                    INSERT INTO temp_company_address (company_name, line_1, line_2, city,
+                    INSERT INTO address (name, line_1, line_2, city,
                                                         state, postal_code, country)
                     VALUES ($1, $2, $3, $4, $5, $6, $7)
-                    RETURNING id, company_name, line_1, line_2, city, state, postal_code, country
+                    RETURNING id, name, line_1, line_2, city, state, postal_code, country
                 `,
         [
           address.name,
@@ -110,9 +141,9 @@ class AddressRepositoryImpl implements AddressRepository {
     try {
       const result = await client.query(
         `
-                UPDATE temp_company_address
+                UPDATE address
                 SET
-                    company_name = $1,
+                    name = $1,
                     line_1 = $2,
                     line_2 = $3,
                     city = $4,
@@ -120,7 +151,7 @@ class AddressRepositoryImpl implements AddressRepository {
                     postal_code = $6,
                     country = $7
                 WHERE id = $8
-                RETURNING id, company_name, line_1, line_2, city, state, postal_code, country
+                RETURNING id, name, line_1, line_2, city, state, postal_code, country
             `,
         [
           address.name,

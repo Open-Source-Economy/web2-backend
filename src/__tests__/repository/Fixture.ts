@@ -89,27 +89,18 @@ export const Fixture = {
     );
   },
   address(addressId: number): Address {
-    return new Address(
-      new AddressId(addressId),
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-    );
+    return new Address(new AddressId(addressId));
   },
   addressFromDto(addressId: number, dto: CreateAddressDto): Address {
     return new Address(
       new AddressId(addressId),
-      dto.name ?? null,
-      dto.line1 ?? null,
-      dto.line2 ?? null,
-      dto.city ?? null,
-      dto.state ?? null,
-      dto.postalCode ?? null,
-      dto.country ?? null,
+      dto.name ?? undefined,
+      dto.line1 ?? undefined,
+      dto.line2 ?? undefined,
+      dto.city ?? undefined,
+      dto.state ?? undefined,
+      dto.postalCode ?? undefined,
+      dto.country ?? undefined,
     );
   },
   company(

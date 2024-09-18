@@ -1,1 +1,3 @@
-export interface CreateCustomerDto {}
+export interface CreateCustomerDto {
+  countryCode?: string;
+}

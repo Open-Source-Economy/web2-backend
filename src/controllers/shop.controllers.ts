@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import {
+  getAddressRepository,
   getStripeCustomerRepository,
   getStripeInvoiceRepository,
   getUserRepository,
@@ -30,31 +31,34 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const stripeInvoiceRepo = getStripeInvoiceRepository();
 const stripeCustomerRepo = getStripeCustomerRepository();
 
+const addressRepo = getAddressRepository();
+
 export class ShopController {
   static shouldCalculateTax = false;
 
   private static async calculateTax(orderAmount: number, currency: string) {
-    const taxCalculation = await stripe.tax.calculations.create({
-      currency,
-      customer_details: {
-        address: {
-          line1: "10709 Cleary Blvd",
-          city: "Plantation",
-          state: "FL",
-          postal_code: "33322",
-          country: "US",
+    const taxCalculation: Stripe.Tax.Calculation =
+      await stripe.tax.calculations.create({
+        currency,
+        customer_details: {
+          address: {
+            line1: "10709 Cleary Blvd",
+            city: "Plantation",
+            state: "FL",
+            postal_code: "33322",
+            country: "US",
+          },
+          address_source: "shipping",
         },
-        address_source: "shipping",
-      },
-      line_items: [
-        {
-          amount: orderAmount,
-          reference: "ProductRef",
-          tax_behavior: "exclusive",
-          tax_code: "txcd_30011000",
-        },
-      ],
-    });
+        line_items: [
+          {
+            amount: orderAmount,
+            reference: "ProductRef",
+            tax_behavior: "exclusive",
+            tax_code: "txcd_30011000",
+          },
+        ],
+      });
 
     return taxCalculation;
   }
@@ -63,101 +67,56 @@ export class ShopController {
     req: Request<{}, {}, CreateCustomerDto, {}>,
     res: Response<StripeCustomer | ValidationError[]>,
   ) {
-    const customer = await stripe.customers.create({
-      // description: req.body.userId.toString(),
-      // email: req.body.email,
-      // /**
-      //  * Tax details about the customer.
-      //  */
-      // tax?: CustomerCreateParams.Tax;
-      // /**
-      //  * The customer's tax exemption. One of `none`, `exempt`, or `reverse`.
-      //  */
-      // tax_exempt?: Stripe.Emptyable<CustomerCreateParams.TaxExempt>;
-      //
-      // /**
-      //  * The customer's tax IDs.
-      //  */
-      // tax_id_data?: Array<CustomerCreateParams.TaxIdDatum>;
-    });
+    if (!req.user) {
+      return res.status(StatusCodes.UNAUTHORIZED).send();
+    } else {
+      const address = await addressRepo.getCompanyUserAddress(req.user.id);
+      let stripeAddress: Stripe.Emptyable<Stripe.AddressParam>;
+      if (address) {
+        stripeAddress = address;
+      } else {
+        stripeAddress = {
+          country: req.body.countryCode,
+        };
+      }
 
-    // const stripeCustomer = new StripeCustomer(
-    //   new StripeCustomerId(customer.id),
-    //   req.body.userId,
-    //   req.body.companyId,
-    // );
-
-    const stripeCustomer = new StripeCustomer(
-      new StripeCustomerId(customer.id),
-      new UserId(1),
-    );
-
-    // await stripeCustomerRepo.insert(stripeCustomer);
-
-    // Create a SetupIntent to set up our payment methods recurring usage
-    const setupIntent = await stripe.setupIntents.create({
-      payment_method_types: ["card"], // TODO: lolo
-      customer: customer.id,
-    });
-
-    return res.status(StatusCodes.CREATED).send(stripeCustomer);
-  }
-
-  static async checkout(request: Request, response: Response) {
-    await stripe.products
-      .create({
-        name: "Starter Subscription",
-        description: "$12/Month subscription",
-      })
-      .then((product) => {
-        stripe.prices
-          .create({
-            unit_amount: 1200,
-            currency: "usd",
-            recurring: {
-              interval: "month",
-            },
-            product: product.id,
-          })
-          .then((price) => {
-            console.log(
-              "Success! Here is your starter subscription product id: " +
-                product.id,
-            );
-            console.log(
-              "Success! Here is your starter subscription price id: " +
-                price.id,
-            );
-          });
+      const customer: Stripe.Customer = await stripe.customers.create({
+        description: req.user.id.toString(),
+        email: req.user.email() ?? undefined,
+        address: stripeAddress,
+        tax: {
+          validate_location: "immediately",
+        },
+        expand: ["tax"],
       });
 
-    return request.user
-      ? response.send(request.user)
-      : response.sendStatus(StatusCodes.UNAUTHORIZED);
+      if (customer.tax?.automatic_tax === "unrecognized_location") {
+        return res.status(StatusCodes.BAD_REQUEST).send();
+      } else if (customer.tax?.automatic_tax === "failure") {
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send();
+      } else {
+        const stripeCustomer = new StripeCustomer(
+          new StripeCustomerId(customer.id),
+          req.user.id,
+        );
+
+        await stripeCustomerRepo.insert(stripeCustomer);
+
+        // Create a SetupIntent to set up our payment methods recurring usage
+        const setupIntent = await stripe.setupIntents.create({
+          payment_method_types: ["card"], // TODO: lolo
+          customer: customer.id,
+        });
+
+        return res.status(StatusCodes.CREATED).send(stripeCustomer);
+      }
+    }
   }
 
   static async createSubscription(
     req: Request<{}, {}, CreateSubscriptionDto, {}>,
     res: Response<Stripe.Subscription | ValidationError[]>,
   ) {
-    // TODO: Is that necessary?
-    // try {
-    //   await stripe.paymentMethods.attach(req.body.paymentMethodId, {
-    //     customer: req.body.stripeCustomerId.toString()
-    //   });
-    // } catch (error) {
-    //   console.log("attach")
-    //   console.log(error);
-    //   return res.status(StatusCodes.PAYMENT_REQUIRED);
-    // }
-    //
-    // // Set the default payment method on the customer
-    // await stripe.customers.update(req.body.stripeCustomerId.toString(), {
-    //   invoice_settings: {
-    //     default_payment_method: req.body.paymentMethodId,
-    //   },
-    // });
-
     const items = [];
     for (const item of req.body.priceItems) {
       items.push({ price: item.priceId, quantity: item.quantity });
@@ -174,7 +133,6 @@ export class ShopController {
     });
 
     // At this point the Subscription is inactive and awaiting payment.
-
     res.send(subscription);
   }
 
@@ -182,74 +140,40 @@ export class ShopController {
     req: Request<{}, {}, CreatePaymentIntentDto, {}>,
     res: Response<Stripe.PaymentIntent | ValidationError[]>,
   ) {
-    // let orderAmount = 1400;
-    // let paymentIntent: Stripe.PaymentIntent;
+    // Step 1: Create an invoice
+    // Step 2: Create an invoice item
+    // Step 3: Finalize the invoice and get the payment intent
+    // Step 4: Request the payment intent for the invoice.
+    const invoice: Stripe.Response<Stripe.Invoice> =
+      await stripe.invoices.create({
+        customer: req.body.stripeCustomerId.toString(),
+        automatic_tax: {
+          enabled: true,
+        },
+      });
 
-    try {
-      // let taxCalculation = await ShopController.calculateTax(orderAmount, req.body.currency);
-
-      // Step 1: Create an invoice
-      // Step 2: Create an invoice item
-      // Step 3: Finalize the invoice and get the payment intent
-      // Step 4: Request the payment intent for the invoice.
-      const invoice: Stripe.Response<Stripe.Invoice> =
-        await stripe.invoices.create({
-          customer: req.body.stripeCustomerId.toString(),
-        });
-
-      for (const item of req.body.priceItems) {
-        await stripe.invoiceItems.create({
-          customer: req.body.stripeCustomerId.toString(),
-          invoice: invoice.id,
-          price: item.priceId,
-          quantity: item.quantity,
-          // tax_behavior: "exclusive",
-          // tax_rates: [taxCalculation.tax_rates[0].id],
-          // tax_code: "txcd_30011000",
-          // metadata: { tax_calculation: taxCalculation.id },
-        });
-      }
-
-      const finalizedInvoice: Stripe.Response<Stripe.Invoice> =
-        await stripe.invoices.finalizeInvoice(invoice.id);
-
-      const paymentIntentId: string = finalizedInvoice.payment_intent as string;
-
-      console.log("paymentIntentId");
-      console.log(paymentIntentId);
-
-      const paymentIntent =
-        await stripe.paymentIntents.retrieve(paymentIntentId);
-
-      if (ShopController.shouldCalculateTax) {
-        // paymentIntent = await stripe.paymentIntents.create({
-        //     currency: 'usd',
-        //     amount: taxCalculation.amount_total,
-        //     automatic_payment_methods: { enabled: true },
-        //     metadata: { tax_calculation: taxCalculation.id },
-        //     customer: req.body.stripeCustomerId.toString(),
-        // });
-      } else {
-        // paymentIntent = await stripe.paymentIntents.create({
-        //     currency: req.body.currency,
-        //     amount: orderAmount,
-        //     customer: req.body.stripeCustomerId.toString(),
-        //     automatic_payment_methods: { enabled: true }
-        // });
-      }
-
-      // Send publishable key and PaymentIntent client_secret to client.
-      res.status(StatusCodes.OK).send(paymentIntent);
-    } catch (e) {
-      // TODO
-      let message: string;
-      if (typeof e === "string") {
-        message = e;
-      } else if (e instanceof Error) {
-        message = e.message;
-      }
-      res.status(400);
+    for (const item of req.body.priceItems) {
+      await stripe.invoiceItems.create({
+        customer: req.body.stripeCustomerId.toString(),
+        invoice: invoice.id,
+        price: item.priceId,
+        quantity: item.quantity,
+        // tax_behavior: "exclusive",
+        // tax_rates: [taxCalculation.tax_rates[0].id],
+        // tax_code: "txcd_30011000",
+        // metadata: { tax_calculation: taxCalculation.id },
+      });
     }
+
+    const finalizedInvoice: Stripe.Response<Stripe.Invoice> =
+      await stripe.invoices.finalizeInvoice(invoice.id);
+
+    const paymentIntentId: string = finalizedInvoice.payment_intent as string;
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    // Send publishable key and PaymentIntent client_secret to client.
+    res.status(StatusCodes.OK).send(paymentIntent);
   }
 
   static async webhook(req: Request, res: Response) {

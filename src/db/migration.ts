@@ -19,7 +19,7 @@ export class Migration {
     await this.pool.query(`
         DROP TABLE IF EXISTS user_session CASCADE;
         DROP TABLE IF EXISTS company CASCADE;
-        DROP TABLE IF EXISTS temp_company_address CASCADE;
+        DROP TABLE IF EXISTS address CASCADE;
         DROP TABLE IF EXISTS github_issue CASCADE;
         DROP TABLE IF EXISTS github_repository CASCADE;
         DROP TABLE IF EXISTS github_owner CASCADE;
