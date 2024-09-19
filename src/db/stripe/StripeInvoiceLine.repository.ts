@@ -104,11 +104,11 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
                 RETURNING stripe_id, invoice_id, customer_id, product_id, price_id, quantity
             `,
         [
-          invoiceLine.stripeId,
-          invoiceLine.invoiceId.id,
-          invoiceLine.customerId.id,
-          invoiceLine.productId,
-          invoiceLine.priceId,
+          invoiceLine.stripeId.toString(),
+          invoiceLine.invoiceId.toString(),
+          invoiceLine.customerId.toString(),
+          invoiceLine.productId.toString(),
+          invoiceLine.priceId.toString(),
           invoiceLine.quantity,
         ],
       );

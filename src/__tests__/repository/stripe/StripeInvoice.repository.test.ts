@@ -1,5 +1,3 @@
-import { type Express } from "express";
-import { createApp } from "../../../createApp";
 import { setupTestDB } from "../../jest.setup";
 import {
   CompanyId,
@@ -23,8 +21,6 @@ import {
 import { CreateCompanyDto } from "../../../dtos";
 
 describe("StripeInvoiceRepository", () => {
-  let app: Express = createApp();
-
   setupTestDB();
 
   const userRepo = getUserRepository();

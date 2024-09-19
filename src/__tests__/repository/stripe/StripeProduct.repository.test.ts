@@ -1,13 +1,9 @@
-import { type Express } from "express";
-import { createApp } from "../../../createApp";
 import { setupTestDB } from "../../jest.setup";
 import { Fixture } from "../Fixture";
 import { getStripeProductRepository } from "../../../db";
 import { StripeProduct, StripeProductId } from "../../../model";
 
 describe("StripeProductRepository", () => {
-  let app: Express = createApp();
-
   setupTestDB();
 
   const productRepo = getStripeProductRepository();

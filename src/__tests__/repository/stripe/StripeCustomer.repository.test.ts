@@ -1,23 +1,19 @@
-import { type Express } from "express";
-import { createApp } from "../../../createApp";
 import { setupTestDB } from "../../jest.setup";
 import {
-  StripeCustomer,
-  UserId,
   CompanyId,
+  StripeCustomer,
   StripeCustomerId,
+  UserId,
 } from "../../../model";
 import { Fixture } from "../Fixture";
 import {
+  getCompanyRepository,
   getStripeCustomerRepository,
   getUserRepository,
-  getCompanyRepository,
 } from "../../../db";
 import { CreateCompanyDto } from "../../../dtos";
 
 describe("StripeCustomerRepository", () => {
-  let app: Express = createApp();
-
   setupTestDB();
 
   const customerRepo = getStripeCustomerRepository();
