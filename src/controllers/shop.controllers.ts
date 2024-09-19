@@ -92,7 +92,7 @@ export class ShopController {
 
       if (customer.tax?.automatic_tax === "unrecognized_location") {
         return res.status(StatusCodes.BAD_REQUEST).send();
-      } else if (customer.tax?.automatic_tax === "failure") {
+      } else if (customer.tax?.automatic_tax === "failed") {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send();
       } else {
         const stripeCustomer = new StripeCustomer(
