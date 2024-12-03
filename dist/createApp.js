@@ -44,16 +44,13 @@ var cors = require("cors");
 function createApp() {
     const app = (0, express_1.default)();
     const pgSession = require("connect-pg-simple")(express_session_1.default);
-    let corsOptions = {};
-    if (config_1.config.env === config_1.NodeEnv.Local) {
-        corsOptions = {
-            origin: "http://localhost:3000",
-            credentials: true, // access-control-allow-credentials:true
-            optionSuccessStatus: 200,
-            methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-            allowedHeaders: "Content-Type, Authorization",
-        };
-    }
+    const corsOptions = {
+        origin: config_1.config.frontEndUrl,
+        credentials: true, // access-control-allow-credentials:true
+        optionSuccessStatus: 200,
+        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+        allowedHeaders: "Content-Type, Authorization",
+    };
     app.use(cors(corsOptions));
     if (config_1.config.env !== config_1.NodeEnv.Local) {
         app.use(morgan.successHandler);

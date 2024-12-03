@@ -16,7 +16,7 @@ const config_1 = require("../config");
 class MailService {
     constructor() {
         // TODO: make a data structure and a test to be sure to that this url exists
-        this.registerURL = `${config_1.config.frontEndBaseUrl}/sign-up`;
+        this.registerURL = `${config_1.config.frontEndUrl}/sign-up`;
         this.client = new postmark_1.ServerClient(config_1.config.email.postmarkApiToken);
     }
     sendMail(to, subject, text) {

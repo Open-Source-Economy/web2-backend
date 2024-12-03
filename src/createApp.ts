@@ -18,16 +18,13 @@ export function createApp() {
   const app = express();
   const pgSession = require("connect-pg-simple")(session);
 
-  let corsOptions = {};
-  if (config.env === NodeEnv.Local) {
-    corsOptions = {
-      origin: "http://localhost:3000",
-      credentials: true, // access-control-allow-credentials:true
-      optionSuccessStatus: 200,
-      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-      allowedHeaders: "Content-Type, Authorization",
-    };
-  }
+  const corsOptions = {
+    origin: config.frontEndUrl,
+    credentials: true, // access-control-allow-credentials:true
+    optionSuccessStatus: 200,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: "Content-Type, Authorization",
+  };
 
   app.use(cors(corsOptions));
 

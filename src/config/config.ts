@@ -10,7 +10,9 @@ const envVarsSchema = Joi.object({
     .required(),
   HOST: Joi.string().required().description("The host url"),
   PORT: Joi.number().required(),
-  FRONT_END_PORT: Joi.number().required(),
+  FRONT_END_URL: Joi.string()
+    .required()
+    .description("The front end url. Required for CORS and redirecting"),
 
   JWT_SECRET: Joi.string().required().description("JWT secret key"),
   JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
@@ -21,18 +23,16 @@ const envVarsSchema = Joi.object({
     .description("days after which refresh tokens expire"),
 
   DATABASE_URL: Joi.string().required().description("postgres database url"),
-  POSTGRES_USER: Joi.string().required().description("postgres name"),
-  POSTGRES_HOST: Joi.string().required().description("postgres host"),
-  POSTGRES_PORT: Joi.number().required().description("postgres database port"),
-  POSTGRES_DATABASE: Joi.string().required().description("postgres database"),
-  POSTGRES_PASSWORD: Joi.string().required().description("postgres password"),
-  POSTGRES_POOL_MAX_SIZE: Joi.number().description(
-    "postgres database pool max size",
-  ),
-  POSTGRES_POOL_MIN_SIZE: Joi.number()
+  PGUSER: Joi.string().required().description("postgres name"),
+  PGHOST: Joi.string().required().description("postgres host"),
+  PGPORT: Joi.number().required().description("postgres database port"),
+  PGDATABASE: Joi.string().required().description("postgres database"),
+  PGPASSWORD: Joi.string().required().description("postgres password"),
+  PGPOOL_MAX_SIZE: Joi.number().description("postgres database pool max size"),
+  PGPOOL_MIN_SIZE: Joi.number()
     .required()
     .description("postgres database pool min size"),
-  POSTGRES_POOL_IDLE_TIMEOUT_MILLIS: Joi.number()
+  PGPOOL_IDLE_TIMEOUT_MILLIS: Joi.number()
     .required()
     .description("postgres: close idle clients after x millis"),
 
@@ -102,9 +102,7 @@ interface Config {
   env: NodeEnv;
   host: string;
   port: number;
-  baseUrl: string;
-  frontEndPort: string;
-  frontEndBaseUrl: string;
+  frontEndUrl: string;
   jwt: Jwt;
   postgres: Postgres;
   github: Github;
@@ -116,9 +114,7 @@ export const config: Config = {
   env: envVars.ENV as NodeEnv,
   host: envVars.HOST,
   port: envVars.PORT,
-  baseUrl: `${envVars.HOST}:${envVars.PORT}`,
-  frontEndPort: envVars.FRONT_END_PORT,
-  frontEndBaseUrl: `${envVars.HOST}:${envVars.FRONT_END_PORT}`,
+  frontEndUrl: envVars.FRONT_END_URL,
   // pagination: {
   //     limit: 10,
   //     page: 1,
@@ -135,15 +131,15 @@ export const config: Config = {
 
   postgres: {
     connectionString: envVars.DATABASE_URL,
-    user: envVars.POSTGRES_USER,
-    host: envVars.POSTGRES_HOST,
-    port: envVars.POSTGRES_PORT,
-    database: envVars.POSTGRES_DATABASE,
-    password: envVars.POSTGRES_PASSWORD,
+    user: envVars.PGUSER,
+    host: envVars.PGHOST,
+    port: envVars.PGPORT,
+    database: envVars.PGDATABASE,
+    password: envVars.PGPASSWORD,
     pool: {
-      maxSize: envVars.POSTGRES_POOL_MAX_SIZE,
-      minSize: envVars.POSTGRES_POOL_MIN_SIZE,
-      idleTimeoutMillis: envVars.POSTGRES_POOL_IDLE_TIMEOUT_MILLIS,
+      maxSize: envVars.PGPOOL_MAX_SIZE,
+      minSize: envVars.PGPOOL_MIN_SIZE,
+      idleTimeoutMillis: envVars.PGPOOL_IDLE_TIMEOUT_MILLIS,
     },
   } as Postgres,
 

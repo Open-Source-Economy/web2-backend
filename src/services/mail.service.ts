@@ -4,7 +4,7 @@ import { config, logger } from "../config";
 // TODO
 export class MailService {
   // TODO: make a data structure and a test to be sure to that this url exists
-  private registerURL: string = `${config.frontEndBaseUrl}/sign-up`;
+  private registerURL: string = `${config.frontEndUrl}/sign-up`;
 
   private client: ServerClient;
 

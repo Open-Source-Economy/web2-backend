@@ -37,7 +37,9 @@ const envVarsSchema = joi_1.default.object({
         .required(),
     HOST: joi_1.default.string().required().description("The host url"),
     PORT: joi_1.default.number().required(),
-    FRONT_END_PORT: joi_1.default.number().required(),
+    FRONT_END_URL: joi_1.default.string()
+        .required()
+        .description("The front end url. Required for CORS and redirecting"),
     JWT_SECRET: joi_1.default.string().required().description("JWT secret key"),
     JWT_ACCESS_EXPIRATION_MINUTES: joi_1.default.number()
         .default(30)
@@ -46,16 +48,16 @@ const envVarsSchema = joi_1.default.object({
         .default(30)
         .description("days after which refresh tokens expire"),
     DATABASE_URL: joi_1.default.string().required().description("postgres database url"),
-    POSTGRES_USER: joi_1.default.string().required().description("postgres name"),
-    POSTGRES_HOST: joi_1.default.string().required().description("postgres host"),
-    POSTGRES_PORT: joi_1.default.number().required().description("postgres database port"),
-    POSTGRES_DATABASE: joi_1.default.string().required().description("postgres database"),
-    POSTGRES_PASSWORD: joi_1.default.string().required().description("postgres password"),
-    POSTGRES_POOL_MAX_SIZE: joi_1.default.number().description("postgres database pool max size"),
-    POSTGRES_POOL_MIN_SIZE: joi_1.default.number()
+    PGUSER: joi_1.default.string().required().description("postgres name"),
+    PGHOST: joi_1.default.string().required().description("postgres host"),
+    PGPORT: joi_1.default.number().required().description("postgres database port"),
+    PGDATABASE: joi_1.default.string().required().description("postgres database"),
+    PGPASSWORD: joi_1.default.string().required().description("postgres password"),
+    PGPOOL_MAX_SIZE: joi_1.default.number().description("postgres database pool max size"),
+    PGPOOL_MIN_SIZE: joi_1.default.number()
         .required()
         .description("postgres database pool min size"),
-    POSTGRES_POOL_IDLE_TIMEOUT_MILLIS: joi_1.default.number()
+    PGPOOL_IDLE_TIMEOUT_MILLIS: joi_1.default.number()
         .required()
         .description("postgres: close idle clients after x millis"),
     GITHUB_CLIENT_ID: joi_1.default.string().required().description("github client id"),
@@ -82,9 +84,7 @@ exports.config = {
     env: envVars.ENV,
     host: envVars.HOST,
     port: envVars.PORT,
-    baseUrl: `${envVars.HOST}:${envVars.PORT}`,
-    frontEndPort: envVars.FRONT_END_PORT,
-    frontEndBaseUrl: `${envVars.HOST}:${envVars.FRONT_END_PORT}`,
+    frontEndUrl: envVars.FRONT_END_URL,
     // pagination: {
     //     limit: 10,
     //     page: 1,
@@ -100,15 +100,15 @@ exports.config = {
     // },
     postgres: {
         connectionString: envVars.DATABASE_URL,
-        user: envVars.POSTGRES_USER,
-        host: envVars.POSTGRES_HOST,
-        port: envVars.POSTGRES_PORT,
-        database: envVars.POSTGRES_DATABASE,
-        password: envVars.POSTGRES_PASSWORD,
+        user: envVars.PGUSER,
+        host: envVars.PGHOST,
+        port: envVars.PGPORT,
+        database: envVars.PGDATABASE,
+        password: envVars.PGPASSWORD,
         pool: {
-            maxSize: envVars.POSTGRES_POOL_MAX_SIZE,
-            minSize: envVars.POSTGRES_POOL_MIN_SIZE,
-            idleTimeoutMillis: envVars.POSTGRES_POOL_IDLE_TIMEOUT_MILLIS,
+            maxSize: envVars.PGPOOL_MAX_SIZE,
+            minSize: envVars.PGPOOL_MIN_SIZE,
+            idleTimeoutMillis: envVars.PGPOOL_IDLE_TIMEOUT_MILLIS,
         },
     },
     github: {
