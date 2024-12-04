@@ -34,7 +34,24 @@ export function createApp() {
   }
 
   // set security HTTP headers
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          "default-src": ["'self'"], // Restrict everything to the same origin by default
+          "script-src": ["'self'"], // Only allow scripts from the same origin
+          "style-src": ["'self'", "'strict-dynamic'"], // Avoid inline styles, or use strict-dynamic if needed
+          "img-src": ["'self'", "https:"], // Allow images from the same origin and HTTPS
+          "object-src": ["'none'"], // Disallow objects (Flash, etc.)
+          "connect-src": ["'self'"], // Restrict network connections
+          "font-src": ["'self'", "https:"], // Allow fonts from the same origin and HTTPS
+        },
+      },
+    }),
+  );
+
+  app.use(helmet.hsts({ maxAge: 31536000 })); // 1 year
 
   app.use(express.json());
   // Use JSON parser for all non-webhook routes.
@@ -49,11 +66,15 @@ export function createApp() {
 
   app.use(
     session({
-      secret: "anson the dev", // TODO: process.env.FOO_COOKIE_SECRET
+      secret: "your-secret-key",
       saveUninitialized: true,
       resave: false,
+      proxy: true,
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        secure: true,
+        httpOnly: true, // Protect against XSS
+        sameSite: "none",
       },
       store: new pgSession({
         pool: getPool(),
@@ -74,6 +95,10 @@ export function createApp() {
     app.use("/api/v1/auth", authLimiter);
   }
   app.use("/api/v1", v1Routes);
+
+  app.get("/", (req, res) => {
+    res.send("Welcome to the server!");
+  });
 
   // send back a 404 error for any unknown api request
   app.use((req, res, next) => {

@@ -57,7 +57,21 @@ function createApp() {
         app.use(morgan.errorHandler);
     }
     // set security HTTP headers
-    app.use((0, helmet_1.default)());
+    app.use((0, helmet_1.default)({
+        contentSecurityPolicy: {
+            useDefaults: true,
+            directives: {
+                "default-src": ["'self'"], // Restrict everything to the same origin by default
+                "script-src": ["'self'"], // Only allow scripts from the same origin
+                "style-src": ["'self'", "'strict-dynamic'"], // Avoid inline styles, or use strict-dynamic if needed
+                "img-src": ["'self'", "https:"], // Allow images from the same origin and HTTPS
+                "object-src": ["'none'"], // Disallow objects (Flash, etc.)
+                "connect-src": ["'self'"], // Restrict network connections
+                "font-src": ["'self'", "https:"], // Allow fonts from the same origin and HTTPS
+            },
+        },
+    }));
+    app.use(helmet_1.default.hsts({ maxAge: 31536000 })); // 1 year
     app.use(express_1.default.json());
     // Use JSON parser for all non-webhook routes.
     app.use((req, res, next) => {
@@ -70,11 +84,15 @@ function createApp() {
         }
     });
     app.use((0, express_session_1.default)({
-        secret: "anson the dev", // TODO: process.env.FOO_COOKIE_SECRET
+        secret: "your-secret-key",
         saveUninitialized: true,
         resave: false,
+        proxy: true,
         cookie: {
             maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+            secure: true,
+            httpOnly: true, // Protect against XSS
+            sameSite: "none",
         },
         store: new pgSession({
             pool: (0, dbPool_1.getPool)(),
@@ -91,6 +109,9 @@ function createApp() {
         app.use("/api/v1/auth", rateLimiter_1.authLimiter);
     }
     app.use("/api/v1", v1_1.default);
+    app.get("/", (req, res) => {
+        res.send("Welcome to the server!");
+    });
     // send back a 404 error for any unknown api request
     app.use((req, res, next) => {
         const errorMessage = `Not found: ${req.originalUrl}`;
