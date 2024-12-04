@@ -10,5 +10,14 @@ export function getPool(): Pool {
     ssl: {
       rejectUnauthorized: false,
     },
+
+    // user: config.postgres.user,
+    // password: config.postgres.password,
+    // host: config.postgres.host,
+    // port: config.postgres.port,
+    // database: config.postgres.database,
+    // max: config.postgres.pool.maxSize,
+    // min: config.postgres.pool.minSize,
+    // idleTimeoutMillis: config.postgres.pool.idleTimeoutMillis,
   });
 }
