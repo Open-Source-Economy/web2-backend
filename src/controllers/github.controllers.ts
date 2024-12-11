@@ -12,7 +12,12 @@ import {
   GetIssueResponse,
   GetIssuesBody,
   GetIssuesParams,
+  GetIssuesQuery,
   GetIssuesResponse,
+  GetOwnerBody,
+  GetOwnerParams,
+  GetOwnerQuery,
+  GetOwnerResponse,
   ResponseBody,
 } from "../dtos";
 import {
@@ -38,7 +43,13 @@ import {
   RequestIssueFundingParams,
   RequestIssueFundingQuery,
   RequestIssueFundingResponse,
-} from "../dtos/github/RequestIssueFunding.dto";
+} from "../dtos";
+import {
+  GetRepositoryBody,
+  GetRepositoryParams,
+  GetRepositoryQuery,
+  GetRepositoryResponse,
+} from "../dtos";
 
 const issueRepository = getIssueRepository();
 const financialIssueRepository = getFinancialIssueRepository();
@@ -47,12 +58,54 @@ const managedIssueRepository = getManagedIssueRepository();
 const issueFundingRepo = getIssueFundingRepository();
 
 export class GithubController {
-  static async issues(
+  static async getOwner(
+    req: Request<
+      GetOwnerParams,
+      ResponseBody<GetOwnerResponse>,
+      GetOwnerBody,
+      GetOwnerQuery
+    >,
+    res: Response<ResponseBody<GetOwnerResponse>>,
+  ) {
+    const owner = await financialIssueRepository.getOwner(
+      new OwnerId(req.params.owner),
+    );
+
+    const response: GetOwnerResponse = {
+      owner: owner,
+    };
+    res.status(StatusCodes.OK).send({ success: response });
+  }
+
+  static async getRepository(
+    req: Request<
+      GetRepositoryParams,
+      ResponseBody<GetRepositoryResponse>,
+      GetRepositoryBody,
+      GetRepositoryQuery
+    >,
+    res: Response<ResponseBody<GetRepositoryResponse>>,
+  ) {
+    const repositoryId = new RepositoryId(
+      new OwnerId(req.params.owner),
+      req.params.repo,
+    );
+    const [owner, repository] =
+      await financialIssueRepository.getRepository(repositoryId);
+
+    const response: GetRepositoryResponse = {
+      owner: owner,
+      repository: repository,
+    };
+    res.status(StatusCodes.OK).send({ success: response });
+  }
+
+  static async getIssues(
     req: Request<
       GetIssuesParams,
       ResponseBody<GetIssuesResponse>,
       GetIssuesBody,
-      {}
+      GetIssuesQuery
     >,
     res: Response<ResponseBody<GetIssuesResponse>>,
   ) {
@@ -64,7 +117,7 @@ export class GithubController {
     res.status(StatusCodes.OK).send({ success: response });
   }
 
-  static async issue(
+  static async getIssue(
     req: Request<
       GetIssueParams,
       ResponseBody<GetIssueResponse>,
