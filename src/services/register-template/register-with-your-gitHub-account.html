@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,25 +8,23 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
-   .br-for-open-source {
-            display: none;
-        }
+
         .main_parent {
-            background: url('https://i.imghippo.com/files/wuAt5679Og.jpg') #0E1F35 !important;
+            background: url('./img/orange_main_img.png') #0E1F35 !important;
             max-width: 740px !important;
-            background-size: cover !important;
+            background-size: 100% !important;
             background-repeat: no-repeat !important;
             margin: auto !important;
-            padding: 115px 0 30px 0 !important;
+            padding: 100px 0 30px 0 !important;
             font-family: "Montserrat", sans-serif !important;
             color: white !important;
-            background-position: top !important;
+            background-position: bottom center !important;
 
 
         }
 
         .btn {
-            background: #ff518c;
+            background: #ff7e4b;
             text-decoration: none !important;
             color: white;
             padding: 16px 20px !important;
@@ -39,11 +36,11 @@
 
         .btn:hover {
             background-color: transparent;
-            border: 1px solid #ff518c;
+            border: 1px solid #ff7e4b;
         }
 
         .pt_70 {
-            padding-top: 66px !important;
+            padding-top: 65px !important;
         }
 
         .w_380 {
@@ -75,11 +72,11 @@
             margin-top: 10px !important;
         }
 
-        .w_90 {
-            width: 90px !important;
+        .w_55 {
+            width: 55px !important;
             border: 1px solid white !important;
             border-radius: 50% !important;
-            height: 90px !important;
+            height: 55px !important;
         }
 
         .w_45_percent {
@@ -97,10 +94,7 @@
         .under_line:hover {
             text-decoration: underline !important;
         }
-.open_source_text{
-    font-size: 18px;
-    font-family: 400;
-}
+
         @media (max-width:760.98px) {
             .main_parent {
                 background-size: cover !important;
@@ -127,10 +121,10 @@
 
         @media (max-width:474.98px) {
             .main_parent {
-                background: url('https://i.imghippo.com/files/LJD1780eM.jpg') #0E1F35 !important;
+                background: url('./img/orange_main_img_mobile.png') #0E1F35 !important;
                 background-size: cover !important;
-                padding: 45px 0 15px 0 !important;
-                background-position: top !important;
+                padding: 50px 0 15px 0 !important;
+                background-position: bottom !important;
             }
 
             .fs_18 {
@@ -145,10 +139,9 @@
                 margin-top: 0px !important;
             }
 
-            .w_90 {
-                width: 80px !important;
-                height: 80px !important;
-                border: 1px solid white !important;
+            .w_55 {
+                width: 40px !important;
+                height: 40px !important;
             }
 
             .w_45_percent {
@@ -162,21 +155,13 @@
             .pt_70 {
                 padding-top: 50px !important;
             }
-            .open_source_text{
-    font-size: 17px;
-}
-
-   .br-for-open-source {
-            display: block;
-        }
-
         }
     </style>
-    </html>
 
 <body>
     <table width="100%" cellpadding="0" cellspacing="0" border="0" class="main_parent">
         <tbody>
+
             <tr>
 
                 <td style="padding: 20px;">
@@ -187,7 +172,7 @@
                                     <tr>
                                         <td>
                                             <img class="w_115" style="margin: auto;"
-                                                src="https://i.postimg.cc/jSBSMScj/Group-1597881597.png" alt="top img">
+                                                src="../common-images/cat_img.png" alt="top img">
 
                                         </td>
 
@@ -195,12 +180,12 @@
                                 </table>
                                 <table style="text-align: center !important; margin: 0 auto !important; " class="w_450">
                                     <th style="color: white ;font-size: 25px;font-weight: 600;" class="pt_70">
-                                        Hey {{toName}}!
+                                        Hey @Matthiew!
                                     </th>
-                                    <tr class="open_source_text">
-                                        <td style="padding: 10px 0 0px 0;">
+                                    <tr style="font-weight: 400; font-size: 18px;">
+                                        <td style="padding: 15px 0;">
                                             Lauriane from <a href="#" class="under_line"
-                                                style="color: #ff518c; font-weight: 600;"> <br class="br-for-open-source">
+                                                style="color: #ff7e4b; font-weight: 600;">
                                                 Open Source Economy
                                             </a> &nbsp;here 👋
                                         </td>
@@ -214,51 +199,57 @@
                         </tr>
                         <tr style="font-weight: 600; font-size: 14px;">
                             <td style="padding: 25px 20px; color: #d8d5d7; text-align: center;">
-                                <a class="btn" href="{{setUpYourAccountLink}}" style="color: white;">Set Up Your Account</a>
+                                <a class="btn" href="#" style="color: white;">Set Up Your Account</a>
                             </td>
                         </tr>
                         <tr style="font-weight: 400; " class="fs_18">
                             <td style="padding: 15px 20px; color: #d8d5d7; text-align: center;">
-                                Please register with your {{companyName}} email address </td>
+                                Register With your GitHub account: </td>
                         </tr>
 
                     </table>
-                    <table style="text-align: center !important; margin: auto !important;">
+                    <table style="margin: auto;" class="w_380">
                         <tbody>
                             <tr>
-                                <td style="padding-top: 10px;">
-                                    <img class=" w_90" style="margin: auto; text-align: center;"
-                                        src="https://i.ibb.co/92zy83W/Group-1597881577-3.png" alt="building">
+                                <td
+                                    style="padding: 15px 20px; color: #d8d5d7; background: #14233A; border-radius: 20px !important;">
+
+                                    <span style=" display: inline-grid; text-align: center;" class="w_45_percent">
+                                        <img class="w_55" style="margin: auto;"
+                                            src="./img/contact.png" alt="user id">
+                                        <a class="under_line" href="#"
+                                            style="font-size: 14px; font-weight: 400; margin-top: 15px; color: white;">
+                                            Lauriane Clodic
+                                        </a>
+                                    </span>
+                                    <span>
+                                        <img width="24px" src="./img/fragment.png" alt="fragment">
+
+                                    </span>
+                                    <span style="display: inline-grid; text-align: center;" class="w_45_percent">
+                                        <img class="w_55" style="margin: auto;"
+                                            src="./img/code.png" alt="github open source">
+                                        <a class="under_line" href="#"
+                                            style="font-size: 14px; font-weight: 400; margin-top: 15px; color: white;">
+                                            Open Source Economy
+                                        </a> </span>
                                 </td>
-
                             </tr>
-                            <tr>
-                                <td style="text-align: center; font-weight: 500; padding: 10px 0px;" class="fs_18">
-                                    {{companyName}}
-                                </td>
 
-                            </tr>
-<!--                            <tr>-->
-<!--                                <td-->
-<!--                                    style="text-align: center; font-weight: 400; font-size: 14px; max-width: 370px; line-height: 20px;">-->
-<!--                                    Jean Baptiste Point du Sable Lake Shore Drive located in Chicago, Illinoi-->
-<!--                                </td>-->
-
-<!--                            </tr>-->
                         </tbody>
                     </table>
-<!--                    <table style=" margin: 20px auto;" class="w_480">-->
-<!--                        <tbody>-->
-<!--                            <tr style="font-weight: 400; line-height: 130%;" class="fs_18">-->
-<!--                                <td style="padding: 15px 0px; color: #d8d5d7; text-align: center;">-->
-<!--                                    Just click below to set up your account - it's quick and straightforward! <img-->
-<!--                                        width="20px" class="mt_10" src="https://i.postimg.cc/WzsQ08p0/image.png "-->
-<!--                                        alt=""></td>-->
-<!--                            </tr>-->
-<!--                        </tbody>-->
-<!--                    </table>-->
+                    <table style=" margin: 20px auto;" class="w_480">
+                        <tbody>
+                            <tr style="font-weight: 400; line-height: 130%;" class="fs_18">
+                                <td style="padding: 15px 0px; color: #d8d5d7; text-align: center;">
+                                    Just click below to set up your account - it's quick and straightforward! <img
+                                        width="20px" class="mt_10" src="../common-images/thunder.png"
+                                        alt="thunder"></td>
+                            </tr>
+                        </tbody>
+                    </table>
                     <table class="w_520"
-                        style=" margin: 20px auto ; border-top: 1px dashed rgba(255, 255, 255, 0.192); border-bottom: 1px dashed rgba(255, 255, 255, 0.192); padding: 15px 0 20px 0;">
+                        style=" margin: 20px auto ; border-top: 1px dashed rgba(255, 255, 255, 0.11); border-bottom: 1px dashed rgba(255, 255, 255, 0.089); padding: 15px 0 20px 0;">
                         <tbody>
                             <tr style="font-weight: 400; " class="fs_18">
                                 <td style="padding: 15px 0px; color: #d8d5d7; ">
@@ -268,26 +259,27 @@
                                 <td style="color: #d8d5d7; ">
                                     <ul style="list-style: none; padding-left: 0px !important; margin-top: 0;">
                                         <li
-                                            style="display: flex; align-items: center; padding: 8px 0; margin-left: 0px !important;">
-                                            <img width="22px" src="https://i.imghippo.com/files/iEO9970bTQ.png"
+                                            style="display: flex; align-items: center; padding: 5px 0; margin-left: 0px !important;">
+                                            <img width="22px" src="./img/orange_checkmark.png"
                                                 alt="checkmark">
                                             <span style="padding-left: 10px;">
-                                                Prioritise your needs </span>
-                                        </li>
-                                        <li
-                                            style="display: flex; align-items: center; padding: 8px 0; margin-left: 0px !important;">
-                                            <img width="22px" src="https://i.imghippo.com/files/iEO9970bTQ.png"
-                                                alt="checkmark">
-                                            <span style="padding-left: 10px;">
-                                                Get help
+                                                Manage Funding
                                             </span>
                                         </li>
                                         <li
-                                            style="display: flex; align-items: center; padding: 8px 0; margin-left: 0px !important;">
-                                            <img width="22px" src="https://i.imghippo.com/files/iEO9970bTQ.png"
+                                            style="display: flex; align-items: center; padding: 5px 0; margin-left: 0px !important;">
+                                            <img width="22px" src="./img/orange_checkmark.png"
                                                 alt="checkmark">
                                             <span style="padding-left: 10px;">
-                                                Manage payment and invoices
+                                                Run Campaigns
+                                            </span>
+                                        </li>
+                                        <li
+                                            style="display: flex; align-items: center; padding: 5px 0; margin-left: 0px !important;">
+                                            <img width="22px" src="./img/orange_checkmark.png"
+                                                alt="checkmark">
+                                            <span style="padding-left: 10px;">
+                                                Control Project
                                             </span>
                                         </li>
 
@@ -296,7 +288,7 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <img width="153px" src="https://i.postimg.cc/DzHvQtRL/Frame-2121450870.png" alt="">
+                                    <img width="153px" src="../common-images/signature.png" alt="signature">
                                 </td>
                             </tr>
                             <tr style="font-weight: 400; font-size: 14px;">
@@ -315,4 +307,5 @@
         </tbody>
     </table>
 </body>
+
 </html>
