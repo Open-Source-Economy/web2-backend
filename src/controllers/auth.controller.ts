@@ -1,46 +1,46 @@
-import {NextFunction, Request, Response} from "express";
+import { NextFunction, Request, Response } from "express";
 import {
-    Company,
-    CompanyUserPermissionToken,
-    CompanyUserRole,
-    RepositoryId,
-    RepositoryUserPermissionToken,
-    ThirdPartyUser,
-    User,
-    UserId,
-    UserRepository,
+  Company,
+  CompanyUserPermissionToken,
+  CompanyUserRole,
+  RepositoryId,
+  RepositoryUserPermissionToken,
+  ThirdPartyUser,
+  User,
+  UserId,
+  UserRepository,
 } from "../model";
-import {StatusCodes} from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 import {
-    GetCompanyUserInviteInfoQuery,
-    GetCompanyUserInviteInfoResponse,
-    LoginBody,
-    LoginQuery,
-    LoginResponse,
-    RegisterBody,
-    RegisterQuery,
-    RegisterResponse,
-    RepositoryInfo,
-    ResponseBody,
-    StatusBody,
-    StatusQuery,
-    StatusResponse,
+  GetCompanyUserInviteInfoQuery,
+  GetCompanyUserInviteInfoResponse,
+  LoginBody,
+  LoginQuery,
+  LoginResponse,
+  RegisterBody,
+  RegisterQuery,
+  RegisterResponse,
+  RepositoryInfo,
+  ResponseBody,
+  StatusBody,
+  StatusQuery,
+  StatusResponse,
 } from "../dtos";
-import {ensureNoEndingTrailingSlash, secureToken} from "../utils";
+import { ensureNoEndingTrailingSlash, secureToken } from "../utils";
 import {
-    getCompanyRepository,
-    getCompanyUserPermissionTokenRepository,
-    getRepositoryUserPermissionTokenRepository,
-    getUserCompanyRepository,
-    getUserRepository,
-    getUserRepositoryRepository,
+  getCompanyRepository,
+  getCompanyUserPermissionTokenRepository,
+  getRepositoryUserPermissionTokenRepository,
+  getUserCompanyRepository,
+  getUserRepository,
+  getUserRepositoryRepository,
 } from "../db";
-import {ApiError} from "../model/error/ApiError";
+import { ApiError } from "../model/error/ApiError";
 import {
-    GetRepositoryUserInviteInfoQuery,
-    GetRepositoryUserInviteInfoResponse,
+  GetRepositoryUserInviteInfoQuery,
+  GetRepositoryUserInviteInfoResponse,
 } from "../dtos/auth/GetRepositoryUserInviteInfo.dto";
-import {config, logger} from "../config";
+import { config, logger } from "../config";
 
 const userRepo = getUserRepository();
 

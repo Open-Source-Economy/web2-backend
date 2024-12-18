@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { StripeCustomer, StripeCustomerId } from "../../model";
+import { StripeCustomer, StripeCustomerId, UserId } from "../../model";
 import { getPool } from "../../dbPool";
 
 export function getStripeCustomerRepository(): StripeCustomerRepository {
@@ -8,7 +8,8 @@ export function getStripeCustomerRepository(): StripeCustomerRepository {
 
 export interface StripeCustomerRepository {
   insert(customer: StripeCustomer): Promise<StripeCustomer>;
-  getById(id: StripeCustomerId): Promise<StripeCustomer | null>;
+  getByStripeId(id: StripeCustomerId): Promise<StripeCustomer | null>;
+  getByUserId(id: UserId): Promise<StripeCustomer | null>;
   getAll(): Promise<StripeCustomer[]>;
 }
 
@@ -61,12 +62,25 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
     return this.getCustomerList(result.rows);
   }
 
-  async getById(id: StripeCustomerId): Promise<StripeCustomer | null> {
+  async getByStripeId(id: StripeCustomerId): Promise<StripeCustomer | null> {
     const result = await this.pool.query(
       `
                 SELECT *
                 FROM stripe_customer
                 WHERE stripe_id = $1
+            `,
+      [id.toString()],
+    );
+
+    return this.getOptionalCustomer(result.rows);
+  }
+
+  async getByUserId(id: UserId): Promise<StripeCustomer | null> {
+    const result = await this.pool.query(
+      `
+                SELECT *
+                FROM stripe_customer
+                WHERE user_id = $1
             `,
       [id.toString()],
     );

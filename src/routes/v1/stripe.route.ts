@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 
-import { StripeController } from "../../controllers/stripe.controllers";
+import { StripeController } from "../../controllers/stripe.controller";
 
 const router = Router();
 

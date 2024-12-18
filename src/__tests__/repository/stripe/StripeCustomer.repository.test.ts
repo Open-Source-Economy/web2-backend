@@ -30,7 +30,7 @@ describe("StripeCustomerRepository", () => {
 
       expect(created).toEqual(customer);
 
-      const found = await customerRepo.getById(customerId);
+      const found = await customerRepo.getByStripeId(customerId);
       expect(found).toEqual(customer);
     });
 
@@ -55,7 +55,7 @@ describe("StripeCustomerRepository", () => {
   describe("getById", () => {
     it("should return null if customer not found", async () => {
       const nonExistentCustomerId = new StripeCustomerId("non-existent-id");
-      const found = await customerRepo.getById(nonExistentCustomerId);
+      const found = await customerRepo.getByStripeId(nonExistentCustomerId);
 
       expect(found).toBeNull();
     });

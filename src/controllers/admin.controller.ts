@@ -1,37 +1,37 @@
-import {Request, Response} from "express";
+import { Request, Response } from "express";
 import {
-    CreateAddressBody,
-    CreateAddressQuery,
-    CreateAddressResponse,
-    CreateCompanyBody,
-    CreateCompanyQuery,
-    CreateCompanyResponse,
-    CreateCompanyUserPermissionTokenBody,
-    CreateManualInvoiceBody,
-    CreateManualInvoiceQuery,
-    CreateManualInvoiceResponse,
-    ResponseBody,
-    SendCompanyAdminInviteBody,
-    SendCompanyAdminInviteQuery,
-    SendCompanyAdminInviteResponse,
-    SendRepositoryAdminInviteBody,
-    SendRepositoryAdminInviteQuery,
-    SendRepositoryAdminInviteResponse,
+  CreateAddressBody,
+  CreateAddressQuery,
+  CreateAddressResponse,
+  CreateCompanyBody,
+  CreateCompanyQuery,
+  CreateCompanyResponse,
+  CreateCompanyUserPermissionTokenBody,
+  CreateManualInvoiceBody,
+  CreateManualInvoiceQuery,
+  CreateManualInvoiceResponse,
+  ResponseBody,
+  SendCompanyAdminInviteBody,
+  SendCompanyAdminInviteQuery,
+  SendCompanyAdminInviteResponse,
+  SendRepositoryAdminInviteBody,
+  SendRepositoryAdminInviteQuery,
+  SendRepositoryAdminInviteResponse,
 } from "../dtos";
-import {StatusCodes} from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 import {
-    CreateRepositoryUserPermissionTokenDto,
-    getAddressRepository,
-    getCompanyRepository,
-    getCompanyUserPermissionTokenRepository,
-    getManualInvoiceRepository,
-    getRepositoryUserPermissionTokenRepository,
+  CreateRepositoryUserPermissionTokenDto,
+  getAddressRepository,
+  getCompanyRepository,
+  getCompanyUserPermissionTokenRepository,
+  getManualInvoiceRepository,
+  getRepositoryUserPermissionTokenRepository,
 } from "../db";
-import {secureToken} from "../utils";
-import {MailService} from "../services";
+import { secureToken } from "../utils";
+import { MailService } from "../services";
 import Decimal from "decimal.js";
-import {getFinancialIssueRepository} from "../db/FinancialIssue.repository";
-import {OwnerId} from "../model";
+import { getFinancialIssueRepository } from "../db/FinancialIssue.repository";
+import { OwnerId } from "../model";
 
 const addressRepository = getAddressRepository();
 const companyRepository = getCompanyRepository();

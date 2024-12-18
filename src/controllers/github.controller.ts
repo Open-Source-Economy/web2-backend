@@ -1,31 +1,43 @@
-import {Request, Response} from "express";
+import { Request, Response } from "express";
 import {
-    CreateIssueFundingBody,
-    CreateManagedIssueBody,
-    FundIssueBody,
-    FundIssueParams,
-    FundIssueQuery,
-    FundIssueResponse,
-    GetIssueBody,
-    GetIssueParams,
-    GetIssueQuery,
-    GetIssueResponse,
-    GetIssuesBody,
-    GetIssuesParams,
-    GetIssuesResponse,
-    ResponseBody,
+  CreateIssueFundingBody,
+  CreateManagedIssueBody,
+  FundIssueBody,
+  FundIssueParams,
+  FundIssueQuery,
+  FundIssueResponse,
+  GetIssueBody,
+  GetIssueParams,
+  GetIssueQuery,
+  GetIssueResponse,
+  GetIssuesBody,
+  GetIssuesParams,
+  GetIssuesResponse,
+  ResponseBody,
 } from "../dtos";
-import {CompanyId, ContributorVisibility, IssueId, ManagedIssueState, OwnerId, RepositoryId,} from "../model";
-import {getFinancialIssueRepository} from "../db/FinancialIssue.repository";
-import {StatusCodes} from "http-status-codes";
-import {getDowNumberRepository, getIssueFundingRepository, getIssueRepository, getManagedIssueRepository,} from "../db";
-import {ApiError} from "../model/error/ApiError";
+import {
+  CompanyId,
+  ContributorVisibility,
+  IssueId,
+  ManagedIssueState,
+  OwnerId,
+  RepositoryId,
+} from "../model";
+import { getFinancialIssueRepository } from "../db/FinancialIssue.repository";
+import { StatusCodes } from "http-status-codes";
+import {
+  getDowNumberRepository,
+  getIssueFundingRepository,
+  getIssueRepository,
+  getManagedIssueRepository,
+} from "../db";
+import { ApiError } from "../model/error/ApiError";
 import Decimal from "decimal.js";
 import {
-    RequestIssueFundingBody,
-    RequestIssueFundingParams,
-    RequestIssueFundingQuery,
-    RequestIssueFundingResponse,
+  RequestIssueFundingBody,
+  RequestIssueFundingParams,
+  RequestIssueFundingQuery,
+  RequestIssueFundingResponse,
 } from "../dtos/github/RequestIssueFunding.dto";
 
 const issueRepository = getIssueRepository();

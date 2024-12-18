@@ -1,4 +1,4 @@
-import {Request, Response} from "express";
+import { Request, Response } from "express";
 import {
   getAddressRepository,
   getStripeCustomerRepository,
@@ -6,7 +6,7 @@ import {
   getStripeProductRepository,
   getUserRepository,
 } from "../db/";
-import {StatusCodes} from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
 import {
   CreateCustomerBody,
@@ -27,8 +27,13 @@ import {
   GetDowPricesResponse,
   ResponseBody,
 } from "../dtos";
-import {StripeCustomer, StripeCustomerId, StripeInvoice, StripeProduct,} from "../model";
-import {config, logger} from "../config";
+import {
+  StripeCustomer,
+  StripeCustomerId,
+  StripeInvoice,
+  StripeProduct,
+} from "../model";
+import { config, logger } from "../config";
 
 // https://github.com/stripe-samples/subscriptions-with-card-and-direct-debit/blob/main/server/node/server.js
 const userRepo = getUserRepository();

@@ -1,15 +1,15 @@
-import {Request, Response} from "express";
-import {getDowNumberRepository} from "../db/";
+import { Request, Response } from "express";
+import { getDowNumberRepository } from "../db/";
 import {
-    GetAvailableDowBody,
-    GetAvailableDowParams,
-    GetAvailableDowQuery,
-    GetAvailableDowResponse,
-    ResponseBody,
+  GetAvailableDowBody,
+  GetAvailableDowParams,
+  GetAvailableDowQuery,
+  GetAvailableDowResponse,
+  ResponseBody,
 } from "../dtos";
-import {StatusCodes} from "http-status-codes";
-import {CompanyId, UserId} from "../model";
-import {ApiError} from "../model/error/ApiError";
+import { StatusCodes } from "http-status-codes";
+import { CompanyId, UserId } from "../model";
+import { ApiError } from "../model/error/ApiError";
 
 const dowNumberRepository = getDowNumberRepository();
 
