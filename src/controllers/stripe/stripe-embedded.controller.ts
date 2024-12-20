@@ -9,19 +9,15 @@ import {
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
 import {
+  CreatePaymentIntentBody,
+  CreatePaymentIntentParams,
+  CreatePaymentIntentQuery,
+  CreatePaymentIntentResponse,
   CreateSubscriptionBody,
   CreateSubscriptionParams,
   CreateSubscriptionQuery,
   CreateSubscriptionResponse,
   ResponseBody,
-  CheckoutBody,
-  CheckoutParams,
-  CheckoutQuery,
-  CheckoutResponse,
-  CreatePaymentIntentParams,
-  CreatePaymentIntentResponse,
-  CreatePaymentIntentBody,
-  CreatePaymentIntentQuery,
 } from "../../dtos";
 import { config } from "../../config";
 import { ApiError } from "../../model/error/ApiError";

@@ -1,4 +1,3 @@
-import { PriceItem } from "./index";
 import Stripe from "stripe";
 
 export interface CheckoutParams {}
@@ -7,7 +6,7 @@ export interface CheckoutResponse {}
 
 export interface CheckoutBody {
   mode: Stripe.Checkout.SessionCreateParams.Mode;
-  priceItems: PriceItem[];
+  items: Stripe.Checkout.SessionCreateParams.LineItem[];
   countryCode: string | null;
 
   // base URL for the frontend (no parameters, no "?" nor "/" at the end)

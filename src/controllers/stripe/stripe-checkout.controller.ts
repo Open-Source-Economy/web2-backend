@@ -9,15 +9,11 @@ import {
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
 import {
-  CreateSubscriptionBody,
-  CreateSubscriptionParams,
-  CreateSubscriptionQuery,
-  CreateSubscriptionResponse,
-  ResponseBody,
   CheckoutBody,
   CheckoutParams,
   CheckoutQuery,
   CheckoutResponse,
+  ResponseBody,
 } from "../../dtos";
 import { config } from "../../config";
 import { ApiError } from "../../model/error/ApiError";
@@ -62,15 +58,10 @@ export class StripeCheckoutController {
         throw stripeCustomer;
       }
 
-      const items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-      for (const item of req.body.priceItems) {
-        items.push({ price: item.priceId.toString(), quantity: item.quantity });
-      }
-
       const params: Stripe.Checkout.SessionCreateParams = {
         mode: req.body.mode,
         customer: stripeCustomer.stripeId.toString(),
-        line_items: items,
+        line_items: req.body.items,
         ui_mode: "embedded",
         // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
         // the actual Session ID is returned in the query parameter when your customer

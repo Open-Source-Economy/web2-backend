@@ -18,6 +18,14 @@ import {
   GetOwnerParams,
   GetOwnerQuery,
   GetOwnerResponse,
+  GetRepositoryBody,
+  GetRepositoryParams,
+  GetRepositoryQuery,
+  GetRepositoryResponse,
+  RequestIssueFundingBody,
+  RequestIssueFundingParams,
+  RequestIssueFundingQuery,
+  RequestIssueFundingResponse,
   ResponseBody,
 } from "../dtos";
 import {
@@ -38,18 +46,6 @@ import {
 } from "../db";
 import { ApiError } from "../model/error/ApiError";
 import Decimal from "decimal.js";
-import {
-  RequestIssueFundingBody,
-  RequestIssueFundingParams,
-  RequestIssueFundingQuery,
-  RequestIssueFundingResponse,
-} from "../dtos";
-import {
-  GetRepositoryBody,
-  GetRepositoryParams,
-  GetRepositoryQuery,
-  GetRepositoryResponse,
-} from "../dtos";
 
 const issueRepository = getIssueRepository();
 const financialIssueRepository = getFinancialIssueRepository();

@@ -1,10 +1,10 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import {
+  CompanyId,
+  CompanyUserRole,
   StripeCustomer,
   StripeCustomerId,
   UserId,
-  CompanyId,
-  CompanyUserRole,
 } from "../../../model"; // Add CompanyId if needed
 import { Fixture } from "../../__helpers__/Fixture";
 import {
