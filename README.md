@@ -12,5 +12,5 @@ logger.warn('message'); // level 1
 logger.info('message'); // level 2
 logger.http('message'); // level 3
 logger.verbose('message'); // level 4
-logger.debug('message'); // level 5
+logger.info('message'); // level 5
 ```

@@ -36,6 +36,7 @@ export class RepositoryUserPermissionToken {
   dowRate: Decimal;
   dowCurrency: DowCurrency;
   expiresAt: Date;
+  hasBeenUsed: boolean; // TODO: not used for the moment
 
   constructor(
     id: RepositoryUserPermissionTokenId,
@@ -48,6 +49,7 @@ export class RepositoryUserPermissionToken {
     dowRate: Decimal,
     dowCurrency: DowCurrency,
     expiresAt: Date,
+    hasBeenUsed: boolean,
   ) {
     this.id = id;
     this.userName = userName;
@@ -59,6 +61,7 @@ export class RepositoryUserPermissionToken {
     this.dowRate = new Decimal(dowRate);
     this.dowCurrency = dowCurrency;
     this.expiresAt = expiresAt;
+    this.hasBeenUsed = hasBeenUsed;
   }
 
   static fromBackend(
@@ -86,6 +89,7 @@ export class RepositoryUserPermissionToken {
       Object.values(DowCurrency) as DowCurrency[],
     );
     const expiresAt = validator.requiredDate("expires_at");
+    const hasBeenUsed = validator.requiredBoolean("has_been_used");
 
     const error = validator.getFirstError();
     if (error) {
@@ -103,6 +107,7 @@ export class RepositoryUserPermissionToken {
       dowRate,
       dowCurrency,
       expiresAt,
+      hasBeenUsed,
     );
   }
 }

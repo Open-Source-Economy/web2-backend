@@ -131,4 +131,20 @@ describe("RepositoryUserPermissionTokenRepository", () => {
       expect(found).toBeNull();
     });
   });
+
+  describe("setHasBeenUsed", () => {
+    it("should mark a token as used", async () => {
+      const tokenBody =
+        Fixture.createRepositoryUserPermissionTokenBody(repositoryId);
+
+      const created = await tokenRepo.create(tokenBody);
+      expect(created.hasBeenUsed).toEqual(false);
+
+      await tokenRepo.setHasBeenUsed(created.token);
+
+      const updated = await tokenRepo.getByToken(created.token);
+      expect(updated).not.toBeNull();
+      expect(updated!.hasBeenUsed).toEqual(true);
+    });
+  });
 });

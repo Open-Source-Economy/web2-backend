@@ -32,6 +32,8 @@ import { MailService } from "../services";
 import Decimal from "decimal.js";
 import { getFinancialIssueRepository } from "../db/FinancialIssue.repository";
 import { OwnerId } from "../model";
+import { ApiError } from "../model/error/ApiError";
+import { logger } from "../config";
 
 const addressRepository = getAddressRepository();
 const companyRepository = getCompanyRepository();
@@ -91,12 +93,24 @@ export class AdminController {
         expiresAt: expiresAt,
       };
 
+    const company = await companyRepository.getById(req.body.companyId);
+
+    if (!company) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        `Company ${req.body.companyId} not found`,
+      );
+    }
+
     const existing = await companyUserPermissionTokenRepository.getByUserEmail(
       req.body.userEmail,
       req.body.companyId,
     );
 
     for (const permission of existing) {
+      logger.info(
+        `Deleting existing company permission token ${permission.token}`,
+      );
       await companyUserPermissionTokenRepository.delete(permission.token);
     }
 
@@ -107,6 +121,7 @@ export class AdminController {
     await mailService.sendCompanyAdminInvite(
       req.body.userName,
       req.body.userEmail,
+      company,
       token,
     );
 
@@ -153,6 +168,9 @@ export class AdminController {
       );
 
     if (existing) {
+      logger.info(
+        `Deleting existing repository permission token ${existing.token}`,
+      );
       await repositoryUserPermissionTokenRepository.delete(existing.token);
     }
 
@@ -164,6 +182,7 @@ export class AdminController {
       req.body.userName,
       req.body.userEmail,
       user,
+      owner,
       repository,
       token,
     );

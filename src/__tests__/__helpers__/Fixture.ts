@@ -357,6 +357,7 @@ export const Fixture = {
       dto.companyId,
       dto.companyUserRole,
       dto.expiresAt,
+      false,
     );
   },
 
@@ -393,6 +394,7 @@ export const Fixture = {
       dto.dowRate,
       dto.dowCurrency,
       dto.expiresAt,
+      false,
     );
   },
 

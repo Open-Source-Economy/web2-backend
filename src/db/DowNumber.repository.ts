@@ -32,7 +32,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
     userId: UserId,
     companyId?: CompanyId,
   ): Promise<Decimal> {
-    logger.debug(
+    logger.info(
       `Getting available DoW for user ${userId} and company ${companyId}...`,
     );
     let totalDoWsPaid = new Decimal(0);
@@ -47,23 +47,23 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
         new Decimal(0),
       ),
     );
-    logger.debug(`Total DoW from manual invoices: ${totalDoWsPaid}`);
+    logger.info(`Total DoW from manual invoices: ${totalDoWsPaid}`);
 
     // Calculate total DoW from Stripe invoices
     const amountPaidWithStripe = await this.getAllStripeInvoicePaidBy(
       companyId ?? userId,
     );
-    logger.debug(`Total DoW from Stripe invoices: ${amountPaidWithStripe}`);
+    logger.info(`Total DoW from Stripe invoices: ${amountPaidWithStripe}`);
     totalDoWsPaid = totalDoWsPaid.plus(amountPaidWithStripe);
 
     const totalFunding = await this.getIssueFundingFrom(companyId ?? userId);
-    logger.debug(`Total issue funding: ${totalFunding}`);
+    logger.info(`Total issue funding: ${totalFunding}`);
     if (totalFunding.isNeg()) {
       logger.error(
         `The amount dow amount (${totalFunding}) is negative for userId ${userId.toString()}, companyId ${companyId ? companyId.toString() : ""}`,
       );
     } else if (totalDoWsPaid.minus(totalFunding).isNeg()) {
-      logger.debug(
+      logger.info(
         `The total DoW paid (${totalDoWsPaid}) is less than the total funding (${totalFunding}) for userId ${userId.toString()}, companyId ${companyId ? companyId.toString() : ""}`,
       );
     }

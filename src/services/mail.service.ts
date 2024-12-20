@@ -1,9 +1,10 @@
 import { ServerClient } from "postmark";
 import { config, logger } from "../config";
-import { Owner, Repository } from "../model";
+import { Company, Owner, Repository } from "../model";
+import { promises as fs } from "fs";
+import path from "path";
 
 export class MailService {
-  // TODO: make a data structure and a test to be sure to that this url exists
   private registerURL: string = `${config.frontEndUrl}/sign-up`;
 
   private client: ServerClient;
@@ -12,62 +13,84 @@ export class MailService {
     this.client = new ServerClient(config.email.postmarkApiToken);
   }
 
-  async sendMail(to: string, subject: string, text: string) {
+  private async sendMail(to: string, subject: string, html?: string) {
     await this.client.sendEmail({
       From: config.email.from,
       To: to,
       Subject: subject,
-      TextBody: text,
+      HtmlBody: html,
     });
   }
 
-  // TODO: create a good email
   async sendCompanyAdminInvite(
     toName: string | null,
     toEmail: string,
+    company: Company,
     token: string,
-  ): Promise<void> {
-    const subject = "Invite to register";
-    const resetPasswordUrl = `${this.registerURL}?company_token=${token}`;
+  ) {
+    const subject = `Open Source Economy - Register as ${company.name} admin`;
 
-    logger.debug(
-      `Sending email to ${toEmail} with invite link ${resetPasswordUrl}`,
+    const setUpYourAccountLink = `${this.registerURL}?company_token=${token}`;
+
+    logger.info(
+      `Sending email to ${toEmail} with compnay invite link ${setUpYourAccountLink}`,
     );
 
-    const text = `Dear ${toName ? toName : ""},,
-        Register to Open Source Economy: ${resetPasswordUrl}`;
+    // Read the HTML file
+    const htmlFilePath = path.join(__dirname, "register-as-company-admin.html");
+    let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
-    await this.sendMail(toEmail, subject, text);
+    // Replace placeholders in the HTML with dynamic values
+    htmlContent = htmlContent
+      .replace("{{toName}}", toName || "")
+      .replace("{{companyName}}", company.name)
+      .replace("{{setUpYourAccountLink}}", setUpYourAccountLink);
+
+    // Send email with both text and HTML
+    await this.sendMail(toEmail, subject, htmlContent);
   }
 
   async sendRepositoryAdminInvite(
     toName: string | null,
     toEmail: string,
+    user: Owner,
     owner: Owner,
     repository: Repository,
     token: string,
   ): Promise<void> {
-    const subject = "Invite to register";
+    const subject = `Open Source Economy - Register as ${owner.id.login}/${repository.id.name} admin`;
+
     const setUpYourAccountLink = `${this.registerURL}?repository_token=${token}`;
-
-    const ownerLogin: string = owner.id.login;
-    const ownerProfileUrl: string | undefined = owner.avatarUrl;
-
+    const userLogin: string = user.id.login;
+    const userProfileUrl: string =
+      user.avatarUrl ?? `https://i.imghippo.com/files/lEXI9914lM.png`;
     const repositoryName: string = repository.id.name;
     const repositoryUrl: string | null = repository.htmlUrl;
+    const repositoryAvatarUrl: string =
+      owner.avatarUrl ?? `https://i.imghippo.com/files/Jyuv9682tIk.png`;
 
-    // URL could be:
-    // https://avatars.githubusercontent.com/u/141809657?v=4
-    // https://avatars.githubusercontent.com/u/6135171?v=4
-    // https://avatars.githubusercontent.com/u/47359?v=4
-
-    logger.debug(
-      `Sending email to ${toEmail} with invite link ${setUpYourAccountLink}`,
+    logger.info(
+      `Sending email to ${toEmail} with repository invite link ${setUpYourAccountLink}`,
     );
 
-    const text = `Dear ${toName ? toName : ownerLogin},,
-        Register to Open Source Economy: ${setUpYourAccountLink}`;
+    // Read the HTML file
+    const htmlFilePath = path.join(
+      __dirname,
+      "register-as-maintainer-admin.html",
+    );
+    let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
-    await this.sendMail(toEmail, subject, text);
+    // Replace placeholders in the HTML with dynamic values
+    htmlContent = htmlContent
+      .replace("{{toName}}", toName || userLogin)
+      .replace("{{setUpYourAccountLink}}", setUpYourAccountLink)
+      .replace("{{userLogin}}", userLogin)
+      .replace("{{userProfileUrl}}", userProfileUrl)
+      .replace("{{repositoryName}}", repositoryName)
+      .replace("{{repositoryUrl}}", repositoryUrl || "")
+      .replace("{{repositoryAvatarUrl}}", repositoryAvatarUrl);
+
+    // Send email with both text and HTML
+    await this.sendMail(toEmail, subject, htmlContent);
   }
 }

@@ -35,6 +35,8 @@ export interface CompanyUserPermissionTokenRepository {
   getAll(): Promise<CompanyUserPermissionToken[]>;
 
   delete(token: string): Promise<void>;
+
+  setHasBeenUsed(token: string): Promise<void>;
 }
 
 class CompanyUserPermissionTokenRepositoryImpl
@@ -87,8 +89,8 @@ class CompanyUserPermissionTokenRepositoryImpl
     try {
       const result = await client.query(
         `
-                    INSERT INTO company_user_permission_token (user_name, user_email, token, company_id, company_user_role, expires_at)
-                    VALUES ($1, $2, $3, $4, $5, $6)
+                    INSERT INTO company_user_permission_token (user_name, user_email, token, company_id, company_user_role, expires_at, has_been_used)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                     RETURNING *
                 `,
         [
@@ -98,6 +100,7 @@ class CompanyUserPermissionTokenRepositoryImpl
           token.companyId.uuid.toString(),
           token.companyUserRole,
           token.expiresAt,
+          false, // Default value for hasBeenUsed
         ],
       );
 
@@ -121,8 +124,9 @@ class CompanyUserPermissionTokenRepositoryImpl
                         token             = $3,
                         company_id        = $4,
                         company_user_role = $5,
-                        expires_at        = $6
-                    WHERE id = $7
+                        expires_at        = $6,
+                        has_been_used     = $7
+                    WHERE id = $8
                     RETURNING *
                 `,
         [
@@ -132,6 +136,7 @@ class CompanyUserPermissionTokenRepositoryImpl
           token.companyId.toString(),
           token.companyUserRole,
           token.expiresAt,
+          token.hasBeenUsed,
           token.id.toString(),
         ],
       );
@@ -199,12 +204,36 @@ class CompanyUserPermissionTokenRepositoryImpl
   async delete(token: string): Promise<void> {
     await this.pool.query(
       `
-                    DELETE
-                    FROM company_user_permission_token
-                    WHERE token = $1
+                DELETE
+                FROM company_user_permission_token
+                WHERE token = $1
             `,
       [token],
     );
-    logger.debug("Deleting permission token: ", token);
+    logger.info("Deleting permission token: ", token);
+  }
+
+  async setHasBeenUsed(token: string): Promise<void> {
+    const client = await this.pool.connect();
+
+    try {
+      const result = await client.query(
+        `
+          UPDATE company_user_permission_token
+          SET has_been_used = TRUE
+          WHERE token = $1
+          RETURNING *
+        `,
+        [token],
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error(`Token not found: ${token}`);
+      }
+
+      logger.info(`Token ${token} has been marked as used.`);
+    } finally {
+      client.release();
+    }
   }
 }

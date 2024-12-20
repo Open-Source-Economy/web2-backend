@@ -31,6 +31,7 @@ describe("CompanyUserPermissionTokenRepository", () => {
       expect(created).toEqual(
         Fixture.userCompanyPermissionTokenFromBody(created.id, tokenBody),
       );
+      expect(created.hasBeenUsed).toEqual(false);
 
       const found = await tokenRepo.getById(created.id);
       expect(found).toEqual(created);
@@ -40,7 +41,7 @@ describe("CompanyUserPermissionTokenRepository", () => {
   });
 
   describe("update", () => {
-    it("should update an existing token record", async () => {
+    it("should update an existing token record, including hasBeenUsed", async () => {
       const tokenBody = Fixture.createUserCompanyPermissionTokenBody(
         "test@example.com",
         companyId,
@@ -56,15 +57,14 @@ describe("CompanyUserPermissionTokenRepository", () => {
         userEmail: "updated@example.com",
       };
 
-      const updated = await tokenRepo.update(
-        Fixture.userCompanyPermissionTokenFromBody(
-          created.id,
-          updatedTokenBody,
-        ),
-      );
+      created.hasBeenUsed = true;
+      created.userEmail = "updated@example.com";
+
+      const updated = await tokenRepo.update(created);
 
       expect(created.id).toEqual(updated.id);
       expect(updated.userEmail).toEqual("updated@example.com");
+      expect(updated.hasBeenUsed).toEqual(true);
     });
 
     // Add more test cases for `update`
@@ -98,6 +98,7 @@ describe("CompanyUserPermissionTokenRepository", () => {
       );
       expect(found.length).toBeGreaterThan(0);
       expect(found[0].userEmail).toEqual("test@example.com");
+      expect(found[0].hasBeenUsed).toEqual(false);
     });
 
     // Add more test cases for `getByUserEmail`
@@ -114,13 +115,14 @@ describe("CompanyUserPermissionTokenRepository", () => {
 
       const found = await tokenRepo.getByToken(created.token);
       expect(found).toEqual(created);
+      expect(found?.hasBeenUsed).toEqual(false);
     });
 
     // Add more test cases for `getByToken`
   });
 
   describe("delete", () => {
-    it("should should", async () => {
+    it("should delete a token", async () => {
       const tokenBody = Fixture.createUserCompanyPermissionTokenBody(
         "test@example.com",
         companyId,
@@ -135,6 +137,24 @@ describe("CompanyUserPermissionTokenRepository", () => {
       const notFound = await tokenRepo.getByToken(created.token);
 
       expect(notFound).toBe(null);
+    });
+  });
+
+  describe("setHasBeenUsed", () => {
+    it("should mark a token as used", async () => {
+      const tokenBody = Fixture.createUserCompanyPermissionTokenBody(
+        "test@example.com",
+        companyId,
+      );
+
+      const created = await tokenRepo.create(tokenBody);
+      expect(created.hasBeenUsed).toEqual(false);
+
+      await tokenRepo.setHasBeenUsed(created.token);
+
+      const updated = await tokenRepo.getByToken(created.token);
+      expect(updated).not.toBeNull();
+      expect(updated!.hasBeenUsed).toEqual(true);
     });
   });
 });

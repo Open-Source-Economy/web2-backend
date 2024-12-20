@@ -4,12 +4,16 @@ import { isAuth } from "../../middlewares/isAuth";
 
 const router = Router();
 
-router.get("/issues", GithubController.issues);
+router.get("/owners/:owner", GithubController.getOwner);
+
+router.get("/repos/:owner/:repo", GithubController.getRepository);
+
+router.get("/issues", GithubController.getIssues);
 
 router.get(
   "/:owner/:repo/issues/:number",
   // checkSchema(createUserValidationSchema),
-  GithubController.issue,
+  GithubController.getIssue,
 );
 
 // TODO: add validation schema

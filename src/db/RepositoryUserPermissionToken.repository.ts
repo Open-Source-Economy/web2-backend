@@ -42,6 +42,11 @@ export interface RepositoryUserPermissionTokenRepository {
     userGithubOwnerLogin: string,
   ): Promise<RepositoryUserPermissionToken | null>;
 
+  getByUserGithubOwnerLoginAndRepository(
+    userGithubOwnerLogin: string,
+    repositoryId: RepositoryId,
+  ): Promise<RepositoryUserPermissionToken[]>;
+
   getByRepositoryId(
     repositoryId: RepositoryId,
   ): Promise<RepositoryUserPermissionToken[]>;
@@ -51,6 +56,8 @@ export interface RepositoryUserPermissionTokenRepository {
   getAll(): Promise<RepositoryUserPermissionToken[]>;
 
   delete(token: string): Promise<void>;
+
+  setHasBeenUsed(token: string): Promise<void>;
 }
 
 class RepositoryUserPermissionTokenRepositoryImpl
@@ -68,14 +75,14 @@ class RepositoryUserPermissionTokenRepositoryImpl
       logger.error("RepositoryUserPermissionToken not found");
       throw new Error("RepositoryUserPermissionToken not found");
     } else {
-      logger.debug("RepositoryUserPermissionToken retrieved successfully");
+      logger.info("RepositoryUserPermissionToken retrieved successfully");
       return token;
     }
   }
 
   private getOptionalToken(rows: any[]): RepositoryUserPermissionToken | null {
     if (rows.length === 0) {
-      logger.debug("No RepositoryUserPermissionToken found");
+      logger.info("No RepositoryUserPermissionToken found");
       return null;
     } else if (rows.length > 1) {
       logger.error("Multiple tokens found");
@@ -89,7 +96,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
         );
         throw token;
       }
-      logger.debug(
+      logger.info(
         "RepositoryUserPermissionToken created successfully from backend data",
       );
       return token;
@@ -106,7 +113,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
         );
         throw token;
       }
-      logger.debug(
+      logger.info(
         "RepositoryUserPermissionToken created successfully from backend data",
       );
       return token;
@@ -118,25 +125,27 @@ class RepositoryUserPermissionTokenRepositoryImpl
   ): Promise<RepositoryUserPermissionToken> {
     const client = await this.pool.connect();
     try {
-      logger.debug("Creating RepositoryUserPermissionToken with data: ", token);
+      logger.info("Creating RepositoryUserPermissionToken with data: ", token);
       const result = await client.query(
         `
-                    INSERT INTO repository_user_permission_token (
-                                                                  user_name,
-                                                                  user_email,
-                                                                  user_github_owner_login, 
-                                                                  token,
-                                                                  github_owner_id,
-                                                                  github_owner_login,
-                                                                  github_repository_id,
-                                                                  github_repository_name,
-                                                                  repository_user_role, 
-                                                                  dow_rate, 
-                                                                  dow_currency, 
-                                                                  expires_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                    RETURNING *
-                `,
+          INSERT INTO repository_user_permission_token (
+            user_name,
+            user_email,
+            user_github_owner_login,
+            token,
+            github_owner_id,
+            github_owner_login,
+            github_repository_id,
+            github_repository_name,
+            repository_user_role,
+            dow_rate,
+            dow_currency,
+            expires_at,
+            has_been_used
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          RETURNING *
+        `,
         [
           token.userName,
           token.userEmail,
@@ -150,10 +159,11 @@ class RepositoryUserPermissionTokenRepositoryImpl
           token.dowRate.toString(),
           token.dowCurrency.toString(),
           token.expiresAt,
+          false, // Default for has_been_used
         ],
       );
 
-      logger.debug("RepositoryUserPermissionToken created successfully");
+      logger.info("RepositoryUserPermissionToken created successfully");
       return this.getOneToken(result.rows);
     } finally {
       client.release();
@@ -166,7 +176,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
     const client = await this.pool.connect();
 
     try {
-      logger.debug(
+      logger.info(
         "Updating RepositoryUserPermissionToken with ID: {}",
         token.id,
       );
@@ -204,7 +214,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
         ],
       );
 
-      logger.debug("RepositoryUserPermissionToken updated successfully");
+      logger.info("RepositoryUserPermissionToken updated successfully");
       return this.getOneToken(result.rows);
     } finally {
       client.release();
@@ -214,7 +224,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
   async getById(
     id: RepositoryUserPermissionTokenId,
   ): Promise<RepositoryUserPermissionToken | null> {
-    logger.debug("Retrieving RepositoryUserPermissionToken by ID: ", id);
+    logger.info("Retrieving RepositoryUserPermissionToken by ID: ", id);
     const result = await this.pool.query(
       `
                 SELECT *
@@ -230,7 +240,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
   async getByRepositoryId(
     repositoryId: RepositoryId,
   ): Promise<RepositoryUserPermissionToken[]> {
-    logger.debug(
+    logger.info(
       "Retrieving RepositoryUserPermissionTokens by repository ID: ",
       repositoryId,
     );
@@ -250,7 +260,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
   async getByUserGithubOwnerLogin(
     userGithubOwnerLogin: string,
   ): Promise<RepositoryUserPermissionToken | null> {
-    logger.debug(
+    logger.info(
       "Retrieving RepositoryUserPermissionToken by userGithubOwnerLogin: {}",
       userGithubOwnerLogin,
     );
@@ -266,13 +276,32 @@ class RepositoryUserPermissionTokenRepositoryImpl
     return this.getOptionalToken(result.rows);
   }
 
+  async getByUserGithubOwnerLoginAndRepository(
+    userGithubOwnerLogin: string,
+    repositoryId: RepositoryId,
+  ): Promise<RepositoryUserPermissionToken[]> {
+    logger.info(
+      "Retrieving RepositoryUserPermissionToken by userGithubOwnerLogin: {}",
+      userGithubOwnerLogin,
+    );
+    const result = await this.pool.query(
+      `
+                SELECT *
+                FROM repository_user_permission_token
+                WHERE user_github_owner_login = $1
+                  AND    github_owner_login = $2
+                  AND github_repository_name = $3
+            `,
+      [userGithubOwnerLogin, repositoryId.ownerLogin(), repositoryId.name],
+    );
+
+    return this.getTokenList(result.rows);
+  }
+
   async getByToken(
     token: string,
   ): Promise<RepositoryUserPermissionToken | null> {
-    logger.debug(
-      "Retrieving RepositoryUserPermissionToken by token: {}",
-      token,
-    );
+    logger.info("Retrieving RepositoryUserPermissionToken by token: {}", token);
     const result = await this.pool.query(
       `
                 SELECT *
@@ -286,7 +315,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
   }
 
   async getAll(): Promise<RepositoryUserPermissionToken[]> {
-    logger.debug("Retrieving all RepositoryUserPermissionTokens");
+    logger.info("Retrieving all RepositoryUserPermissionTokens");
     const result = await this.pool.query(
       `
                 SELECT *
@@ -298,7 +327,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
   }
 
   async delete(token: string): Promise<void> {
-    logger.debug("Deleting permission token: {}", token);
+    logger.info("Deleting permission token: {}", token);
     await this.pool.query(
       `
                 DELETE FROM repository_user_permission_token
@@ -306,5 +335,29 @@ class RepositoryUserPermissionTokenRepositoryImpl
             `,
       [token],
     );
+  }
+
+  async setHasBeenUsed(token: string): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      logger.info(`Marking token as used: ${token}`);
+      const result = await client.query(
+        `
+          UPDATE repository_user_permission_token
+          SET has_been_used = TRUE
+          WHERE token = $1
+          RETURNING *
+        `,
+        [token],
+      );
+
+      if (result.rows.length === 0) {
+        throw new Error(`Token not found: ${token}`);
+      }
+
+      logger.info(`Token ${token} marked as used successfully.`);
+    } finally {
+      client.release();
+    }
   }
 }

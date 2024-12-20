@@ -27,6 +27,7 @@ export class CompanyUserPermissionToken {
   companyId: CompanyId;
   companyUserRole: CompanyUserRole;
   expiresAt: Date;
+  hasBeenUsed: boolean; // TODO: not used for the moment
 
   constructor(
     id: CompanyUserPermissionTokenId,
@@ -36,6 +37,7 @@ export class CompanyUserPermissionToken {
     companyId: CompanyId,
     companyUserRole: CompanyUserRole,
     expiresAt: Date,
+    hasBeenUsed: boolean,
   ) {
     this.id = id;
     this.userName = userName;
@@ -44,6 +46,7 @@ export class CompanyUserPermissionToken {
     this.companyId = companyId;
     this.companyUserRole = companyUserRole;
     this.expiresAt = expiresAt;
+    this.hasBeenUsed = hasBeenUsed;
   }
 
   static fromBackend(row: any): CompanyUserPermissionToken | ValidationError {
@@ -58,6 +61,7 @@ export class CompanyUserPermissionToken {
       Object.values(CompanyUserRole) as CompanyUserRole[],
     );
     const expiresAt = validator.requiredDate("expires_at");
+    const hasBeenUsed = validator.requiredBoolean("has_been_used");
 
     const error = validator.getFirstError();
     if (error) {
@@ -72,6 +76,7 @@ export class CompanyUserPermissionToken {
       new CompanyId(companyId),
       companyUserRole,
       expiresAt,
+      hasBeenUsed,
     );
   }
 }
