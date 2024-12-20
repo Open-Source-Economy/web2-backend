@@ -14,10 +14,10 @@ import {
   CreateSubscriptionQuery,
   CreateSubscriptionResponse,
   ResponseBody,
-  SubscriptionCheckoutBody,
-  SubscriptionCheckoutParams,
-  SubscriptionCheckoutQuery,
-  SubscriptionCheckoutResponse,
+  CheckoutBody,
+  CheckoutParams,
+  CheckoutQuery,
+  CheckoutResponse,
 } from "../../dtos";
 import { config } from "../../config";
 import { ApiError } from "../../model/error/ApiError";
@@ -33,57 +33,10 @@ const stripeCustomerRepo = getStripeCustomerRepository();
 const addressRepo = getAddressRepository();
 const stripeProductRepo = getStripeProductRepository();
 
-// Build-subscriptions: https://docs.stripe.com/billing/subscriptions/build-subscriptions?lang=node
-// 1. createCustomer
-// 2. createSubscription
-//
-export class StripeSubscriptionController {
-  static async createSubscription(
-    req: Request<
-      CreateSubscriptionParams,
-      ResponseBody<CreateSubscriptionResponse>,
-      CreateSubscriptionBody,
-      CreateSubscriptionQuery
-    >,
-    res: Response<ResponseBody<CreateSubscriptionResponse>>,
-  ) {
-    if (!req.user) {
-      return new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
-    } else {
-      const stripeCustomer = await StripeController.getOrCreateStripeCustomer(
-        req.user,
-        req.body.countryCode,
-      );
-      if (stripeCustomer instanceof ApiError) {
-        throw stripeCustomer;
-      }
+export class StripeCheckoutController {
 
-      const items: Stripe.SubscriptionCreateParams.Item[] = [];
-      for (const item of req.body.priceItems) {
-        items.push({ price: item.priceId.toString(), quantity: item.quantity });
-      }
 
-      // Create the subscription.
-      // Note we're expanding the Subscription's latest invoice and that invoice's payment_intent,
-      // so we can pass it to the front end to confirm the payment
-      const subscription: Stripe.Subscription =
-        await stripe.subscriptions.create({
-          customer: stripeCustomer.stripeId.toString(),
-          items: items,
-          payment_behavior: "default_incomplete",
-          payment_settings: { save_default_payment_method: "on_subscription" },
-          expand: ["latest_invoice.payment_intent"],
-        });
-
-      const response: CreateSubscriptionResponse = {
-        subscription: subscription,
-      };
-
-      // At this point the Subscription is inactive and awaiting payment.
-      res.status(StatusCodes.CREATED).send({ success: response });
-    }
-  }
-
+  // Save payment details: https://docs.stripe.com/payments/checkout/save-during-payment
   /**
    * Create a Checkout Session for the subscription, redirecting the user to the Stripe checkout page
    *
@@ -93,12 +46,12 @@ export class StripeSubscriptionController {
    */
   static async subscriptionCheckout(
     req: Request<
-      SubscriptionCheckoutParams,
-      ResponseBody<SubscriptionCheckoutResponse>,
-      SubscriptionCheckoutBody,
-      SubscriptionCheckoutQuery
+      CheckoutParams,
+      ResponseBody<CheckoutResponse>,
+      CheckoutBody,
+      CheckoutQuery
     >,
-    res: Response<ResponseBody<SubscriptionCheckoutResponse>>,
+    res: Response<ResponseBody<CheckoutResponse>>,
   ) {
     if (!req.user) {
       return new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
@@ -117,13 +70,14 @@ export class StripeSubscriptionController {
       }
 
       const params: Stripe.Checkout.SessionCreateParams = {
-        mode: "subscription",
+        mode: req.body.mode,
         customer: stripeCustomer.stripeId.toString(),
         line_items: items,
+        ui_mode: 'embedded',
         // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
         // the actual Session ID is returned in the query parameter when your customer
         // is redirected to the success page.
-        success_url: `${req.body.successUrl}?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${req.body.successUrl}?session_id={CHECKOUT_SESSION_ID}&mode=${req.body.mode}`,
         cancel_url: `${req.body.cancelUrl}`,
       };
       const options: Stripe.RequestOptions = {};

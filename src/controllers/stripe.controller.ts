@@ -213,51 +213,5 @@ export class StripeController {
     res.status(StatusCodes.CREATED).send({ success: response });
   }
 
-  static async createPaymentIntent(
-    req: Request<
-      CreatePaymentIntentParams,
-      ResponseBody<CreatePaymentIntentResponse>,
-      CreatePaymentIntentBody,
-      CreatePaymentIntentQuery
-    >,
-    res: Response<ResponseBody<CreatePaymentIntentResponse>>,
-  ) {
-    // Step 1: Create an invoice
-    // Step 2: Create an invoice item
-    // Step 3: Finalize the invoice and get the payment intent
-    // Step 4: Request the payment intent for the invoice.
-    const invoice: Stripe.Response<Stripe.Invoice> =
-      await stripe.invoices.create({
-        customer: req.body.stripeCustomerId.toString(),
-        automatic_tax: {
-          enabled: false,
-        },
-      });
 
-    for (const item of req.body.priceItems) {
-      await stripe.invoiceItems.create({
-        customer: req.body.stripeCustomerId.toString(),
-        invoice: invoice.id,
-        price: item.priceId.toString(),
-        quantity: item.quantity,
-        // tax_behavior: "exclusive",
-        // tax_rates: [taxCalculation.tax_rates[0].id],
-        // tax_code: "txcd_30011000",
-        // metadata: { tax_calculation: taxCalculation.id },
-      });
-    }
-
-    const finalizedInvoice: Stripe.Response<Stripe.Invoice> =
-      await stripe.invoices.finalizeInvoice(invoice.id);
-
-    const paymentIntentId: string = finalizedInvoice.payment_intent as string;
-
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    const response: CreatePaymentIntentResponse = {
-      paymentIntent: paymentIntent,
-    };
-    // Send publishable key and PaymentIntent client_secret to client.
-    res.status(StatusCodes.OK).send({ success: response });
-  }
 }
