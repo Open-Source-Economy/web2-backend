@@ -64,12 +64,12 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
 
   async getByStripeId(id: StripeCustomerId): Promise<StripeCustomer | null> {
     const result = await this.pool.query(
-        `
+      `
         SELECT *
         FROM stripe_customer
         WHERE stripe_id = $1
       `,
-        [id.toString()],
+      [id.toString()],
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -77,12 +77,12 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
 
   async getByUserId(id: UserId): Promise<StripeCustomer | null> {
     const result = await this.pool.query(
-        `
+      `
         SELECT *
         FROM stripe_customer
         WHERE user_id = $1
       `,
-        [id.toString()],
+      [id.toString()],
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -95,16 +95,16 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
       await client.query("BEGIN");
 
       const result = await client.query(
-          `
+        `
           INSERT INTO stripe_customer (stripe_id, user_id, company_id)
           VALUES ($1, $2, $3)
           RETURNING *
         `,
-          [
-            customer.stripeId.toString(),
-            customer.userId.toString(),
-            customer.companyId?.toString() ?? null
-          ],
+        [
+          customer.stripeId.toString(),
+          customer.userId.toString(),
+          customer.companyId?.toString() ?? null,
+        ],
       );
 
       await client.query("COMMIT");

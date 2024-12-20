@@ -1,17 +1,10 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
 import { AddressId, Company } from "../../model";
 import { Fixture } from "../__helpers__/Fixture";
-import {
-  getAddressRepository,
-  getCompanyRepository,
-  getUserCompanyRepository,
-  getUserRepository,
-} from "../../db/";
+import { getAddressRepository, getCompanyRepository } from "../../db/";
 
 describe("CompanyRepository", () => {
   const addressRepo = getAddressRepository();
-  const userRepo = getUserRepository();
-  const userCompanyRepo = getUserCompanyRepository();
   const companyRepo = getCompanyRepository();
 
   setupTestDB();

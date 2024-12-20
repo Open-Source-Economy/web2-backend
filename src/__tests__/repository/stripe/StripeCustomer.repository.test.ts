@@ -1,20 +1,37 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import { StripeCustomer, StripeCustomerId, UserId, CompanyId } from "../../../model"; // Add CompanyId if needed
+import {
+  StripeCustomer,
+  StripeCustomerId,
+  UserId,
+  CompanyId,
+  CompanyUserRole,
+} from "../../../model"; // Add CompanyId if needed
 import { Fixture } from "../../__helpers__/Fixture";
-import { getStripeCustomerRepository, getUserRepository } from "../../../db";
+import {
+  getCompanyRepository,
+  getStripeCustomerRepository,
+  getUserCompanyRepository,
+  getUserRepository,
+} from "../../../db";
 
 describe("StripeCustomerRepository", () => {
   setupTestDB();
 
   let validUserId: UserId;
+  let validCompanyId: CompanyId;
+  const companyRepo = getCompanyRepository();
+  const userCompanyRepo = getUserCompanyRepository();
   const customerRepo = getStripeCustomerRepository();
   const userRepo = getUserRepository();
 
   beforeEach(async () => {
     const validUser = await userRepo.insert(
-        Fixture.createUser(Fixture.localUser()),
+      Fixture.createUser(Fixture.localUser()),
     );
     validUserId = validUser.id;
+
+    const validCompany = await companyRepo.create(Fixture.createCompanyBody());
+    validCompanyId = validCompany.id;
   });
 
   describe("create", () => {
@@ -40,8 +57,17 @@ describe("StripeCustomerRepository", () => {
       // Insert user before inserting the customer
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
 
-      const companyId = new CompanyId("company-123");
-      const customer = new StripeCustomer(customerId, validUserId, companyId);
+      await userCompanyRepo.insert(
+        validUserId,
+        validCompanyId,
+        CompanyUserRole.ADMIN,
+      );
+
+      const customer = new StripeCustomer(
+        customerId,
+        validUserId,
+        validCompanyId,
+      );
       const created = await customerRepo.insert(customer);
 
       expect(created).toEqual(customer);
@@ -56,7 +82,9 @@ describe("StripeCustomerRepository", () => {
 
       try {
         await customerRepo.insert(customer);
-        fail("Expected foreign key constraint violation, but no error was thrown.");
+        fail(
+          "Expected foreign key constraint violation, but no error was thrown.",
+        );
       } catch (error: any) {
         // Check if the error is related to foreign key constraint
         expect(error.message).toMatch(/violates foreign key constraint/);

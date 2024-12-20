@@ -4,17 +4,18 @@
 
 CREATE TABLE IF NOT EXISTS stripe_customer
 (
-    id         UUID        NOT NULL DEFAULT gen_random_uuid(),
-    stripe_id  VARCHAR(50) NOT NULL PRIMARY KEY,
-    user_id    UUID        NOT NULL,
-    company_id UUID,
-
-    created_at TIMESTAMP   NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP   NOT NULL DEFAULT now(),
+    id          UUID        NOT NULL DEFAULT gen_random_uuid(),
+    stripe_id   VARCHAR(50) NOT NULL PRIMARY KEY,
+    user_id     UUID        NOT NULL,
+    company_id  UUID,
+    created_at  TIMESTAMP   NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMP   NOT NULL DEFAULT now(),
 
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE,
-    CONSTRAINT fk_company FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE
+    CONSTRAINT fk_company FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_company FOREIGN KEY (user_id, company_id) REFERENCES user_company (user_id, company_id) ON DELETE CASCADE
 );
+
 
 
 -- example: represent the product 0.01 DoW

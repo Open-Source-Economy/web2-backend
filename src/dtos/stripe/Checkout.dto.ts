@@ -1,4 +1,4 @@
-import {PriceItem} from "./index";
+import { PriceItem } from "./index";
 import Stripe from "stripe";
 
 export interface CheckoutParams {}
@@ -6,7 +6,7 @@ export interface CheckoutParams {}
 export interface CheckoutResponse {}
 
 export interface CheckoutBody {
-  mode: Stripe.Checkout.SessionCreateParams.Mode
+  mode: Stripe.Checkout.SessionCreateParams.Mode;
   priceItems: PriceItem[];
   countryCode: string | null;
 

@@ -34,8 +34,6 @@ const addressRepo = getAddressRepository();
 const stripeProductRepo = getStripeProductRepository();
 
 export class StripeCheckoutController {
-
-
   // Save payment details: https://docs.stripe.com/payments/checkout/save-during-payment
   /**
    * Create a Checkout Session for the subscription, redirecting the user to the Stripe checkout page
@@ -73,7 +71,7 @@ export class StripeCheckoutController {
         mode: req.body.mode,
         customer: stripeCustomer.stripeId.toString(),
         line_items: items,
-        ui_mode: 'embedded',
+        ui_mode: "embedded",
         // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
         // the actual Session ID is returned in the query parameter when your customer
         // is redirected to the success page.

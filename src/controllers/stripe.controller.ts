@@ -212,6 +212,4 @@ export class StripeController {
     // At this point the Subscription is inactive and awaiting payment.
     res.status(StatusCodes.CREATED).send({ success: response });
   }
-
-
 }

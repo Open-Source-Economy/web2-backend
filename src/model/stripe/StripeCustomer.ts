@@ -1,6 +1,6 @@
 import { ValidationError, Validator } from "../error";
 import { UserId } from "../user";
-import {CompanyId} from "../Company";
+import { CompanyId } from "../Company";
 
 export class StripeCustomerId {
   id: string;
@@ -31,7 +31,11 @@ export class StripeCustomer {
   userId: UserId;
   companyId?: CompanyId;
 
-  constructor(stripeId: StripeCustomerId, userId: UserId, companyId?: CompanyId) {
+  constructor(
+    stripeId: StripeCustomerId,
+    userId: UserId,
+    companyId?: CompanyId,
+  ) {
     this.stripeId = stripeId;
     this.userId = userId;
     this.companyId = companyId;
@@ -48,11 +52,7 @@ export class StripeCustomer {
       return error;
     }
 
-    return new StripeCustomer(
-        new StripeCustomerId(id),
-        new UserId(userId),
-
-    );
+    return new StripeCustomer(new StripeCustomerId(id), new UserId(userId));
   }
 
   static fromBackend(row: any): StripeCustomer | ValidationError {
@@ -67,9 +67,9 @@ export class StripeCustomer {
     }
 
     return new StripeCustomer(
-        new StripeCustomerId(id),
-        new UserId(userId),
-        companyId ? new CompanyId(companyId) : undefined
+      new StripeCustomerId(id),
+      new UserId(userId),
+      companyId ? new CompanyId(companyId) : undefined,
     );
   }
 }
