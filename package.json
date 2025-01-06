@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "nodemon api/index.ts",
 		"build": "rimraf dist && tsc",
-		"ts.check": "tsc --project tsconfig.json ; rm -f -r dist",
+		"ts.check": "tsc --project tsconfig.json && tsc --project tsconfig.test.json ; rm -f -r dist",
 		"test": "jest",
 		"test:e2e": "jest --runInBand --testPathPattern=src/__tests__/ --testPathIgnorePatterns='src/__tests__/__mocks__/|src/__tests__/__helpers__/' --detectOpenHandles",
 		"start:dev": "nodemon api/index.ts",
