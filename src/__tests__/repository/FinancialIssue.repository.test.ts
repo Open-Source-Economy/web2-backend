@@ -23,7 +23,6 @@ import { CreateIssueFundingBody } from "../../dtos";
 import { Fixture } from "../__helpers__/Fixture";
 import { getFinancialIssueRepository } from "../../db/FinancialIssue.repository";
 import { GitHubApi } from "../../services";
-import Decimal from "decimal.js";
 
 describe("FinancialIssueRepository", () => {
   setupTestDB();
@@ -130,13 +129,13 @@ describe("FinancialIssueRepository", () => {
       const issueFundingBody1: CreateIssueFundingBody = {
         githubIssueId: issueId1,
         userId: userId,
-        downAmount: new Decimal(5000),
+        milliDowAmount: 5000,
       };
 
       const issueFundingBody2: CreateIssueFundingBody = {
         githubIssueId: issueId1,
         userId: userId,
-        downAmount: new Decimal(10000),
+        milliDowAmount: 10000,
       };
 
       const issueFunding1 = await issueFundingRepo.create(issueFundingBody1);
@@ -178,13 +177,13 @@ describe("FinancialIssueRepository", () => {
       const issueFundingBody1: CreateIssueFundingBody = {
         githubIssueId: issueId1,
         userId: userId,
-        downAmount: new Decimal(5000),
+        milliDowAmount: 5000,
       };
 
       const issueFundingBody2: CreateIssueFundingBody = {
         githubIssueId: issueId1,
         userId: userId,
-        downAmount: new Decimal(10000),
+        milliDowAmount: 10000,
       };
 
       const issueFunding1 = await issueFundingRepo.create(issueFundingBody1);

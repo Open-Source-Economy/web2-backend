@@ -13,7 +13,6 @@ import {
 } from "../../db/";
 import { Fixture } from "../__helpers__/Fixture";
 import { CreateIssueFundingBody, CreateManualInvoiceBody } from "../../dtos";
-import Decimal from "decimal.js";
 
 describe("DowNumberRepository", () => {
   const userRepo = getUserRepository();
@@ -77,17 +76,18 @@ describe("DowNumberRepository", () => {
   describe("getAvailableDoWs", () => {
     describe("should return 0", () => {
       it("for a user with no invoices nor issue funding", async () => {
-        const totalDoWs = await dowNumberRepo.getAvailableDoWs(lonelyUserId);
-        expect(totalDoWs).toEqual(new Decimal(0));
+        const totalDoWs =
+          await dowNumberRepo.getAvailableMilliDoWs(lonelyUserId);
+        expect(totalDoWs).toEqual(0);
       });
 
       it("for a company with no invoices nor issue funding", async () => {
-        const totalDoWs = await dowNumberRepo.getAvailableDoWs(
+        const totalDoWs = await dowNumberRepo.getAvailableMilliDoWs(
           companyUserId1,
           validCompanyId,
         );
 
-        expect(totalDoWs).toEqual(new Decimal(0));
+        expect(totalDoWs).toEqual(0);
       });
     });
 
@@ -95,24 +95,25 @@ describe("DowNumberRepository", () => {
       it("for a user", async () => {
         const manualInvoiceBody: CreateManualInvoiceBody = {
           ...Fixture.createManualInvoiceBody(undefined, lonelyUserId),
-          dowAmount: new Decimal(200),
+          milliDowAmount: 200,
         };
         await manualInvoiceRepo.create(manualInvoiceBody);
-        const totalDoWs = await dowNumberRepo.getAvailableDoWs(lonelyUserId);
-        expect(totalDoWs).toEqual(new Decimal(200));
+        const totalDoWs =
+          await dowNumberRepo.getAvailableMilliDoWs(lonelyUserId);
+        expect(totalDoWs).toEqual(200);
       });
 
       it("for a company", async () => {
         const manualInvoiceBody: CreateManualInvoiceBody = {
           ...Fixture.createManualInvoiceBody(validCompanyId),
-          dowAmount: new Decimal(200),
+          milliDowAmount: 200,
         };
         await manualInvoiceRepo.create(manualInvoiceBody);
-        const totalDoWs = await dowNumberRepo.getAvailableDoWs(
+        const totalDoWs = await dowNumberRepo.getAvailableMilliDoWs(
           companyUserId1,
           validCompanyId,
         );
-        expect(totalDoWs).toEqual(new Decimal(200));
+        expect(totalDoWs).toEqual(200);
       });
     });
 
@@ -140,52 +141,53 @@ describe("DowNumberRepository", () => {
       it("for a user", async () => {
         const manualInvoiceBody: CreateManualInvoiceBody = {
           ...Fixture.createManualInvoiceBody(undefined, lonelyUserId),
-          dowAmount: new Decimal(200),
+          milliDowAmount: 200,
         };
         await manualInvoiceRepo.create(manualInvoiceBody);
 
         const issueFundingBody1: CreateIssueFundingBody = {
           githubIssueId: validIssueId,
           userId: lonelyUserId,
-          downAmount: new Decimal(50),
+          milliDowAmount: 50,
         };
         const issueFundingBody2: CreateIssueFundingBody = {
           ...issueFundingBody1,
-          downAmount: new Decimal(20),
+          milliDowAmount: 20,
         };
         await issueFundingRepo.create(issueFundingBody1);
         await issueFundingRepo.create(issueFundingBody2);
 
-        const totalDoWs = await dowNumberRepo.getAvailableDoWs(lonelyUserId);
-        expect(totalDoWs).toEqual(new Decimal(200 - 50 - 20));
+        const totalDoWs =
+          await dowNumberRepo.getAvailableMilliDoWs(lonelyUserId);
+        expect(totalDoWs).toEqual(200 - 50 - 20);
       });
 
       it("for a company", async () => {
         const manualInvoiceBody: CreateManualInvoiceBody = {
           ...Fixture.createManualInvoiceBody(validCompanyId),
-          dowAmount: new Decimal(200),
+          milliDowAmount: 200,
         };
         await manualInvoiceRepo.create(manualInvoiceBody);
 
         const issueFundingBody1: CreateIssueFundingBody = {
           githubIssueId: validIssueId,
           userId: companyUserId2,
-          downAmount: new Decimal(50),
+          milliDowAmount: 50,
         };
         const issueFundingBody2: CreateIssueFundingBody = {
           ...issueFundingBody1,
-          downAmount: new Decimal(20),
+          milliDowAmount: 20,
         };
         await issueFundingRepo.create(issueFundingBody1);
         await issueFundingRepo.create(issueFundingBody2);
 
-        const expected = new Decimal(200 - 50 - 20);
-        const totalDoWs1 = await dowNumberRepo.getAvailableDoWs(
+        const expected = 200 - 50 - 20;
+        const totalDoWs1 = await dowNumberRepo.getAvailableMilliDoWs(
           companyUserId1,
           validCompanyId,
         );
         expect(totalDoWs1).toEqual(expected);
-        const totalDoWs2 = await dowNumberRepo.getAvailableDoWs(
+        const totalDoWs2 = await dowNumberRepo.getAvailableMilliDoWs(
           companyUserId2,
           validCompanyId,
         );

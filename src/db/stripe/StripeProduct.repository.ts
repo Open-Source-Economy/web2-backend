@@ -81,16 +81,11 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
       const result = await client.query(
         `
           INSERT INTO stripe_product (
-              stripe_id, unit, unit_amount, recurring
-          ) VALUES ($1, $2, $3, $4)
-          RETURNING stripe_id, unit, unit_amount, recurring
+              stripe_id, type
+          ) VALUES ($1, $2)
+          RETURNING stripe_id, type
         `,
-        [
-          product.stripeId.toString(),
-          product.unit,
-          product.unitAmount,
-          product.recurring,
-        ],
+        [product.stripeId.toString(), product.type],
       );
 
       return this.getOneProduct(result.rows);

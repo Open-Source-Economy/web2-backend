@@ -59,7 +59,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
   async create(issueFunding: CreateIssueFundingBody): Promise<IssueFunding> {
     const client = await this.pool.connect();
 
-    logger.info("Creating issue funding", JSON.stringify(issueFunding));
+    logger.info(`Creating issue funding: ${JSON.stringify(issueFunding)}`);
     try {
       const result = await client.query(
         `
@@ -70,7 +70,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
                                                github_issue_id,
                                                github_issue_number,
                                                user_id,
-                                               dow_amount)
+                                               milli_dow_amount)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                     RETURNING id,
                         github_owner_id,
@@ -80,7 +80,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
                         github_issue_id,
                         github_issue_number,
                         user_id,
-                        dow_amount
+                        milli_dow_amount
                 `,
         [
           issueFunding.githubIssueId.repositoryId.ownerId.githubId,
@@ -90,7 +90,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
           issueFunding.githubIssueId.githubId,
           issueFunding.githubIssueId.number,
           issueFunding.userId.toString(),
-          issueFunding.downAmount.toString(),
+          issueFunding.milliDowAmount,
         ],
       );
 

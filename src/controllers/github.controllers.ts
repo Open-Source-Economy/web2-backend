@@ -18,6 +18,14 @@ import {
   GetOwnerParams,
   GetOwnerQuery,
   GetOwnerResponse,
+  GetRepositoryBody,
+  GetRepositoryParams,
+  GetRepositoryQuery,
+  GetRepositoryResponse,
+  RequestIssueFundingBody,
+  RequestIssueFundingParams,
+  RequestIssueFundingQuery,
+  RequestIssueFundingResponse,
   ResponseBody,
 } from "../dtos";
 import {
@@ -37,19 +45,6 @@ import {
   getManagedIssueRepository,
 } from "../db";
 import { ApiError } from "../model/error/ApiError";
-import Decimal from "decimal.js";
-import {
-  RequestIssueFundingBody,
-  RequestIssueFundingParams,
-  RequestIssueFundingQuery,
-  RequestIssueFundingResponse,
-} from "../dtos";
-import {
-  GetRepositoryBody,
-  GetRepositoryParams,
-  GetRepositoryQuery,
-  GetRepositoryResponse,
-} from "../dtos";
 
 const issueRepository = getIssueRepository();
 const financialIssueRepository = getFinancialIssueRepository();
@@ -172,7 +167,7 @@ export class GithubController {
     const companyId = req.body.companyId
       ? new CompanyId(req.body.companyId)
       : undefined;
-    const dowAmount = new Decimal(req.body.dowAmount);
+    const dowAmount = req.body.milliDowAmount;
 
     const managedIssue = await managedIssueRepository.getByIssueId(issue.id);
     if (
@@ -185,14 +180,14 @@ export class GithubController {
       );
     }
 
-    const availableDoWs = await dowNumberRepository.getAvailableDoWs(
+    const availableDoWs = await dowNumberRepository.getAvailableMilliDoWs(
       req.user.id,
       companyId,
     );
-    if (dowAmount.greaterThan(availableDoWs)) {
+    if (dowAmount > availableDoWs) {
       throw new ApiError(StatusCodes.PAYMENT_REQUIRED, "Not enough DoWs");
     }
-    if (availableDoWs.isNeg()) {
+    if (availableDoWs < 0) {
       throw new ApiError(
         StatusCodes.INTERNAL_SERVER_ERROR,
         "The amount of available DoWs is negative",
@@ -202,7 +197,7 @@ export class GithubController {
     const issueFunding: CreateIssueFundingBody = {
       githubIssueId: issue.id,
       userId: req.user.id,
-      downAmount: dowAmount,
+      milliDowAmount: dowAmount,
     };
 
     await issueFundingRepo.create(issueFunding);
@@ -241,7 +236,7 @@ export class GithubController {
     if (managedIssue === null) {
       const createManagedIssueBody: CreateManagedIssueBody = {
         githubIssueId: issue.id,
-        requestedDowAmount: new Decimal(req.body.dowAmount),
+        requestedMilliDowAmount: req.body.milliDowAmount,
         managerId: req.user.id,
         contributorVisibility: ContributorVisibility.PRIVATE,
         state: ManagedIssueState.OPEN,
@@ -259,7 +254,7 @@ export class GithubController {
         "This issue funding is already being REJECTED or SOLVED",
       );
     } else {
-      managedIssue.requestedDowAmount = new Decimal(req.body.dowAmount);
+      managedIssue.requestedMilliDowAmount = req.body.milliDowAmount;
       await managedIssueRepository.update(managedIssue);
       res.status(StatusCodes.OK).send({ success: {} });
     }

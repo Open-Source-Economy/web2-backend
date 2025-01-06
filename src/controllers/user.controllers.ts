@@ -31,7 +31,7 @@ export class UserController {
       ? new CompanyId(req.query.companyId)
       : undefined;
 
-    const dowAmount = await dowNumberRepository.getAvailableDoWs(
+    const dowAmount = await dowNumberRepository.getAvailableMilliDoWs(
       userId,
       companyId,
     );

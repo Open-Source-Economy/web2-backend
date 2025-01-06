@@ -1,6 +1,5 @@
 import { ValidationError, Validator } from "./error";
 import { IssueId, UserId } from "./index";
-import Decimal from "decimal.js";
 
 export enum ContributorVisibility {
   PUBLIC = "public",
@@ -24,7 +23,7 @@ export class ManagedIssueId {
 export class ManagedIssue {
   id: ManagedIssueId;
   githubIssueId: IssueId;
-  requestedDowAmount: Decimal;
+  requestedMilliDowAmount: number;
   managerId: UserId;
   contributorVisibility: ContributorVisibility;
   state: ManagedIssueState;
@@ -32,14 +31,14 @@ export class ManagedIssue {
   constructor(
     id: ManagedIssueId,
     githubIssueId: IssueId,
-    requestedDowAmount: Decimal,
+    requestedMilliDowAmount: number,
     managerId: UserId, // TODO: need to change to User
     contributorVisibility: ContributorVisibility,
     state: ManagedIssueState,
   ) {
     this.id = id;
     this.githubIssueId = githubIssueId;
-    this.requestedDowAmount = requestedDowAmount;
+    this.requestedMilliDowAmount = requestedMilliDowAmount;
     this.managerId = managerId;
     this.contributorVisibility = contributorVisibility;
     this.state = state;
@@ -53,8 +52,8 @@ export class ManagedIssue {
 
     const validator = new Validator(row);
     const id = validator.requiredString("id");
-    const requestedDowAmount = validator.requiredDecimal(
-      "requested_dow_amount",
+    const requestedMilliDowAmount = validator.requiredNumber(
+      "requested_milli_dow_amount",
     );
     const managerId = validator.requiredString("manager_id");
     const contributorVisibility = validator.requiredEnum(
@@ -74,7 +73,7 @@ export class ManagedIssue {
     return new ManagedIssue(
       new ManagedIssueId(id),
       githubIssueId,
-      requestedDowAmount,
+      requestedMilliDowAmount,
       new UserId(managerId),
       contributorVisibility,
       state,

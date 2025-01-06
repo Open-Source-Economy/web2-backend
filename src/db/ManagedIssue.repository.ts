@@ -9,9 +9,13 @@ export function getManagedIssueRepository(): ManagedIssueRepository {
 
 export interface ManagedIssueRepository {
   create(managedIssue: CreateManagedIssueBody): Promise<ManagedIssue>;
+
   update(managedIssue: ManagedIssue): Promise<ManagedIssue>;
+
   getById(id: ManagedIssueId): Promise<ManagedIssue | null>;
+
   getByIssueId(issueId: IssueId): Promise<ManagedIssue | null>;
+
   getAll(): Promise<ManagedIssue[]>;
 }
 
@@ -61,29 +65,29 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
     try {
       const result = await client.query(
         `
-            INSERT INTO managed_issue (github_owner_id,
-                                       github_owner_login,
-                                       github_repository_id,
-                                       github_repository_name,
-                                       github_issue_id,
-                                       github_issue_number,
-                                       requested_dow_amount,
-                                       manager_id,
-                                       contributor_visibility,
-                                       state)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id,
-              github_owner_id,
-              github_owner_login,
-              github_repository_id,
-              github_repository_name,
-              github_issue_id,
-              github_issue_number,
-                requested_dow_amount, 
-                manager_id, 
-                contributor_visibility, 
-                state
-        `,
+                    INSERT INTO managed_issue (github_owner_id,
+                                               github_owner_login,
+                                               github_repository_id,
+                                               github_repository_name,
+                                               github_issue_id,
+                                               github_issue_number,
+                                               requested_milli_dow_amount,
+                                               manager_id,
+                                               contributor_visibility,
+                                               state)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    RETURNING id,
+                        github_owner_id,
+                        github_owner_login,
+                        github_repository_id,
+                        github_repository_name,
+                        github_issue_id,
+                        github_issue_number,
+                        requested_milli_dow_amount,
+                        manager_id,
+                        contributor_visibility,
+                        state
+                `,
         [
           managedIssue.githubIssueId.repositoryId.ownerId.githubId,
           managedIssue.githubIssueId.repositoryId.ownerId.login,
@@ -91,7 +95,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
           managedIssue.githubIssueId.repositoryId.name,
           managedIssue.githubIssueId.githubId,
           managedIssue.githubIssueId.number,
-          managedIssue.requestedDowAmount.toString(),
+          managedIssue.requestedMilliDowAmount,
           managedIssue.managerId.toString(),
           managedIssue.contributorVisibility,
           managedIssue.state,
@@ -110,31 +114,30 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
     try {
       const result = await client.query(
         `
-        UPDATE managed_issue
-        SET
-            github_owner_id = $1,
-            github_owner_login = $2,
-            github_repository_id = $3,
-            github_repository_name = $4,
-            github_issue_id = $5,
-            github_issue_number = $6,
-                requested_dow_amount = $7, 
-                manager_id = $8, 
-                contributor_visibility = $9, 
-                state = $10
-        WHERE id = $11
-        RETURNING id,
-          github_owner_id,
-          github_owner_login,
-          github_repository_id,
-          github_repository_name,
-          github_issue_id,
-          github_issue_number,
-            requested_dow_amount, 
-            manager_id, 
-            contributor_visibility, 
-            state
-        `,
+                    UPDATE managed_issue
+                    SET github_owner_id            = $1,
+                        github_owner_login         = $2,
+                        github_repository_id       = $3,
+                        github_repository_name     = $4,
+                        github_issue_id            = $5,
+                        github_issue_number        = $6,
+                        requested_milli_dow_amount = $7,
+                        manager_id                 = $8,
+                        contributor_visibility     = $9,
+                        state                      = $10
+                    WHERE id = $11
+                    RETURNING id,
+                        github_owner_id,
+                        github_owner_login,
+                        github_repository_id,
+                        github_repository_name,
+                        github_issue_id,
+                        github_issue_number,
+                        requested_milli_dow_amount,
+                        manager_id,
+                        contributor_visibility,
+                        state
+                `,
         [
           managedIssue.githubIssueId.repositoryId.ownerId.githubId,
           managedIssue.githubIssueId.repositoryId.ownerId.login,
@@ -142,7 +145,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
           managedIssue.githubIssueId.repositoryId.name,
           managedIssue.githubIssueId.githubId,
           managedIssue.githubIssueId.number,
-          managedIssue.requestedDowAmount.toString(),
+          managedIssue.requestedMilliDowAmount.toString(),
           managedIssue.managerId.toString(),
           managedIssue.contributorVisibility,
           managedIssue.state,
@@ -159,10 +162,10 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
   async getById(id: ManagedIssueId): Promise<ManagedIssue | null> {
     const result = await this.pool.query(
       `
-      SELECT *
-      FROM managed_issue
-      WHERE id = $1
-      `,
+                SELECT *
+                FROM managed_issue
+                WHERE id = $1
+            `,
       [id.uuid],
     );
 
@@ -172,10 +175,12 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
   async getByIssueId(issueId: IssueId): Promise<ManagedIssue | null> {
     const result = await this.pool.query(
       `
-        SELECT *
-        FROM managed_issue
-        WHERE github_owner_login = $1 AND github_repository_name = $2 AND github_issue_number = $3
-        `,
+                SELECT *
+                FROM managed_issue
+                WHERE github_owner_login = $1
+                  AND github_repository_name = $2
+                  AND github_issue_number = $3
+            `,
       [
         issueId.repositoryId.ownerId.login,
         issueId.repositoryId.name,
@@ -188,9 +193,9 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
 
   async getAll(): Promise<ManagedIssue[]> {
     const result = await this.pool.query(`
-      SELECT *
-      FROM managed_issue
-    `);
+            SELECT *
+            FROM managed_issue
+        `);
 
     return this.getManagedIssueList(result.rows);
   }

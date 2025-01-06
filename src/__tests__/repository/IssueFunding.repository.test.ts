@@ -10,7 +10,6 @@ import {
 } from "../../db/";
 import { CreateIssueFundingBody } from "../../dtos";
 import { Fixture } from "../__helpers__/Fixture";
-import Decimal from "decimal.js";
 
 describe("IssueFundingRepository", () => {
   const userRepo = getUserRepository();
@@ -44,7 +43,7 @@ describe("IssueFundingRepository", () => {
       const issueFundingBody: CreateIssueFundingBody = {
         githubIssueId: issueId,
         userId: validUserId,
-        downAmount: new Decimal(5000),
+        milliDowAmount: 5000,
       };
 
       expect(true).toEqual(true);
@@ -93,13 +92,13 @@ describe("IssueFundingRepository", () => {
       const issueFundingBody1: CreateIssueFundingBody = {
         githubIssueId: issueId,
         userId: validUserId,
-        downAmount: new Decimal(5000),
+        milliDowAmount: 5000,
       };
 
       const issueFundingBody2: CreateIssueFundingBody = {
         githubIssueId: issueId,
         userId: validUserId,
-        downAmount: new Decimal(10000),
+        milliDowAmount: 10000,
       };
 
       const issueFunding1 = await issueFundingRepo.create(issueFundingBody1);

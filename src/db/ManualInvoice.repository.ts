@@ -68,7 +68,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
     try {
       const result = await client.query(
         `
-                    INSERT INTO manual_invoice (number, company_id, user_id, paid, dow_amount)
+                    INSERT INTO manual_invoice (number, company_id, user_id, paid, milli_dow_amount)
                     VALUES ($1, $2, $3, $4, $5)
                     RETURNING *
                 `,
@@ -77,7 +77,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
           manualInvoice.companyId?.uuid.toString(),
           manualInvoice.userId?.uuid.toString(),
           manualInvoice.paid,
-          manualInvoice.dowAmount.toString(),
+          manualInvoice.milliDowAmount.toString(),
         ],
       );
 
@@ -98,16 +98,16 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                         company_id = $2,
                         user_id = $3,
                         paid = $4,
-                        dow_amount = $5
+                        milli_dow_amount = $5
                     WHERE id = $6
-                    RETURNING id, number, company_id, user_id, paid, dow_amount
+                    RETURNING id, number, company_id, user_id, paid, milli_dow_amount
                 `,
         [
           manualInvoice.number,
           manualInvoice.companyId?.toString(),
           manualInvoice.userId?.toString(),
           manualInvoice.paid,
-          manualInvoice.dowAmount.toString(),
+          manualInvoice.milliDowAmount.toString(),
           manualInvoice.id?.toString(),
         ],
       );

@@ -9,10 +9,12 @@ export class Migration {
   }
 
   public async migrate(): Promise<void> {
-    const sql = fs.readFileSync("src/db/migration/1.sql").toString();
+    const sql1 = fs.readFileSync("src/db/migration/1.sql").toString();
+    const sql2 = fs.readFileSync("src/db/migration/2.sql").toString();
     const stripe = fs.readFileSync("src/db/migration/stripe.sql").toString();
 
-    await this.pool.query(sql);
+    await this.pool.query(sql1);
+    await this.pool.query(sql2);
     await this.pool.query(stripe);
     await this.pool.query(`SET timezone = 'UTC';`);
   }

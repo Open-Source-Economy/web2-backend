@@ -14,19 +14,15 @@ CREATE TABLE IF NOT EXISTS stripe_customer
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE
 );
 
--- example: represent the product 0.01 DoW
+-- example: represent the product 0.001 DoW
 CREATE TABLE IF NOT EXISTS stripe_product
 (
-    id          UUID        NOT NULL DEFAULT gen_random_uuid(),
-    stripe_id   VARCHAR(50) NOT NULL PRIMARY KEY,
-    unit        VARCHAR(50) NOT NULL, -- 'DoW'
-    unit_amount INTEGER     NOT NULL,
-    recurring   BOOLEAN     NOT NULL,
+    id         UUID        NOT NULL DEFAULT gen_random_uuid(),
+    stripe_id  VARCHAR(50) NOT NULL PRIMARY KEY,
+    type       VARCHAR(50) NOT NULL CHECK (type IN ('milli_dow', 'donation')),
 
-    created_at  TIMESTAMP   NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMP   NOT NULL DEFAULT now(),
-
-    CONSTRAINT positive_quantity CHECK (unit_amount > 0)
+    created_at TIMESTAMP   NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP   NOT NULL DEFAULT now() -- Removed trailing comma
 );
 
 CREATE TABLE IF NOT EXISTS stripe_invoice

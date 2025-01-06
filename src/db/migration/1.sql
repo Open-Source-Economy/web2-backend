@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS manual_invoice
     company_id UUID,
     user_id    UUID,
     paid       BOOLEAN   NOT NULL,
-    dow_amount NUMERIC   NOT NULL,
+    dow_amount NUMERIC   NOT NULL, -- changed to milli_dow_amount, type integer, in migration 2.sql
 
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
@@ -235,7 +235,7 @@ CREATE TABLE IF NOT EXISTS managed_issue
     github_issue_id        BIGINT           NOT NULL,
     github_issue_number    INTEGER          NOT NULL,
 
-    requested_dow_amount   NUMERIC          NOT NULL,
+    requested_dow_amount   NUMERIC          NOT NULL, -- changed to requested_milli_dow_amount, type integer, in migration 2.sql
 
     manager_id             UUID             NOT NULL,
     contributor_visibility VARCHAR(50)      NOT NULL, -- 'public' or 'private'
@@ -270,7 +270,7 @@ CREATE TABLE IF NOT EXISTS issue_funding
     github_issue_number    INTEGER          NOT NULL,
 
     user_id                UUID             NOT NULL,
-    dow_amount             NUMERIC          NOT NULL,
+    dow_amount             NUMERIC          NOT NULL, -- changed to milli_dow_amount, type integer, in migration 2.sql
 
     created_at             TIMESTAMP        NOT NULL DEFAULT now(),
     updated_at             TIMESTAMP        NOT NULL DEFAULT now(),

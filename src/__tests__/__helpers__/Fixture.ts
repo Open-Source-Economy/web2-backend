@@ -22,6 +22,7 @@ import {
   Owner,
   OwnerId,
   OwnerType,
+  ProductType,
   Provider,
   Repository,
   RepositoryId,
@@ -192,7 +193,7 @@ export const Fixture = {
   },
 
   stripeProduct(productId: StripeProductId): StripeProduct {
-    return new StripeProduct(productId, "DoW", 1, false);
+    return new StripeProduct(productId, ProductType.milliDow);
   },
 
   stripeCustomerId(): StripeCustomerId {
@@ -266,7 +267,7 @@ export const Fixture = {
       companyId: companyId,
       userId: userId,
       paid: paid,
-      dowAmount: new Decimal(dowAmount),
+      milliDowAmount: dowAmount,
     };
   },
   manualInvoiceFromBody(
@@ -279,7 +280,7 @@ export const Fixture = {
       dto.companyId,
       dto.userId,
       dto.paid,
-      dto.dowAmount,
+      dto.milliDowAmount,
     );
   },
 
@@ -296,7 +297,7 @@ export const Fixture = {
       issueFundingId,
       dto.githubIssueId,
       dto.userId,
-      dto.downAmount,
+      dto.milliDowAmount,
     );
   },
   managedIssueId(): ManagedIssueId {
@@ -310,7 +311,7 @@ export const Fixture = {
   ): CreateManagedIssueBody {
     return {
       githubIssueId,
-      requestedDowAmount: new Decimal(requestedDowAmount),
+      requestedMilliDowAmount: requestedDowAmount,
       managerId,
       contributorVisibility: ContributorVisibility.PUBLIC,
       state: ManagedIssueState.OPEN,
@@ -323,7 +324,7 @@ export const Fixture = {
     return new ManagedIssue(
       managedIssueId,
       dto.githubIssueId,
-      dto.requestedDowAmount,
+      dto.requestedMilliDowAmount,
       dto.managerId,
       dto.contributorVisibility,
       dto.state,

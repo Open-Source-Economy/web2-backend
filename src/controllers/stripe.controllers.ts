@@ -60,42 +60,42 @@ export class StripeController {
     req: Request,
     res: Response<ResponseBody<GetDowPricesResponse>>,
   ) {
-    const products = await stripeProductRepo.getAll();
-
-    // TODO: For the POC, we should have only one product of each type
-    const subscriptionProducts = products.find((p) => p.recurring);
-    const oneTimeProducts = products.find((p) => !p.recurring);
-
-    if (!subscriptionProducts) {
-      throw new Error("No subscription product found");
-    }
-    if (!oneTimeProducts) {
-      throw new Error("No one-time product found");
-    }
-
-    const prices: Stripe.ApiList<Stripe.Price> = await stripe.prices.list({
-      limit: 100,
-    });
-
-    // TODO: For the POC, we should have less than 100 prices
-    if (prices.has_more) {
-      logger.warn("More than 100 prices found");
-    }
-
-    const subscriptionPrices: Stripe.Price[] = prices.data.filter((price) => {
-      return price.product === subscriptionProducts.stripeId.toString();
-    });
-
-    const oneTimePrices: Stripe.Price[] = prices.data.filter((price) => {
-      return price.product === oneTimeProducts.stripeId.toString();
-    });
-
-    const response: GetDowPricesResponse = {
-      subscriptionPrices: subscriptionPrices,
-      oneTimePrices: oneTimePrices,
-    };
-
-    res.send({ success: response });
+    // const products = await stripeProductRepo.getAll();
+    //
+    // // TODO: For the POC, we should have only one product of each type
+    // const subscriptionProducts = products.find((p) => p.recurring);
+    // const oneTimeProducts = products.find((p) => !p.recurring);
+    //
+    // if (!subscriptionProducts) {
+    //   throw new Error("No subscription product found");
+    // }
+    // if (!oneTimeProducts) {
+    //   throw new Error("No one-time product found");
+    // }
+    //
+    // const prices: Stripe.ApiList<Stripe.Price> = await stripe.prices.list({
+    //   limit: 100,
+    // });
+    //
+    // // TODO: For the POC, we should have less than 100 prices
+    // if (prices.has_more) {
+    //   logger.warn("More than 100 prices found");
+    // }
+    //
+    // const subscriptionPrices: Stripe.Price[] = prices.data.filter((price) => {
+    //   return price.product === subscriptionProducts.stripeId.toString();
+    // });
+    //
+    // const oneTimePrices: Stripe.Price[] = prices.data.filter((price) => {
+    //   return price.product === oneTimeProducts.stripeId.toString();
+    // });
+    //
+    // const response: GetDowPricesResponse = {
+    //   subscriptionPrices: subscriptionPrices,
+    //   oneTimePrices: oneTimePrices,
+    // };
+    //
+    // res.send({ success: response });
   }
 
   static async createCustomer(
