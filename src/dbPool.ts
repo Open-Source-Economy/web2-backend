@@ -6,7 +6,7 @@ dotenv.config();
 
 export function getPool(): Pool {
   if (config.env === NodeEnv.Local) {
-    logger.info("Connecting to local postgres");
+    logger.debug("Connecting to local postgres");
     return new Pool({
       user: config.postgres.user,
       password: config.postgres.password,
@@ -18,7 +18,7 @@ export function getPool(): Pool {
       idleTimeoutMillis: config.postgres.pool.idleTimeoutMillis,
     });
   } else {
-    logger.info("Connecting to remote postgres");
+    logger.debug("Connecting to remote postgres");
     return new Pool({
       connectionString: config.postgres.connectionString,
       ssl: {

@@ -14,6 +14,8 @@ const envVarsSchema = Joi.object({
     .required()
     .description("The front end url. Required for CORS and redirecting"),
 
+  SHOW_DEBUG_LOGS: Joi.boolean().default(false).description("Show debug logs"),
+
   JWT_SECRET: Joi.string().required().description("JWT secret key"),
   JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
     .default(60 * 24 * 10) // 10 days
@@ -117,6 +119,7 @@ interface Config {
   host: string;
   port: number;
   frontEndUrl: string;
+  showDebugLogs: boolean;
   jwt: Jwt;
   postgres: Postgres;
   github: Github;
@@ -130,6 +133,8 @@ export const config: Config = {
   host: envVars.HOST,
   port: envVars.PORT,
   frontEndUrl: envVars.FRONT_END_URL,
+
+  showDebugLogs: envVars.SHOW_DEBUG_LOGS,
 
   jwt: {
     secret: envVars.JWT_SECRET,

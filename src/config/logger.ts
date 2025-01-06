@@ -10,9 +10,19 @@ const enumerateErrorFormat = winston.format((info) => {
   return info;
 });
 
+// Add a winston format to filter debug messages
+const filterDebug = winston.format((info) => {
+  if (!config.showDebugLogs && info.level === "debug") {
+    return false;
+  } else {
+    return info;
+  }
+});
+
 export const logger = winston.createLogger({
   level: config.env === NodeEnv.Production ? "info" : "debug",
   format: winston.format.combine(
+    filterDebug(),
     enumerateErrorFormat(),
     config.env === NodeEnv.Local
       ? winston.format.colorize()
@@ -24,9 +34,14 @@ export const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console({
-      stderrLevels: ["error", "warn", "info", "debug"],
-      debugStdout: true,
-      forceConsole: true,
+      stderrLevels: ["error"],
+      consoleWarnLevels: ["warn"],
+      eol: "", // Removes extra newlines
+      log: (info, callback) => {
+        // Custom log function to bypass console.log prefix
+        process.stdout.write(`${info[Symbol.for("message")]}\n`);
+        callback();
+      },
     }),
   ],
 });
