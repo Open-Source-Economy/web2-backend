@@ -14,7 +14,7 @@ import { StatusCodes } from "http-status-codes";
 import { ensureNoEndingTrailingSlash } from "../utils";
 
 const repo: UserRepository = getUserRepository();
-const repositoryUserPermissionTokenRepository =
+const repositoryUserPermissionTokenRepo =
   getRepositoryUserPermissionTokenRepository();
 
 passport.use(
@@ -44,7 +44,7 @@ passport.use(
 
           // const repositoryUserPermissionToken = req.repositoryUserPermissionToken; // TODO: does not work, repositoryUserPermissionToken is undefined...
           const repositoryUserPermissionToken =
-            await repositoryUserPermissionTokenRepository.getByUserGithubOwnerLogin(
+            await repositoryUserPermissionTokenRepo.getByUserGithubOwnerLogin(
               thirdPartyUser.providerData.owner.id.login,
             );
 

@@ -1,4 +1,5 @@
 import { ValidationError, Validator } from "../error";
+import { RepositoryId } from "../github";
 
 export class StripeProductId {
   id: string;
@@ -31,43 +32,25 @@ export enum ProductType {
 
 export class StripeProduct {
   stripeId: StripeProductId;
+  repositoryId: RepositoryId | null;
   type: ProductType;
 
-  constructor(stripeId: StripeProductId, type: ProductType) {
+  constructor(
+    stripeId: StripeProductId,
+    repositoryId: RepositoryId | null,
+    type: ProductType,
+  ) {
     this.stripeId = stripeId;
+    this.repositoryId = repositoryId;
     this.type = type;
-  }
-
-  // Method to create a StripeProduct from a JSON response from the Stripe API
-  static fromStripeApi(json: any): StripeProduct | ValidationError {
-    // TODO: Implement this method
-    // const validator = new Validator(json);
-    // validator.requiredString("id");
-    // validator.requiredString("unit");
-    // validator.requiredNumber("unit_amount");
-    // validator.requiredBoolean("recurring");
-    //
-    // const error = validator.getFirstError();
-    // if (error) {
-    //   return error;
-    // }
-    //
-    // return new StripeProduct(
-    //   new StripeProductId(json.id),
-    //   json.unit,
-    //   json.unit_amount,
-    //   json.recurring,
-    // );
-    return new StripeProduct(
-      new StripeProductId(json.id),
-      ProductType.milliDow,
-    );
   }
 
   // Method to create a StripeProduct from a database row
   static fromBackend(row: any): StripeProduct | ValidationError {
     const validator = new Validator(row);
     const stripeId = validator.requiredString("stripe_id");
+    const repositoryId = RepositoryId.fromBackendForeignKey(row);
+
     const type = validator.requiredEnum(
       "type",
       Object.values(ProductType) as ProductType[],
@@ -78,6 +61,18 @@ export class StripeProduct {
       return error;
     }
 
-    return new StripeProduct(new StripeProductId(stripeId), type);
+    // TODO: Implement the optionality properly
+    let repositoryIdValue: RepositoryId | null;
+    if (repositoryId instanceof ValidationError) {
+      repositoryIdValue = null;
+    } else {
+      repositoryIdValue = repositoryId;
+    }
+
+    return new StripeProduct(
+      new StripeProductId(stripeId),
+      repositoryIdValue,
+      type,
+    );
   }
 }

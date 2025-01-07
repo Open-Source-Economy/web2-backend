@@ -28,12 +28,12 @@ import {
 } from "../dtos";
 import { ensureNoEndingTrailingSlash, secureToken } from "../utils";
 import {
-  getCompanyRepository,
-  getCompanyUserPermissionTokenRepository,
-  getRepositoryUserPermissionTokenRepository,
-  getUserCompanyRepository,
-  getUserRepository,
-  getUserRepositoryRepository,
+  companyRepo,
+  companyUserPermissionTokenRepo,
+  repositoryUserPermissionTokenRepo,
+  userCompanyRepo,
+  userRepo,
+  userRepositoryRepo,
 } from "../db";
 import { ApiError } from "../model/error/ApiError";
 import {
@@ -41,17 +41,6 @@ import {
   GetRepositoryUserInviteInfoResponse,
 } from "../dtos/auth/GetRepositoryUserInviteInfo.dto";
 import { config, logger } from "../config";
-
-const userRepo = getUserRepository();
-
-const companyRepo = getCompanyRepository();
-const companyUserPermissionTokenRepo =
-  getCompanyUserPermissionTokenRepository();
-const userCompanyRepo = getUserCompanyRepository();
-
-const repositoryUserPermissionTokenRepo =
-  getRepositoryUserPermissionTokenRepository();
-const userRepositoryRepo = getUserRepositoryRepository();
 
 export class AuthController {
   // TODO: probably put info of the company in the session, to to much avoid request to the DB.

@@ -20,30 +20,28 @@ import {
 } from "../dtos";
 import { StatusCodes } from "http-status-codes";
 import {
+  addressRepo,
+  companyRepo,
+  companyUserPermissionTokenRepo,
   CreateRepositoryUserPermissionTokenDto,
-  getAddressRepository,
-  getCompanyRepository,
-  getCompanyUserPermissionTokenRepository,
-  getManualInvoiceRepository,
-  getRepositoryUserPermissionTokenRepository,
+  financialIssueRepo,
+  manualInvoiceRepo,
+  repositoryUserPermissionTokenRepo,
 } from "../db";
 import { secureToken } from "../utils";
 import { MailService } from "../services";
 import Decimal from "decimal.js";
-import { getFinancialIssueRepository } from "../db/FinancialIssue.repository";
-import { OwnerId } from "../model";
+import { OwnerId, RepositoryId } from "../model";
 import { ApiError } from "../model/error/ApiError";
 import { logger } from "../config";
+import {
+  CreateProductAndPriceBody,
+  CreateProductAndPriceParams,
+  CreateProductAndPriceQuery,
+  CreateProductAndPriceResponse,
+} from "../dtos/stripe/CreateProductAndPrice";
+import { StripeHelper } from "./stripe";
 
-const addressRepository = getAddressRepository();
-const companyRepository = getCompanyRepository();
-const companyUserPermissionTokenRepository =
-  getCompanyUserPermissionTokenRepository();
-const repositoryUserPermissionTokenRepository =
-  getRepositoryUserPermissionTokenRepository();
-const manualInvoiceRepository = getManualInvoiceRepository();
-
-const financialIssueRepository = getFinancialIssueRepository();
 const mailService = new MailService();
 
 export class AdminController {
@@ -51,7 +49,7 @@ export class AdminController {
     req: Request<{}, {}, CreateAddressBody, CreateAddressQuery>,
     res: Response<ResponseBody<CreateAddressResponse>>,
   ) {
-    const created = await addressRepository.create(req.body);
+    const created = await addressRepo.create(req.body);
 
     const response: CreateAddressResponse = {
       createdAddressId: created.id,
@@ -63,7 +61,7 @@ export class AdminController {
     req: Request<{}, {}, CreateCompanyBody, CreateCompanyQuery>,
     res: Response<ResponseBody<CreateCompanyResponse>>,
   ) {
-    const created = await companyRepository.create(req.body);
+    const created = await companyRepo.create(req.body);
     const response: CreateCompanyResponse = {
       createdCompanyId: created.id,
     };
@@ -93,7 +91,7 @@ export class AdminController {
         expiresAt: expiresAt,
       };
 
-    const company = await companyRepository.getById(req.body.companyId);
+    const company = await companyRepo.getById(req.body.companyId);
 
     if (!company) {
       throw new ApiError(
@@ -102,7 +100,7 @@ export class AdminController {
       );
     }
 
-    const existing = await companyUserPermissionTokenRepository.getByUserEmail(
+    const existing = await companyUserPermissionTokenRepo.getByUserEmail(
       req.body.userEmail,
       req.body.companyId,
     );
@@ -111,10 +109,10 @@ export class AdminController {
       logger.info(
         `Deleting existing company permission token ${permission.token}`,
       );
-      await companyUserPermissionTokenRepository.delete(permission.token);
+      await companyUserPermissionTokenRepo.delete(permission.token);
     }
 
-    await companyUserPermissionTokenRepository.create(
+    await companyUserPermissionTokenRepo.create(
       createCompanyUserPermissionTokenBody,
     );
 
@@ -142,10 +140,10 @@ export class AdminController {
       email: req.body.userEmail,
     });
 
-    const user = await financialIssueRepository.getOwner(
+    const user = await financialIssueRepo.getOwner(
       new OwnerId(req.body.userGithubOwnerLogin),
     );
-    const [owner, repository] = await financialIssueRepository.getRepository(
+    const [owner, repository] = await financialIssueRepo.getRepository(
       req.body.repositoryId,
     );
 
@@ -163,7 +161,7 @@ export class AdminController {
       };
 
     const existing =
-      await repositoryUserPermissionTokenRepository.getByUserGithubOwnerLogin(
+      await repositoryUserPermissionTokenRepo.getByUserGithubOwnerLogin(
         req.body.userGithubOwnerLogin,
       );
 
@@ -171,10 +169,10 @@ export class AdminController {
       logger.info(
         `Deleting existing repository permission token ${existing.token}`,
       );
-      await repositoryUserPermissionTokenRepository.delete(existing.token);
+      await repositoryUserPermissionTokenRepo.delete(existing.token);
     }
 
-    await repositoryUserPermissionTokenRepository.create(
+    await repositoryUserPermissionTokenRepo.create(
       createRepositoryUserPermissionTokenDto,
     );
 
@@ -195,10 +193,29 @@ export class AdminController {
     req: Request<{}, {}, CreateManualInvoiceBody, CreateManualInvoiceQuery>,
     res: Response<ResponseBody<CreateManualInvoiceResponse>>,
   ) {
-    const created = await manualInvoiceRepository.create(req.body);
+    const created = await manualInvoiceRepo.create(req.body);
     const response: CreateManualInvoiceResponse = {
       createdInvoiceId: created.id,
     };
+    res.status(StatusCodes.CREATED).send({ success: response });
+  }
+
+  static async createProductAndPrice(
+    req: Request<
+      CreateProductAndPriceParams,
+      ResponseBody<CreateProductAndPriceResponse>,
+      CreateProductAndPriceBody,
+      CreateProductAndPriceQuery
+    >,
+    res: Response<ResponseBody<CreateProductAndPriceResponse>>,
+  ) {
+    const [owner, repository] = await financialIssueRepo.getRepository(
+      new RepositoryId(new OwnerId(req.params.owner), req.params.repo),
+    );
+
+    await StripeHelper.createProductAndPrice(owner, repository);
+
+    const response: CreateProductAndPriceResponse = {};
     res.status(StatusCodes.CREATED).send({ success: response });
   }
 }

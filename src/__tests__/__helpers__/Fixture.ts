@@ -22,6 +22,7 @@ import {
   Owner,
   OwnerId,
   OwnerType,
+  PriceType,
   ProductType,
   Provider,
   Repository,
@@ -34,6 +35,7 @@ import {
   StripeInvoiceId,
   StripeInvoiceLine,
   StripeInvoiceLineId,
+  StripePrice,
   StripeProduct,
   StripeProductId,
   ThirdPartyUser,
@@ -54,6 +56,7 @@ import { StripePriceId } from "../../model/stripe/StripePrice";
 import { v4 as uuid } from "uuid";
 import Decimal from "decimal.js";
 import { CreateRepositoryUserPermissionTokenDto, CreateUser } from "../../db";
+import { Currency } from "../../controllers";
 
 export const Fixture = {
   id(): number {
@@ -192,19 +195,36 @@ export const Fixture = {
     return new StripeProductId(uuid);
   },
 
-  stripeProduct(productId: StripeProductId): StripeProduct {
-    return new StripeProduct(productId, ProductType.milliDow);
+  stripeProduct(
+    productId: StripeProductId,
+    repositoryId: RepositoryId | null,
+  ): StripeProduct {
+    return new StripeProduct(productId, repositoryId, ProductType.milliDow);
+  },
+
+  stripePriceId(): StripePriceId {
+    const uuid = this.uuid();
+    return new StripePriceId(uuid);
+  },
+
+  stripePrice(
+    stripeId: StripePriceId,
+    productId: StripeProductId,
+  ): StripePrice {
+    return new StripePrice(
+      stripeId,
+      productId,
+      200,
+      Currency.USD,
+      true,
+      PriceType.RECURRING,
+    );
   },
 
   stripeCustomerId(): StripeCustomerId {
     const uuid = this.uuid();
     return new StripeCustomerId(uuid);
   },
-  stripePriceId(): StripePriceId {
-    const uuid = this.uuid();
-    return new StripePriceId(uuid);
-  },
-
   stripeInvoiceId(): StripeInvoiceId {
     const uuid = this.uuid();
     return new StripeInvoiceId(uuid);
@@ -240,13 +260,14 @@ export const Fixture = {
     invoiceId: StripeInvoiceId,
     customerId: StripeCustomerId,
     productId: StripeProductId,
+    priceId: StripePriceId,
   ): StripeInvoiceLine {
     return new StripeInvoiceLine(
       stripeId,
       invoiceId,
       customerId,
       productId,
-      new StripePriceId("100"),
+      priceId,
       100,
     );
   },

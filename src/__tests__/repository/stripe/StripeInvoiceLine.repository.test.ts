@@ -1,9 +1,10 @@
 import {
-  getStripeCustomerRepository,
-  getStripeInvoiceLineRepository,
-  getStripeInvoiceRepository,
-  getStripeProductRepository,
-  getUserRepository,
+  stripeCustomerRepo,
+  stripeInvoiceLineRepo,
+  stripeInvoiceRepo,
+  stripePriceRepo,
+  stripeProductRepo,
+  userRepo,
 } from "../../../db";
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
@@ -12,46 +13,46 @@ import { StripeCustomer, StripeInvoiceLineId, UserId } from "../../../model";
 describe("StripeInvoiceLineRepository", () => {
   setupTestDB();
 
-  const userRepo = getUserRepository();
-  const productRepo = getStripeProductRepository();
-  const invoiceLineRepo = getStripeInvoiceLineRepository();
-  const invoiceRepo = getStripeInvoiceRepository();
-  const customerRepo = getStripeCustomerRepository();
-
   let validUserId: UserId;
+  const validCustomerId = Fixture.stripeCustomerId();
+  const validProductId = Fixture.stripeProductId();
+  const validPriceId = Fixture.stripePriceId();
+  const validInvoiceId = Fixture.stripeInvoiceId();
 
   beforeEach(async () => {
     const validUser = await userRepo.insert(
       Fixture.createUser(Fixture.localUser()),
     );
     validUserId = validUser.id;
+
+    await userRepo.insert(Fixture.createUser(Fixture.localUser()));
+    await stripeCustomerRepo.insert(
+      new StripeCustomer(validCustomerId, validUserId),
+    );
+    await stripeInvoiceRepo.insert(
+      Fixture.stripeInvoice(validInvoiceId, validCustomerId, []),
+    );
+
+    const product = Fixture.stripeProduct(validProductId, null);
+    await stripeProductRepo.insert(product);
+    const price = Fixture.stripePrice(validPriceId, validProductId);
+    await stripePriceRepo.insert(price);
   });
 
   describe("create", () => {
     it("should work", async () => {
-      const customerId = Fixture.stripeCustomerId();
-      const invoiceId = Fixture.stripeInvoiceId();
-      const productId = Fixture.stripeProductId();
-
-      await userRepo.insert(Fixture.createUser(Fixture.localUser()));
-      await customerRepo.insert(new StripeCustomer(customerId, validUserId));
-
-      await productRepo.insert(Fixture.stripeProduct(productId));
-      await invoiceRepo.insert(
-        Fixture.stripeInvoice(invoiceId, customerId, []),
-      );
-
       const invoiceLineId = Fixture.stripeInvoiceLineId();
       const invoiceLine = Fixture.stripeInvoiceLine(
         invoiceLineId,
-        invoiceId,
-        customerId,
-        productId,
+        validInvoiceId,
+        validCustomerId,
+        validProductId,
+        validPriceId,
       );
-      const created = await invoiceLineRepo.insert(invoiceLine);
+      const created = await stripeInvoiceLineRepo.insert(invoiceLine);
       expect(created).toEqual(invoiceLine);
 
-      const found = await invoiceLineRepo.getById(invoiceLine.stripeId);
+      const found = await stripeInvoiceLineRepo.getById(invoiceLine.stripeId);
       expect(found).toEqual(invoiceLine);
       expect(true).toEqual(true);
     });
@@ -62,8 +63,10 @@ describe("StripeInvoiceLineRepository", () => {
       const productId = Fixture.stripeProductId();
 
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
-      await customerRepo.insert(new StripeCustomer(customerId, validUserId));
-      await productRepo.insert(Fixture.stripeProduct(productId));
+      await stripeCustomerRepo.insert(
+        new StripeCustomer(customerId, validUserId),
+      );
+      await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
 
       const invoiceLineId = Fixture.stripeInvoiceLineId();
       const invoiceLine = Fixture.stripeInvoiceLine(
@@ -71,10 +74,11 @@ describe("StripeInvoiceLineRepository", () => {
         invoiceId,
         customerId,
         productId,
+        validPriceId,
       );
 
       try {
-        await invoiceLineRepo.insert(invoiceLine);
+        await stripeInvoiceLineRepo.insert(invoiceLine);
         // If the insertion doesn't throw, fail the test
         fail(
           "Expected foreign key constraint violation, but no error was thrown.",
@@ -91,7 +95,9 @@ describe("StripeInvoiceLineRepository", () => {
       const nonExistentInvoiceLineId = new StripeInvoiceLineId(
         "non-existent-id",
       );
-      const found = await invoiceLineRepo.getById(nonExistentInvoiceLineId);
+      const found = await stripeInvoiceLineRepo.getById(
+        nonExistentInvoiceLineId,
+      );
 
       expect(found).toBeNull();
     });
@@ -99,36 +105,27 @@ describe("StripeInvoiceLineRepository", () => {
 
   describe("getAll", () => {
     it("should return all invoice lines", async () => {
-      const customerId = Fixture.stripeCustomerId();
-      const invoiceId = Fixture.stripeInvoiceId();
-      const productId = Fixture.stripeProductId();
-
-      await userRepo.insert(Fixture.createUser(Fixture.localUser()));
-      await customerRepo.insert(new StripeCustomer(customerId, validUserId));
-      await productRepo.insert(Fixture.stripeProduct(productId));
-      await invoiceRepo.insert(
-        Fixture.stripeInvoice(invoiceId, customerId, []),
-      );
-
       const invoiceLineId1 = Fixture.stripeInvoiceLineId();
       const invoiceLineId2 = Fixture.stripeInvoiceLineId();
       const invoiceLine1 = Fixture.stripeInvoiceLine(
         invoiceLineId1,
-        invoiceId,
-        customerId,
-        productId,
+        validInvoiceId,
+        validCustomerId,
+        validProductId,
+        validPriceId,
       );
       const invoiceLine2 = Fixture.stripeInvoiceLine(
         invoiceLineId2,
-        invoiceId,
-        customerId,
-        productId,
+        validInvoiceId,
+        validCustomerId,
+        validProductId,
+        validPriceId,
       );
 
-      await invoiceLineRepo.insert(invoiceLine1);
-      await invoiceLineRepo.insert(invoiceLine2);
+      await stripeInvoiceLineRepo.insert(invoiceLine1);
+      await stripeInvoiceLineRepo.insert(invoiceLine2);
 
-      const allInvoiceLines = await invoiceLineRepo.getAll();
+      const allInvoiceLines = await stripeInvoiceLineRepo.getAll();
 
       expect(allInvoiceLines).toHaveLength(2);
       expect(allInvoiceLines).toContainEqual(invoiceLine1);
@@ -136,7 +133,7 @@ describe("StripeInvoiceLineRepository", () => {
     });
 
     it("should return an empty array if no invoice lines exist", async () => {
-      const allInvoiceLines = await invoiceLineRepo.getAll();
+      const allInvoiceLines = await stripeInvoiceLineRepo.getAll();
       expect(allInvoiceLines).toEqual([]);
     });
   });

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { AdminController } from "../../controllers/admin.controllers";
+import { AdminController } from "../../controllers/admin.controller";
 import { isWebsiteAdmin } from "../../middlewares/isWebsiteAdmin";
 
 const router = Router();
@@ -21,6 +21,12 @@ router.post(
   "/repository/admin-invite",
   isWebsiteAdmin,
   AdminController.sendRepositoryAdminInvite,
+);
+
+router.post(
+  "/repository/:owner/:repo/stripe/create-product-and-price",
+  isWebsiteAdmin,
+  AdminController.createProductAndPrice,
 );
 
 export default router;

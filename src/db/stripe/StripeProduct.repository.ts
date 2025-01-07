@@ -8,7 +8,9 @@ export function getStripeProductRepository(): StripeProductRepository {
 
 export interface StripeProductRepository {
   insert(product: StripeProduct): Promise<StripeProduct>;
+
   getById(id: StripeProductId): Promise<StripeProduct | null>;
+
   getAll(): Promise<StripeProduct[]>;
 }
 
@@ -54,9 +56,9 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
 
   async getAll(): Promise<StripeProduct[]> {
     const result = await this.pool.query(`
-        SELECT *
-        FROM stripe_product
-    `);
+            SELECT *
+            FROM stripe_product
+        `);
 
     return this.getProductList(result.rows);
   }
@@ -64,10 +66,10 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
   async getById(id: StripeProductId): Promise<StripeProduct | null> {
     const result = await this.pool.query(
       `
-        SELECT *
-        FROM stripe_product
-        WHERE stripe_id = $1
-      `,
+                SELECT *
+                FROM stripe_product
+                WHERE stripe_id = $1
+            `,
       [id.toString()],
     );
 
@@ -80,12 +82,23 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
     try {
       const result = await client.query(
         `
-          INSERT INTO stripe_product (
-              stripe_id, type
-          ) VALUES ($1, $2)
-          RETURNING stripe_id, type
-        `,
-        [product.stripeId.toString(), product.type],
+                    INSERT INTO stripe_product (stripe_id,
+                                                type,
+                                                github_owner_id,
+                                                github_owner_login,
+                                                github_repository_id,
+                                                github_repository_name)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    RETURNING stripe_id, type, github_owner_id, github_owner_login, github_repository_id, github_repository_name
+                `,
+        [
+          product.stripeId.toString(),
+          product.type,
+          product.repositoryId?.ownerId.githubId ?? null,
+          product.repositoryId?.ownerId.login ?? null,
+          product.repositoryId?.githubId ?? null,
+          product.repositoryId?.name ?? null,
+        ],
       );
 
       return this.getOneProduct(result.rows);

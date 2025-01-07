@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { StripeCustomer, StripeCustomerId } from "../../model";
+import { StripeCustomer, StripeCustomerId, UserId } from "../../model";
 import { getPool } from "../../dbPool";
 
 export function getStripeCustomerRepository(): StripeCustomerRepository {
@@ -8,7 +8,8 @@ export function getStripeCustomerRepository(): StripeCustomerRepository {
 
 export interface StripeCustomerRepository {
   insert(customer: StripeCustomer): Promise<StripeCustomer>;
-  getById(id: StripeCustomerId): Promise<StripeCustomer | null>;
+  getByStripeId(id: StripeCustomerId): Promise<StripeCustomer | null>;
+  getByUserId(id: UserId): Promise<StripeCustomer | null>;
   getAll(): Promise<StripeCustomer[]>;
 }
 
@@ -54,20 +55,33 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
 
   async getAll(): Promise<StripeCustomer[]> {
     const result = await this.pool.query(`
-            SELECT *
-            FROM stripe_customer
-        `);
+      SELECT *
+      FROM stripe_customer
+    `);
 
     return this.getCustomerList(result.rows);
   }
 
-  async getById(id: StripeCustomerId): Promise<StripeCustomer | null> {
+  async getByStripeId(id: StripeCustomerId): Promise<StripeCustomer | null> {
     const result = await this.pool.query(
       `
-                SELECT *
-                FROM stripe_customer
-                WHERE stripe_id = $1
-            `,
+        SELECT *
+        FROM stripe_customer
+        WHERE stripe_id = $1
+      `,
+      [id.toString()],
+    );
+
+    return this.getOptionalCustomer(result.rows);
+  }
+
+  async getByUserId(id: UserId): Promise<StripeCustomer | null> {
+    const result = await this.pool.query(
+      `
+        SELECT *
+        FROM stripe_customer
+        WHERE user_id = $1
+      `,
       [id.toString()],
     );
 
@@ -82,11 +96,15 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
 
       const result = await client.query(
         `
-                    INSERT INTO stripe_customer (stripe_id, user_id)
-                    VALUES ($1, $2)
-                    RETURNING stripe_id, user_id
-                `,
-        [customer.stripeId.toString(), customer.userId.toString()],
+          INSERT INTO stripe_customer (stripe_id, user_id, company_id)
+          VALUES ($1, $2, $3)
+          RETURNING *
+        `,
+        [
+          customer.stripeId.toString(),
+          customer.userId.toString(),
+          customer.companyId?.toString() ?? null,
+        ],
       );
 
       await client.query("COMMIT");

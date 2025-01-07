@@ -36,21 +36,15 @@ import {
   OwnerId,
   RepositoryId,
 } from "../model";
-import { getFinancialIssueRepository } from "../db/FinancialIssue.repository";
 import { StatusCodes } from "http-status-codes";
 import {
-  getDowNumberRepository,
-  getIssueFundingRepository,
-  getIssueRepository,
-  getManagedIssueRepository,
+  dowNumberRepo,
+  financialIssueRepo,
+  issueFundingRepo,
+  issueRepository,
+  managedIssueRepo,
 } from "../db";
 import { ApiError } from "../model/error/ApiError";
-
-const issueRepository = getIssueRepository();
-const financialIssueRepository = getFinancialIssueRepository();
-const dowNumberRepository = getDowNumberRepository();
-const managedIssueRepository = getManagedIssueRepository();
-const issueFundingRepo = getIssueFundingRepository();
 
 export class GithubController {
   static async getOwner(
@@ -62,7 +56,7 @@ export class GithubController {
     >,
     res: Response<ResponseBody<GetOwnerResponse>>,
   ) {
-    const owner = await financialIssueRepository.getOwner(
+    const owner = await financialIssueRepo.getOwner(
       new OwnerId(req.params.owner),
     );
 
@@ -86,7 +80,7 @@ export class GithubController {
       req.params.repo,
     );
     const [owner, repository] =
-      await financialIssueRepository.getRepository(repositoryId);
+      await financialIssueRepo.getRepository(repositoryId);
 
     const response: GetRepositoryResponse = {
       owner: owner,
@@ -104,7 +98,7 @@ export class GithubController {
     >,
     res: Response<ResponseBody<GetIssuesResponse>>,
   ) {
-    const issues = await financialIssueRepository.getAll();
+    const issues = await financialIssueRepo.getAll();
 
     const response: GetIssuesResponse = {
       issues: issues,
@@ -125,7 +119,7 @@ export class GithubController {
     const repositoryId = new RepositoryId(ownerId, req.params.repo);
     const issueId = new IssueId(repositoryId, req.params.number);
 
-    const issue = await financialIssueRepository.get(issueId);
+    const issue = await financialIssueRepo.get(issueId);
 
     if (issue === null) {
       res.sendStatus(StatusCodes.NOT_FOUND);
@@ -169,7 +163,7 @@ export class GithubController {
       : undefined;
     const dowAmount = req.body.milliDowAmount;
 
-    const managedIssue = await managedIssueRepository.getByIssueId(issue.id);
+    const managedIssue = await managedIssueRepo.getByIssueId(issue.id);
     if (
       managedIssue !== null &&
       managedIssue.state === ManagedIssueState.REJECTED
@@ -180,7 +174,7 @@ export class GithubController {
       );
     }
 
-    const availableDoWs = await dowNumberRepository.getAvailableMilliDoWs(
+    const availableDoWs = await dowNumberRepo.getAvailableMilliDoWs(
       req.user.id,
       companyId,
     );
@@ -232,7 +226,7 @@ export class GithubController {
         "Cannot request funding for a closed issue",
       );
 
-    const managedIssue = await managedIssueRepository.getByIssueId(issue.id);
+    const managedIssue = await managedIssueRepo.getByIssueId(issue.id);
     if (managedIssue === null) {
       const createManagedIssueBody: CreateManagedIssueBody = {
         githubIssueId: issue.id,
@@ -241,7 +235,7 @@ export class GithubController {
         contributorVisibility: ContributorVisibility.PRIVATE,
         state: ManagedIssueState.OPEN,
       };
-      await managedIssueRepository.create(createManagedIssueBody);
+      await managedIssueRepo.create(createManagedIssueBody);
       res.status(StatusCodes.CREATED).send({ success: {} });
     } else if (managedIssue.managerId !== req.user.id) {
       throw new ApiError(
@@ -255,7 +249,7 @@ export class GithubController {
       );
     } else {
       managedIssue.requestedMilliDowAmount = req.body.milliDowAmount;
-      await managedIssueRepository.update(managedIssue);
+      await managedIssueRepo.update(managedIssue);
       res.status(StatusCodes.OK).send({ success: {} });
     }
   }

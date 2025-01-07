@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getDowNumberRepository } from "../db/";
+import { dowNumberRepo } from "../db/";
 import {
   GetAvailableDowBody,
   GetAvailableDowParams,
@@ -10,8 +10,6 @@ import {
 import { StatusCodes } from "http-status-codes";
 import { CompanyId, UserId } from "../model";
 import { ApiError } from "../model/error/ApiError";
-
-const dowNumberRepository = getDowNumberRepository();
 
 export class UserController {
   static async getAvailableDow(
@@ -31,7 +29,7 @@ export class UserController {
       ? new CompanyId(req.query.companyId)
       : undefined;
 
-    const dowAmount = await dowNumberRepository.getAvailableMilliDoWs(
+    const dowAmount = await dowNumberRepo.getAvailableMilliDoWs(
       userId,
       companyId,
     );

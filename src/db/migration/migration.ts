@@ -34,6 +34,7 @@ export class Migration {
         DROP TABLE IF EXISTS stripe_invoice CASCADE;
         DROP TABLE IF EXISTS stripe_customer CASCADE;
         DROP TABLE IF EXISTS stripe_product CASCADE;
+        DROP TABLE IF EXISTS stripe_price CASCADE;
         DROP TABLE IF EXISTS issue_funding CASCADE;
         DROP TABLE IF EXISTS managed_issue CASCADE;
         DROP TABLE IF EXISTS repository_user_permission_token CASCADE;

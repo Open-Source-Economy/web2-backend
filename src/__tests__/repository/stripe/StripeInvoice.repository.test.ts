@@ -1,14 +1,24 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import { StripeCustomer, StripeInvoiceLine, UserId } from "../../../model";
+import {
+  StripeCustomer,
+  StripeInvoiceLine,
+  StripePriceId,
+  UserId,
+} from "../../../model";
 import { Fixture } from "../../__helpers__/Fixture";
 import {
+  companyRepo,
   getCompanyRepository,
   getStripeCustomerRepository,
   getStripeInvoiceRepository,
   getStripeProductRepository,
   getUserRepository,
+  stripeCustomerRepo,
+  stripeInvoiceRepo,
+  stripePriceRepo,
+  stripeProductRepo,
+  userRepo,
 } from "../../../db";
-import { StripePriceId } from "../../../model/stripe/StripePrice";
 
 describe("StripeInvoiceRepository", () => {
   setupTestDB();
@@ -22,17 +32,12 @@ describe("StripeInvoiceRepository", () => {
     validUserId = validUser.id;
   });
 
-  const userRepo = getUserRepository();
-  const companyRepo = getCompanyRepository();
-  const customerRepo = getStripeCustomerRepository();
-  const productRepo = getStripeProductRepository();
-  const stripeInvoiceRepo = getStripeInvoiceRepository();
-
   describe("create", () => {
     it("should insert an invoice with lines", async () => {
       const customerId = Fixture.stripeCustomerId();
       const invoiceId = Fixture.stripeInvoiceId();
       const productId = Fixture.stripeProductId();
+      const priceId = Fixture.stripePriceId();
 
       const stripeId1 = Fixture.stripeInvoiceLineId();
       const stripeId2 = Fixture.stripeInvoiceLineId();
@@ -41,12 +46,25 @@ describe("StripeInvoiceRepository", () => {
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
       await companyRepo.create(Fixture.createCompanyBody());
       const customer = new StripeCustomer(customerId, validUserId);
-      await customerRepo.insert(customer);
-      await productRepo.insert(Fixture.stripeProduct(productId));
+      await stripeCustomerRepo.insert(customer);
+      await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
+      await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
 
       const lines = [
-        Fixture.stripeInvoiceLine(stripeId1, invoiceId, customerId, productId),
-        Fixture.stripeInvoiceLine(stripeId2, invoiceId, customerId, productId),
+        Fixture.stripeInvoiceLine(
+          stripeId1,
+          invoiceId,
+          customerId,
+          productId,
+          priceId,
+        ),
+        Fixture.stripeInvoiceLine(
+          stripeId2,
+          invoiceId,
+          customerId,
+          productId,
+          priceId,
+        ),
       ];
 
       const invoice = Fixture.stripeInvoice(invoiceId, customerId, lines);
@@ -61,6 +79,7 @@ describe("StripeInvoiceRepository", () => {
       const customerId = Fixture.stripeCustomerId();
       const invoiceId = Fixture.stripeInvoiceId();
       const productId = Fixture.stripeProductId();
+      const priceId = Fixture.stripePriceId();
 
       const stripeId1 = Fixture.stripeInvoiceLineId();
       const stripeId2 = Fixture.stripeInvoiceLineId();
@@ -69,11 +88,18 @@ describe("StripeInvoiceRepository", () => {
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
       await companyRepo.create(Fixture.createCompanyBody());
       const customer = new StripeCustomer(customerId, validUserId);
-      await customerRepo.insert(customer);
-      await productRepo.insert(Fixture.stripeProduct(productId));
+      await stripeCustomerRepo.insert(customer);
+      await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
+      await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
 
       const lines = [
-        Fixture.stripeInvoiceLine(stripeId1, invoiceId, customerId, productId),
+        Fixture.stripeInvoiceLine(
+          stripeId1,
+          invoiceId,
+          customerId,
+          productId,
+          priceId,
+        ),
         // @ts-ignore
         new StripeInvoiceLine(
           stripeId2,
