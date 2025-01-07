@@ -11,9 +11,7 @@ export interface StripeProductRepository {
 
   getById(id: StripeProductId): Promise<StripeProduct | null>;
 
-  getByRepositoryId(
-    repositoryId: RepositoryId,
-  ): Promise<StripeProduct[] | null>;
+  getByRepositoryId(repositoryId: RepositoryId): Promise<StripeProduct[]>;
 
   getAll(): Promise<StripeProduct[]>;
 }
@@ -82,7 +80,7 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
 
   async getByRepositoryId(
     repositoryId: RepositoryId,
-  ): Promise<StripeProduct[] | null> {
+  ): Promise<StripeProduct[]> {
     const result = await this.pool.query(
       `
                   SELECT *

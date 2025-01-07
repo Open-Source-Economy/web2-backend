@@ -12,6 +12,7 @@ import {
   Owner,
   ProductType,
   Repository,
+  RepositoryId,
   StripeCustomer,
   StripeCustomerId,
   StripePrice,
@@ -32,15 +33,21 @@ import { logger } from "../../config";
 // If the user pays 10$ - recurring payment - they receive 1 DoW * 15$ / 1.2$ = 12 milliDoW (12.5, rounded down)
 // If the user pays 10$ - one-time payment - they receive 1 DoW * 15$ / 1.5$ = 10 DoW
 
-const milliDowRecurring$CentsPrice: number = 120;
-const milliDowOneTime$CentsPrice: number = 150;
-
 export enum Currency {
   USD = "usd",
   EUR = "eur",
   GBP = "gbp",
   CHF = "chf",
 }
+
+const milliDowRecurring$CentsPrice: number = 120;
+const milliDowOneTime$CentsPrice: number = 150;
+const donationUnits: Record<Currency, number> = {
+  [Currency.USD]: 100,
+  [Currency.EUR]: 100,
+  [Currency.GBP]: 100,
+  [Currency.CHF]: 100,
+};
 
 // USD to EUR, GBP, CHF
 // Ex: 1 USD = 0.8 GBP
@@ -136,7 +143,8 @@ export class StripeHelper {
     const images = owner.avatarUrl ? [owner.avatarUrl] : undefined;
 
     // --- milliDoW product ---
-    const milliDowProduct: Stripe.Product = await stripe.products.create({
+
+    const milliDowParams: Stripe.ProductCreateParams = {
       name: `DoW for ${repoName}`,
       type: "service",
       images: images,
@@ -144,87 +152,99 @@ export class StripeHelper {
       unit_label: "milliDoW",
       description: `Support the development of ${repoName} and receive DoW credits to prioritize your needs.`,
       // url: frontendUrl,
-    });
+    };
 
-    await stripeProductRepo.insert(
-      new StripeProduct(
-        new StripeProductId(milliDowProduct.id),
-        repository.id,
-        ProductType.milliDow,
-      ),
+    await StripeHelper.createProductAndPrices(
+      repository.id,
+      ProductType.milliDow,
+      milliDowParams,
+      getPrices(milliDowRecurring$CentsPrice),
+      getPrices(milliDowOneTime$CentsPrice),
     );
 
-    const milliDowRecurringCentsPrices: Record<Currency, number> = getPrices(
-      milliDowRecurring$CentsPrice,
-    );
-    for (const [currency, price] of Object.entries(
-      milliDowRecurringCentsPrices,
-    )) {
-      await stripe.prices.create({
-        currency: currency.toLowerCase(),
-        unit_amount: price,
-        recurring: {
-          interval: "month",
-        },
-        product: milliDowProduct.id,
-      });
-    }
-
-    const milliDowOneTimeCentsPrices: Record<Currency, number> = getPrices(
-      milliDowOneTime$CentsPrice,
-    );
-    for (const [currency, price] of Object.entries(
-      milliDowOneTimeCentsPrices,
-    )) {
-      const priceResponse = await stripe.prices.create({
-        currency: currency.toLowerCase(),
-        unit_amount: price,
-        product: milliDowProduct.id,
-      });
-
-      const stripePrice = StripePrice.fromStripeApi(priceResponse);
-      if (stripePrice instanceof StripePrice) {
-        await stripePriceRepo.insert(stripePrice);
-      } else {
-        logger.error(`${stripePrice} - received from Stripe: ${priceResponse}`);
-        throw stripePrice;
-      }
-    }
-
-    // --- milliDoW product ---
-
-    const donationProduct: Stripe.Product = await stripe.products.create({
+    const donationParams: Stripe.ProductCreateParams = {
       name: `Donation for ${repoName}`,
       type: "service",
       images: images,
       shippable: false,
       description: `Donate to ${repoName} to support its maintainer and ongoing development.`,
       // url: frontendUrl,
-    });
+    };
+
+    await StripeHelper.createProductAndPrices(
+      repository.id,
+      ProductType.donation,
+      donationParams,
+      donationUnits,
+      donationUnits,
+    );
+  }
+
+  private static async createProductAndPrices(
+    repositoryId: RepositoryId,
+    productType: ProductType,
+    params: Stripe.ProductCreateParams,
+    recurringCentsPrices: Record<Currency, number>,
+    oneTimeCentsPrices: Record<Currency, number>,
+  ) {
+    const product: Stripe.Product = await stripe.products.create(params);
 
     await stripeProductRepo.insert(
       new StripeProduct(
-        new StripeProductId(donationProduct.id),
-        repository.id,
-        ProductType.donation,
+        new StripeProductId(product.id),
+        repositoryId,
+        productType,
       ),
     );
 
-    const donationPrices: Record<Currency, number> = getPrices(1);
-    for (const [currency, price] of Object.entries(donationPrices)) {
-      const priceResponse = await stripe.prices.create({
-        currency: currency.toLowerCase(),
-        unit_amount: price,
-        product: donationProduct.id,
-      });
+    const recurringOptions: Stripe.PriceCreateParams.Recurring = {
+      interval: "month",
+    };
 
-      const stripePrice = StripePrice.fromStripeApi(priceResponse);
-      if (stripePrice instanceof StripePrice) {
-        await stripePriceRepo.insert(stripePrice);
-      } else {
-        logger.error(`${stripePrice} - received from Stripe: ${priceResponse}`);
-        throw stripePrice;
-      }
+    // --- recurring price ---
+    await StripeHelper.createAndStoreStripePrices(
+      product,
+      recurringCentsPrices,
+      recurringOptions,
+    );
+
+    // --- one time price ---
+    await StripeHelper.createAndStoreStripePrices(product, oneTimeCentsPrices);
+  }
+
+  private static async createAndStoreStripePrices(
+    product: Stripe.Product,
+    prices: Record<Currency, number>,
+    options?: Stripe.PriceCreateParams.Recurring,
+  ) {
+    const creationPromises = Object.entries(prices).map(
+      async ([currency, price]) => {
+        const priceParams: Stripe.PriceCreateParams = {
+          currency: currency.toLowerCase(),
+          unit_amount: price,
+          product: product.id,
+          recurring: options,
+        };
+
+        const priceResponse = await stripe.prices.create(priceParams);
+        const stripePrice = StripePrice.fromStripeApi(priceResponse);
+
+        if (stripePrice instanceof StripePrice) {
+          await stripePriceRepo.insert(stripePrice);
+        } else {
+          logger.error(
+            `${stripePrice} - received from Stripe: ${priceResponse}`,
+          );
+          throw stripePrice;
+        }
+      },
+    );
+
+    try {
+      await Promise.all(creationPromises);
+    } catch (error) {
+      logger.error("Error creating a stripe price:", error);
+      throw error;
     }
   }
 }
