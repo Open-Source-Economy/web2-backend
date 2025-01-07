@@ -8,11 +8,6 @@ import {
 import { Fixture } from "../../__helpers__/Fixture";
 import {
   companyRepo,
-  getCompanyRepository,
-  getStripeCustomerRepository,
-  getStripeInvoiceRepository,
-  getStripeProductRepository,
-  getUserRepository,
   stripeCustomerRepo,
   stripeInvoiceRepo,
   stripePriceRepo,

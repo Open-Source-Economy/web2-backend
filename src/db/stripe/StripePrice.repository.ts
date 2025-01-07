@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { getPool } from "../../dbPool";
-import { StripePrice, StripePriceId } from "../../model";
+import { StripePrice, StripePriceId, StripeProductId } from "../../model";
+import { Currency } from "../../controllers";
 
 export function getStripePriceRepository(): StripePriceRepository {
   return new StripePriceRepositoryImpl(getPool());
@@ -9,6 +10,9 @@ export function getStripePriceRepository(): StripePriceRepository {
 export interface StripePriceRepository {
   insert(price: StripePrice): Promise<StripePrice>;
   getById(id: StripePriceId): Promise<StripePrice | null>;
+  getActivePricesByProductId(
+    productId: StripeProductId,
+  ): Promise<Record<Currency, StripePrice[]>>;
   getAll(): Promise<StripePrice[]>;
 }
 
@@ -53,15 +57,6 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
     });
   }
 
-  async getAll(): Promise<StripePrice[]> {
-    const result = await this.pool.query(`
-      SELECT *
-      FROM stripe_price
-    `);
-
-    return this.getPriceList(result.rows);
-  }
-
   async getById(id: StripePriceId): Promise<StripePrice | null> {
     const result = await this.pool.query(
       `
@@ -72,6 +67,46 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
       [id.toString()],
     );
     return this.getOptionalPrice(result.rows);
+  }
+
+  async getActivePricesByProductId(
+    productId: StripeProductId,
+  ): Promise<Record<Currency, StripePrice[]>> {
+    const result = await this.pool.query(
+      `
+        SELECT *
+        FROM stripe_price
+        WHERE product_id = $1
+      `,
+      [productId.toString()],
+    );
+
+    const priceList = this.getPriceList(result.rows);
+
+    const pricesByCurrency: Record<Currency, StripePrice[]> = {} as Record<
+      Currency,
+      StripePrice[]
+    >;
+    // Group prices by currency
+    for (const price of priceList) {
+      if (!pricesByCurrency[price.currency]) {
+        pricesByCurrency[price.currency] = [];
+      }
+      if (price.active) {
+        pricesByCurrency[price.currency].push(price);
+      }
+    }
+
+    return pricesByCurrency;
+  }
+
+  async getAll(): Promise<StripePrice[]> {
+    const result = await this.pool.query(`
+      SELECT *
+      FROM stripe_price
+    `);
+
+    return this.getPriceList(result.rows);
   }
 
   async insert(price: StripePrice): Promise<StripePrice> {

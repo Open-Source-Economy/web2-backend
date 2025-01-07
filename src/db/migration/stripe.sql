@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS stripe_product
     CONSTRAINT fk_github_owner_login FOREIGN KEY (github_owner_login) REFERENCES github_owner (github_login) ON DELETE RESTRICT,
     CONSTRAINT fk_github_repository FOREIGN KEY (github_owner_login, github_repository_name) REFERENCES github_repository (github_owner_login, github_name) ON DELETE RESTRICT,
 
+    CONSTRAINT unique_type_per_repo UNIQUE (github_owner_login, github_repository_name, type),
+
     created_at             TIMESTAMP   NOT NULL DEFAULT now(),
     updated_at             TIMESTAMP   NOT NULL DEFAULT now() -- Removed trailing comma
 );

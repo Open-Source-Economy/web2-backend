@@ -34,9 +34,6 @@ import { logger } from "../../config";
 
 const milliDowRecurring$CentsPrice: number = 120;
 const milliDowOneTime$CentsPrice: number = 150;
-const USDDonationPrices: number[] = [10, 20, 50, 100, 200].map(
-  (price) => price * 100,
-); // in cents
 
 export enum Currency {
   USD = "usd",
@@ -55,46 +52,16 @@ const conversionRates: Record<Currency, number> = {
 };
 
 function getConvertedPrice(usdPrice: number, currency: Currency): number {
-  // round down
-  return Math.floor(usdPrice * conversionRates[currency]);
-}
-
-// Convention DoW unit: 0.001 DoW (MilliDoW)
-interface DowAmount {
-  recurring: number;
-  recurringMilliDoW: number;
-  oneTime: number;
-  oneTimeMilliDoW: number;
+  return Math.floor(usdPrice * conversionRates[currency]); // round down
 }
 
 // price number is in $ cents
-function getPrices(prices: number[]): Record<Currency, [number, DowAmount][]> {
-  const displayedUSDPriceAndDoWAmounts: [number, DowAmount][] = prices.map(
-    (price) => {
-      const recurringMilliDoW = Math.floor(
-        price / milliDowRecurring$CentsPrice,
-      );
-      const oneTimeMilliDoW = Math.floor(price / milliDowOneTime$CentsPrice);
-      const dowAmount: DowAmount = {
-        recurring: recurringMilliDoW / 1000,
-        recurringMilliDoW: recurringMilliDoW,
-        oneTime: oneTimeMilliDoW / 1000,
-        oneTimeMilliDoW: oneTimeMilliDoW,
-      };
-
-      return [price, dowAmount];
-    },
-  );
-
-  const record = {} as Record<Currency, [number, DowAmount][]>;
+function getPrices($price: number): Record<Currency, number> {
+  const record = {} as Record<Currency, number>;
 
   for (const currency of Object.values(Currency) as Currency[]) {
     record[currency] =
-      currency === Currency.USD
-        ? displayedUSDPriceAndDoWAmounts
-        : displayedUSDPriceAndDoWAmounts.map(([price, dowAmount]) => {
-            return [getConvertedPrice(price, currency), dowAmount];
-          });
+      currency === Currency.USD ? $price : getConvertedPrice($price, currency);
   }
 
   return record;
@@ -187,46 +154,40 @@ export class StripeHelper {
       ),
     );
 
-    const milliDowRecurringCentsPrices: Record<
-      Currency,
-      [number, DowAmount][]
-    > = getPrices([milliDowRecurring$CentsPrice]);
-    for (const [currency, priceDowArray] of Object.entries(
+    const milliDowRecurringCentsPrices: Record<Currency, number> = getPrices(
+      milliDowRecurring$CentsPrice,
+    );
+    for (const [currency, price] of Object.entries(
       milliDowRecurringCentsPrices,
     )) {
-      for (const [price, _] of priceDowArray) {
-        await stripe.prices.create({
-          currency: currency.toLowerCase(),
-          unit_amount: price,
-          recurring: {
-            interval: "month",
-          },
-          product: milliDowProduct.id,
-        });
-      }
+      await stripe.prices.create({
+        currency: currency.toLowerCase(),
+        unit_amount: price,
+        recurring: {
+          interval: "month",
+        },
+        product: milliDowProduct.id,
+      });
     }
 
-    const milliDowOneTimeCentsPrices: Record<Currency, [number, DowAmount][]> =
-      getPrices([milliDowOneTime$CentsPrice]);
-    for (const [currency, priceDowArray] of Object.entries(
+    const milliDowOneTimeCentsPrices: Record<Currency, number> = getPrices(
+      milliDowOneTime$CentsPrice,
+    );
+    for (const [currency, price] of Object.entries(
       milliDowOneTimeCentsPrices,
     )) {
-      for (const [price, _] of priceDowArray) {
-        const priceResponse = await stripe.prices.create({
-          currency: currency.toLowerCase(),
-          unit_amount: price,
-          product: milliDowProduct.id,
-        });
+      const priceResponse = await stripe.prices.create({
+        currency: currency.toLowerCase(),
+        unit_amount: price,
+        product: milliDowProduct.id,
+      });
 
-        const stripePrice = StripePrice.fromStripeApi(priceResponse);
-        if (stripePrice instanceof StripePrice) {
-          await stripePriceRepo.insert(stripePrice);
-        } else {
-          logger.error(
-            `${stripePrice} - received from Stripe: ${priceResponse}`,
-          );
-          throw stripePrice;
-        }
+      const stripePrice = StripePrice.fromStripeApi(priceResponse);
+      if (stripePrice instanceof StripePrice) {
+        await stripePriceRepo.insert(stripePrice);
+      } else {
+        logger.error(`${stripePrice} - received from Stripe: ${priceResponse}`);
+        throw stripePrice;
       }
     }
 
@@ -249,25 +210,20 @@ export class StripeHelper {
       ),
     );
 
-    const donationPrices: Record<Currency, [number, DowAmount][]> =
-      getPrices(USDDonationPrices);
-    for (const [currency, priceDowArray] of Object.entries(donationPrices)) {
-      for (const [price, _] of priceDowArray) {
-        const priceResponse = await stripe.prices.create({
-          currency: currency.toLowerCase(),
-          unit_amount: price,
-          product: donationProduct.id,
-        });
+    const donationPrices: Record<Currency, number> = getPrices(1);
+    for (const [currency, price] of Object.entries(donationPrices)) {
+      const priceResponse = await stripe.prices.create({
+        currency: currency.toLowerCase(),
+        unit_amount: price,
+        product: donationProduct.id,
+      });
 
-        const stripePrice = StripePrice.fromStripeApi(priceResponse);
-        if (stripePrice instanceof StripePrice) {
-          await stripePriceRepo.insert(stripePrice);
-        } else {
-          logger.error(
-            `${stripePrice} - received from Stripe: ${priceResponse}`,
-          );
-          throw stripePrice;
-        }
+      const stripePrice = StripePrice.fromStripeApi(priceResponse);
+      if (stripePrice instanceof StripePrice) {
+        await stripePriceRepo.insert(stripePrice);
+      } else {
+        logger.error(`${stripePrice} - received from Stripe: ${priceResponse}`);
+        throw stripePrice;
       }
     }
   }

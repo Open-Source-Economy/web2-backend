@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { getPool } from "../../dbPool";
-import { StripeProduct, StripeProductId } from "../../model";
+import { RepositoryId, StripeProduct, StripeProductId } from "../../model";
 
 export function getStripeProductRepository(): StripeProductRepository {
   return new StripeProductRepositoryImpl(getPool());
@@ -10,6 +10,10 @@ export interface StripeProductRepository {
   insert(product: StripeProduct): Promise<StripeProduct>;
 
   getById(id: StripeProductId): Promise<StripeProduct | null>;
+
+  getByRepositoryId(
+    repositoryId: RepositoryId,
+  ): Promise<StripeProduct[] | null>;
 
   getAll(): Promise<StripeProduct[]>;
 }
@@ -74,6 +78,20 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
     );
 
     return this.getOptionalProduct(result.rows);
+  }
+
+  async getByRepositoryId(
+    repositoryId: RepositoryId,
+  ): Promise<StripeProduct[] | null> {
+    const result = await this.pool.query(
+      `
+                  SELECT *
+                  FROM stripe_product
+                  WHERE github_owner_login = $1 AND github_repository_name = $2
+              `,
+      [repositoryId.ownerId.login, repositoryId.name],
+    );
+    return this.getProductList(result.rows);
   }
 
   async insert(product: StripeProduct): Promise<StripeProduct> {
