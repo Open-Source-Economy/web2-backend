@@ -9,13 +9,16 @@ export class Migration {
   }
 
   public async migrate(): Promise<void> {
-    const sql1 = fs.readFileSync("src/db/migration/1.sql").toString();
-    const sql2 = fs.readFileSync("src/db/migration/2.sql").toString();
-    const stripe = fs.readFileSync("src/db/migration/stripe.sql").toString();
+    const migrationFiles = ["1.sql", "2.sql", "3.sql", "stripe.sql"];
 
-    await this.pool.query(sql1);
-    await this.pool.query(sql2);
-    await this.pool.query(stripe);
+    const migrations = migrationFiles.map((file) => {
+      return fs.readFileSync(`src/db/migration/${file}`).toString();
+    });
+
+    for (const migration of migrations) {
+      await this.pool.query(migration);
+    }
+
     await this.pool.query(`SET timezone = 'UTC';`);
   }
 

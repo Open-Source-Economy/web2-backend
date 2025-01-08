@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import {
+  Currency,
   LocalUser,
   Owner,
   Provider,
@@ -20,6 +21,7 @@ export interface CreateUser {
   name: string | null;
   data: LocalUser | ThirdPartyUser;
   role: UserRole;
+  preferredCurrency?: Currency;
 }
 
 export interface UserRepository {
@@ -32,6 +34,7 @@ export interface UserRepository {
     thirdPartyId: ThirdPartyUserId,
     provider: Provider,
   ): Promise<User | null>;
+  setPreferredCurrency(userId: UserId, currency: Currency): Promise<void>;
 }
 
 class UserRepositoryImpl implements UserRepository {
@@ -134,10 +137,17 @@ class UserRepositoryImpl implements UserRepository {
       try {
         const result = await client.query(
           `
-                INSERT INTO app_user (name, email, is_email_verified, hashed_password, role)
-                VALUES ($1, $2, $3, $4, $5) RETURNING *
-            `,
-          [user.name, user.data.email, false, hashedPassword, user.role],
+          INSERT INTO app_user (name, email, is_email_verified, hashed_password, role, preferred_currency)
+          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+        `,
+          [
+            user.name,
+            user.data.email,
+            false,
+            hashedPassword,
+            user.role,
+            user.preferredCurrency,
+          ],
         );
 
         return this.getOneUser(result.rows);
@@ -154,15 +164,15 @@ class UserRepositoryImpl implements UserRepository {
         // Insert or update the Github owner
         const ownerResult = await client.query(
           `
-                    INSERT INTO github_owner (github_id, github_type, github_login, github_html_url, github_avatar_url)
-                    VALUES ($1, $2, $3, $4, $5)
-                    ON CONFLICT (github_id) DO UPDATE
-                        SET github_type       = EXCLUDED.github_type,
-                            github_login      = EXCLUDED.github_login,
-                            github_html_url   = EXCLUDED.github_html_url,
-                            github_avatar_url = EXCLUDED.github_avatar_url
-                    RETURNING *
-                `,
+          INSERT INTO github_owner (github_id, github_type, github_login, github_html_url, github_avatar_url)
+          VALUES ($1, $2, $3, $4, $5)
+          ON CONFLICT (github_id) DO UPDATE
+              SET github_type       = EXCLUDED.github_type,
+                  github_login      = EXCLUDED.github_login,
+                  github_html_url   = EXCLUDED.github_html_url,
+                  github_avatar_url = EXCLUDED.github_avatar_url
+          RETURNING *
+        `,
           [
             owner.id.githubId,
             owner.type,
@@ -172,7 +182,6 @@ class UserRepositoryImpl implements UserRepository {
           ],
         );
 
-        // TODO: refactor
         const githubOwner = Owner.fromBackend(ownerResult.rows[0]);
         if (githubOwner instanceof Error) {
           throw githubOwner;
@@ -181,25 +190,18 @@ class UserRepositoryImpl implements UserRepository {
         // Insert or update the ThirdPartyUser
         const userResult = await client.query(
           `
-                    INSERT INTO app_user (provider, 
-                                          third_party_id, 
-                                          name, 
-                                          email, 
-                                          is_email_verified, 
-                                          role,
-                                          github_owner_id, 
-                                          github_owner_login
-                )
-                    VALUES ($1, $2, $3, $4, TRUE, $5, $6, $7)
-                    ON CONFLICT (third_party_id) DO UPDATE
-                        SET provider           = EXCLUDED.provider,
-                            name               = EXCLUDED.name,
-                            email              = EXCLUDED.email,
-                            role               = EXCLUDED.role,
-                            github_owner_id    = EXCLUDED.github_owner_id,
-                            github_owner_login = EXCLUDED.github_owner_login
-                    RETURNING *
-                `,
+          INSERT INTO app_user (provider, third_party_id, name, email, is_email_verified, role, github_owner_id, github_owner_login, preferred_currency)
+          VALUES ($1, $2, $3, $4, TRUE, $5, $6, $7, $8)
+          ON CONFLICT (third_party_id) DO UPDATE
+              SET provider           = EXCLUDED.provider,
+                  name               = EXCLUDED.name,
+                  email              = EXCLUDED.email,
+                  role               = EXCLUDED.role,
+                  github_owner_id    = EXCLUDED.github_owner_id,
+                  github_owner_login = EXCLUDED.github_owner_login,
+                  preferred_currency = EXCLUDED.preferred_currency
+          RETURNING *
+        `,
           [
             user.data.provider,
             user.data.id.id,
@@ -208,6 +210,7 @@ class UserRepositoryImpl implements UserRepository {
             UserRole.USER,
             githubOwner.id.githubId,
             githubOwner.id.login,
+            user.preferredCurrency,
           ],
         );
 
@@ -277,5 +280,23 @@ class UserRepositoryImpl implements UserRepository {
       [id.id, provider],
     );
     return this.getOptionalUser(result.rows);
+  }
+
+  async setPreferredCurrency(
+    userId: UserId,
+    currency: Currency,
+  ): Promise<void> {
+    const result = await this.pool.query(
+      `
+      UPDATE app_user
+      SET preferred_currency = $1
+      WHERE id = $2
+    `,
+      [currency, userId.uuid],
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error(`User with id ${userId.uuid} not found`);
+    }
   }
 }

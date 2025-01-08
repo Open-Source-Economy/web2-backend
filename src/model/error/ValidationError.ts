@@ -205,6 +205,25 @@ export class Validator {
     }
   }
 
+  optionalEnum<EnumType extends string>(
+    path: string | string[],
+    enumType: EnumType[],
+  ): EnumType | undefined {
+    const value = this.getValue(path) as EnumType | undefined;
+
+    if (value === undefined || value === null) {
+      return undefined; // Return undefined for optional values
+    }
+
+    const enumValues = Object.values(enumType) as EnumType[];
+    if (!enumValues.includes(value)) {
+      this.errors.push(new EnumValidationError(path, value, enumType));
+      return undefined;
+    }
+
+    return value;
+  }
+
   requiredEnum<EnumType extends string>(
     path: string | string[],
     enumType: EnumType[],

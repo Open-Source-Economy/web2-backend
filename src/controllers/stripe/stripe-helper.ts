@@ -9,6 +9,7 @@ import Stripe from "stripe";
 import {
   CompanyId,
   CompanyUserRole,
+  Currency,
   Owner,
   ProductType,
   Repository,
@@ -32,13 +33,6 @@ import { logger } from "../../config";
 
 // If the user pays 10$ - recurring payment - they receive 1 DoW * 15$ / 1.2$ = 12 milliDoW (12.5, rounded down)
 // If the user pays 10$ - one-time payment - they receive 1 DoW * 15$ / 1.5$ = 10 DoW
-
-export enum Currency {
-  USD = "usd",
-  EUR = "eur",
-  GBP = "gbp",
-  CHF = "chf",
-}
 
 const milliDowRecurring$CentsPrice: number = 120;
 const milliDowOneTime$CentsPrice: number = 150;

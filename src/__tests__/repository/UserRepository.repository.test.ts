@@ -6,7 +6,7 @@ import {
   getUserRepositoryRepository,
 } from "../../db";
 import { Fixture } from "../__helpers__/Fixture";
-import { RepositoryUserRole, UserId } from "../../model";
+import { Currency, RepositoryUserRole, UserId } from "../../model";
 
 describe("UserRepositoryRepository", () => {
   const userRepo = getUserRepository();
@@ -66,5 +66,30 @@ describe("UserRepositoryRepository", () => {
       const found = await userRepositoryRepo.getById(userId, repositoryId);
       expect(found).toBeNull();
     });
+  });
+
+  it("should update the preferred currency for a user", async () => {
+    // Ensure the initial preferred currency is null
+    const userBeforeUpdate = await userRepo.getById(userId);
+    expect(userBeforeUpdate).not.toBeNull();
+    expect(userBeforeUpdate!.preferredCurrency).toBeUndefined()
+
+    // Update the preferred currency
+    const newCurrency = Currency.EUR;
+    await userRepo.setPreferredCurrency(userId, newCurrency);
+
+    // Verify the preferred currency was updated
+    const userAfterUpdate = await userRepo.getById(userId);
+    expect(userAfterUpdate).not.toBeUndefined();
+    expect(userAfterUpdate!.preferredCurrency).toEqual(newCurrency);
+  });
+
+  it("should throw an error if the user does not exist", async () => {
+    const invalidUserId = Fixture.userId()
+    const newCurrency = Currency.USD;
+
+    await expect(
+      userRepo.setPreferredCurrency(invalidUserId, newCurrency),
+    ).rejects.toThrowError(`User with id ${invalidUserId.uuid} not found`);
   });
 });

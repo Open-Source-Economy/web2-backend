@@ -1,7 +1,11 @@
 import { Pool } from "pg";
 import { getPool } from "../../dbPool";
-import { StripePrice, StripePriceId, StripeProductId } from "../../model";
-import { Currency } from "../../controllers";
+import {
+  Currency,
+  StripePrice,
+  StripePriceId,
+  StripeProductId,
+} from "../../model";
 
 export function getStripePriceRepository(): StripePriceRepository {
   return new StripePriceRepositoryImpl(getPool());

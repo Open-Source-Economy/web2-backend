@@ -8,9 +8,8 @@ import {
 } from "../../dtos";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { Currency } from "./stripe-helper";
 import { stripePriceRepo, stripeProductRepo } from "../../db";
-import { OwnerId, ProductType, RepositoryId } from "../../model";
+import { Currency, OwnerId, ProductType, RepositoryId } from "../../model";
 import { ApiError } from "../../model/error/ApiError";
 
 const LABELS = [

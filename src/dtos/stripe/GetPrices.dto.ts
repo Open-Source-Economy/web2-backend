@@ -1,5 +1,4 @@
-import { Currency } from "../../controllers";
-import { ProductType, StripePrice } from "../../model";
+import { Currency, ProductType, StripePrice } from "../../model";
 
 export interface GetPricesParams {
   owner: string;

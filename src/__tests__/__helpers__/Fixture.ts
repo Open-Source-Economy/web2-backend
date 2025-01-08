@@ -7,6 +7,7 @@ import {
   CompanyUserPermissionTokenId,
   CompanyUserRole,
   ContributorVisibility,
+  Currency,
   DowCurrency,
   GithubData,
   Issue,
@@ -52,11 +53,10 @@ import {
   CreateManagedIssueBody,
   CreateManualInvoiceBody,
 } from "../../dtos";
-import { StripePriceId } from "../../model/stripe/StripePrice";
+import { StripePriceId } from "../../model";
 import { v4 as uuid } from "uuid";
 import Decimal from "decimal.js";
 import { CreateRepositoryUserPermissionTokenDto, CreateUser } from "../../db";
-import { Currency } from "../../controllers";
 
 export const Fixture = {
   id(): number {

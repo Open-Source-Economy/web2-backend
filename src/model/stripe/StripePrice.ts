@@ -1,6 +1,6 @@
 import { ValidationError, Validator } from "../error";
 import { StripeProductId } from "./StripeProduct";
-import { Currency } from "../../controllers";
+import { Currency } from "./Currency";
 
 export enum PriceType {
   RECURRING = "recurring",
