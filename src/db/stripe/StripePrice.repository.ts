@@ -114,20 +114,24 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
   }
 
   async insert(price: StripePrice): Promise<StripePrice> {
+    if (price.unitAmount <= 0) {
+      throw new Error("Unit amount must be greater than 0");
+    }
+
     const client = await this.pool.connect();
 
     try {
       const result = await client.query(
         `
-          INSERT INTO stripe_price (stripe_id,
-                                    product_id,
-                                    unit_amount,
-                                    currency,
-                                    active,
-                                    type)
-          VALUES ($1, $2, $3, $4, $5, $6)
-          RETURNING stripe_id, product_id, unit_amount, currency, active, type
-        `,
+        INSERT INTO stripe_price (stripe_id,
+                                  product_id,
+                                  unit_amount,
+                                  currency,
+                                  active,
+                                  type)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING stripe_id, product_id, unit_amount, currency, active, type
+      `,
         [
           price.stripeId.toString(),
           price.productId.toString(),

@@ -198,8 +198,9 @@ export const Fixture = {
   stripeProduct(
     productId: StripeProductId,
     repositoryId: RepositoryId | null,
+    productType: ProductType = ProductType.milliDow,
   ): StripeProduct {
-    return new StripeProduct(productId, repositoryId, ProductType.milliDow);
+    return new StripeProduct(productId, repositoryId, productType);
   },
 
   stripePriceId(): StripePriceId {
@@ -210,14 +211,17 @@ export const Fixture = {
   stripePrice(
     stripeId: StripePriceId,
     productId: StripeProductId,
+    unitAmount: number = 200,
+    currency: Currency = Currency.USD,
+    priceType: PriceType = PriceType.RECURRING,
   ): StripePrice {
     return new StripePrice(
       stripeId,
       productId,
-      200,
-      Currency.USD,
+      unitAmount,
+      currency,
       true,
-      PriceType.RECURRING,
+      priceType,
     );
   },
 

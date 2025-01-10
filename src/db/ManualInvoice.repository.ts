@@ -63,7 +63,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
   async create(manualInvoice: CreateManualInvoiceBody): Promise<ManualInvoice> {
     const client = await this.pool.connect();
 
-    logger.info(`Creating manual invoice: ${JSON.stringify(manualInvoice)}`);
+    logger.debug(`Creating manual invoice`, manualInvoice);
 
     try {
       const result = await client.query(
@@ -146,7 +146,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
     let result;
 
     if (id instanceof CompanyId) {
-      logger.info(
+      logger.debug(
         `Getting all manual invoices paid by company: ${id.toString()}`,
       );
       result = await this.pool.query(

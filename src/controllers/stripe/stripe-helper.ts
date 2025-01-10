@@ -79,8 +79,10 @@ export class StripeHelper {
   ): Promise<StripeCustomer | ApiError> {
     const exiting = await stripeCustomerRepo.getByUserId(user.id);
 
-    if (exiting) return exiting;
-    else {
+    if (exiting) {
+      logger.debug("Stripe customer already exists", exiting);
+      return exiting;
+    } else {
       const companies: [CompanyId, CompanyUserRole][] =
         await userCompanyRepo.getByUserId(user.id);
       if (companies.length > 1) {
@@ -118,6 +120,8 @@ export class StripeHelper {
         email: email,
         address: stripeAddress,
       };
+
+      logger.debug("Creating Stripe customer", customerCreateParams);
 
       const customer: Stripe.Customer =
         await stripe.customers.create(customerCreateParams);
@@ -182,53 +186,87 @@ export class StripeHelper {
   ): Promise<
     Record<PriceType, Record<Currency, Record<ProductType, Price[]>>>
   > {
+    const prices = StripeHelper.initializePrices();
+
     const products = await stripeProductRepo.getByRepositoryId(repositoryId);
-    const prices = {} as Record<
-      PriceType,
-      Record<Currency, Record<ProductType, Price[]>>
-    >;
+
+    logger.debug("Products", products);
 
     for (const product of products) {
       const productPrices = await stripePriceRepo.getActivePricesByProductId(
         product.stripeId,
       );
+      logger.debug("Product prices", productPrices);
 
       for (const [currency, stripePrices] of Object.entries(productPrices)) {
-        if (!stripePrices || stripePrices.length !== 1) continue;
-
-        const stripePrice = stripePrices[0];
-        if (stripePrice.unitAmount <= 0) {
+        const parsedCurrency = currency as Currency;
+        const currencyConfigs = currencyPriceConfigs[parsedCurrency];
+        if (
+          !stripePrices ||
+          stripePrices.length !== Object.keys(PriceType).length
+        ) {
+          logger.error("Unexpected price configuration for product", {
+            productStripeId: product.stripeId,
+            currency: currency,
+            stripePrices: stripePrices,
+            message: "Expected exactly one price per product and price type",
+          });
           throw new Error(
-            "Stripe price unit amount is not strictly positive for product " +
-              product.stripeId,
+            `Expected exactly one price per price type in product ${product.stripeId} in currency ${currency}`,
           );
         }
 
-        const priceType = stripePrice.type;
-        prices[priceType] =
-          prices[priceType] ||
-          ({} as Record<Currency, Record<ProductType, Price[]>>);
-        prices[priceType][currency as Currency] =
-          prices[priceType][currency as Currency] ||
-          ({} as Record<ProductType, Price[]>);
-        prices[priceType][currency as Currency][product.type] =
-          prices[priceType][currency as Currency][product.type] || [];
+        for (const stripePrice of stripePrices) {
+          if (stripePrice.unitAmount <= 0) {
+            logger.error("Stripe price unit amount is not strictly positive", {
+              productStripeId: product.stripeId,
+              unitAmount: stripePrice.unitAmount,
+              message:
+                "The unit amount for the given Stripe price is invalid (non-positive)",
+            });
+            throw new Error(
+              `Stripe price unit amount is not strictly positive for product ${product.stripeId}`,
+            );
+          }
 
-        const currencyConfigs = currencyPriceConfigs[currency as Currency];
-        if (!currencyConfigs) continue;
-
-        for (const [amount, label] of currencyConfigs) {
-          prices[priceType][currency as Currency][product.type].push({
-            totalAmount: amount,
-            quantity: Math.floor(amount / stripePrice.unitAmount),
-            label,
-            price: stripePrice,
-          });
+          for (const [amount, label] of currencyConfigs) {
+            prices[stripePrice.type][parsedCurrency][product.type].push({
+              totalAmount: amount,
+              quantity: Math.floor(amount / stripePrice.unitAmount),
+              label,
+              price: stripePrice,
+            });
+          }
         }
       }
     }
 
     return prices;
+  }
+
+  private static initializePrices(): Record<
+    PriceType,
+    Record<Currency, Record<ProductType, Price[]>>
+  > {
+    return Object.values(PriceType).reduce(
+      (priceTypeAcc, priceType) => {
+        priceTypeAcc[priceType] = Object.values(Currency).reduce(
+          (currencyAcc, currency) => {
+            currencyAcc[currency] = Object.values(ProductType).reduce(
+              (productAcc, productType) => {
+                productAcc[productType] = [];
+                return productAcc;
+              },
+              {} as Record<ProductType, Price[]>,
+            );
+            return currencyAcc;
+          },
+          {} as Record<Currency, Record<ProductType, Price[]>>,
+        );
+        return priceTypeAcc;
+      },
+      {} as Record<PriceType, Record<Currency, Record<ProductType, Price[]>>>,
+    );
   }
 
   private static async createProductAndPrices(

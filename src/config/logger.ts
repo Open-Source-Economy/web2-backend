@@ -19,11 +19,25 @@ const filterDebug = winston.format((info) => {
   }
 });
 
+// Add a format to stringify objects in messages
+const formatWithObjects = winston.format((info) => {
+  const splat = info[Symbol.for("splat")]; // Access the additional arguments
+  if (splat && Array.isArray(splat)) {
+    info.message +=
+      " " +
+      splat
+        .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg))
+        .join(" ");
+  }
+  return info;
+});
+
 export const logger = winston.createLogger({
   level: config.env === NodeEnv.Production ? "info" : "debug",
   format: winston.format.combine(
     filterDebug(),
     enumerateErrorFormat(),
+    formatWithObjects(),
     config.env === NodeEnv.Local
       ? winston.format.colorize()
       : winston.format.uncolorize(),

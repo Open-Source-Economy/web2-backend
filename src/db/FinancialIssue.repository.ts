@@ -279,7 +279,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
 
   async getAll(): Promise<FinancialIssue[]> {
     const allManagedIssues = await this.managedIssueRepo.getAll();
-    logger.info(`Got ${allManagedIssues.length} managed issues from the DB`);
+    logger.debug(`Got ${allManagedIssues.length} managed issues from the DB`);
     const managedIssues: Map<number | undefined, ManagedIssue> = new Map(
       allManagedIssues.map((m) => {
         if (!m.githubIssueId || !m.githubIssueId.githubId) {
@@ -293,7 +293,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
 
     const issueFundings: Map<number, IssueFunding[]> = new Map();
     const allIssueFundings = await this.issueFundingRepo.getAll();
-    logger.info(`Got ${allIssueFundings.length} issue fundings from the DB`);
+    logger.debug(`Got ${allIssueFundings.length} issue fundings from the DB`);
     allIssueFundings.forEach((i) => {
       const githubId = i.githubIssueId?.githubId;
       if (!githubId) {

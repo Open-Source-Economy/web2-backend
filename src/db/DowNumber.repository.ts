@@ -31,7 +31,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
     userId: UserId,
     companyId?: CompanyId,
   ): Promise<number> {
-    logger.info(
+    logger.debug(
       `Getting available milliDoW for user ${userId} and company ${companyId}...`,
     );
     let totalDoWsPaid: number = 0;
@@ -44,18 +44,18 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
     totalDoWsPaid += manualInvoices.reduce((acc, invoice) => {
       return acc + invoice.milliDowAmount; // invoice.milliDowAmount is an integer
     }, 0);
-    logger.info(`Total DoW from manual invoices: ${totalDoWsPaid}`);
+    logger.debug(`Total DoW from manual invoices: ${totalDoWsPaid}`);
 
     // Calculate total DoW from Stripe invoices
     const amountPaidWithStripe = await this.getAllStripeInvoicePaidBy(
       companyId ?? userId,
     );
-    logger.info(`Total DoW from Stripe invoices: ${amountPaidWithStripe}`);
+    logger.debug(`Total DoW from Stripe invoices: ${amountPaidWithStripe}`);
     totalDoWsPaid += amountPaidWithStripe;
 
     const totalFunding = await this.getIssueFundingFrom(companyId ?? userId);
     const availableMilliDoWs = totalDoWsPaid - totalFunding;
-    logger.info(`Total issue funding: ${totalFunding}`);
+    logger.debug(`Total issue funding: ${totalFunding}`);
     if (totalFunding < 0) {
       logger.error(
         `The amount dow amount (${totalFunding}) is negative for userId ${userId.toString()}, companyId ${companyId ? companyId.toString() : ""}`,

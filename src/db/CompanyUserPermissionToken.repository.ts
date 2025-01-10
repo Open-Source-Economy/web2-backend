@@ -210,7 +210,7 @@ class CompanyUserPermissionTokenRepositoryImpl
             `,
       [token],
     );
-    logger.info("Deleting permission token: ", token);
+    logger.debug("Deleting permission token: ", token);
   }
 
   async setHasBeenUsed(token: string): Promise<void> {
@@ -231,7 +231,7 @@ class CompanyUserPermissionTokenRepositoryImpl
         throw new Error(`Token not found: ${token}`);
       }
 
-      logger.info(`Token ${token} has been marked as used.`);
+      logger.debug(`Token ${token} has been marked as used.`);
     } finally {
       client.release();
     }

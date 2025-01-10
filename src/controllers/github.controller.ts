@@ -277,7 +277,7 @@ export class GithubController {
     );
 
     if (owner === "apache" && repo === "pekko") {
-      const reponse: GetCampaignResponse = {
+      const response: GetCampaignResponse = {
         raisedAmount: {
           [Currency.USD]: 40000,
           [Currency.EUR]: 40000,
@@ -292,7 +292,7 @@ export class GithubController {
         },
         prices,
       };
-      res.status(StatusCodes.OK).send({ success: reponse });
+      res.status(StatusCodes.OK).send({ success: response });
     } else {
       throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Not implemented yet");
     }

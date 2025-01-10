@@ -59,7 +59,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
   async create(issueFunding: CreateIssueFundingBody): Promise<IssueFunding> {
     const client = await this.pool.connect();
 
-    logger.info(`Creating issue funding: ${JSON.stringify(issueFunding)}`);
+    logger.debug(`Creating issue funding: ${JSON.stringify(issueFunding)}`);
     try {
       const result = await client.query(
         `
