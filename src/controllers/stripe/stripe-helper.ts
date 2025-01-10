@@ -11,6 +11,7 @@ import {
   CompanyUserRole,
   Currency,
   Owner,
+  PriceType,
   ProductType,
   Repository,
   RepositoryId,
@@ -24,6 +25,7 @@ import { ApiError } from "../../model/error/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { stripe } from "./index";
 import { logger } from "../../config";
+import { Price } from "../../dtos";
 
 // 1 DoW - recurring payment: 1200$
 // 1 DoW - one-time payment: 1500$
@@ -172,6 +174,61 @@ export class StripeHelper {
       donationUnits,
       donationUnits,
     );
+  }
+
+  static async getPrices(
+    repositoryId: RepositoryId,
+    currencyPriceConfigs: Record<Currency, [number, string][]>,
+  ): Promise<
+    Record<PriceType, Record<Currency, Record<ProductType, Price[]>>>
+  > {
+    const products = await stripeProductRepo.getByRepositoryId(repositoryId);
+    const prices = {} as Record<
+      PriceType,
+      Record<Currency, Record<ProductType, Price[]>>
+    >;
+
+    for (const product of products) {
+      const productPrices = await stripePriceRepo.getActivePricesByProductId(
+        product.stripeId,
+      );
+
+      for (const [currency, stripePrices] of Object.entries(productPrices)) {
+        if (!stripePrices || stripePrices.length !== 1) continue;
+
+        const stripePrice = stripePrices[0];
+        if (stripePrice.unitAmount <= 0) {
+          throw new Error(
+            "Stripe price unit amount is not strictly positive for product " +
+              product.stripeId,
+          );
+        }
+
+        const priceType = stripePrice.type;
+        prices[priceType] =
+          prices[priceType] ||
+          ({} as Record<Currency, Record<ProductType, Price[]>>);
+        prices[priceType][currency as Currency] =
+          prices[priceType][currency as Currency] ||
+          ({} as Record<ProductType, Price[]>);
+        prices[priceType][currency as Currency][product.type] =
+          prices[priceType][currency as Currency][product.type] || [];
+
+        const currencyConfigs = currencyPriceConfigs[currency as Currency];
+        if (!currencyConfigs) continue;
+
+        for (const [amount, label] of currencyConfigs) {
+          prices[priceType][currency as Currency][product.type].push({
+            totalAmount: amount,
+            quantity: Math.floor(amount / stripePrice.unitAmount),
+            label,
+            price: stripePrice,
+          });
+        }
+      }
+    }
+
+    return prices;
   }
 
   private static async createProductAndPrices(

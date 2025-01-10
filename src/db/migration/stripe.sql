@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS stripe_price
     unit_amount INTEGER     NOT NULL, -- Amount in cents
     currency    VARCHAR(10) NOT NULL,
     active      BOOLEAN     NOT NULL,
-    type        VARCHAR(50) NOT NULL CHECK (type IN ('recurring', 'one_time')),
+    type        VARCHAR(50) NOT NULL CHECK (type IN ('monthly', 'one_time')),
 
     created_at  TIMESTAMP   NOT NULL DEFAULT now(),
     updated_at  TIMESTAMP   NOT NULL DEFAULT now(),

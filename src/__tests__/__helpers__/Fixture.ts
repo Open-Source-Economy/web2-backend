@@ -37,6 +37,7 @@ import {
   StripeInvoiceLine,
   StripeInvoiceLineId,
   StripePrice,
+  StripePriceId,
   StripeProduct,
   StripeProductId,
   ThirdPartyUser,
@@ -53,7 +54,6 @@ import {
   CreateManagedIssueBody,
   CreateManualInvoiceBody,
 } from "../../dtos";
-import { StripePriceId } from "../../model";
 import { v4 as uuid } from "uuid";
 import Decimal from "decimal.js";
 import { CreateRepositoryUserPermissionTokenDto, CreateUser } from "../../db";

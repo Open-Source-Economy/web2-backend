@@ -1,15 +1,18 @@
 import {
+  GetCampaignBody,
+  GetCampaignParams,
+  GetCampaignQuery,
+  GetCampaignResponse,
   GetPricesBody,
   GetPricesParams,
   GetPricesQuery,
   GetPricesResponse,
-  Price,
   ResponseBody,
 } from "../../dtos";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { stripePriceRepo, stripeProductRepo } from "../../db";
-import { Currency, OwnerId, ProductType, RepositoryId } from "../../model";
+import { Currency, OwnerId, RepositoryId } from "../../model";
+import { StripeHelper } from "./stripe-helper";
 import { ApiError } from "../../model/error/ApiError";
 
 const LABELS = [
@@ -40,7 +43,7 @@ const CURRENCY_AMOUNTS: Record<Currency, number[]> = {
   ), // in cents
 };
 
-const CURRENCY_PRICE_CONFIGS: Record<Currency, [number, string][]> =
+export const CURRENCY_PRICE_CONFIGS: Record<Currency, [number, string][]> =
   Object.entries(CURRENCY_AMOUNTS).reduce(
     (acc, [currency, amounts]) => {
       if (amounts.length !== LABELS.length) {
@@ -70,58 +73,16 @@ export class StripeController {
   ) {
     const { owner, repo } = req.params;
     const repositoryId = new RepositoryId(new OwnerId(owner), repo);
-    const products = await stripeProductRepo.getByRepositoryId(repositoryId);
-    const prices = {} as Record<ProductType, Record<Currency, Price[]>>;
-
-    for (const product of products) {
-      // Initialize the product type record if it doesn't exist
-      if (!prices[product.type]) {
-        prices[product.type] = {} as Record<Currency, Price[]>;
-      } else {
-        throw new ApiError(
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          "Multiple products of the same type found for repository: " +
-            repositoryId.toString(),
-        );
-      }
-
-      const productPrices = await stripePriceRepo.getActivePricesByProductId(
-        product.stripeId,
-      );
-
-      // Organize prices by currency
-      for (const [c, stripePrices] of Object.entries(productPrices)) {
-        const currency = c as Currency;
-        // Initialize the currency array if it doesn't exist
-        if (!prices[product.type][currency as Currency]) {
-          prices[product.type][currency as Currency] = [];
-        }
-
-        if (stripePrices.length !== 1) {
-          throw new ApiError(
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            `Several prices found for product : ${product.stripeId.toString()} currency ${currency}`,
-          );
-        }
-        const price = stripePrices[0];
-
-        const currencyConfigs = CURRENCY_PRICE_CONFIGS[currency] || [];
-
-        for (const [amount, label] of currencyConfigs) {
-          prices[product.type][currency].push({
-            totalAmount: amount,
-            quantity: Math.floor(amount / price.unitAmount),
-            label: label,
-            price,
-          });
-        }
-      }
-    }
+    const prices = await StripeHelper.getPrices(
+      repositoryId,
+      CURRENCY_PRICE_CONFIGS,
+    );
 
     const response: GetPricesResponse = {
       prices,
     };
-
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send({
+      success: response,
+    });
   }
 }

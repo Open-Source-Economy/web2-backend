@@ -1,4 +1,4 @@
-import { Currency, ProductType, StripePrice } from "../../model";
+import { Currency, PriceType, ProductType, StripePrice } from "../../model";
 
 export interface GetPricesParams {
   owner: string;
@@ -13,7 +13,7 @@ export interface Price {
 }
 
 export interface GetPricesResponse {
-  prices: Record<ProductType, Record<Currency, Price[]>>;
+  prices: Record<PriceType, Record<Currency, Record<ProductType, Price[]>>>;
 }
 
 export interface GetPricesBody {}

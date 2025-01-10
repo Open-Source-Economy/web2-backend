@@ -72,7 +72,7 @@ describe("UserRepositoryRepository", () => {
     // Ensure the initial preferred currency is null
     const userBeforeUpdate = await userRepo.getById(userId);
     expect(userBeforeUpdate).not.toBeNull();
-    expect(userBeforeUpdate!.preferredCurrency).toBeUndefined()
+    expect(userBeforeUpdate!.preferredCurrency).toBeUndefined();
 
     // Update the preferred currency
     const newCurrency = Currency.EUR;
@@ -85,7 +85,7 @@ describe("UserRepositoryRepository", () => {
   });
 
   it("should throw an error if the user does not exist", async () => {
-    const invalidUserId = Fixture.userId()
+    const invalidUserId = Fixture.userId();
     const newCurrency = Currency.USD;
 
     await expect(

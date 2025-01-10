@@ -1,17 +1,17 @@
-// TODO: to implement
-
 export interface GetMaintainersParams {
   owner: string;
   repo: string;
 }
 
 export interface Maintainer {
-  name: string;
+  displayName: string;
+  githubUsername: string;
+  githubAvatar: string;
+  githubPage: string;
   title: string;
-  quote: string;
-  image: string;
+  quote?: string;
   mascot: string;
-  link: string;
+  mascotAlt: string;
 }
 
 export interface GetMaintainersResponse {

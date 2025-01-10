@@ -6,6 +6,10 @@ import {
   FundIssueParams,
   FundIssueQuery,
   FundIssueResponse,
+  GetCampaignBody,
+  GetCampaignParams,
+  GetCampaignQuery,
+  GetCampaignResponse,
   GetIssueBody,
   GetIssueParams,
   GetIssueQuery,
@@ -31,6 +35,7 @@ import {
 import {
   CompanyId,
   ContributorVisibility,
+  Currency,
   IssueId,
   ManagedIssueState,
   OwnerId,
@@ -45,6 +50,7 @@ import {
   managedIssueRepo,
 } from "../db";
 import { ApiError } from "../model/error/ApiError";
+import { CURRENCY_PRICE_CONFIGS, StripeHelper } from "./stripe";
 
 export class GithubController {
   static async getOwner(
@@ -89,7 +95,7 @@ export class GithubController {
     res.status(StatusCodes.OK).send({ success: response });
   }
 
-  static async getIssues(
+  static async getAllFinancialIssues(
     req: Request<
       GetIssuesParams,
       ResponseBody<GetIssuesResponse>,
@@ -251,6 +257,44 @@ export class GithubController {
       managedIssue.requestedMilliDowAmount = req.body.milliDowAmount;
       await managedIssueRepo.update(managedIssue);
       res.status(StatusCodes.OK).send({ success: {} });
+    }
+  }
+
+  static async getCampaign(
+    req: Request<
+      GetCampaignParams,
+      ResponseBody<GetCampaignResponse>,
+      GetCampaignBody,
+      GetCampaignQuery
+    >,
+    res: Response<ResponseBody<GetCampaignResponse>>,
+  ) {
+    const { owner, repo } = req.params;
+    const repositoryId = new RepositoryId(new OwnerId(owner), repo);
+    const prices = await StripeHelper.getPrices(
+      repositoryId,
+      CURRENCY_PRICE_CONFIGS,
+    );
+
+    if (owner === "apache" && repo === "pekko") {
+      const reponse: GetCampaignResponse = {
+        raisedAmount: {
+          [Currency.USD]: 40000,
+          [Currency.EUR]: 40000,
+          [Currency.GBP]: 40000,
+          [Currency.CHF]: 40000,
+        },
+        targetAmount: {
+          [Currency.USD]: 50000,
+          [Currency.EUR]: 50000,
+          [Currency.GBP]: 50000,
+          [Currency.CHF]: 50000,
+        },
+        prices,
+      };
+      res.status(StatusCodes.OK).send({ success: reponse });
+    } else {
+      throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Not implemented yet");
     }
   }
 }
