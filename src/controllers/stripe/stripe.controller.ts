@@ -1,8 +1,4 @@
 import {
-  GetCampaignBody,
-  GetCampaignParams,
-  GetCampaignQuery,
-  GetCampaignResponse,
   GetPricesBody,
   GetPricesParams,
   GetPricesQuery,
@@ -13,7 +9,6 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { Currency, OwnerId, RepositoryId } from "../../model";
 import { StripeHelper } from "./stripe-helper";
-import { ApiError } from "../../model/error/ApiError";
 
 const LABELS = [
   "15 mDOW",

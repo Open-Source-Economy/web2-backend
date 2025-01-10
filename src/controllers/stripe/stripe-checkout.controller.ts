@@ -21,7 +21,7 @@ export class StripeCheckoutController {
    * @param req
    * @param res
    */
-  static async subscriptionCheckout(
+  static async checkout(
     req: Request<
       CheckoutParams,
       ResponseBody<CheckoutResponse>,

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { GithubController } from "../../controllers/github.controller";
+import { GithubController } from "../../controllers";
 import { isAuth } from "../../middlewares/isAuth";
 
 const router = Router();
