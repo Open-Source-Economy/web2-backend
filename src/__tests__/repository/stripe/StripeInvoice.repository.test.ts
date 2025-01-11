@@ -1,14 +1,8 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import {
-  StripeCustomerUser,
-  StripeInvoiceLine,
-  StripePriceId,
-  UserId,
-} from "../../../model";
+import { StripeInvoiceLine, StripePriceId, UserId } from "../../../model";
 import { Fixture } from "../../__helpers__/Fixture";
 import {
-  companyRepo,
-  stripeCustomerUserRepo,
+  stripeCustomerRepo,
   stripeInvoiceRepo,
   stripePriceRepo,
   stripeProductRepo,
@@ -29,7 +23,7 @@ describe("StripeInvoiceRepository", () => {
 
   describe("create", () => {
     it("should insert an invoice with lines", async () => {
-      const customerId = Fixture.stripeCustomerUserId();
+      const customerId = Fixture.stripeCustomerId();
       const invoiceId = Fixture.stripeInvoiceId();
       const productId = Fixture.stripeProductId();
       const priceId = Fixture.stripePriceId();
@@ -37,11 +31,8 @@ describe("StripeInvoiceRepository", () => {
       const stripeId1 = Fixture.stripeInvoiceLineId();
       const stripeId2 = Fixture.stripeInvoiceLineId();
 
-      // Insert user, company and customer before inserting the customer
-      await userRepo.insert(Fixture.createUser(Fixture.localUser()));
-      await companyRepo.create(Fixture.createCompanyBody());
-      const customer = new StripeCustomerUser(customerId, validUserId);
-      await stripeCustomerUserRepo.insert(customer);
+      const stripeCustomer = Fixture.stripeCustomer(customerId);
+      await stripeCustomerRepo.insert(stripeCustomer);
       await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
       await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
 
@@ -71,7 +62,7 @@ describe("StripeInvoiceRepository", () => {
     });
 
     it("should rollback transaction if inserting lines fails", async () => {
-      const customerId = Fixture.stripeCustomerUserId();
+      const customerId = Fixture.stripeCustomerId();
       const invoiceId = Fixture.stripeInvoiceId();
       const productId = Fixture.stripeProductId();
       const priceId = Fixture.stripePriceId();
@@ -80,10 +71,8 @@ describe("StripeInvoiceRepository", () => {
       const stripeId2 = Fixture.stripeInvoiceLineId();
 
       // Insert user, company and customer before inserting the customer
-      await userRepo.insert(Fixture.createUser(Fixture.localUser()));
-      await companyRepo.create(Fixture.createCompanyBody());
-      const customer = new StripeCustomerUser(customerId, validUserId);
-      await stripeCustomerUserRepo.insert(customer);
+      const stripeCustomer = Fixture.stripeCustomer(customerId);
+      await stripeCustomerRepo.insert(stripeCustomer);
       await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
       await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
 

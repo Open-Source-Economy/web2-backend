@@ -12,6 +12,7 @@ import {
   getStripeCustomerUserRepository,
   getUserCompanyRepository,
   getUserRepository,
+  stripeCustomerRepo,
 } from "../../../db";
 
 describe("StripeCustomerUserRepository", () => {
@@ -19,6 +20,8 @@ describe("StripeCustomerUserRepository", () => {
 
   let validUserId: UserId;
   let validCompanyId: CompanyId;
+  let validStripeCustomerId: StripeCustomerId = Fixture.stripeCustomerId();
+  let validStripeCustomerId2: StripeCustomerId = Fixture.stripeCustomerId();
   const companyRepo = getCompanyRepository();
   const userCompanyRepo = getUserCompanyRepository();
   const customerRepo = getStripeCustomerUserRepository();
@@ -32,28 +35,32 @@ describe("StripeCustomerUserRepository", () => {
 
     const validCompany = await companyRepo.create(Fixture.createCompanyBody());
     validCompanyId = validCompany.id;
+
+    const stripeCustomer = Fixture.stripeCustomer(validStripeCustomerId);
+    await stripeCustomerRepo.insert(stripeCustomer);
+    const stripeCustomer2 = Fixture.stripeCustomer(validStripeCustomerId2);
+    await stripeCustomerRepo.insert(stripeCustomer2);
   });
 
   describe("create", () => {
     it("should work without a companyId", async () => {
-      const customerId = Fixture.stripeCustomerUserId();
-
       // Insert user before inserting the customer
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
 
       // No companyId provided
-      const customer = new StripeCustomerUser(customerId, validUserId);
+      const customer = new StripeCustomerUser(
+        validStripeCustomerId,
+        validUserId,
+      );
       const created = await customerRepo.insert(customer);
 
       expect(created).toEqual(customer);
 
-      const found = await customerRepo.getByStripeId(customerId);
+      const found = await customerRepo.getByStripeId(validStripeCustomerId);
       expect(found).toEqual(customer);
     });
 
     it("should work with a companyId", async () => {
-      const customerId = Fixture.stripeCustomerUserId();
-
       // Insert user before inserting the customer
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
 
@@ -64,7 +71,7 @@ describe("StripeCustomerUserRepository", () => {
       );
 
       const customer = new StripeCustomerUser(
-        customerId,
+        validStripeCustomerId,
         validUserId,
         validCompanyId,
       );
@@ -72,13 +79,16 @@ describe("StripeCustomerUserRepository", () => {
 
       expect(created).toEqual(customer);
 
-      const found = await customerRepo.getByStripeId(customerId);
+      const found = await customerRepo.getByStripeId(validStripeCustomerId);
       expect(found).toEqual(customer);
     });
 
     it("should fail with foreign key constraint error if user is not inserted", async () => {
-      const customerId = new StripeCustomerId("123");
-      const customer = new StripeCustomerUser(customerId, Fixture.userId()); // no user in DB
+      const validStripeCustomerId = new StripeCustomerId("123");
+      const customer = new StripeCustomerUser(
+        validStripeCustomerId,
+        Fixture.userId(),
+      ); // no user in DB
 
       try {
         await customerRepo.insert(customer);
@@ -106,11 +116,14 @@ describe("StripeCustomerUserRepository", () => {
       // Insert user before inserting the customer
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
 
-      const customerId1 = new StripeCustomerId("123");
-      const customerId2 = new StripeCustomerId("abc");
-
-      const customer1 = new StripeCustomerUser(customerId1, validUserId);
-      const customer2 = new StripeCustomerUser(customerId2, validUserId);
+      const customer1 = new StripeCustomerUser(
+        validStripeCustomerId,
+        validUserId,
+      );
+      const customer2 = new StripeCustomerUser(
+        validStripeCustomerId2,
+        validUserId,
+      );
 
       await customerRepo.insert(customer1);
       await customerRepo.insert(customer2);

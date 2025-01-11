@@ -1,38 +1,26 @@
 import {
-  stripeCustomerUserRepo,
+  stripeCustomerRepo,
   stripeInvoiceLineRepo,
   stripeInvoiceRepo,
   stripePriceRepo,
   stripeProductRepo,
-  userRepo,
 } from "../../../db";
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
-import {
-  StripeCustomerUser,
-  StripeInvoiceLineId,
-  UserId,
-} from "../../../model";
+import { StripeInvoiceLineId, UserId } from "../../../model";
 
 describe("StripeInvoiceLineRepository", () => {
   setupTestDB();
 
   let validUserId: UserId;
-  const validCustomerId = Fixture.stripeCustomerUserId();
+  const validCustomerId = Fixture.stripeCustomerId();
   const validProductId = Fixture.stripeProductId();
   const validPriceId = Fixture.stripePriceId();
   const validInvoiceId = Fixture.stripeInvoiceId();
 
   beforeEach(async () => {
-    const validUser = await userRepo.insert(
-      Fixture.createUser(Fixture.localUser()),
-    );
-    validUserId = validUser.id;
-
-    await userRepo.insert(Fixture.createUser(Fixture.localUser()));
-    await stripeCustomerUserRepo.insert(
-      new StripeCustomerUser(validCustomerId, validUserId),
-    );
+    const stripeCustomer = Fixture.stripeCustomer(validCustomerId);
+    await stripeCustomerRepo.insert(stripeCustomer);
     await stripeInvoiceRepo.insert(
       Fixture.stripeInvoice(validInvoiceId, validCustomerId, []),
     );
@@ -62,14 +50,10 @@ describe("StripeInvoiceLineRepository", () => {
     });
 
     it("should fail with foreign key constraint error if invoice or customer is not inserted", async () => {
-      const customerId = Fixture.stripeCustomerUserId();
+      const customerId = Fixture.stripeCustomerId();
       const invoiceId = Fixture.stripeInvoiceId();
       const productId = Fixture.stripeProductId();
 
-      await userRepo.insert(Fixture.createUser(Fixture.localUser()));
-      await stripeCustomerUserRepo.insert(
-        new StripeCustomerUser(customerId, validUserId),
-      );
       await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
 
       const invoiceLineId = Fixture.stripeInvoiceLineId();

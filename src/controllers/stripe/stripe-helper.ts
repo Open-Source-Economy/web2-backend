@@ -1,5 +1,6 @@
 import {
   addressRepo,
+  stripeCustomerRepo,
   stripeCustomerUserRepo,
   stripePriceRepo,
   stripeProductRepo,
@@ -15,6 +16,7 @@ import {
   ProductType,
   Repository,
   RepositoryId,
+  StripeCustomer,
   StripeCustomerId,
   StripeCustomerUser,
   StripePrice,
@@ -26,6 +28,7 @@ import { StatusCodes } from "http-status-codes";
 import { stripe } from "./index";
 import { logger } from "../../config";
 import { Price } from "../../dtos";
+import { ValidationError } from "../../model/error";
 
 // 1 DoW - recurring payment: 1200$
 // 1 DoW - one-time payment: 1500$
@@ -125,11 +128,16 @@ export class StripeHelper {
 
       const customer: Stripe.Customer =
         await stripe.customers.create(customerCreateParams);
+      const stripeCustomer = StripeCustomer.fromStripeApi(customer);
+      if (stripeCustomer instanceof ValidationError) {
+        throw stripeCustomer;
+      }
       const stripeCustomerUser: StripeCustomerUser = new StripeCustomerUser(
         new StripeCustomerId(customer.id),
         user.id,
       );
 
+      await stripeCustomerRepo.insert(stripeCustomer);
       await stripeCustomerUserRepo.insert(stripeCustomerUser);
 
       return stripeCustomerUser;

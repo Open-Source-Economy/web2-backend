@@ -31,6 +31,7 @@ import {
   RepositoryUserPermissionToken,
   RepositoryUserPermissionTokenId,
   RepositoryUserRole,
+  StripeCustomer,
   StripeCustomerId,
   StripeInvoice,
   StripeInvoiceId,
@@ -225,10 +226,29 @@ export const Fixture = {
     );
   },
 
-  stripeCustomerUserId(): StripeCustomerId {
+  stripeCustomerId(): StripeCustomerId {
     const uuid = this.uuid();
     return new StripeCustomerId(uuid);
   },
+
+  stripeCustomer(
+    stripeId: StripeCustomerId,
+    currency: string = "USD",
+    email: string = "default@example.com",
+    name: string = "Default Name",
+    phone?: string,
+    preferredLocales: string[] = [],
+  ): StripeCustomer {
+    return new StripeCustomer(
+      stripeId,
+      currency,
+      email,
+      name,
+      phone,
+      preferredLocales,
+    );
+  },
+
   stripeInvoiceId(): StripeInvoiceId {
     const uuid = this.uuid();
     return new StripeInvoiceId(uuid);

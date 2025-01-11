@@ -56,6 +56,7 @@ export class StripeCheckoutController {
     const params: Stripe.Checkout.SessionCreateParams = {
       mode: req.body.mode,
       line_items: items,
+      customer: customer?.stripeCustomerId.id,
       customer_email: req.user?.email() ?? undefined,
       // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
       // the actual Session ID is returned in the query parameter when your customer
