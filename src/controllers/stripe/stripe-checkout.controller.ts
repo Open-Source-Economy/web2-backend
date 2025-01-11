@@ -12,7 +12,7 @@ import { ApiError } from "../../model/error/ApiError";
 import { StripeHelper } from "./stripe-helper";
 import { stripe } from "./index";
 import { logger } from "../../config";
-import { StripeCustomer } from "../../model";
+import { StripeCustomerUser } from "../../model";
 
 export class StripeCheckoutController {
   // Save payment details: https://docs.stripe.com/payments/checkout/save-during-payment
@@ -32,17 +32,18 @@ export class StripeCheckoutController {
     >,
     res: Response<ResponseBody<CheckoutResponse>>,
   ) {
-    let customer: StripeCustomer | null = null;
+    let customer: StripeCustomerUser | null = null;
     if (req.user) {
       logger.debug("Checkout request received", req.body);
-      const stripeCustomer = await StripeHelper.getOrCreateStripeCustomer(
-        req.user,
-        req.body.countryCode,
-      );
-      if (stripeCustomer instanceof ApiError) {
-        throw stripeCustomer;
+      const stripeCustomerUser =
+        await StripeHelper.getOrCreateStripeCustomerUser(
+          req.user,
+          req.body.countryCode,
+        );
+      if (stripeCustomerUser instanceof ApiError) {
+        throw stripeCustomerUser;
       } else {
-        customer = stripeCustomer;
+        customer = stripeCustomerUser;
       }
     }
 

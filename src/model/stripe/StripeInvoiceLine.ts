@@ -81,7 +81,7 @@ export class StripeInvoiceLine {
     const validator = new Validator(row);
     validator.requiredString("stripe_id");
     validator.requiredString("invoice_id");
-    validator.requiredString("customer_id");
+    validator.requiredString("stripe_customer_id");
     validator.requiredString("product_id");
     validator.requiredString("price_id");
     validator.requiredNumber("quantity");
@@ -93,7 +93,7 @@ export class StripeInvoiceLine {
     return new StripeInvoiceLine(
       new StripeInvoiceLineId(row.stripe_id),
       new StripeInvoiceId(row.invoice_id),
-      new StripeCustomerId(row.customer_id),
+      new StripeCustomerId(row.stripe_customer_id),
       new StripeProductId(row.product_id),
       new StripePriceId(row.price_id),
       row.quantity,

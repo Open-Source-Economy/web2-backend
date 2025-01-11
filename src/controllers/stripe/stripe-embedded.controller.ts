@@ -32,12 +32,13 @@ export class StripeEmbeddedController {
     if (!req.user) {
       return new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
     } else {
-      const stripeCustomer = await StripeHelper.getOrCreateStripeCustomer(
-        req.user,
-        req.body.countryCode,
-      );
-      if (stripeCustomer instanceof ApiError) {
-        throw stripeCustomer;
+      const stripeCustomerUser =
+        await StripeHelper.getOrCreateStripeCustomerUser(
+          req.user,
+          req.body.countryCode,
+        );
+      if (stripeCustomerUser instanceof ApiError) {
+        throw stripeCustomerUser;
       }
 
       const items: Stripe.SubscriptionCreateParams.Item[] = [];
@@ -50,7 +51,7 @@ export class StripeEmbeddedController {
       // so we can pass it to the front end to confirm the payment
       const subscription: Stripe.Subscription =
         await stripe.subscriptions.create({
-          customer: stripeCustomer.stripeId.toString(),
+          customer: stripeCustomerUser.stripeCustomerId.toString(),
           items: items,
           payment_behavior: "default_incomplete",
           payment_settings: { save_default_payment_method: "on_subscription" },
@@ -82,7 +83,7 @@ export class StripeEmbeddedController {
     // Step 4: Request the payment intent for the invoice.
     const invoice: Stripe.Response<Stripe.Invoice> =
       await stripe.invoices.create({
-        customer: req.body.stripeCustomerId.toString(),
+        customer: req.body.stripeCustomerUserId.toString(),
         automatic_tax: {
           enabled: false,
         },
@@ -90,7 +91,7 @@ export class StripeEmbeddedController {
 
     for (const item of req.body.priceItems) {
       await stripe.invoiceItems.create({
-        customer: req.body.stripeCustomerId.toString(),
+        customer: req.body.stripeCustomerUserId.toString(),
         invoice: invoice.id,
         price: item.priceId.toString(),
         quantity: item.quantity,

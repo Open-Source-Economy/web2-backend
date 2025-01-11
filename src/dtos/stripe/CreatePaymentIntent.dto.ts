@@ -9,7 +9,7 @@ export interface CreatePaymentIntentResponse {
 }
 
 export interface CreatePaymentIntentBody {
-  stripeCustomerId: StripeCustomerId;
+  stripeCustomerUserId: StripeCustomerId;
   priceItems: PriceItem[];
 }
 

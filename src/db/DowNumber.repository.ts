@@ -81,10 +81,10 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
           FROM stripe_invoice_line sl
                    JOIN stripe_product sp ON sl.product_id = sp.stripe_id
                    JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id
-          WHERE sl.customer_id IN
-                (SELECT sc.stripe_id
+          WHERE sl.stripe_customer_id IN
+                (SELECT sc.stripe_customer_id
                  FROM user_company uc
-                          JOIN stripe_customer sc ON uc.company_id = $1 AND uc.user_id = sc.user_id)
+                          JOIN stripe_customer_user sc ON uc.company_id = $1 AND uc.user_id = sc.user_id)
             AND sp.type = '${ProductType.milliDow}'
             AND si.paid = TRUE
       `;
@@ -95,7 +95,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
         FROM stripe_invoice_line sl
                JOIN stripe_product sp ON sl.product_id = sp.stripe_id
                JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id
-               JOIN stripe_customer sc ON sl.customer_id = sc.stripe_id
+               JOIN stripe_customer_user sc ON sl.stripe_customer_id = sc.stripe_customer_id
         WHERE sc.user_id = $1
           AND sp.type = '${ProductType.milliDow}'
           AND si.paid = true

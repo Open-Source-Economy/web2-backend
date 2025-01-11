@@ -59,7 +59,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
 
   async getAll(): Promise<StripeInvoiceLine[]> {
     const result = await this.pool.query(`
-            SELECT stripe_id, invoice_id, customer_id, product_id, price_id, quantity
+            SELECT stripe_id, invoice_id, stripe_customer_id, product_id, price_id, quantity
             FROM stripe_invoice_line
         `);
 
@@ -69,7 +69,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
   async getById(id: StripeInvoiceLineId): Promise<StripeInvoiceLine | null> {
     const result = await this.pool.query(
       `
-            SELECT stripe_id, invoice_id, customer_id, product_id, price_id, quantity
+            SELECT stripe_id, invoice_id, stripe_customer_id, product_id, price_id, quantity
             FROM stripe_invoice_line
             WHERE stripe_id = $1
         `,
@@ -82,7 +82,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
   async getByInvoiceId(id: StripeInvoiceId): Promise<StripeInvoiceLine[]> {
     const result = await this.pool.query(
       `
-            SELECT stripe_id, invoice_id, customer_id, product_id, price_id, quantity
+            SELECT stripe_id, invoice_id, stripe_customer_id, product_id, price_id, quantity
             FROM stripe_invoice_line
             WHERE invoice_id = $1
         `,
@@ -99,9 +99,9 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
       const result = await client.query(
         `
                 INSERT INTO stripe_invoice_line (
-                    stripe_id, invoice_id, customer_id, product_id, price_id, quantity
+                    stripe_id, invoice_id, stripe_customer_id, product_id, price_id, quantity
                 ) VALUES ($1, $2, $3, $4, $5, $6)
-                RETURNING stripe_id, invoice_id, customer_id, product_id, price_id, quantity
+                RETURNING stripe_id, invoice_id, stripe_customer_id, product_id, price_id, quantity
             `,
         [
           invoiceLine.stripeId.toString(),

@@ -1,6 +1,6 @@
 import {
   addressRepo,
-  stripeCustomerRepo,
+  stripeCustomerUserRepo,
   stripePriceRepo,
   stripeProductRepo,
   userCompanyRepo,
@@ -15,8 +15,8 @@ import {
   ProductType,
   Repository,
   RepositoryId,
-  StripeCustomer,
   StripeCustomerId,
+  StripeCustomerUser,
   StripePrice,
   StripeProduct,
   StripeProductId,
@@ -73,11 +73,11 @@ function getPrices($price: number): Record<Currency, number> {
 export class StripeHelper {
   // to read:
   // Subscriptions with multiple products: https://docs.stripe.com/billing/subscriptions/multiple-products
-  static async getOrCreateStripeCustomer(
+  static async getOrCreateStripeCustomerUser(
     user: Express.User,
     countryCode: string | null,
-  ): Promise<StripeCustomer | ApiError> {
-    const exiting = await stripeCustomerRepo.getByUserId(user.id);
+  ): Promise<StripeCustomerUser | ApiError> {
+    const exiting = await stripeCustomerUserRepo.getByUserId(user.id);
 
     if (exiting) {
       logger.debug("Stripe customer already exists", exiting);
@@ -125,14 +125,14 @@ export class StripeHelper {
 
       const customer: Stripe.Customer =
         await stripe.customers.create(customerCreateParams);
-      const stripeCustomer: StripeCustomer = new StripeCustomer(
+      const stripeCustomerUser: StripeCustomerUser = new StripeCustomerUser(
         new StripeCustomerId(customer.id),
         user.id,
       );
 
-      await stripeCustomerRepo.insert(stripeCustomer);
+      await stripeCustomerUserRepo.insert(stripeCustomerUser);
 
-      return stripeCustomer;
+      return stripeCustomerUser;
     }
   }
 

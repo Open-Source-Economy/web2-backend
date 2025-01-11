@@ -1,26 +1,26 @@
 import { Pool } from "pg";
-import { StripeCustomer, StripeCustomerId, UserId } from "../../model";
+import { StripeCustomerId, StripeCustomerUser, UserId } from "../../model";
 import { getPool } from "../../dbPool";
 
-export function getStripeCustomerRepository(): StripeCustomerRepository {
-  return new StripeCustomerRepositoryImpl(getPool());
+export function getStripeCustomerUserRepository(): StripeCustomerUserRepository {
+  return new StripeCustomerUserRepositoryImpl(getPool());
 }
 
-export interface StripeCustomerRepository {
-  insert(customer: StripeCustomer): Promise<StripeCustomer>;
-  getByStripeId(id: StripeCustomerId): Promise<StripeCustomer | null>;
-  getByUserId(id: UserId): Promise<StripeCustomer | null>;
-  getAll(): Promise<StripeCustomer[]>;
+export interface StripeCustomerUserRepository {
+  insert(customer: StripeCustomerUser): Promise<StripeCustomerUser>;
+  getByStripeId(id: StripeCustomerId): Promise<StripeCustomerUser | null>;
+  getByUserId(id: UserId): Promise<StripeCustomerUser | null>;
+  getAll(): Promise<StripeCustomerUser[]>;
 }
 
-class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
+class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
   private pool: Pool;
 
   constructor(pool: Pool) {
     this.pool = pool;
   }
 
-  private getOneCustomer(rows: any[]): StripeCustomer {
+  private getOneCustomer(rows: any[]): StripeCustomerUser {
     const customer = this.getOptionalCustomer(rows);
     if (customer === null) {
       throw new Error("Customer not found");
@@ -29,13 +29,13 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
     }
   }
 
-  private getOptionalCustomer(rows: any[]): StripeCustomer | null {
+  private getOptionalCustomer(rows: any[]): StripeCustomerUser | null {
     if (rows.length === 0) {
       return null;
     } else if (rows.length > 1) {
       throw new Error("Multiple customers found");
     } else {
-      const customer = StripeCustomer.fromBackend(rows[0]);
+      const customer = StripeCustomerUser.fromBackend(rows[0]);
       if (customer instanceof Error) {
         throw customer;
       }
@@ -43,9 +43,9 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
     }
   }
 
-  private getCustomerList(rows: any[]): StripeCustomer[] {
+  private getCustomerList(rows: any[]): StripeCustomerUser[] {
     return rows.map((r) => {
-      const customer = StripeCustomer.fromBackend(r);
+      const customer = StripeCustomerUser.fromBackend(r);
       if (customer instanceof Error) {
         throw customer;
       }
@@ -53,21 +53,23 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
     });
   }
 
-  async getAll(): Promise<StripeCustomer[]> {
+  async getAll(): Promise<StripeCustomerUser[]> {
     const result = await this.pool.query(`
       SELECT *
-      FROM stripe_customer
+      FROM stripe_customer_user
     `);
 
     return this.getCustomerList(result.rows);
   }
 
-  async getByStripeId(id: StripeCustomerId): Promise<StripeCustomer | null> {
+  async getByStripeId(
+    id: StripeCustomerId,
+  ): Promise<StripeCustomerUser | null> {
     const result = await this.pool.query(
       `
         SELECT *
-        FROM stripe_customer
-        WHERE stripe_id = $1
+        FROM stripe_customer_user
+        WHERE stripe_customer_id = $1
       `,
       [id.toString()],
     );
@@ -75,11 +77,11 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
     return this.getOptionalCustomer(result.rows);
   }
 
-  async getByUserId(id: UserId): Promise<StripeCustomer | null> {
+  async getByUserId(id: UserId): Promise<StripeCustomerUser | null> {
     const result = await this.pool.query(
       `
         SELECT *
-        FROM stripe_customer
+        FROM stripe_customer_user
         WHERE user_id = $1
       `,
       [id.toString()],
@@ -88,7 +90,7 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
     return this.getOptionalCustomer(result.rows);
   }
 
-  async insert(customer: StripeCustomer): Promise<StripeCustomer> {
+  async insert(customer: StripeCustomerUser): Promise<StripeCustomerUser> {
     const client = await this.pool.connect();
 
     try {
@@ -96,12 +98,12 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
 
       const result = await client.query(
         `
-          INSERT INTO stripe_customer (stripe_id, user_id, company_id)
+          INSERT INTO stripe_customer_user (stripe_customer_id, user_id, company_id)
           VALUES ($1, $2, $3)
           RETURNING *
         `,
         [
-          customer.stripeId.toString(),
+          customer.stripeCustomerId.toString(),
           customer.userId.toString(),
           customer.companyId?.toString() ?? null,
         ],

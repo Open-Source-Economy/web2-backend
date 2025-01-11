@@ -120,7 +120,7 @@ export class StripeInvoice {
   ): StripeInvoice | ValidationError {
     const validator = new Validator(row);
     validator.requiredString("stripe_id");
-    validator.requiredString("customer_id");
+    validator.requiredString("stripe_customer_id");
     validator.requiredBoolean("paid");
     validator.requiredString("account_country");
     validator.requiredString("currency");
@@ -137,7 +137,7 @@ export class StripeInvoice {
     }
 
     const invoiceId = new StripeInvoiceId(row.stripe_id);
-    const customerId = new StripeCustomerId(row.customer_id);
+    const customerId = new StripeCustomerId(row.stripe_customer_id);
     return new StripeInvoice(
       invoiceId,
       customerId,

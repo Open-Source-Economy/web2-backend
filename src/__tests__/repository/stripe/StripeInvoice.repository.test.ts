@@ -1,6 +1,6 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import {
-  StripeCustomer,
+  StripeCustomerUser,
   StripeInvoiceLine,
   StripePriceId,
   UserId,
@@ -8,7 +8,7 @@ import {
 import { Fixture } from "../../__helpers__/Fixture";
 import {
   companyRepo,
-  stripeCustomerRepo,
+  stripeCustomerUserRepo,
   stripeInvoiceRepo,
   stripePriceRepo,
   stripeProductRepo,
@@ -29,7 +29,7 @@ describe("StripeInvoiceRepository", () => {
 
   describe("create", () => {
     it("should insert an invoice with lines", async () => {
-      const customerId = Fixture.stripeCustomerId();
+      const customerId = Fixture.stripeCustomerUserId();
       const invoiceId = Fixture.stripeInvoiceId();
       const productId = Fixture.stripeProductId();
       const priceId = Fixture.stripePriceId();
@@ -40,8 +40,8 @@ describe("StripeInvoiceRepository", () => {
       // Insert user, company and customer before inserting the customer
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
       await companyRepo.create(Fixture.createCompanyBody());
-      const customer = new StripeCustomer(customerId, validUserId);
-      await stripeCustomerRepo.insert(customer);
+      const customer = new StripeCustomerUser(customerId, validUserId);
+      await stripeCustomerUserRepo.insert(customer);
       await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
       await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
 
@@ -71,7 +71,7 @@ describe("StripeInvoiceRepository", () => {
     });
 
     it("should rollback transaction if inserting lines fails", async () => {
-      const customerId = Fixture.stripeCustomerId();
+      const customerId = Fixture.stripeCustomerUserId();
       const invoiceId = Fixture.stripeInvoiceId();
       const productId = Fixture.stripeProductId();
       const priceId = Fixture.stripePriceId();
@@ -82,8 +82,8 @@ describe("StripeInvoiceRepository", () => {
       // Insert user, company and customer before inserting the customer
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
       await companyRepo.create(Fixture.createCompanyBody());
-      const customer = new StripeCustomer(customerId, validUserId);
-      await stripeCustomerRepo.insert(customer);
+      const customer = new StripeCustomerUser(customerId, validUserId);
+      await stripeCustomerUserRepo.insert(customer);
       await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
       await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
 

@@ -225,7 +225,7 @@ export const Fixture = {
     );
   },
 
-  stripeCustomerId(): StripeCustomerId {
+  stripeCustomerUserId(): StripeCustomerId {
     const uuid = this.uuid();
     return new StripeCustomerId(uuid);
   },

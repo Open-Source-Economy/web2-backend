@@ -1,5 +1,5 @@
 import {
-  stripeCustomerRepo,
+  stripeCustomerUserRepo,
   stripeInvoiceLineRepo,
   stripeInvoiceRepo,
   stripePriceRepo,
@@ -8,13 +8,17 @@ import {
 } from "../../../db";
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
-import { StripeCustomer, StripeInvoiceLineId, UserId } from "../../../model";
+import {
+  StripeCustomerUser,
+  StripeInvoiceLineId,
+  UserId,
+} from "../../../model";
 
 describe("StripeInvoiceLineRepository", () => {
   setupTestDB();
 
   let validUserId: UserId;
-  const validCustomerId = Fixture.stripeCustomerId();
+  const validCustomerId = Fixture.stripeCustomerUserId();
   const validProductId = Fixture.stripeProductId();
   const validPriceId = Fixture.stripePriceId();
   const validInvoiceId = Fixture.stripeInvoiceId();
@@ -26,8 +30,8 @@ describe("StripeInvoiceLineRepository", () => {
     validUserId = validUser.id;
 
     await userRepo.insert(Fixture.createUser(Fixture.localUser()));
-    await stripeCustomerRepo.insert(
-      new StripeCustomer(validCustomerId, validUserId),
+    await stripeCustomerUserRepo.insert(
+      new StripeCustomerUser(validCustomerId, validUserId),
     );
     await stripeInvoiceRepo.insert(
       Fixture.stripeInvoice(validInvoiceId, validCustomerId, []),
@@ -58,13 +62,13 @@ describe("StripeInvoiceLineRepository", () => {
     });
 
     it("should fail with foreign key constraint error if invoice or customer is not inserted", async () => {
-      const customerId = Fixture.stripeCustomerId();
+      const customerId = Fixture.stripeCustomerUserId();
       const invoiceId = Fixture.stripeInvoiceId();
       const productId = Fixture.stripeProductId();
 
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
-      await stripeCustomerRepo.insert(
-        new StripeCustomer(customerId, validUserId),
+      await stripeCustomerUserRepo.insert(
+        new StripeCustomerUser(customerId, validUserId),
       );
       await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
 

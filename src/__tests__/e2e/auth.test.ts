@@ -2,6 +2,7 @@ import request from "supertest";
 import { type Express } from "express";
 import { createApp } from "../../createApp";
 import { setupTestDB } from "../__helpers__/jest.setup";
+import { logger } from "../../config";
 
 describe("/api/v1/auth", () => {
   let app: Express = createApp();
@@ -27,8 +28,8 @@ describe("/api/v1/auth", () => {
       .get("/api/v1/auth/status")
       .set("Cookie", registerResponse.headers["set-cookie"]);
 
-    // console.log("Response Body:", response.body);
-    // console.log("Response Status:", response.status);
+    // logger.info("Response Body:", response.body);
+    // logger.info("Response Status:", response.status);
 
     expect(response.statusCode).toBe(200);
 
@@ -57,8 +58,8 @@ describe("/api/v1/auth", () => {
       password: password,
     });
 
-    console.log("Response Body:", loginResponse.body);
-    console.log("Response Status:", loginResponse.status);
+    logger.info("Response Body:", loginResponse.body);
+    logger.info("Response Status:", loginResponse.status);
 
     expect(loginResponse.status).toBe(200);
 
@@ -68,8 +69,8 @@ describe("/api/v1/auth", () => {
       .get("/api/v1/auth/status")
       .set("Cookie", loginResponse.headers["set-cookie"]);
 
-    // console.log("Response Body:", response.body);
-    // console.log("Response Status:", response.status);
+    // logger.info("Response Body:", response.body);
+    // logger.info("Response Status:", response.status);
 
     expect(response.statusCode).toBe(200);
 

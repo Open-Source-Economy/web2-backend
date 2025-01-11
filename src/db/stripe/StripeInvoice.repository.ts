@@ -64,7 +64,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
     const result = await this.pool.query(
       `
                 SELECT stripe_id,
-                       customer_id,
+                       stripe_customer_id,
                        paid,
                        account_country,
                        currency,
@@ -98,11 +98,11 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
 
       const result = await client.query(
         `
-                    INSERT INTO stripe_invoice (stripe_id, customer_id, paid, account_country, currency, total,
+                    INSERT INTO stripe_invoice (stripe_id, stripe_customer_id, paid, account_country, currency, total,
                                                 total_excl_tax, subtotal, subtotal_excl_tax, hosted_invoice_url,
                                                 invoice_pdf)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                    RETURNING stripe_id, customer_id, paid, account_country, currency, total, total_excl_tax, subtotal, subtotal_excl_tax, hosted_invoice_url, invoice_pdf
+                    RETURNING stripe_id, stripe_customer_id, paid, account_country, currency, total, total_excl_tax, subtotal, subtotal_excl_tax, hosted_invoice_url, invoice_pdf
                 `,
         [
           invoice.id.toString(),
@@ -123,7 +123,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
       for (const line of invoice.lines) {
         await client.query(
           `
-                        INSERT INTO stripe_invoice_line (stripe_id, invoice_id, customer_id, product_id, price_id,
+                        INSERT INTO stripe_invoice_line (stripe_id, invoice_id, stripe_customer_id, product_id, price_id,
                                                          quantity)
                         VALUES ($1, $2, $3, $4, $5, $6)
                     `,
@@ -157,8 +157,8 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
         `
                 SELECT *
                 FROM stripe_invoice
-                WHERE customer_id IN (
-                    SELECT stripe_id FROM stripe_customer WHERE user_id IN (
+                WHERE stripe_customer_id IN (
+                    SELECT stripe_id FROM stripe_customer_user WHERE user_id IN (
                         SELECT user_id FROM user_company WHERE company_id = $1
                     )
                 ) AND paid = TRUE
@@ -170,8 +170,8 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
         `
                 SELECT *
                 FROM stripe_invoice
-                WHERE customer_id IN (
-                    SELECT stripe_id FROM stripe_customer WHERE user_id = $1
+                WHERE stripe_customer_id IN (
+                    SELECT stripe_id FROM stripe_customer_user WHERE user_id = $1
                 ) AND paid = TRUE
                 `,
         [id.toString()],
