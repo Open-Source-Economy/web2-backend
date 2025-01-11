@@ -1,5 +1,4 @@
 import {
-  addressRepo,
   stripeCustomerRepo,
   stripeCustomerUserRepo,
   stripePriceRepo,
@@ -93,34 +92,22 @@ export class StripeHelper {
           StatusCodes.NOT_IMPLEMENTED,
           "Multiple companies not supported",
         );
+      } else if (companies.length === 1) {
+        return new ApiError(
+          StatusCodes.NOT_IMPLEMENTED,
+          "Company user not supported yes ",
+        );
+
+        // const address = await addressRepo.getCompanyUserAddress(user.id);
       }
 
-      let description: string;
-      if (companies.length === 1) {
-        const company = companies[0];
-        description = company[0].toString();
-      } else {
-        description = user.id.toString();
-      }
-
-      const address = await addressRepo.getCompanyUserAddress(user.id);
-      let stripeAddress: Stripe.Emptyable<Stripe.AddressParam>;
-      if (address) {
-        stripeAddress = address;
-      } else {
-        stripeAddress = {
-          country: countryCode ?? undefined,
-        };
-      }
-
-      let email: string | undefined;
-      if (companies.length === 0) {
-        email = user.email() ?? undefined;
-      }
+      let stripeAddress: Stripe.Emptyable<Stripe.AddressParam> = {
+        country: countryCode ?? undefined,
+      };
 
       const customerCreateParams: Stripe.CustomerCreateParams = {
-        description: description,
-        email: email,
+        description: user.id.toString(),
+        email: user.email() ?? undefined,
         address: stripeAddress,
       };
 
@@ -129,9 +116,7 @@ export class StripeHelper {
       const customer: Stripe.Customer =
         await stripe.customers.create(customerCreateParams);
       const stripeCustomer = StripeCustomer.fromStripeApi(customer);
-      if (stripeCustomer instanceof ValidationError) {
-        throw stripeCustomer;
-      }
+      if (stripeCustomer instanceof ValidationError) throw stripeCustomer;
       const stripeCustomerUser: StripeCustomerUser = new StripeCustomerUser(
         new StripeCustomerId(customer.id),
         user.id,

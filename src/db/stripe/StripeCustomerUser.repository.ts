@@ -98,15 +98,11 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
 
       const result = await client.query(
         `
-          INSERT INTO stripe_customer_user (stripe_customer_id, user_id, company_id)
-          VALUES ($1, $2, $3)
+          INSERT INTO stripe_customer_user (stripe_customer_id, user_id)
+          VALUES ($1, $2)
           RETURNING *
         `,
-        [
-          customer.stripeCustomerId.toString(),
-          customer.userId.toString(),
-          customer.companyId?.toString() ?? null,
-        ],
+        [customer.stripeCustomerId.toString(), customer.userId.toString()],
       );
 
       await client.query("COMMIT");

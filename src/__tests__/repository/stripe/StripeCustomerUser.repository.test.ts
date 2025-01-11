@@ -73,7 +73,6 @@ describe("StripeCustomerUserRepository", () => {
       const customer = new StripeCustomerUser(
         validStripeCustomerId,
         validUserId,
-        validCompanyId,
       );
       const created = await customerRepo.insert(customer);
 
