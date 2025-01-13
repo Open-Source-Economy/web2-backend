@@ -139,7 +139,6 @@ export class StripeWebhookController {
             await StripeWebhookController.createAddressAndStripeCustomer(
               email,
               session.customer_details,
-              currency,
             );
           await StripeWebhookController.saveAddressAndStripeCustomer(
             customerId,
@@ -155,7 +154,6 @@ export class StripeWebhookController {
   private static async createAddressAndStripeCustomer(
     email: string | null,
     customerDetails: Stripe.Checkout.Session.CustomerDetails | null,
-    currency?: string,
   ): Promise<StripeCustomerId> {
     let stripeAddress: Stripe.Emptyable<Stripe.AddressParam> = {
       city: customerDetails?.address?.city ?? undefined,

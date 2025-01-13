@@ -48,9 +48,12 @@ import {
   issueFundingRepo,
   issueRepository,
   managedIssueRepo,
+  stripeMiscellaneousRepository,
 } from "../db";
 import { ApiError } from "../model/error/ApiError";
 import { CURRENCY_PRICE_CONFIGS, StripeHelper } from "./stripe";
+import { currencyAPI } from "../services";
+import { logger } from "../config";
 
 export class GithubController {
   static async getOwner(
@@ -276,14 +279,41 @@ export class GithubController {
       CURRENCY_PRICE_CONFIGS,
     );
 
+    const raisedAmountPerCurrency =
+      await stripeMiscellaneousRepository.getRaisedAmountPerCurrency(
+        repositoryId,
+      );
+
+    const raisedAmount: Record<Currency, number> = Object.values(
+      Currency,
+    ).reduce(
+      (acc, currency) => {
+        acc[currency] = 0;
+        return acc;
+      },
+      {} as Record<Currency, number>,
+    );
+
+    // For each target currency
+    Object.values(Currency).forEach((targetCurrency) => {
+      // Sum up converted amounts from all source currencies
+      Object.entries(raisedAmountPerCurrency).forEach(
+        ([sourceCurrency, amount]) => {
+          raisedAmount[targetCurrency] += currencyAPI.convertPrice(
+            amount,
+            sourceCurrency as Currency,
+            targetCurrency as Currency,
+          );
+        },
+      );
+    });
+
+    logger.debug(`Raised amount per currency`, raisedAmountPerCurrency);
+    logger.debug(`Raised amount`, raisedAmount);
+
     if (owner === "apache" && repo === "pekko") {
       const response: GetCampaignResponse = {
-        raisedAmount: {
-          [Currency.USD]: 40000,
-          [Currency.EUR]: 40000,
-          [Currency.GBP]: 40000,
-          [Currency.CHF]: 40000,
-        },
+        raisedAmount: raisedAmount,
         targetAmount: {
           [Currency.USD]: 50000,
           [Currency.EUR]: 50000,

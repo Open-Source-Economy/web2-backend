@@ -28,6 +28,7 @@ import { stripe } from "./index";
 import { logger } from "../../config";
 import { Price } from "../../dtos";
 import { ValidationError } from "../../model/error";
+import { currencyAPI } from "../../services";
 
 // 1 DoW - recurring payment: 1200$
 // 1 DoW - one-time payment: 1500$
@@ -47,26 +48,12 @@ const donationUnits: Record<Currency, number> = {
   [Currency.CHF]: 100,
 };
 
-// USD to EUR, GBP, CHF
-// Ex: 1 USD = 0.8 GBP
-const conversionRates: Record<Currency, number> = {
-  [Currency.USD]: 1,
-  [Currency.EUR]: 1,
-  [Currency.GBP]: 0.8,
-  [Currency.CHF]: 0.9,
-};
-
-function getConvertedPrice(usdPrice: number, currency: Currency): number {
-  return Math.floor(usdPrice * conversionRates[currency]); // round down
-}
-
 // price number is in $ cents
 function getPrices($price: number): Record<Currency, number> {
   const record = {} as Record<Currency, number>;
 
   for (const currency of Object.values(Currency) as Currency[]) {
-    record[currency] =
-      currency === Currency.USD ? $price : getConvertedPrice($price, currency);
+    record[currency] = currencyAPI.convertPrice($price, Currency.USD, currency);
   }
 
   return record;

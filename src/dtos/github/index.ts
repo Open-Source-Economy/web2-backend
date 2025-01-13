@@ -5,3 +5,4 @@ export * from "./GetRepository.dto";
 export * from "./GetIssues.dto";
 export * from "./RequestIssueFunding.dto";
 export * from "./GetMaintainers.dto";
+export * from "./GetCampaign.dto";

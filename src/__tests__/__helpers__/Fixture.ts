@@ -258,6 +258,8 @@ export const Fixture = {
     invoiceId: StripeInvoiceId,
     customerId: StripeCustomerId,
     lines: StripeInvoiceLine[],
+    currency: Currency = Currency.USD,
+    total: number = 1000,
   ): StripeInvoice {
     return new StripeInvoice(
       invoiceId,
@@ -265,8 +267,8 @@ export const Fixture = {
       true,
       "US",
       lines,
-      "USD",
-      1000,
+      currency,
+      total,
       900,
       800,
       700,

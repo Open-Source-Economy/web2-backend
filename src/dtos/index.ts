@@ -11,4 +11,3 @@ export * from "./CreateManualInvoice.dto";
 export * from "./CreateCompanyUserPermissionToken.dto";
 export * from "./SendCompanyAdminInvite.dto";
 export * from "./SendRepositoryAdminInvite.dto";
-export * from "./GetCampaign.dto";

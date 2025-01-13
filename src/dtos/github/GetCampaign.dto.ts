@@ -1,5 +1,5 @@
-import { Currency, PriceType, ProductType } from "../model";
-import { Price } from "./stripe";
+import { Currency, PriceType, ProductType } from "../../model";
+import { Price } from "../stripe";
 
 export interface GetCampaignParams {
   owner: string;

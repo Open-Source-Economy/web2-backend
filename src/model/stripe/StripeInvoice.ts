@@ -1,6 +1,7 @@
 import { ValidationError, Validator } from "../error";
 import { StripeInvoiceLine } from "./StripeInvoiceLine";
 import { StripeCustomerId } from "./StripeCustomer";
+import { Currency } from "./Currency";
 
 export class StripeInvoiceId {
   id: string;
@@ -20,7 +21,7 @@ export class StripeInvoice {
   paid: boolean;
   accountCountry: string;
   lines: StripeInvoiceLine[];
-  currency: string;
+  currency: Currency;
   total: number;
   totalExclTax: number;
   subtotal: number;
@@ -34,7 +35,7 @@ export class StripeInvoice {
     paid: boolean,
     accountCountry: string,
     lines: StripeInvoiceLine[],
-    currency: string,
+    currency: Currency,
     total: number,
     totalExclTax: number,
     subtotal: number,
@@ -64,7 +65,10 @@ export class StripeInvoice {
     const paid = validator.requiredBoolean("paid");
     const accountCountry = validator.requiredString("account_country");
     const linesData = validator.requiredArray<any>(["lines", "data"]);
-    const currency = validator.requiredString("currency");
+    const currency = validator.requiredEnum(
+      "currency",
+      Object.values(Currency) as Currency[],
+    );
     const total = validator.requiredNumber("total");
     const totalExclTax = validator.requiredNumber("total_excluding_tax");
     const subtotal = validator.requiredNumber("subtotal");
@@ -119,7 +123,10 @@ export class StripeInvoice {
     const customerId = validator.requiredString("stripe_customer_id");
     const paid = validator.requiredBoolean("paid");
     const accountCountry = validator.requiredString("account_country");
-    const currency = validator.requiredString("currency");
+    const currency = validator.requiredEnum(
+      "currency",
+      Object.values(Currency) as Currency[],
+    );
     const total = validator.requiredNumber("total");
     const totalExclTax = validator.requiredNumber("total_excl_tax");
     const subtotal = validator.requiredNumber("subtotal");

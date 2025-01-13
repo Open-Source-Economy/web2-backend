@@ -7,12 +7,11 @@ import {
 } from "../../../db";
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
-import { StripeInvoiceLineId, UserId } from "../../../model";
+import { StripeInvoiceLineId } from "../../../model";
 
 describe("StripeInvoiceLineRepository", () => {
   setupTestDB();
 
-  let validUserId: UserId;
   const validCustomerId = Fixture.stripeCustomerId();
   const validProductId = Fixture.stripeProductId();
   const validPriceId = Fixture.stripePriceId();
