@@ -1,10 +1,17 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
-import { StripeInvoice } from "../../model";
+import {
+  Address,
+  StripeCustomer,
+  StripeCustomerId,
+  StripeInvoice,
+} from "../../model";
 import { config, logger } from "../../config";
 import { stripe } from "./index";
-import { stripeInvoiceRepo } from "../../db";
+import { addressRepo, stripeCustomerRepo, stripeInvoiceRepo } from "../../db";
+import { ValidationError } from "../../model/error";
+import { CreateAddressBody } from "../../dtos";
 
 export class StripeWebhookController {
   static async webhook(req: Request, res: Response) {
@@ -12,8 +19,7 @@ export class StripeWebhookController {
     try {
       event = stripe.webhooks.constructEvent(
         req.body,
-        // @ts-ignore
-        req.headers["stripe-signature"],
+        req.headers["stripe-signature"] as string,
         config.stripe.webhookSecret,
       );
     } catch (err) {
@@ -22,64 +28,199 @@ export class StripeWebhookController {
     }
 
     const data = event.data;
+    const object = data.object;
     const eventType: string = event.type;
 
     logger.debug(`🔔  Webhook received an event of type: ${eventType}!`);
-    logger.debug(`🔔  Webhook received: ${data.object}!`);
+    logger.debug(`🔔  Webhook data:`, data);
 
-    // Handle the event
-    // Review important events for Billing webhooks
-    // https://stripe.com/docs/billing/webhooks
-    // Remove comment to see the various objects sent for this sample
-    // Event types: https://docs.stripe.com/api/events/types
-    switch (eventType) {
-      case "checkout.session.completed":
-        // Stripe comments:
-        // Payment is successful and the subscription is created.
-        // You should provision the subscription and save the customer ID to your database.
-
-        // We already save the customer ID to our database when the customer is created.
-        // => Do nothing here.
-        break;
-      case "invoice.paid":
-        // Stripe comments:
-        // Continue to provision the subscription as payments continue to be made.
-        // Store the status in your database and check when a user accesses your service.
-        // This approach helps you avoid hitting rate limits.
-
-        // https://docs.stripe.com/billing/subscriptions/webhooks#active-subscriptions
-        const invoice = StripeInvoice.fromStripeApi(data.object);
-        if (invoice instanceof Error) {
-          throw invoice;
+    try {
+      // Handle the event
+      // Review important events for Billing webhooks
+      // https://stripe.com/docs/billing/webhooks
+      // Remove comment to see the various objects sent for this sample
+      // Event types: https://docs.stripe.com/api/events/types
+      switch (eventType) {
+        case "checkout.session.completed": {
+          logger.debug("🔔 checkout.session.completed, starting!");
+          await StripeWebhookController.checkoutSessionCompleted(
+            event.data.object as Stripe.Checkout.Session,
+          );
+          logger.debug("🔔 checkout.session.completed, done!");
+          break;
         }
 
-        await stripeInvoiceRepo.insert(invoice);
-        break;
-      case "invoice.payment_failed":
-        // Stripe comments:
-        // The payment failed or the customer does not have a valid payment method.
-        // The subscription becomes past_due. Notify your customer and send them to the
-        // customer portal to update their payment information.
-        break;
+        case "invoice.paid": {
+          logger.debug(`🔔 invoice.paid, starting!`);
+          await StripeWebhookController.invoicePaid(object);
+          logger.debug(`🔔 invoice.paid, done!`);
+          break;
+        }
 
-      case "payment_intent.succeeded":
-        // Stripe comments:
-        // Cast the event into a PaymentIntent to make use of the types.
-        // const pi: Stripe.PaymentIntent = data.object as Stripe.PaymentIntent;
-        // Funds have been captured
-        // Fulfill any orders, e-mail receipts, etc
-        // To cancel the payment after capture you will need to issue a Refund (https://stripe.com/docs/api/refunds).
-        logger.debug("💰 Payment captured!");
-        break;
+        case "invoice.payment_failed":
+          // TODO: Implement payment failure handling
+          break;
 
-      case "payment_intent.payment_failed":
-        // Stripe comments:
-        // const paymentIntent = data as Stripe.PaymentIntent.DA;
-        logger.debug("❌ Payment failed.");
-        break;
-      default:
+        case "payment_intent.succeeded": {
+          const paymentIntent = data.object as Stripe.PaymentIntent;
+          logger.debug(
+            `💰 Payment captured for amount: ${paymentIntent.amount}!`,
+          );
+          break;
+        }
+
+        case "payment_intent.payment_failed": {
+          const paymentIntent = data.object as Stripe.PaymentIntent;
+          logger.debug(`❌ Payment failed for amount: ${paymentIntent.amount}`);
+          break;
+        }
+      }
+
+      res.sendStatus(StatusCodes.OK);
+    } catch (error) {
+      logger.error("Error processing webhook:", error);
+      res.sendStatus(StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  static async checkoutSessionCompleted(session: Stripe.Checkout.Session) {
+    // Stripe comments:
+    // Payment is successful and the subscription is created.
+    // You should provision the subscription and save the customer ID to your database.
+
+    const email = session.customer_details?.email ?? session.customer_email;
+    const currency = session.currency ?? undefined;
+
+    const stripeCustomerId: StripeCustomerId | null = session.customer
+      ? new StripeCustomerId(
+          typeof session.customer === "string"
+            ? session.customer
+            : session.customer.id, // based on testing, it should be a string
+        )
+      : null;
+
+    if (stripeCustomerId) {
+      const stripeCustomerUser =
+        await stripeCustomerRepo.getByStripeId(stripeCustomerId);
+
+      if (stripeCustomerUser !== null) {
+        logger.debug(
+          `🔔 Stripe customer, already registered: ${stripeCustomerUser?.stripeId.id}`,
+        );
+      } else {
+        logger.debug(
+          `🔔 Stripe customer creation, not registered: ${stripeCustomerId}`,
+        );
+        await StripeWebhookController.saveAddressAndStripeCustomer(
+          stripeCustomerId,
+          email,
+          session.customer_details,
+          currency,
+        );
+      }
+    } else {
+      if (email === null) {
+        logger.error("No email in checkout session");
+        throw new Error("No email in checkout session");
+      } else {
+        logger.debug(`🔔  Email in checkout session: ${email}`);
+        const stripeCustomer = await stripeCustomerRepo.getByEmail(email);
+
+        if (stripeCustomer) {
+          logger.debug(
+            `🔔  Stripe customer, already registered with email ${email}:`,
+            stripeCustomer,
+          );
+        } else {
+          logger.debug(
+            `🔔  Stripe customer, not registered with email ${email}`,
+          );
+          const customerId =
+            await StripeWebhookController.createAddressAndStripeCustomer(
+              email,
+              session.customer_details,
+              currency,
+            );
+          await StripeWebhookController.saveAddressAndStripeCustomer(
+            customerId,
+            email,
+            session.customer_details,
+            currency,
+          );
+        }
+      }
+    }
+  }
+
+  private static async createAddressAndStripeCustomer(
+    email: string | null,
+    customerDetails: Stripe.Checkout.Session.CustomerDetails | null,
+    currency?: string,
+  ): Promise<StripeCustomerId> {
+    let stripeAddress: Stripe.Emptyable<Stripe.AddressParam> = {
+      city: customerDetails?.address?.city ?? undefined,
+      country: customerDetails?.address?.country ?? undefined,
+      line1: customerDetails?.address?.line1 ?? undefined,
+      line2: customerDetails?.address?.line2 ?? undefined,
+      postal_code: customerDetails?.address?.postal_code ?? undefined,
+      state: customerDetails?.address?.state ?? undefined,
+    };
+
+    const customerCreateParams: Stripe.CustomerCreateParams = {
+      email: email ?? undefined,
+      address: stripeAddress,
+    };
+
+    logger.debug("Creating stripe customer...", customerCreateParams);
+
+    const customer: Stripe.Customer =
+      await stripe.customers.create(customerCreateParams);
+    return new StripeCustomerId(customer.id);
+  }
+
+  private static async saveAddressAndStripeCustomer(
+    customerId: StripeCustomerId,
+    email: string | null,
+    customerDetails: Stripe.Checkout.Session.CustomerDetails | null,
+    currency?: string,
+  ) {
+    const name = customerDetails?.name ?? undefined;
+    const phone = customerDetails?.phone ?? undefined;
+
+    let address: Address | null = null;
+    if (customerDetails?.address) {
+      const createAddressBody: CreateAddressBody = {
+        line1: customerDetails?.address?.line1 ?? undefined,
+        line2: customerDetails?.address?.line2 ?? undefined,
+        city: customerDetails?.address?.city ?? undefined,
+        state: customerDetails?.address?.state ?? undefined,
+        postalCode: customerDetails?.address?.postal_code ?? undefined,
+        country: customerDetails?.address?.country ?? undefined,
+      };
+      address = await addressRepo.create(createAddressBody);
     }
 
-    res.sendStatus(StatusCodes.OK);
+    const newStripeCustomer = new StripeCustomer(
+      customerId,
+      currency,
+      email ?? undefined,
+      name,
+      phone,
+      [],
+      address ? address.id : null,
+    );
+
+    logger.debug(
+      `🔔  Stripe customer, not registered, created: ${newStripeCustomer}`,
+    );
+    await stripeCustomerRepo.insert(newStripeCustomer);
+  }
+
+  static async invoicePaid(object: any): Promise<void> {
+    const invoice = StripeInvoice.fromStripeApi(object);
+    if (invoice instanceof ValidationError) {
+      throw invoice;
+    }
+    await stripeInvoiceRepo.insert(invoice);
   }
 }

@@ -1,0 +1,118 @@
+{
+  "id": "evt_1Qg18JP1IOinjlLpGu83SaUJ",
+  "object": "event",
+  "api_version": "2024-06-20",
+  "created": 1736588251,
+  "data": {
+    "object": {
+      "id": "cs_test_a1PthEat2LPCVM7CSlIkrT6GhTG5XK0eMAwIDQke3Z8mjKjshffaU5Iqoj",
+      "object": "checkout.session",
+      "adaptive_pricing": null,
+      "after_expiration": null,
+      "allow_promotion_codes": null,
+      "amount_subtotal": 2700,
+      "amount_total": 2700,
+      "automatic_tax": {
+        "enabled": false,
+        "liability": null,
+        "status": null
+      },
+      "billing_address_collection": null,
+      "cancel_url": "https://dev-ose.vercel.app/apache/pekko/campaign?checkout_error=true?checkout_error=true",
+      "client_reference_id": null,
+      "client_secret": null,
+      "consent": null,
+      "consent_collection": null,
+      "created": 1736588209,
+      "currency": "eur",
+      "currency_conversion": null,
+      "custom_fields": [
+      ],
+      "custom_text": {
+        "after_submit": null,
+        "shipping_address": null,
+        "submit": null,
+        "terms_of_service_acceptance": null
+      },
+      "customer": "cus_RZ8sfJJIQe0rzC",
+      "customer_creation": null,
+      "customer_details": {
+        "address": {
+          "city": null,
+          "country": "CH",
+          "line1": null,
+          "line2": null,
+          "postal_code": null,
+          "state": null
+        },
+        "email": "lauriane@open-source-economy.com",
+        "name": "Lauriane Mollier",
+        "phone": null,
+        "tax_exempt": "none",
+        "tax_ids": [
+        ]
+      },
+      "customer_email": null,
+      "expires_at": 1736674609,
+      "invoice": "in_1Qg18GP1IOinjlLpJ2bfQQEE",
+      "invoice_creation": null,
+      "livemode": false,
+      "locale": null,
+      "metadata": {
+      },
+      "mode": "subscription",
+      "payment_intent": null,
+      "payment_link": null,
+      "payment_method_collection": "always",
+      "payment_method_configuration_details": {
+        "id": "pmc_1QeHPaP1IOinjlLpb2tc1GVX",
+        "parent": null
+      },
+      "payment_method_options": {
+        "card": {
+          "request_three_d_secure": "automatic"
+        }
+      },
+      "payment_method_types": [
+        "card",
+        "link"
+      ],
+      "payment_status": "paid",
+      "phone_number_collection": {
+        "enabled": false
+      },
+      "recovered_from": null,
+      "saved_payment_method_options": {
+        "allow_redisplay_filters": [
+          "always"
+        ],
+        "payment_method_remove": null,
+        "payment_method_save": null
+      },
+      "setup_intent": null,
+      "shipping_address_collection": null,
+      "shipping_cost": null,
+      "shipping_details": null,
+      "shipping_options": [
+      ],
+      "status": "complete",
+      "submit_type": null,
+      "subscription": "sub_1Qg18GP1IOinjlLp5YoFmfhV",
+      "success_url": "https://dev-ose.vercel.app/checkout/success?session_id={CHECKOUT_SESSION_ID}&mode=subscription",
+      "total_details": {
+        "amount_discount": 0,
+        "amount_shipping": 0,
+        "amount_tax": 0
+      },
+      "ui_mode": "hosted",
+      "url": null
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": {
+    "id": null,
+    "idempotency_key": null
+  },
+  "type": "checkout.session.completed"
+}

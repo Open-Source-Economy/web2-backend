@@ -21,7 +21,7 @@ export function createApp() {
   const corsOptions = {
     origin: config.frontEndUrl,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "stripe-signature"], // Added stripe-signature
     credentials: true,
     optionsSuccessStatus: 200,
   };
@@ -53,12 +53,12 @@ export function createApp() {
 
   app.use(helmet.hsts({ maxAge: 31536000 })); // 1 year
 
-  app.use(express.json());
-  // Use JSON parser for all non-webhook routes.
+  // IMPORTANT: Remove the global express.json() middleware
+
+  // Use raw body parser for webhook route and JSON parser for other routes
   app.use((req, res, next) => {
     if (req.originalUrl === "/api/v1/stripe/webhook") {
-      // TODO refactor
-      next();
+      express.raw({ type: "application/json" })(req, res, next);
     } else {
       express.json()(req, res, next);
     }
@@ -71,9 +71,9 @@ export function createApp() {
       resave: false,
       proxy: true,
       cookie: {
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        maxAge: 30 * 24 * 60 * 60 * 1000,
         secure: true,
-        httpOnly: true, // Protect against XSS
+        httpOnly: true,
         sameSite: "none",
       },
       store: new pgSession({
@@ -83,14 +83,9 @@ export function createApp() {
     }),
   );
 
-  // sanitize request data
-  // TODO: lolo
-  // app.use(xss());
-
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // limit repeated failed requests to auth endpoints
   if (config.env === NodeEnv.Production) {
     app.use("/api/v1/auth", authLimiter);
   }
@@ -106,10 +101,7 @@ export function createApp() {
     next(new ApiError(StatusCodes.NOT_FOUND, errorMessage));
   });
 
-  // convert error to ApiError, if needed
   app.use(errorConverter);
-
-  // handle error
   app.use(errorHandler);
 
   return app;

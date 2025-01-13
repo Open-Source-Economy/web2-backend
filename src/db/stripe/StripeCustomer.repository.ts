@@ -98,15 +98,16 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
 
       const result = await client.query(
         `
-                    INSERT INTO stripe_customer (stripe_id,
-                                                 currency,
-                                                 email,
-                                                 name,
-                                                 phone,
-                                                 preferred_locales)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    RETURNING *
-                `,
+        INSERT INTO stripe_customer (stripe_id,
+                                   currency,
+                                   email,
+                                   name,
+                                   phone,
+                                   preferred_locales,
+                                   address_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `,
         [
           customer.stripeId.toString(),
           customer.currency || null,
@@ -114,6 +115,7 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
           customer.name || null,
           customer.phone || null,
           customer.preferredLocales || null,
+          customer.addressId?.toString() || null,
         ],
       );
 

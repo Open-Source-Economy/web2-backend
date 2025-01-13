@@ -1,4 +1,5 @@
 import { ValidationError, Validator } from "../error";
+import { AddressId } from "../Address";
 
 export class StripeCustomerId {
   id: string;
@@ -31,6 +32,7 @@ export class StripeCustomer {
   name?: string;
   phone?: string;
   preferredLocales?: string[];
+  addressId: AddressId | null;
 
   constructor(
     stripeId: StripeCustomerId,
@@ -39,6 +41,7 @@ export class StripeCustomer {
     name?: string,
     phone?: string,
     preferredLocales?: string[],
+    addressId: AddressId | null = null,
   ) {
     this.stripeId = stripeId;
     this.currency = currency;
@@ -46,9 +49,9 @@ export class StripeCustomer {
     this.name = name;
     this.phone = phone;
     this.preferredLocales = preferredLocales;
+    this.addressId = addressId;
   }
 
-  // Stripe API: https://docs.stripe.com/api/invoices/object
   static fromStripeApi(apiResponse: any): StripeCustomer | ValidationError {
     const validator = new Validator(apiResponse);
 
@@ -61,6 +64,7 @@ export class StripeCustomer {
       "preferred_locales",
       "string",
     );
+    const addressId = validator.optionalString("address_id");
 
     const error = validator.getFirstError();
     if (error) {
@@ -74,6 +78,7 @@ export class StripeCustomer {
       name,
       phone,
       preferredLocales,
+      addressId ? new AddressId(addressId) : null,
     );
   }
 
@@ -89,6 +94,7 @@ export class StripeCustomer {
       "preferred_locales",
       "string",
     );
+    const addressId = validator.optionalString("address_id");
 
     const error = validator.getFirstError();
     if (error) {
@@ -102,6 +108,7 @@ export class StripeCustomer {
       name,
       phone,
       preferredLocales,
+      addressId ? new AddressId(addressId) : null,
     );
   }
 }

@@ -216,12 +216,29 @@ export class Validator {
     return value;
   }
 
-  requiredArray(path: string | string[]): void {
+  requiredArray<T = any>(path: string | string[], elementType?: string): T[] {
     const value = this.getValue(path);
+
+    if (value === undefined || value === null) {
+      this.errors.push(new ArrayValidationError(path, value, this.data));
+      return [];
+    }
 
     if (!Array.isArray(value)) {
       this.errors.push(new ArrayValidationError(path, value, this.data));
+      return [];
     }
+
+    if (elementType) {
+      for (const element of value) {
+        if (typeof element !== elementType) {
+          this.errors.push(new ArrayValidationError(path, value, this.data));
+          return [];
+        }
+      }
+    }
+
+    return value;
   }
 
   optionalEnum<EnumType extends string>(

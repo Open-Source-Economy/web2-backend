@@ -1,19 +1,20 @@
 import { StripeInvoice } from "../../../model";
 import * as fs from "fs";
-import { logger } from "../../../config";
+import { ValidationError } from "../../../model/error";
 
 describe("StripeInvoice", () => {
   it("fromStripeApi does not throw an error", () => {
-    const data = fs.readFileSync(
-      `src/__tests__/model/stripe/invoice.paid.json`,
+    const issueData = fs.readFileSync(
+      `src/__tests__/__data__/stripe/webhook/invoice-paid.json`,
       "utf8",
     );
-    const json = JSON.parse(data);
-    const invoice = StripeInvoice.fromStripeApi(json);
-
-    if (invoice instanceof Error) {
-      logger.error(invoice);
+    const invoice = StripeInvoice.fromStripeApi(
+      JSON.parse(issueData).data.object,
+    );
+    if (invoice instanceof ValidationError) {
+      throw invoice;
     }
-    expect(invoice).toBeInstanceOf(StripeInvoice);
+
+    expect(invoice.id.id).toEqual("in_1Qg18GP1IOinjlLpJ2bfQQEE");
   });
 });

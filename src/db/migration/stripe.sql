@@ -5,11 +5,17 @@
 CREATE TABLE IF NOT EXISTS stripe_customer
 (
     stripe_id         VARCHAR(50) NOT NULL PRIMARY KEY,
-    currency          VARCHAR(3), -- Optional, 3-letter ISO currency code
+    currency          VARCHAR(10), -- Optional, 3-letter ISO currency code
     email             VARCHAR(255),
     name              VARCHAR(255),
-    phone             VARCHAR(15),
-    preferred_locales TEXT[]
+    phone             VARCHAR(20),
+    preferred_locales TEXT[],
+    address_id UUID,
+
+    created_at TIMESTAMP        NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP        NOT NULL DEFAULT now(),
+
+    CONSTRAINT fk_address_id FOREIGN KEY (address_id) REFERENCES address (id) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS stripe_customer_user
