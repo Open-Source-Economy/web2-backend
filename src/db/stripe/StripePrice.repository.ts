@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { getPool } from "../../dbPool";
+import { pool } from "../../dbPool";
 import {
   Currency,
   StripePrice,
@@ -8,7 +8,7 @@ import {
 } from "../../model";
 
 export function getStripePriceRepository(): StripePriceRepository {
-  return new StripePriceRepositoryImpl(getPool());
+  return new StripePriceRepositoryImpl(pool);
 }
 
 export interface StripePriceRepository {

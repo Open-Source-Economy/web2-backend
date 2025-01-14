@@ -6,12 +6,12 @@ import {
   RepositoryUserPermissionTokenId,
   RepositoryUserRole,
 } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 import { logger } from "../config";
 import Decimal from "decimal.js";
 
 export function getRepositoryUserPermissionTokenRepository(): RepositoryUserPermissionTokenRepository {
-  return new RepositoryUserPermissionTokenRepositoryImpl(getPool());
+  return new RepositoryUserPermissionTokenRepositoryImpl(pool);
 }
 export interface CreateRepositoryUserPermissionTokenDto {
   userName: string | null;

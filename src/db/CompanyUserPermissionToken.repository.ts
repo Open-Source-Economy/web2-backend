@@ -4,12 +4,12 @@ import {
   CompanyUserPermissionToken,
   CompanyUserPermissionTokenId,
 } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 import { CreateCompanyUserPermissionTokenBody } from "../dtos";
 import { logger } from "../config";
 
 export function getCompanyUserPermissionTokenRepository(): CompanyUserPermissionTokenRepository {
-  return new CompanyUserPermissionTokenRepositoryImpl(getPool());
+  return new CompanyUserPermissionTokenRepositoryImpl(pool);
 }
 
 export interface CompanyUserPermissionTokenRepository {

@@ -1,9 +1,9 @@
 import { Pool } from "pg";
 import { Owner, OwnerId } from "../../model";
-import { getPool } from "../../dbPool";
+import { pool } from "../../dbPool";
 
 export function getOwnerRepository(): OwnerRepository {
-  return new OwnerRepositoryImpl(getPool());
+  return new OwnerRepositoryImpl(pool);
 }
 
 export interface OwnerRepository {

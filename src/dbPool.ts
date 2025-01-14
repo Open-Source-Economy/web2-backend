@@ -4,7 +4,9 @@ import { config, logger, NodeEnv } from "./config";
 
 dotenv.config();
 
-export function getPool(): Pool {
+export const pool: Pool = getPool();
+
+function getPool(): Pool {
   if (config.env === NodeEnv.Local) {
     logger.debug("Connecting to local postgres");
     return new Pool({

@@ -1,9 +1,9 @@
 import { Pool } from "pg";
 import { RepositoryId, UserId, UserRepository } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 
 export function getUserRepositoryRepository(): UserRepositoryRepository {
-  return new UserRepositoryRepositoryImpl(getPool());
+  return new UserRepositoryRepositoryImpl(pool);
 }
 
 export interface UserRepositoryRepository {

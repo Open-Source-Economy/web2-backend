@@ -11,7 +11,7 @@ import {
   RepositoryId,
   User,
 } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 import {
   getIssueRepository,
   getOwnerRepository,
@@ -26,7 +26,7 @@ import { getUserRepository } from "./User.repository";
 export function getFinancialIssueRepository(
   gitHubApi: GitHubApi = getGitHubAPI(),
 ): FinancialIssueRepository {
-  return new FinancialIssueRepositoryImpl(getPool(), gitHubApi);
+  return new FinancialIssueRepositoryImpl(pool, gitHubApi);
 }
 
 // TODO: optimize this implementation

@@ -1,10 +1,10 @@
 import { Pool } from "pg";
 import { Company, CompanyId } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 import { CreateCompanyBody } from "../dtos";
 
 export function getCompanyRepository(): CompanyRepository {
-  return new CompanyRepositoryImpl(getPool());
+  return new CompanyRepositoryImpl(pool);
 }
 
 export interface CompanyRepository {

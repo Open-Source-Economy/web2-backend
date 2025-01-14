@@ -1,9 +1,9 @@
 import { Pool } from "pg";
 import { StripeCustomerId, StripeCustomerUser, UserId } from "../../model";
-import { getPool } from "../../dbPool";
+import { pool } from "../../dbPool";
 
 export function getStripeCustomerUserRepository(): StripeCustomerUserRepository {
-  return new StripeCustomerUserRepositoryImpl(getPool());
+  return new StripeCustomerUserRepositoryImpl(pool);
 }
 
 export interface StripeCustomerUserRepository {

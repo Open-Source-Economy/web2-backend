@@ -1,11 +1,11 @@
 import { Pool, QueryResult } from "pg";
 import { IssueFunding, IssueFundingId, IssueId } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 import { CreateIssueFundingBody } from "../dtos";
 import { logger } from "../config";
 
 export function getIssueFundingRepository(): IssueFundingRepository {
-  return new IssueFundingRepositoryImpl(getPool());
+  return new IssueFundingRepositoryImpl(pool);
 }
 
 export interface IssueFundingRepository {

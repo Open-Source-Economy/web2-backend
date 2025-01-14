@@ -4,10 +4,10 @@ import {
   StripeInvoiceLine,
   StripeInvoiceLineId,
 } from "../../model";
-import { getPool } from "../../dbPool";
+import { pool } from "../../dbPool";
 
 export function getStripeInvoiceLineRepository(): StripeInvoiceLineRepository {
-  return new StripeInvoiceLineRepositoryImpl(getPool());
+  return new StripeInvoiceLineRepositoryImpl(pool);
 }
 
 export interface StripeInvoiceLineRepository {

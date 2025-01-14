@@ -1,9 +1,9 @@
 import { Pool } from "pg";
-import { getPool } from "../../dbPool";
+import { pool } from "../../dbPool";
 import { RepositoryId, StripeProduct, StripeProductId } from "../../model";
 
 export function getStripeProductRepository(): StripeProductRepository {
-  return new StripeProductRepositoryImpl(getPool());
+  return new StripeProductRepositoryImpl(pool);
 }
 
 export interface StripeProductRepository {

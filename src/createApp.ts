@@ -4,7 +4,7 @@ import passport from "passport";
 import v1Routes from "./routes/v1";
 import { errorConverter, errorHandler } from "./middlewares/errorHandler";
 import "./strategies";
-import { getPool } from "./dbPool";
+import { pool } from "./dbPool";
 import helmet from "helmet";
 import { StatusCodes } from "http-status-codes";
 import * as morgan from "./config";
@@ -77,7 +77,7 @@ export function createApp() {
         sameSite: "none",
       },
       store: new pgSession({
-        pool: getPool(),
+        pool: pool,
         tableName: "user_session",
       }),
     }),

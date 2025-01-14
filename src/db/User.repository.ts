@@ -10,11 +10,11 @@ import {
   UserId,
   UserRole,
 } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 import { encrypt } from "../utils";
 
 export function getUserRepository(): UserRepository {
-  return new UserRepositoryImpl(getPool());
+  return new UserRepositoryImpl(pool);
 }
 
 export interface CreateUser {

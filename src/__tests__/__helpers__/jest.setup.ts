@@ -1,10 +1,9 @@
 import { Migration } from "../../db/migration/migration";
 import { afterAll, afterEach, beforeEach } from "@jest/globals";
-import { getPool } from "../../dbPool";
+import { pool } from "../../dbPool";
 import { logger } from "../../config";
 
 export const setupTestDB = () => {
-  const pool = getPool();
   const migration = new Migration(pool);
 
   beforeEach(async () => {

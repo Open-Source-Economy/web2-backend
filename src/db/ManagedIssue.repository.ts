@@ -1,10 +1,10 @@
 import { Pool } from "pg";
 import { IssueId, ManagedIssue, ManagedIssueId } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 import { CreateManagedIssueBody } from "../dtos";
 
 export function getManagedIssueRepository(): ManagedIssueRepository {
-  return new ManagedIssueRepositoryImpl(getPool());
+  return new ManagedIssueRepositoryImpl(pool);
 }
 
 export interface ManagedIssueRepository {

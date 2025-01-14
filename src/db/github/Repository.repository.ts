@@ -1,10 +1,10 @@
 import { Pool } from "pg";
 import { Repository, RepositoryId } from "../../model";
-import { getPool } from "../../dbPool";
+import { pool } from "../../dbPool";
 import { ValidationError } from "../../model/error";
 
 export function getRepositoryRepository(): RepositoryRepository {
-  return new RepositoryRepositoryImpl(getPool());
+  return new RepositoryRepositoryImpl(pool);
 }
 
 export interface RepositoryRepository {

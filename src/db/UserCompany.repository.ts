@@ -1,10 +1,10 @@
 import { Pool } from "pg";
 import { CompanyId, CompanyUserRole, UserId } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 import { logger } from "../config";
 
 export function getUserCompanyRepository(): UserCompanyRepository {
-  return new UserCompanyRepositoryImpl(getPool());
+  return new UserCompanyRepositoryImpl(pool);
 }
 
 export interface UserCompanyRepository {

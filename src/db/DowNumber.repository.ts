@@ -1,11 +1,11 @@
 import { Pool } from "pg";
 import { CompanyId, ProductType, UserId } from "../model";
-import { getPool } from "../dbPool";
+import { pool } from "../dbPool";
 import { getManualInvoiceRepository } from "./ManualInvoice.repository";
 import { logger } from "../config";
 
 export function getDowNumberRepository(): DowNumberRepository {
-  return new DowNumberRepositoryImpl(getPool());
+  return new DowNumberRepositoryImpl(pool);
 }
 
 // TODO: optimize this implementation
