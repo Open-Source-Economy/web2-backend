@@ -1,0 +1,1 @@
+ALTER TABLE stripe_invoice ADD COLUMN number VARCHAR(255) NULL;

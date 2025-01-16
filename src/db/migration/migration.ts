@@ -9,7 +9,7 @@ export class Migration {
   }
 
   public async migrate(): Promise<void> {
-    const migrationFiles = ["1.sql", "2.sql", "3.sql", "4.sql"];
+    const migrationFiles = ["1.sql", "2.sql", "3.sql", "4.sql", "5.sql"];
 
     const migrations = migrationFiles.map((file) => {
       return fs.readFileSync(`src/db/migration/${file}`).toString();

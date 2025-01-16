@@ -260,6 +260,7 @@ export const Fixture = {
     lines: StripeInvoiceLine[],
     currency: Currency = Currency.USD,
     total: number = 1000,
+    invoiceNumber: string | null = "123",
   ): StripeInvoice {
     return new StripeInvoice(
       invoiceId,
@@ -274,6 +275,7 @@ export const Fixture = {
       700,
       "https://hosted_invoice_url.com",
       "https://invoice_pdf.com",
+      invoiceNumber,
     );
   },
 
