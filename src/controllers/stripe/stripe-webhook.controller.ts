@@ -41,6 +41,7 @@ export class StripeWebhookController {
       // Remove comment to see the various objects sent for this sample
       // Event types: https://docs.stripe.com/api/events/types
       switch (eventType) {
+        // TODO: https://docs.stripe.com/checkout/fulfillment?payment-ui=embedded-form#create-payment-event-handler
         case "checkout.session.completed": {
           logger.debug("🔔 checkout.session.completed, starting!");
           await StripeWebhookController.checkoutSessionCompleted(
@@ -52,7 +53,7 @@ export class StripeWebhookController {
 
         case "invoice.paid": {
           logger.debug(`🔔 invoice.paid, starting!`);
-          await StripeWebhookController.invoicePaid(object);
+          await StripeWebhookController.invoicePaid(object as Stripe.Invoice);
           logger.debug(`🔔 invoice.paid, done!`);
           break;
         }
@@ -214,8 +215,8 @@ export class StripeWebhookController {
     await stripeCustomerRepo.insert(newStripeCustomer);
   }
 
-  static async invoicePaid(object: any): Promise<void> {
-    const invoice = StripeInvoice.fromStripeApi(object);
+  static async invoicePaid(stripeInvoice: Stripe.Invoice): Promise<void> {
+    const invoice = StripeInvoice.fromStripeApi(stripeInvoice);
     if (invoice instanceof ValidationError) {
       throw invoice;
     }

@@ -32,8 +32,17 @@ const formatWithObjects = winston.format((info) => {
   return info;
 });
 
+/* The level configuration in Winston defines the minimum severity level of logs that will be processed and output. It works like a filter where only logs of the specified level and higher severity will be shown.
+   The Winston log levels from lowest to highest severity are:
+   "silly"
+   "debug"
+   "verbose"
+   "info"
+   "warn"
+   "error"
+ */
 export const logger = winston.createLogger({
-  level: config.env === NodeEnv.Production ? "info" : "debug",
+  level: config.showDebugLogs ? "debug" : "info",
   format: winston.format.combine(
     filterDebug(),
     enumerateErrorFormat(),

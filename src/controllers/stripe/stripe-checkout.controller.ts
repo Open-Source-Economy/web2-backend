@@ -55,6 +55,8 @@ export class StripeCheckoutController {
 
     const params: Stripe.Checkout.SessionCreateParams = {
       mode: req.body.mode,
+      invoice_creation:
+        req.body.mode === `payment` ? { enabled: true } : undefined,
       line_items: items,
       customer: customer?.stripeCustomerId.id,
       customer_email: customer ? undefined : req.user?.email() ?? undefined,

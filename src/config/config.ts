@@ -14,7 +14,7 @@ const envVarsSchema = Joi.object({
     .required()
     .description("The front end url. Required for CORS and redirecting"),
 
-  SHOW_DEBUG_LOGS: Joi.boolean().default(false).description("Show debug logs"),
+  SHOW_DEBUG_LOGS: Joi.boolean().default(true).description("Show debug logs"),
 
   JWT_SECRET: Joi.string().required().description("JWT secret key"),
   JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
