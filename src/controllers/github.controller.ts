@@ -312,14 +312,21 @@ export class GithubController {
     logger.debug(`Raised amount`, raisedAmount);
 
     if (owner === "apache" && repo === "pekko") {
+      const targetAmount$ = 4000000;
+
       const response: GetCampaignResponse = {
         raisedAmount: raisedAmount,
-        targetAmount: {
-          [Currency.USD]: 50000,
-          [Currency.EUR]: 50000,
-          [Currency.GBP]: 50000,
-          [Currency.CHF]: 50000,
-        },
+        targetAmount: Object.values(Currency).reduce(
+          (acc, currency) => {
+            acc[currency] = currencyAPI.convertPrice(
+              targetAmount$,
+              Currency.USD,
+              currency as Currency,
+            );
+            return acc;
+          },
+          {} as Record<Currency, number>,
+        ),
         prices,
       };
       res.status(StatusCodes.OK).send({ success: response });

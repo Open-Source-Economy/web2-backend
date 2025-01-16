@@ -15,11 +15,11 @@ import { logger } from "../../config";
 import { StripeCustomerUser } from "../../model";
 
 export class StripeCheckoutController {
-  // Save payment details: https://docs.stripe.com/payments/checkout/save-during-payment
+  // TODO ? : Save payment details: https://docs.stripe.com/payments/checkout/save-during-payment
   /**
    * Create a Checkout Session for the subscription, redirecting the user to the Stripe checkout page
    *
-   * DOC: https://docs.stripe.com/billing/subscriptions/build-subscriptions?platform=web&ui=stripe-hosted&lang=node#create-session
+   * DOC + TEST: https://docs.stripe.com/billing/subscriptions/build-subscriptions?platform=web&ui=stripe-hosted&lang=node#create-session
    * @param req
    * @param res
    */
