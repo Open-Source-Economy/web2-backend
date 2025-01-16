@@ -82,20 +82,12 @@ export class StripeInvoice {
     }
 
     const lines = linesData.map((line: any) => {
-      const lineResult = StripeInvoiceLine.fromStripeApi(
-        new StripeCustomerId(customerId),
-        line,
-      );
-      if (lineResult instanceof ValidationError) {
-        return error;
-      }
-      return lineResult;
+      return StripeInvoiceLine.fromStripeApi(new StripeCustomerId(customerId), line);
     });
 
-    if (lines.some((line) => line instanceof ValidationError)) {
-      return lines.find(
-        (line) => line instanceof ValidationError,
-      ) as ValidationError;
+    const lineError = lines.find((line) => line instanceof ValidationError);
+    if (lineError instanceof ValidationError) {
+      return lineError;
     }
 
     return new StripeInvoice(
