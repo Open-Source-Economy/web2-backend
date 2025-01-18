@@ -10,11 +10,10 @@ import {
   CompanyId,
   CompanyUserRole,
   Currency,
-  Owner,
   PriceType,
   ProductType,
-  Repository,
-  RepositoryId,
+  Project,
+  ProjectId,
   StripeCustomer,
   StripeCustomerId,
   StripeCustomerUser,
@@ -118,9 +117,13 @@ export class StripeHelper {
 
   // Donation to Pekko: One product, several prices (100$, 200$, 500$), several currencies (USD, EUR, GBP)
   // To read: https://support.stripe.com/questions/how-to-accept-donations-through-stripe
-  static async createProductAndPrice(owner: Owner, repository: Repository) {
-    const repoName = `${repository.id.ownerLogin()}/${repository.id.name}`;
-    const images = owner.avatarUrl ? [owner.avatarUrl] : undefined;
+  static async createProductAndPrice(project: Project) {
+    let repoName = `${project.owner.id.login}`;
+    if (project.repository) repoName += `/${project.repository.id.name}`;
+
+    const images = project.owner.avatarUrl
+      ? [project.owner.avatarUrl]
+      : undefined;
 
     // --- milliDoW product ---
 
@@ -135,7 +138,7 @@ export class StripeHelper {
     };
 
     await StripeHelper.createProductAndPrices(
-      repository.id,
+      project.id,
       ProductType.milliDow,
       milliDowParams,
       getPrices(milliDowRecurring$CentsPrice),
@@ -152,7 +155,7 @@ export class StripeHelper {
     };
 
     await StripeHelper.createProductAndPrices(
-      repository.id,
+      project.id,
       ProductType.donation,
       donationParams,
       donationUnits,
@@ -161,14 +164,14 @@ export class StripeHelper {
   }
 
   static async getPrices(
-    repositoryId: RepositoryId,
+    projectId: ProjectId,
     currencyPriceConfigs: Record<Currency, [number, string][]>,
   ): Promise<
     Record<PriceType, Record<Currency, Record<ProductType, Price[]>>>
   > {
     const prices = StripeHelper.initializePrices();
 
-    const products = await stripeProductRepo.getByRepositoryId(repositoryId);
+    const products = await stripeProductRepo.getByProjectId(projectId);
 
     logger.debug("Products", products);
 
@@ -250,7 +253,7 @@ export class StripeHelper {
   }
 
   private static async createProductAndPrices(
-    repositoryId: RepositoryId,
+    projectId: ProjectId,
     productType: ProductType,
     params: Stripe.ProductCreateParams,
     recurringCentsPrices: Record<Currency, number>,
@@ -261,7 +264,7 @@ export class StripeHelper {
     await stripeProductRepo.insert(
       new StripeProduct(
         new StripeProductId(product.id),
-        repositoryId,
+        projectId,
         productType,
       ),
     );

@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { Currency, RepositoryId } from "../../model";
+import { Currency, Project, ProjectId } from "../../model";
 import { pool } from "../../dbPool";
 
 export function getStripeMiscellaneousRepository(): StripeMiscellaneousRepository {
@@ -8,7 +8,7 @@ export function getStripeMiscellaneousRepository(): StripeMiscellaneousRepositor
 
 export interface StripeMiscellaneousRepository {
   getRaisedAmountPerCurrency(
-    repositoryId: RepositoryId,
+    projectId: ProjectId,
   ): Promise<Record<Currency, number>>; // in cents in the currency of the price
 }
 
@@ -22,32 +22,45 @@ class StripeMiscellaneousRepositoryImpl
   }
 
   async getRaisedAmountPerCurrency(
-    repositoryId: RepositoryId,
+    projectId: ProjectId,
   ): Promise<Record<Currency, number>> {
-    const query = `
-        SELECT sp.github_owner_login,
-               sp.github_repository_name,
-               si.currency,
-               SUM(si.total) as total_raised
-        FROM stripe_invoice_line sil
-                 JOIN stripe_invoice si ON si.stripe_id = sil.invoice_id
-                 JOIN stripe_product sp ON sp.stripe_id = sil.product_id
-        WHERE si.paid = true
-          AND si.created_at >= date_trunc('month', current_date - interval '1' month)
-          AND sp.github_owner_login = $1
-          AND sp.github_repository_name = $2
-        GROUP BY sp.github_owner_login,
-                 sp.github_repository_name,
-                 si.currency
-        ORDER BY sp.github_owner_login,
-                 sp.github_repository_name,
-                 si.currency;
-    `;
-    const result = await this.pool.query(query, [
-      repositoryId.ownerId.login,
-      repositoryId.name,
-    ]);
+    const { ownerLogin, repoName } = Project.getDBParams(projectId);
 
+    // Base query with owner condition
+    let query = `
+      SELECT sp.github_owner_login,
+             sp.github_repository_name,
+             si.currency,
+             SUM(si.total) as total_raised
+      FROM stripe_invoice_line sil
+               JOIN stripe_invoice si ON si.stripe_id = sil.invoice_id
+               JOIN stripe_product sp ON sp.stripe_id = sil.product_id
+      WHERE si.paid = true
+        AND si.created_at >= date_trunc('month', current_date - interval '1' month)
+        AND sp.github_owner_login = $1
+  `;
+
+    const params = [ownerLogin];
+
+    // Add repository condition if it's a repository project
+    if (repoName) {
+      query += ` AND sp.github_repository_name = $2`;
+      params.push(repoName);
+    } else {
+      query += ` AND sp.github_repository_name IS NULL`;
+    }
+
+    // Add group by and order by
+    query += `
+      GROUP BY sp.github_owner_login,
+               sp.github_repository_name,
+               si.currency
+      ORDER BY sp.github_owner_login,
+               sp.github_repository_name,
+               si.currency;
+  `;
+
+    const result = await this.pool.query(query, params);
     // Initialize all currencies with 0 using Object.values(Currency)
     const totalRaised = Object.values(Currency).reduce(
       (acc, currency) => {

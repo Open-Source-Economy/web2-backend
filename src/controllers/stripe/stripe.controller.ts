@@ -7,7 +7,7 @@ import {
 } from "../../dtos";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { Currency, OwnerId, RepositoryId } from "../../model";
+import { Currency, Project } from "../../model";
 import { StripeHelper } from "./stripe-helper";
 
 const LABELS = [
@@ -57,10 +57,9 @@ export class StripeController {
     >,
     res: Response<ResponseBody<GetPricesResponse>>,
   ) {
-    const { owner, repo } = req.params;
-    const repositoryId = new RepositoryId(new OwnerId(owner), repo);
+    const projectId = Project.getId(req.params.owner, req.params.repo);
     const prices = await StripeHelper.getPrices(
-      repositoryId,
+      projectId,
       CURRENCY_PRICE_CONFIGS,
     );
 

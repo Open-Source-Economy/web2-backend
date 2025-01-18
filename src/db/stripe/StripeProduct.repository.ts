@@ -1,6 +1,12 @@
 import { Pool } from "pg";
 import { pool } from "../../dbPool";
-import { RepositoryId, StripeProduct, StripeProductId } from "../../model";
+import {
+  Project,
+  ProjectId,
+  RepositoryId,
+  StripeProduct,
+  StripeProductId,
+} from "../../model";
 
 export function getStripeProductRepository(): StripeProductRepository {
   return new StripeProductRepositoryImpl(pool);
@@ -11,7 +17,7 @@ export interface StripeProductRepository {
 
   getById(id: StripeProductId): Promise<StripeProduct | null>;
 
-  getByRepositoryId(repositoryId: RepositoryId): Promise<StripeProduct[]>;
+  getByProjectId(projectId: ProjectId): Promise<StripeProduct[]>;
 
   getAll(): Promise<StripeProduct[]>;
 }
@@ -78,42 +84,59 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
     return this.getOptionalProduct(result.rows);
   }
 
-  async getByRepositoryId(
-    repositoryId: RepositoryId,
-  ): Promise<StripeProduct[]> {
-    const result = await this.pool.query(
-      `
-                  SELECT *
-                  FROM stripe_product
-                  WHERE github_owner_login = $1 AND github_repository_name = $2
-              `,
-      [repositoryId.ownerId.login, repositoryId.name],
-    );
-    return this.getProductList(result.rows);
+  async getByProjectId(projectId: ProjectId): Promise<StripeProduct[]> {
+    if (projectId instanceof RepositoryId) {
+      const result = await this.pool.query(
+        `
+                    SELECT *
+                    FROM stripe_product
+                    WHERE github_owner_login = $1
+                      AND github_repository_name = $2
+                `,
+        [projectId.ownerId.login, projectId.name],
+      );
+      return this.getProductList(result.rows);
+    } else {
+      const result = await this.pool.query(
+        `
+                    SELECT *
+                    FROM stripe_product
+                    WHERE github_owner_login = $1
+                      AND github_repository_name IS NULL
+                `,
+        [projectId.login],
+      );
+      return this.getProductList(result.rows);
+    }
   }
 
   async insert(product: StripeProduct): Promise<StripeProduct> {
     const client = await this.pool.connect();
+    const { ownerId, ownerLogin, repoId, repoName } = Project.getDBParams(
+      product.projectId,
+    );
 
     try {
       const result = await client.query(
         `
-                    INSERT INTO stripe_product (stripe_id,
-                                                type,
-                                                github_owner_id,
-                                                github_owner_login,
-                                                github_repository_id,
-                                                github_repository_name)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    RETURNING stripe_id, type, github_owner_id, github_owner_login, github_repository_id, github_repository_name
-                `,
+        INSERT INTO stripe_product (
+          stripe_id,
+          type,
+          github_owner_id,
+          github_owner_login,
+          github_repository_id,
+          github_repository_name
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING stripe_id, type, github_owner_id, github_owner_login, github_repository_id, github_repository_name
+      `,
         [
           product.stripeId.toString(),
           product.type,
-          product.repositoryId?.ownerId.githubId ?? null,
-          product.repositoryId?.ownerId.login ?? null,
-          product.repositoryId?.githubId ?? null,
-          product.repositoryId?.name ?? null,
+          ownerId,
+          ownerLogin,
+          repoId,
+          repoName,
         ],
       );
 

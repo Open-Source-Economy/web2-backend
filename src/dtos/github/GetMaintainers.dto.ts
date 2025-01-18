@@ -1,6 +1,8 @@
+// TODO: to implement
+
 export interface GetMaintainersParams {
   owner: string;
-  repo: string;
+  repo?: string;
 }
 
 export interface Maintainer {

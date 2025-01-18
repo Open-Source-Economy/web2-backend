@@ -4,29 +4,26 @@ import { isAuth } from "../../middlewares/isAuth";
 
 const router = Router();
 
+// Project routes (handles both owners and repositories)
 router.get("/owners/:owner", GithubController.getOwner);
-
-// Repositories
 router.get("/repos/:owner/:repo", GithubController.getRepository);
 
-// Issues
+// Project campaigns (for both owners and repositories)
+router.get("/owners/:owner/campaigns", GithubController.getCampaign);
+router.get("/repos/:owner/:repo/campaigns", GithubController.getCampaign);
+
+// Issues (repository-specific)
 router.get("/all-financial-issues", GithubController.getAllFinancialIssues);
 router.get("/repos/:owner/:repo/issues/:number", GithubController.getIssue);
-
-// Funding
 router.post(
   "/repos/:owner/:repo/issues/:number/funding",
   isAuth, // TODO: security: make sure the user belongs to the company that is funding the issue
   GithubController.fundIssue,
 );
-
 router.post(
   "/repos/:owner/:repo/issues/:number/funding/requests",
   isAuth, // TODO: security: make sure the user belongs to the company that is funding the issue
   GithubController.requestIssueFunding,
 );
-
-// Campaigns
-router.get("/repos/:owner/:repo/campaigns", GithubController.getCampaign);
 
 export default router;

@@ -39,6 +39,7 @@ import {
   IssueId,
   ManagedIssueState,
   OwnerId,
+  Project,
   RepositoryId,
 } from "../model";
 import { StatusCodes } from "http-status-codes";
@@ -272,17 +273,14 @@ export class GithubController {
     >,
     res: Response<ResponseBody<GetCampaignResponse>>,
   ) {
-    const { owner, repo } = req.params;
-    const repositoryId = new RepositoryId(new OwnerId(owner), repo);
+    const projectId = Project.getId(req.params.owner, req.params.repo);
     const prices = await StripeHelper.getPrices(
-      repositoryId,
+      projectId,
       CURRENCY_PRICE_CONFIGS,
     );
 
     const raisedAmountPerCurrency =
-      await stripeMiscellaneousRepository.getRaisedAmountPerCurrency(
-        repositoryId,
-      );
+      await stripeMiscellaneousRepository.getRaisedAmountPerCurrency(projectId);
 
     const raisedAmount: Record<Currency, number> = Object.values(
       Currency,
@@ -311,7 +309,11 @@ export class GithubController {
     logger.debug(`Raised amount per currency`, raisedAmountPerCurrency);
     logger.debug(`Raised amount`, raisedAmount);
 
-    if (owner === "apache" && repo === "pekko") {
+    if (
+      projectId instanceof RepositoryId &&
+      projectId.ownerId.login === "apache" &&
+      projectId.name === "pekko"
+    ) {
       const targetAmount$ = 4000000;
 
       const response: GetCampaignResponse = {
@@ -328,6 +330,7 @@ export class GithubController {
           {} as Record<Currency, number>,
         ),
         prices,
+        description: null,
       };
       res.status(StatusCodes.OK).send({ success: response });
     } else {

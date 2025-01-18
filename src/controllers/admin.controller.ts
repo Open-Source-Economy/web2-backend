@@ -31,7 +31,7 @@ import {
 import { secureToken } from "../utils";
 import { MailService } from "../services";
 import Decimal from "decimal.js";
-import { OwnerId, RepositoryId } from "../model";
+import { OwnerId, Project } from "../model";
 import { ApiError } from "../model/error/ApiError";
 import { logger } from "../config";
 import {
@@ -209,11 +209,10 @@ export class AdminController {
     >,
     res: Response<ResponseBody<CreateProductAndPriceResponse>>,
   ) {
-    const [owner, repository] = await financialIssueRepo.getRepository(
-      new RepositoryId(new OwnerId(req.params.owner), req.params.repo),
-    );
+    const projectId = Project.getId(req.params.owner, req.params.repo);
+    const project = await financialIssueRepo.getProject(projectId);
 
-    await StripeHelper.createProductAndPrice(owner, repository);
+    await StripeHelper.createProductAndPrice(project);
 
     const response: CreateProductAndPriceResponse = {};
     res.status(StatusCodes.CREATED).send({ success: response });

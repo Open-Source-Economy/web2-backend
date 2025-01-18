@@ -17,7 +17,6 @@ describe("StripeMiscellaneousRepository", () => {
   const validRepositoryId = Fixture.repositoryId(validOwnerId);
 
   const validCustomerId = Fixture.stripeCustomerId();
-  const validProductId = Fixture.stripeProductId();
   const validPriceId = Fixture.stripePriceId();
   const validInvoiceId = Fixture.stripeInvoiceId();
 
@@ -27,20 +26,23 @@ describe("StripeMiscellaneousRepository", () => {
 
     const stripeCustomer = Fixture.stripeCustomer(validCustomerId);
     await stripeCustomerRepo.insert(stripeCustomer);
-    const product = Fixture.stripeProduct(validProductId, validRepositoryId);
-    await stripeProductRepo.insert(product);
-    const price = Fixture.stripePrice(validPriceId, validProductId);
-    await stripePriceRepo.insert(price);
   });
 
   describe("getRaisedAmountPerCurrency", () => {
-    it("should work", async () => {
+    it("for the repository", async () => {
+      const projectId = validRepositoryId;
+      const productId = Fixture.stripeProductId();
+      const product = Fixture.stripeProduct(productId, projectId);
+      await stripeProductRepo.insert(product);
+      const price = Fixture.stripePrice(validPriceId, productId);
+      await stripePriceRepo.insert(price);
+
       const invoiceLineId = Fixture.stripeInvoiceLineId();
       const invoiceLine = Fixture.stripeInvoiceLine(
         invoiceLineId,
         validInvoiceId,
         validCustomerId,
-        validProductId,
+        productId,
         validPriceId,
       );
       await stripeInvoiceRepo.insert(
@@ -55,7 +57,41 @@ describe("StripeMiscellaneousRepository", () => {
 
       const raisedAmount =
         await stripeMiscellaneousRepository.getRaisedAmountPerCurrency(
-          validRepositoryId,
+          projectId,
+        );
+
+      expect(raisedAmount[Currency.USD]).toEqual(1000);
+    });
+
+    it("for the owner", async () => {
+      const projectId = validOwnerId;
+      const productId = Fixture.stripeProductId();
+      const product = Fixture.stripeProduct(productId, projectId);
+      await stripeProductRepo.insert(product);
+      const price = Fixture.stripePrice(validPriceId, productId);
+      await stripePriceRepo.insert(price);
+
+      const invoiceLineId = Fixture.stripeInvoiceLineId();
+      const invoiceLine = Fixture.stripeInvoiceLine(
+        invoiceLineId,
+        validInvoiceId,
+        validCustomerId,
+        productId,
+        validPriceId,
+      );
+      await stripeInvoiceRepo.insert(
+        Fixture.stripeInvoice(
+          validInvoiceId,
+          validCustomerId,
+          [invoiceLine],
+          Currency.USD,
+          1000,
+        ),
+      );
+
+      const raisedAmount =
+        await stripeMiscellaneousRepository.getRaisedAmountPerCurrency(
+          projectId,
         );
 
       expect(raisedAmount[Currency.USD]).toEqual(1000);

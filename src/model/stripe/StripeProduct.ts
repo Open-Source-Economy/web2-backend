@@ -1,5 +1,5 @@
 import { ValidationError, Validator } from "../error";
-import { RepositoryId } from "../github";
+import { OwnerId, ProjectId, RepositoryId } from "../github";
 
 export class StripeProductId {
   id: string;
@@ -32,16 +32,16 @@ export enum ProductType {
 
 export class StripeProduct {
   stripeId: StripeProductId;
-  repositoryId: RepositoryId | null;
+  projectId: ProjectId | null;
   type: ProductType;
 
   constructor(
     stripeId: StripeProductId,
-    repositoryId: RepositoryId | null,
+    projectId: ProjectId | null,
     type: ProductType,
   ) {
     this.stripeId = stripeId;
-    this.repositoryId = repositoryId;
+    this.projectId = projectId;
     this.type = type;
   }
 
@@ -49,8 +49,6 @@ export class StripeProduct {
   static fromBackend(row: any): StripeProduct | ValidationError {
     const validator = new Validator(row);
     const stripeId = validator.requiredString("stripe_id");
-    const repositoryId = RepositoryId.fromBackendForeignKey(row);
-
     const type = validator.requiredEnum(
       "type",
       Object.values(ProductType) as ProductType[],
@@ -61,18 +59,18 @@ export class StripeProduct {
       return error;
     }
 
-    // TODO: Implement the optionality properly
-    let repositoryIdValue: RepositoryId | null;
-    if (repositoryId instanceof ValidationError) {
-      repositoryIdValue = null;
+    let projectId: ProjectId | null | ValidationError = null;
+    if (row.github_repository_name) {
+      projectId = RepositoryId.fromBackendForeignKey(row);
     } else {
-      repositoryIdValue = repositoryId;
+      projectId = OwnerId.fromBackendForeignKey(row);
     }
 
-    return new StripeProduct(
-      new StripeProductId(stripeId),
-      repositoryIdValue,
-      type,
-    );
+    // TODO: Implement the optionality properly
+    if (projectId instanceof ValidationError) {
+      projectId = null;
+    }
+
+    return new StripeProduct(new StripeProductId(stripeId), projectId, type);
   }
 }

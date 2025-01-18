@@ -25,6 +25,7 @@ import {
   OwnerType,
   PriceType,
   ProductType,
+  ProjectId,
   Provider,
   Repository,
   RepositoryId,
@@ -198,10 +199,10 @@ export const Fixture = {
 
   stripeProduct(
     productId: StripeProductId,
-    repositoryId: RepositoryId | null,
+    projectId: ProjectId | null,
     productType: ProductType = ProductType.milliDow,
   ): StripeProduct {
-    return new StripeProduct(productId, repositoryId, productType);
+    return new StripeProduct(productId, projectId, productType);
   },
 
   stripePriceId(): StripePriceId {

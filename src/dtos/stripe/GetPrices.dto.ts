@@ -2,7 +2,7 @@ import { Currency, PriceType, ProductType, StripePrice } from "../../model";
 
 export interface GetPricesParams {
   owner: string;
-  repo: string;
+  repo?: string;
 }
 
 export interface Price {

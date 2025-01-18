@@ -23,8 +23,14 @@ router.post(
   AdminController.sendRepositoryAdminInvite,
 );
 
+// Create prices (for both owners and repositories)
 router.post(
-  "/repository/:owner/:repo/stripe/create-product-and-price",
+  "/owners/:owner/stripe/product-and-price",
+  isWebsiteAdmin,
+  AdminController.createProductAndPrice,
+);
+router.post(
+  "/repos/:owner/:repo/stripe/product-and-price",
   isWebsiteAdmin,
   AdminController.createProductAndPrice,
 );

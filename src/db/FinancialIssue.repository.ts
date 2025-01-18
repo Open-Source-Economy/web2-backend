@@ -7,6 +7,8 @@ import {
   ManagedIssue,
   Owner,
   OwnerId,
+  Project,
+  ProjectId,
   Repository,
   RepositoryId,
   User,
@@ -35,6 +37,8 @@ export interface FinancialIssueRepository {
 
   // TODO: this function should not be here. And there is a copy-paste get
   getRepository(repositoryId: RepositoryId): Promise<[Owner, Repository]>;
+
+  getProject(projectId: ProjectId): Promise<Project>;
 
   get(issueId: IssueId): Promise<FinancialIssue | null>;
 
@@ -156,6 +160,18 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       throw new Error(
         `Failed to fetch all required data for repository ${JSON.stringify(repositoryId)}`,
       );
+    }
+  }
+
+  async getProject(projectId: ProjectId): Promise<Project> {
+    if (projectId instanceof RepositoryId) {
+      const [owner, repository] = await this.getRepository(
+        new RepositoryId(new OwnerId(projectId.ownerId.login), projectId.name),
+      );
+      return new Project(owner, repository);
+    } else {
+      const owner = await this.getOwner(new OwnerId(projectId.login));
+      return new Project(owner);
     }
   }
 

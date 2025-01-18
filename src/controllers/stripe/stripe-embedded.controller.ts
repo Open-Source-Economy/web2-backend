@@ -83,7 +83,7 @@ export class StripeEmbeddedController {
     // Step 4: Request the payment intent for the invoice.
     const invoice: Stripe.Response<Stripe.Invoice> =
       await stripe.invoices.create({
-        customer: req.body.stripeCustomerUserId.toString(),
+        customer: req.body.stripeCustomerId.toString(),
         automatic_tax: {
           enabled: false,
         },
@@ -91,7 +91,7 @@ export class StripeEmbeddedController {
 
     for (const item of req.body.priceItems) {
       await stripe.invoiceItems.create({
-        customer: req.body.stripeCustomerUserId.toString(),
+        customer: req.body.stripeCustomerId.toString(),
         invoice: invoice.id,
         price: item.priceId.toString(),
         quantity: item.quantity,
