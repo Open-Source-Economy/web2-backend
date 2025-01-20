@@ -279,8 +279,21 @@ export class GithubController {
       CURRENCY_PRICE_CONFIGS,
     );
 
+    logger.debug(`Prices: `, prices);
+
     const raisedAmountPerCurrency =
       await stripeMiscellaneousRepository.getRaisedAmountPerCurrency(projectId);
+
+    if (
+      projectId instanceof RepositoryId &&
+      projectId.ownerId.login === "apache" &&
+      projectId.name === "pekko"
+    ) {
+      raisedAmountPerCurrency[Currency.USD] =
+        raisedAmountPerCurrency[Currency.USD] + 50000; // manual invoice #1
+      raisedAmountPerCurrency[Currency.CHF] =
+        raisedAmountPerCurrency[Currency.CHF] + 100000; // manual invoice #2
+    }
 
     const raisedAmount: Record<Currency, number> = Object.values(
       Currency,
@@ -309,13 +322,21 @@ export class GithubController {
     logger.debug(`Raised amount per currency`, raisedAmountPerCurrency);
     logger.debug(`Raised amount`, raisedAmount);
 
+    let targetAmount$: number | null = null;
     if (
       projectId instanceof RepositoryId &&
       projectId.ownerId.login === "apache" &&
       projectId.name === "pekko"
     ) {
-      const targetAmount$ = 4000000;
+      targetAmount$ = 4000000;
+    } else if (
+      projectId instanceof OwnerId &&
+      projectId.login === "open-source-economy"
+    ) {
+      targetAmount$ = 1000000;
+    }
 
+    if (targetAmount$ !== null) {
       const response: GetCampaignResponse = {
         raisedAmount: raisedAmount,
         targetAmount: Object.values(Currency).reduce(
