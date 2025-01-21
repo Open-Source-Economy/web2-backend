@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -8,17 +9,19 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
-
+   .br-for-open-source {
+            display: none;
+        }
         .main_parent {
             background: url('https://i.imghippo.com/files/wuAt5679Og.jpg') #0E1F35 !important;
             max-width: 740px !important;
             background-size: cover !important;
             background-repeat: no-repeat !important;
             margin: auto !important;
-            padding: 130px 0 30px 0 !important;
+            padding: 115px 0 30px 0 !important;
             font-family: "Montserrat", sans-serif !important;
             color: white !important;
-            background-position: bottom center !important;
+            background-position: top !important;
 
 
         }
@@ -94,7 +97,10 @@
         .under_line:hover {
             text-decoration: underline !important;
         }
-
+.open_source_text{
+    font-size: 18px;
+    font-family: 400;
+}
         @media (max-width:760.98px) {
             .main_parent {
                 background-size: cover !important;
@@ -123,8 +129,8 @@
             .main_parent {
                 background: url('https://i.imghippo.com/files/LJD1780eM.jpg') #0E1F35 !important;
                 background-size: cover !important;
-                padding: 60px 0 15px 0 !important;
-                background-position: bottom !important;
+                padding: 45px 0 15px 0 !important;
+                background-position: top !important;
             }
 
             .fs_18 {
@@ -156,6 +162,14 @@
             .pt_70 {
                 padding-top: 50px !important;
             }
+            .open_source_text{
+    font-size: 17px;
+}
+
+   .br-for-open-source {
+            display: block;
+        }
+
         }
     </style>
     </html>
@@ -183,10 +197,10 @@
                                     <th style="color: white ;font-size: 25px;font-weight: 600;" class="pt_70">
                                         Hey {{toName}}!
                                     </th>
-                                    <tr style="font-weight: 400; font-size: 18px;">
+                                    <tr class="open_source_text">
                                         <td style="padding: 10px 0 0px 0;">
                                             Lauriane from <a href="#" class="under_line"
-                                                style="color: #ff518c; font-weight: 600;">
+                                                style="color: #ff518c; font-weight: 600;"> <br class="br-for-open-source">
                                                 Open Source Economy
                                             </a> &nbsp;here 👋
                                         </td>
