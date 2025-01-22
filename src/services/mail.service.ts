@@ -37,7 +37,10 @@ export class MailService {
     );
 
     // Read the HTML file
-    const htmlFilePath = path.join(__dirname, "register-as-company-admin.html");
+    const htmlFilePath = path.join(
+      __dirname,
+      "company-template/register-as-company-admin.html",
+    );
     let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
     // Replace placeholders in the HTML with dynamic values
@@ -45,6 +48,11 @@ export class MailService {
       .replace("{{toName}}", toName || "")
       .replace("{{companyName}}", company.name)
       .replace("{{setUpYourAccountLink}}", setUpYourAccountLink);
+
+    // htmlContent = htmlContent
+    //     .replace(/{{toName}}/g, toName || "")
+    //     .replace(/{{companyName}}/g, company.name)
+    //     .replace(/{{setUpYourAccountLink}}/g, setUpYourAccountLink);
 
     // Send email with both text and HTML
     await this.sendMail(toEmail, subject, htmlContent);
@@ -76,7 +84,7 @@ export class MailService {
     // Read the HTML file
     const htmlFilePath = path.join(
       __dirname,
-      "register-as-maintainer-admin.html",
+      "register-template/register-as-maintainer-admin.html",
     );
     let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
@@ -89,6 +97,15 @@ export class MailService {
       .replace("{{repositoryName}}", repositoryName)
       .replace("{{repositoryUrl}}", repositoryUrl || "")
       .replace("{{repositoryAvatarUrl}}", repositoryAvatarUrl);
+
+    // htmlContent = htmlContent
+    //     .replace(/{{toName}}/g, toName || userLogin)
+    //     .replace(/{{setUpYourAccountLink}}/g, setUpYourAccountLink)
+    //     .replace(/{{userLogin}}/g, userLogin)
+    //     .replace(/{{userProfileUrl}}/g, userProfileUrl)
+    //     .replace(/{{repositoryName}}/g, repositoryName)
+    //     .replace(/{{repositoryUrl}}/g, repositoryUrl || "")
+    //     .replace(/{{repositoryAvatarUrl}}/g, repositoryAvatarUrl);
 
     // Send email with both text and HTML
     await this.sendMail(toEmail, subject, htmlContent);
