@@ -10,13 +10,18 @@ import {
   CreateManualInvoiceBody,
   CreateManualInvoiceQuery,
   CreateManualInvoiceResponse,
+  GetCampaignBody,
+  GetCampaignParams,
+  GetCampaignQuery,
+  GetCampaignResponse,
   ResponseBody,
-  SendCompanyAdminInviteBody,
-  SendCompanyAdminInviteQuery,
-  SendCompanyAdminInviteResponse,
-  SendRepositoryAdminInviteBody,
-  SendRepositoryAdminInviteQuery,
-  SendRepositoryAdminInviteResponse,
+  SendCompanyRoleInviteBody,
+  SendCompanyRoleInviteParams,
+  SendCompanyRoleInviteQuery,
+  SendCompanyRoleInviteResponse,
+  SendRepositoryRoleInviteBody,
+  SendRepositoryRoleInviteQuery,
+  SendRepositoryRoleInviteResponse,
 } from "../dtos";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -70,12 +75,12 @@ export class AdminController {
 
   static async sendCompanyAdminInvite(
     req: Request<
-      {},
-      {},
-      SendCompanyAdminInviteBody,
-      SendCompanyAdminInviteQuery
+      SendCompanyRoleInviteParams,
+      ResponseBody<SendCompanyRoleInviteResponse>,
+      SendCompanyRoleInviteBody,
+      SendCompanyRoleInviteQuery
     >,
-    res: Response<ResponseBody<SendCompanyAdminInviteResponse>>,
+    res: Response<ResponseBody<SendCompanyRoleInviteResponse>>,
   ) {
     const [token, expiresAt] = secureToken.generate({
       email: req.body.userEmail,
@@ -123,7 +128,7 @@ export class AdminController {
       token,
     );
 
-    const response: SendCompanyAdminInviteResponse = {};
+    const response: SendCompanyRoleInviteResponse = {};
     res.status(StatusCodes.OK).send({ success: response });
   }
 
@@ -131,10 +136,10 @@ export class AdminController {
     req: Request<
       {},
       {},
-      SendRepositoryAdminInviteBody,
-      SendRepositoryAdminInviteQuery
+      SendRepositoryRoleInviteBody,
+      SendRepositoryRoleInviteQuery
     >,
-    res: Response<ResponseBody<SendCompanyAdminInviteResponse>>,
+    res: Response<ResponseBody<SendCompanyRoleInviteResponse>>,
   ) {
     const [token, expiresAt] = secureToken.generate({
       email: req.body.userEmail,
@@ -185,7 +190,7 @@ export class AdminController {
       token,
     );
 
-    const response: SendRepositoryAdminInviteResponse = {};
+    const response: SendRepositoryRoleInviteResponse = {};
     res.status(StatusCodes.OK).send({ success: response });
   }
 

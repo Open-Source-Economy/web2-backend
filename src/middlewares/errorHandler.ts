@@ -25,6 +25,8 @@ export function errorHandler(
   res: Response,
   next: NextFunction,
 ) {
+  logger.error(err);
+
   let { statusCode, message } = err;
   if (config.env === NodeEnv.Production && !err.isOperational) {
     statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
