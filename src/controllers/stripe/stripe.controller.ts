@@ -23,7 +23,7 @@ const CURRENCY_AMOUNTS: Record<Currency, number[]> = Object.values(
   Currency,
 ).reduce(
   (acc, currency) => {
-    acc[currency] = [15, 30, 50, 100, 250, 500].map((amount) => amount * 100); // in cents
+    acc[currency] = [50, 100, 200, 300, 500, 750].map((amount) => amount * 100); // in cents
     return acc;
   },
   {} as Record<Currency, number[]>,
