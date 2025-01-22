@@ -114,17 +114,17 @@ class IssueRepositoryImpl implements IssueRepository {
       `;
 
       const values = [
-        issue.id.githubId?.toString(),
+        issue.id.githubId,
         issue.id.repositoryId.ownerId.githubId,
         issue.id.repositoryId.ownerId.login,
-        issue.id.repositoryId.githubId?.toString(),
+        issue.id.repositoryId.githubId,
         issue.id.repositoryId.name,
         issue.id.number,
         issue.title,
         issue.htmlUrl,
         issue.createdAt.toISOString(),
         issue.closedAt ? issue.closedAt.toISOString() : null,
-        issue.openBy?.githubId?.toString(),
+        issue.openBy?.githubId,
         issue.openBy.login,
         issue.body,
       ];

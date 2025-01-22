@@ -58,11 +58,11 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
     logger.debug(`Total issue funding: ${totalFunding}`);
     if (totalFunding < 0) {
       logger.error(
-        `The amount dow amount (${totalFunding}) is negative for userId ${userId.toString()}, companyId ${companyId ? companyId.toString() : ""}`,
+        `The amount dow amount (${totalFunding}) is negative for userId ${userId.uuid}, companyId ${companyId ? companyId.uuid : ""}`,
       );
     } else if (availableMilliDoWs < 0) {
       logger.error(
-        `The total DoW paid (${totalDoWsPaid}) is less than the total funding (${totalFunding}) for userId ${userId.toString()}, companyId ${companyId ? companyId.toString() : ""}`,
+        `The total DoW paid (${totalDoWsPaid}) is less than the total funding (${totalFunding}) for userId ${userId.uuid}, companyId ${companyId ? companyId.uuid : ""}`,
       );
     }
 
@@ -88,7 +88,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
             AND sp.type = '${ProductType.milliDow}'
             AND si.paid = TRUE
       `;
-      result = await this.pool.query(query, [id.toString()]);
+      result = await this.pool.query(query, [id.uuid]);
     } else {
       const query = `
         SELECT SUM(sl.quantity) AS total_milli_dow_paid
@@ -100,7 +100,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
           AND sp.type = '${ProductType.milliDow}'
           AND si.paid = true
             `;
-      result = await this.pool.query(query, [id.toString()]);
+      result = await this.pool.query(query, [id.uuid]);
     }
 
     try {
@@ -125,7 +125,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
                 WHERE uc.company_id = $1
                   AND (mi.state != 'rejected' OR mi.state is NULL)
             `;
-      result = await this.pool.query(query, [id.toString()]);
+      result = await this.pool.query(query, [id.uuid]);
     } else {
       const query = `
                 SELECT SUM(if.milli_dow_amount) AS total_funding
@@ -134,7 +134,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
                 WHERE if.user_id = $1
                   AND (mi.state != 'rejected' OR mi.state is NULL)
             `;
-      result = await this.pool.query(query, [id.toString()]);
+      result = await this.pool.query(query, [id.uuid]);
     }
 
     try {

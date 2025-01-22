@@ -157,7 +157,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
           token.repositoryId.name,
           token.repositoryUserRole,
           token.dowRate.toString(),
-          token.dowCurrency.toString(),
+          token.dowCurrency,
           token.expiresAt,
           false, // Default for has_been_used
         ],
@@ -210,7 +210,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
           token.dowRate.toString(),
           token.dowCurrency.toString(),
           token.expiresAt,
-          token.id.toString(),
+          token.id.uuid,
         ],
       );
 
@@ -231,7 +231,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
                 FROM repository_user_permission_token
                 WHERE id = $1
             `,
-      [id.toString()],
+      [id.uuid],
     );
 
     return this.getOptionalToken(result.rows);

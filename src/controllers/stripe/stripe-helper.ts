@@ -92,7 +92,7 @@ export class StripeHelper {
       };
 
       const customerCreateParams: Stripe.CustomerCreateParams = {
-        description: user.id.toString(),
+        description: user.id.uuid,
         email: user.email() ?? undefined,
         address: stripeAddress,
       };

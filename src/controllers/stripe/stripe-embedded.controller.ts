@@ -43,7 +43,7 @@ export class StripeEmbeddedController {
 
       const items: Stripe.SubscriptionCreateParams.Item[] = [];
       for (const item of req.body.priceItems) {
-        items.push({ price: item.priceId.toString(), quantity: item.quantity });
+        items.push({ price: item.priceId.id, quantity: item.quantity });
       }
 
       // Create the subscription.
@@ -51,7 +51,7 @@ export class StripeEmbeddedController {
       // so we can pass it to the front end to confirm the payment
       const subscription: Stripe.Subscription =
         await stripe.subscriptions.create({
-          customer: stripeCustomerUser.stripeCustomerId.toString(),
+          customer: stripeCustomerUser.stripeCustomerId.id,
           items: items,
           payment_behavior: "default_incomplete",
           payment_settings: { save_default_payment_method: "on_subscription" },
@@ -83,7 +83,7 @@ export class StripeEmbeddedController {
     // Step 4: Request the payment intent for the invoice.
     const invoice: Stripe.Response<Stripe.Invoice> =
       await stripe.invoices.create({
-        customer: req.body.stripeCustomerId.toString(),
+        customer: req.body.stripeCustomerId.id,
         automatic_tax: {
           enabled: false,
         },
@@ -91,9 +91,9 @@ export class StripeEmbeddedController {
 
     for (const item of req.body.priceItems) {
       await stripe.invoiceItems.create({
-        customer: req.body.stripeCustomerId.toString(),
+        customer: req.body.stripeCustomerId.id,
         invoice: invoice.id,
-        price: item.priceId.toString(),
+        price: item.priceId.id,
         quantity: item.quantity,
         // tax_behavior: "exclusive",
         // tax_rates: [taxCalculation.tax_rates[0].id],

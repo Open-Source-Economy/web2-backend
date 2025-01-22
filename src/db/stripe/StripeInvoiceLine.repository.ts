@@ -73,7 +73,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
             FROM stripe_invoice_line
             WHERE stripe_id = $1
         `,
-      [id.toString()],
+      [id.id],
     );
 
     return this.getOptionalInvoiceLine(result.rows);
@@ -86,7 +86,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
             FROM stripe_invoice_line
             WHERE invoice_id = $1
         `,
-      [id.toString()],
+      [id.id],
     );
 
     return this.getInvoiceLineList(result.rows);
@@ -104,11 +104,11 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
                 RETURNING stripe_id, invoice_id, stripe_customer_id, product_id, price_id, quantity
             `,
         [
-          invoiceLine.stripeId.toString(),
-          invoiceLine.invoiceId.toString(),
-          invoiceLine.customerId.toString(),
-          invoiceLine.productId.toString(),
-          invoiceLine.priceId.toString(),
+          invoiceLine.stripeId.id,
+          invoiceLine.invoiceId.id,
+          invoiceLine.customerId.id,
+          invoiceLine.productId.id,
+          invoiceLine.priceId.id,
           invoiceLine.quantity,
         ],
       );

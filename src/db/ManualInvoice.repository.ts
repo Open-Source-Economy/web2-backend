@@ -74,10 +74,10 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                 `,
         [
           manualInvoice.number,
-          manualInvoice.companyId?.uuid.toString(),
-          manualInvoice.userId?.uuid.toString(),
+          manualInvoice.companyId?.uuid,
+          manualInvoice.userId?.uuid,
           manualInvoice.paid,
-          manualInvoice.milliDowAmount.toString(),
+          manualInvoice.milliDowAmount,
         ],
       );
 
@@ -104,11 +104,11 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                 `,
         [
           manualInvoice.number,
-          manualInvoice.companyId?.toString(),
-          manualInvoice.userId?.toString(),
+          manualInvoice.companyId?.uuid,
+          manualInvoice.userId?.uuid,
           manualInvoice.paid,
-          manualInvoice.milliDowAmount.toString(),
-          manualInvoice.id?.toString(),
+          manualInvoice.milliDowAmount,
+          manualInvoice.id?.uuid,
         ],
       );
 
@@ -146,16 +146,14 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
     let result;
 
     if (id instanceof CompanyId) {
-      logger.debug(
-        `Getting all manual invoices paid by company: ${id.toString()}`,
-      );
+      logger.debug(`Getting all manual invoices paid by company: ${id.uuid}`);
       result = await this.pool.query(
         `
                         SELECT *
                         FROM manual_invoice
                         WHERE company_id = $1 AND paid = TRUE
                     `,
-        [id.toString()],
+        [id.uuid],
       );
     } else {
       result = await this.pool.query(
@@ -164,7 +162,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                         FROM manual_invoice
                         WHERE user_id = $1 AND paid = TRUE
                     `,
-        [id.toString()],
+        [id.uuid],
       );
     }
 

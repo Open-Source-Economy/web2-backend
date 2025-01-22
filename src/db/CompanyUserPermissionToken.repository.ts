@@ -97,7 +97,7 @@ class CompanyUserPermissionTokenRepositoryImpl
           token.userName,
           token.userEmail,
           token.token,
-          token.companyId.uuid.toString(),
+          token.companyId.uuid,
           token.companyUserRole,
           token.expiresAt,
           false, // Default value for hasBeenUsed
@@ -133,11 +133,11 @@ class CompanyUserPermissionTokenRepositoryImpl
           token.userName,
           token.userEmail,
           token.token,
-          token.companyId.toString(),
+          token.companyId.uuid,
           token.companyUserRole,
           token.expiresAt,
           token.hasBeenUsed,
-          token.id.toString(),
+          token.id.uuid,
         ],
       );
 
@@ -156,7 +156,7 @@ class CompanyUserPermissionTokenRepositoryImpl
                 FROM company_user_permission_token
                 WHERE id = $1
             `,
-      [id.toString()],
+      [id.uuid],
     );
 
     return this.getOptionalToken(result.rows);
@@ -173,7 +173,7 @@ class CompanyUserPermissionTokenRepositoryImpl
                 WHERE user_email = $1
                   AND company_id = $2
             `,
-      [userEmail, companyId.uuid.toString()],
+      [userEmail, companyId.uuid],
     );
 
     return this.getTokenList(result.rows);

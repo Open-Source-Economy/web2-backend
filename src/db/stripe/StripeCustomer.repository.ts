@@ -71,7 +71,7 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
                 FROM stripe_customer
                 WHERE stripe_id = $1
             `,
-      [id.toString()],
+      [id.id],
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -109,13 +109,13 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
         RETURNING *
       `,
         [
-          customer.stripeId.toString(),
+          customer.stripeId.id,
           customer.currency || null,
           customer.email || null,
           customer.name || null,
           customer.phone || null,
           customer.preferredLocales || null,
-          customer.addressId?.toString() || null,
+          customer.addressId?.uuid || null,
         ],
       );
 

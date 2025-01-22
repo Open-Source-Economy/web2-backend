@@ -89,7 +89,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
           issueFunding.githubIssueId.repositoryId.name,
           issueFunding.githubIssueId.githubId,
           issueFunding.githubIssueId.number,
-          issueFunding.userId.toString(),
+          issueFunding.userId.uuid,
           issueFunding.milliDowAmount,
         ],
       );
@@ -107,7 +107,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
                 FROM issue_funding
                 WHERE id = $1
             `,
-      [id.toString()],
+      [id.uuid],
     );
 
     return this.getOptionalIssueFunding(result.rows);

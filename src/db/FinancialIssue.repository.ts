@@ -81,7 +81,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       })
       .catch((error) => {
         logger.error(
-          `Owner ${ownerId.toString()} does not exist in the DB and go an error fetching GitHub data:`,
+          `Owner ${JSON.stringify(ownerId)} does not exist in the DB and go an error fetching GitHub data:`,
           error,
         );
         return null;
@@ -131,7 +131,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       })
       .catch((error) => {
         logger.error(
-          `Owner ${repositoryId.ownerId.toString()} does not exist in the DB and go an error fetching GitHub data:`,
+          `Owner ${JSON.stringify(repositoryId.ownerId)} does not exist in the DB and go an error fetching GitHub data:`,
           error,
         );
         return null;
@@ -148,7 +148,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       })
       .catch((error) => {
         logger.error(
-          `Repository ${repositoryId.toString()} does not exist in the DB and go an error fetching GitHub data:`,
+          `Repository ${JSON.stringify(repositoryId)} does not exist in the DB and go an error fetching GitHub data:`,
           error,
         );
         return null;

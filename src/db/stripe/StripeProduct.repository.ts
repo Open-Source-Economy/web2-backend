@@ -78,7 +78,7 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
                 FROM stripe_product
                 WHERE stripe_id = $1
             `,
-      [id.toString()],
+      [id.id],
     );
 
     return this.getOptionalProduct(result.rows);
@@ -131,7 +131,7 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
         RETURNING stripe_id, type, github_owner_id, github_owner_login, github_repository_id, github_repository_name
       `,
         [
-          product.stripeId.toString(),
+          product.stripeId.id,
           product.type,
           ownerId,
           ownerLogin,

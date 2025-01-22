@@ -66,7 +66,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                 FROM stripe_invoice
                 WHERE stripe_id = $1
             `,
-      [id.toString()],
+      [id.id],
     );
 
     const lines = await this.stripeInvoiceLineRepository.getByInvoiceId(id);
@@ -117,8 +117,8 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                         number
                 `,
         [
-          invoice.id.toString(),
-          invoice.customerId.toString(),
+          invoice.id.id,
+          invoice.customerId.id,
           invoice.paid,
           invoice.accountCountry,
           invoice.currency,
@@ -147,11 +147,11 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                         VALUES ($1, $2, $3, $4, $5, $6)
                     `,
           [
-            line.stripeId.toString(),
-            line.invoiceId.toString(),
-            line.customerId.toString(),
-            line.productId.toString(),
-            line.priceId.toString(),
+            line.stripeId.id,
+            line.invoiceId.id,
+            line.customerId.id,
+            line.productId.id,
+            line.priceId.id,
             line.quantity,
           ],
         );
@@ -182,7 +182,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                         )
                     ) AND paid = TRUE
                 `,
-        [id.toString()],
+        [id.uuid],
       );
     } else {
       result = await this.pool.query(
@@ -193,7 +193,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                         SELECT stripe_id FROM stripe_customer_user WHERE user_id = $1
                     ) AND paid = TRUE
                 `,
-        [id.toString()],
+        [id.uuid],
       );
     }
 

@@ -71,7 +71,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
         FROM stripe_customer_user
         WHERE stripe_customer_id = $1
       `,
-      [id.toString()],
+      [id.id],
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -84,7 +84,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
         FROM stripe_customer_user
         WHERE user_id = $1
       `,
-      [id.toString()],
+      [id.uuid],
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -102,7 +102,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
           VALUES ($1, $2)
           RETURNING *
         `,
-        [customer.stripeCustomerId.toString(), customer.userId.toString()],
+        [customer.stripeCustomerId.id, customer.userId.uuid],
       );
 
       await client.query("COMMIT");

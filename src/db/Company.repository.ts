@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import { Company, CompanyId } from "../model";
 import { pool } from "../dbPool";
 import { CreateCompanyBody } from "../dtos";
+import { logger } from "../config";
 
 export function getCompanyRepository(): CompanyRepository {
   return new CompanyRepositoryImpl(pool);
@@ -64,13 +65,14 @@ class CompanyRepositoryImpl implements CompanyRepository {
   }
 
   async getById(id: CompanyId): Promise<Company | null> {
+    logger.debug(`Getting company by id:`, id);
     const result = await this.pool.query(
       `
       SELECT *
       FROM company
       WHERE id = $1
       `,
-      [id.toString()],
+      [id.uuid],
     );
 
     return this.getOptionalCompany(result.rows);
@@ -87,11 +89,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
       VALUES ($1, $2, $3) 
       RETURNING *
       `,
-        [
-          company.taxId,
-          company.name,
-          company.addressId?.uuid.toString() ?? null,
-        ],
+        [company.taxId, company.name, company.addressId?.uuid ?? null],
       );
 
       return this.getOneCompany(result.rows);
@@ -117,8 +115,8 @@ class CompanyRepositoryImpl implements CompanyRepository {
         [
           company.taxId,
           company.name,
-          company.addressId?.toString() ?? null,
-          company.id.toString(),
+          company.addressId?.uuid ?? null,
+          company.id.uuid,
         ],
       );
 

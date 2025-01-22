@@ -64,7 +64,7 @@ class AddressRepositoryImpl implements AddressRepository {
       JOIN company c ON a.id = c.address_id
       WHERE c.id = $1
       `,
-      [id.toString()],
+      [id.uuid],
     );
 
     return this.getOptionalAddress(result.rows);
@@ -79,7 +79,7 @@ class AddressRepositoryImpl implements AddressRepository {
       JOIN address a ON c.address_id = a.id
       WHERE uc.user_id = $1
       `,
-      [id.toString()],
+      [id.uuid],
     );
 
     return this.getOptionalAddress(result.rows);

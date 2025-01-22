@@ -98,7 +98,7 @@ export const Fixture = {
 
   ownerId(): OwnerId {
     const id = this.id();
-    return new OwnerId(`owner-${id.toString()}`, id);
+    return new OwnerId(`owner-${id}`, id);
   },
 
   owner(ownerId: OwnerId, payload: string = "payload"): Owner {

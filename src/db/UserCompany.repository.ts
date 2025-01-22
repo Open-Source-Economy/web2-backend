@@ -42,7 +42,7 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 VALUES ($1, $2, $3)
                 RETURNING *
                 `,
-        [userId.toString(), companyId.toString(), role.toString()],
+        [userId.uuid, companyId.uuid, role],
       );
 
       return [
@@ -66,7 +66,7 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 DELETE FROM user_company
                 WHERE user_id = $1 AND company_id = $2
                 `,
-        [userId.toString(), companyId.toString()],
+        [userId.uuid, companyId.uuid],
       );
     } catch (error) {
       throw error; // Handle errors as needed
@@ -85,7 +85,7 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 FROM user_company
                 WHERE user_id = $1
                 `,
-        [userId.toString()],
+        [userId.uuid],
       );
 
       return result.rows.map((row) => [
@@ -111,7 +111,7 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 FROM user_company
                 WHERE company_id = $1
                 `,
-        [companyId.toString()],
+        [companyId.uuid],
       );
 
       return result.rows.map((row) => [

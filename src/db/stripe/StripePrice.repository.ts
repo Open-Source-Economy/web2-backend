@@ -68,7 +68,7 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
         FROM stripe_price
         WHERE stripe_id = $1
       `,
-      [id.toString()],
+      [id.id],
     );
     return this.getOptionalPrice(result.rows);
   }
@@ -82,7 +82,7 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
         FROM stripe_price
         WHERE product_id = $1
       `,
-      [productId.toString()],
+      [productId.id],
     );
 
     const priceList = this.getPriceList(result.rows);
@@ -133,8 +133,8 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
         RETURNING stripe_id, product_id, unit_amount, currency, active, type
       `,
         [
-          price.stripeId.toString(),
-          price.productId.toString(),
+          price.stripeId.id,
+          price.productId.id,
           price.unitAmount,
           price.currency,
           price.active,

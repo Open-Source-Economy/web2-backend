@@ -70,7 +70,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
           RETURNING *
         `,
         [
-          userRepository.userId.toString(),
+          userRepository.userId.uuid,
           userRepository.repositoryId.ownerId.githubId,
           userRepository.repositoryId.ownerId.login,
           userRepository.repositoryId.githubId,
@@ -94,7 +94,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
       `
         SELECT * FROM user_repository WHERE user_id = $1 AND github_owner_login = $2 AND github_repository_name = $3
       `,
-      [userId.toString(), repositoryId.ownerId.login, repositoryId.name],
+      [userId.uuid, repositoryId.ownerId.login, repositoryId.name],
     );
     return this.getOptional(result.rows);
   }
@@ -104,7 +104,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
       `
             SELECT * FROM user_repository WHERE user_id = $1
         `,
-      [userId.toString()],
+      [userId.uuid],
     );
     return this.getList(result.rows);
   }
@@ -123,7 +123,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
           userRepository.repositoryUserRole,
           userRepository.dowRate.toNumber(),
           userRepository.dowCurrency,
-          userRepository.userId.toString(),
+          userRepository.userId.uuid,
           userRepository.repositoryId.ownerId.login,
           userRepository.repositoryId.name,
         ],
@@ -139,7 +139,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
       `
         DELETE FROM user_repository WHERE user_id = $1 AND github_owner_login = $2 AND github_repository_name = $3
       `,
-      [userId.toString(), repositoryId.ownerId.login, repositoryId.name],
+      [userId.uuid, repositoryId.ownerId.login, repositoryId.name],
     );
   }
 }
