@@ -11,7 +11,9 @@ import { Currency, PriceType, ProductType, Project } from "../../model";
 import { getRoundedMilliDowAmount, StripeHelper } from "./stripe-helper";
 
 const DONATION_LABELS = [
+  "This made my day! 😄",
   "Thanks a bunch! 🌟",
+  "You rock! 🎸",
   "You're awesome! 🎉",
   "Wow, incredible! 🙌",
   "Amazing generosity! 🚀",
@@ -23,7 +25,9 @@ const CURRENCY_AMOUNTS: Record<Currency, number[]> = Object.values(
   Currency,
 ).reduce(
   (acc, currency) => {
-    acc[currency] = [50, 100, 200, 300, 500, 750].map((amount) => amount * 100); // in cents
+    acc[currency] = [15, 30, 50, 100, 250, 500, 750, 1000].map(
+      (amount) => amount * 100,
+    ); // in cents
     return acc;
   },
   {} as Record<Currency, number[]>,
