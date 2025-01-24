@@ -58,6 +58,21 @@ function getPrices($price: number): Record<Currency, number> {
   return record;
 }
 
+export function getRoundedMilliDowAmount(
+  price: number, // in cents
+  currency: Currency,
+  priceType: PriceType,
+): number {
+  const $amount = currencyAPI.convertPrice(price, currency, Currency.USD);
+  if (priceType === PriceType.ONE_TIME) {
+    return Math.floor($amount / milliDowOneTime$CentsPrice);
+  } else if (priceType === PriceType.RECURRING) {
+    return Math.floor($amount / milliDowRecurring$CentsPrice);
+  } else {
+    throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Price type not supported");
+  }
+}
+
 export class StripeHelper {
   // to read:
   // Subscriptions with multiple products: https://docs.stripe.com/billing/subscriptions/multiple-products
@@ -165,7 +180,10 @@ export class StripeHelper {
 
   static async getPrices(
     projectId: ProjectId,
-    currencyPriceConfigs: Record<Currency, [number, string][]>,
+    currencyPriceConfigs: Record<
+      Currency,
+      [number, Record<ProductType, Record<PriceType, string>>][]
+    >,
   ): Promise<
     Record<PriceType, Record<Currency, Record<ProductType, Price[]>>>
   > {
@@ -212,11 +230,11 @@ export class StripeHelper {
             );
           }
 
-          for (const [amount, label] of currencyConfigs) {
+          for (const [amount, labels] of currencyConfigs) {
             prices[stripePrice.type][parsedCurrency][product.type].push({
               totalAmount: amount,
               quantity: Math.floor(amount / stripePrice.unitAmount),
-              label,
+              label: labels[product.type][stripePrice.type],
               price: stripePrice,
             });
           }

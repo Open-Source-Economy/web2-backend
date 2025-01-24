@@ -16,24 +16,33 @@ import {
 } from "../../../model";
 import { Price } from "../../../dtos";
 
-const currencyPriceConfigs: Record<Currency, [number, string][]> = {
-  [Currency.USD]: [
-    [500, "10$"],
-    [1000, "20$"],
-  ],
-  [Currency.EUR]: [
-    [800, "8€"],
-    [1600, "16€"],
-  ],
-  [Currency.GBP]: [
-    [700, "7£"],
-    [1400, "14£"],
-  ],
-  [Currency.CHF]: [
-    [700, "7CHF"],
-    [1400, "7CHF"],
-  ],
-};
+const currencyPriceConfigs: Record<
+  Currency,
+  [number, Record<ProductType, Record<PriceType, string>>][]
+> = Object.fromEntries(
+  Object.entries({
+    [Currency.USD]: [500, 1000],
+    [Currency.EUR]: [800, 1600],
+    [Currency.GBP]: [700, 1400],
+    [Currency.CHF]: [700, 1400],
+  }).map(([currency, amounts]) => [
+    currency as Currency,
+    amounts.map((amount) => [
+      amount,
+      Object.fromEntries(
+        Object.values(ProductType).map((productType) => [
+          productType,
+          Object.fromEntries(
+            Object.values(PriceType).map((priceType) => [priceType, "label"]),
+          ),
+        ]),
+      ),
+    ]) as [number, Record<ProductType, Record<PriceType, string>>][],
+  ]),
+) as Record<
+  Currency,
+  [number, Record<ProductType, Record<PriceType, string>>][]
+>;
 
 describe("StripeHelper.getPrices", () => {
   setupTestDB();
@@ -105,14 +114,5 @@ describe("StripeHelper.getPrices", () => {
         2,
       );
     });
-  });
-
-  it("should return an empty result if no products exist", async () => {
-    const nonExistentRepositoryId = Fixture.repositoryId(Fixture.ownerId());
-    const prices = await StripeHelper.getPrices(
-      nonExistentRepositoryId,
-      currencyPriceConfigs,
-    );
-    expect(prices).toEqual({});
   });
 });

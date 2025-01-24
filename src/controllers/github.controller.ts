@@ -328,7 +328,7 @@ export class GithubController {
       projectId.ownerId.login === "apache" &&
       projectId.name === "pekko"
     ) {
-      targetAmount$ = 4000000;
+      targetAmount$ = 4500000;
     } else if (
       projectId instanceof OwnerId &&
       projectId.login === "Open-Source-Economy"

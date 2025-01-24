@@ -7,10 +7,10 @@ import {
 } from "../../dtos";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { Currency, Project } from "../../model";
-import { StripeHelper } from "./stripe-helper";
+import { Currency, PriceType, ProductType, Project } from "../../model";
+import { getRoundedMilliDowAmount, StripeHelper } from "./stripe-helper";
 
-const LABELS = [
+const DONATION_LABELS = [
   "Thanks a bunch! 🌟",
   "You're awesome! 🎉",
   "Wow, incredible! 🙌",
@@ -29,23 +29,37 @@ const CURRENCY_AMOUNTS: Record<Currency, number[]> = Object.values(
   {} as Record<Currency, number[]>,
 );
 
-export const CURRENCY_PRICE_CONFIGS: Record<Currency, [number, string][]> =
-  Object.entries(CURRENCY_AMOUNTS).reduce(
-    (acc, [currency, amounts]) => {
-      if (amounts.length !== LABELS.length) {
-        throw new Error(
-          `Currency ${currency} has ${amounts.length} amounts but there are ${LABELS.length} labels`,
-        );
-      }
+export const CURRENCY_PRICE_CONFIGS: Record<
+  Currency,
+  [number, Record<ProductType, Record<PriceType, string>>][]
+> = Object.entries(CURRENCY_AMOUNTS).reduce(
+  (acc, [currency, amounts]) => {
+    if (amounts.length !== DONATION_LABELS.length) {
+      throw new Error(
+        `Currency ${currency} has ${amounts.length} amounts but there are ${DONATION_LABELS.length} labels`,
+      );
+    }
 
-      acc[currency as Currency] = amounts.map((amount, index) => [
-        amount,
-        LABELS[index],
-      ]);
-      return acc;
-    },
-    {} as Record<Currency, [number, string][]>,
-  );
+    acc[currency as Currency] = amounts.map((amount, index) => [
+      amount,
+      {
+        [ProductType.donation]: {
+          [PriceType.ONE_TIME]: DONATION_LABELS[index],
+          [PriceType.RECURRING]: DONATION_LABELS[index],
+        },
+        [ProductType.milliDow]: {
+          [PriceType.ONE_TIME]: `${getRoundedMilliDowAmount(amount, currency as Currency, PriceType.ONE_TIME)} milliDoW`,
+          [PriceType.RECURRING]: `${getRoundedMilliDowAmount(amount, currency as Currency, PriceType.RECURRING)} milliDoW/mo`,
+        },
+      },
+    ]);
+    return acc;
+  },
+  {} as Record<
+    Currency,
+    [number, Record<ProductType, Record<PriceType, string>>][]
+  >,
+);
 
 export class StripeController {
   static async getPrices(
