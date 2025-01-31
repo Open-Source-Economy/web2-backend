@@ -107,6 +107,13 @@ export class AdminController {
     );
 
     for (const permission of existing) {
+      if (permission.hasBeenUsed) {
+        logger.error("Cannot send invite to user with used permission token");
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "Cannot send invite to user with used permission token",
+        );
+      }
       logger.info(
         `Deleting existing company permission token ${permission.token}`,
       );
@@ -167,6 +174,13 @@ export class AdminController {
       );
 
     if (existing) {
+      if (existing.hasBeenUsed) {
+        logger.error("Cannot send invite to user with used permission token");
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "Cannot send invite to user with used permission token",
+        );
+      }
       logger.info(
         `Deleting existing repository permission token ${existing.token}`,
       );

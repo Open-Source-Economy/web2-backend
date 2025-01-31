@@ -150,7 +150,7 @@ describe("CompanyUserPermissionTokenRepository", () => {
       const created = await tokenRepo.create(tokenBody);
       expect(created.hasBeenUsed).toEqual(false);
 
-      await tokenRepo.setHasBeenUsed(created.token);
+      await tokenRepo.use(created.token);
 
       const updated = await tokenRepo.getByToken(created.token);
       expect(updated).not.toBeNull();

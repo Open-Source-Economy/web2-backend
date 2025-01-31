@@ -57,7 +57,7 @@ export interface RepositoryUserPermissionTokenRepository {
 
   delete(token: string): Promise<void>;
 
-  setHasBeenUsed(token: string): Promise<void>;
+  use(token: string): Promise<void>;
 }
 
 class RepositoryUserPermissionTokenRepositoryImpl
@@ -340,7 +340,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
     );
   }
 
-  async setHasBeenUsed(token: string): Promise<void> {
+  async use(token: string): Promise<void> {
     const client = await this.pool.connect();
     try {
       logger.debug(`Marking token as used: ${token}`);
