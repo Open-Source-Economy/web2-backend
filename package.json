@@ -14,7 +14,8 @@
 		"lint": "prettier */*.js \"*/**/*{.js,.ts,.tsx}\" --check",
 		"db-migrate": "ts-node -T scripts/migrate.ts",
 		"db-drop": "ts-node -T scripts/drop.ts",
-		"prepare": "husky"
+		"prepare": "husky",
+		"fmt": "prettier */*.js \"*/**/*{.js,.ts,.tsx}\" -w ; tsc --project tsconfig.json && tsc --project tsconfig.test.json ; rm -f -r dist"
 	},
 	"keywords": [],
 	"author": "",

@@ -75,7 +75,7 @@ export class AuthController {
     return userRepos.map((userRepo) => {
       const info: RepositoryInfo = {
         role: userRepo.repositoryUserRole,
-        dowRate: userRepo.dowRate.toString(),
+        dowRate: userRepo.dowRate ? userRepo.dowRate.toString() : null,
         dowCurrency: userRepo.dowCurrency,
       };
       return [userRepo.repositoryId, info];

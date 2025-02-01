@@ -76,7 +76,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
           userRepository.repositoryId.githubId,
           userRepository.repositoryId.name,
           userRepository.repositoryUserRole,
-          userRepository.dowRate.toNumber(),
+          userRepository.dowRate ? userRepository.dowRate.toNumber() : null,
           userRepository.dowCurrency,
         ],
       );
@@ -121,7 +121,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
         `,
         [
           userRepository.repositoryUserRole,
-          userRepository.dowRate.toNumber(),
+          userRepository.dowRate ? userRepository.dowRate.toNumber() : null,
           userRepository.dowCurrency,
           userRepository.userId.uuid,
           userRepository.repositoryId.ownerId.login,

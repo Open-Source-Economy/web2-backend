@@ -65,7 +65,7 @@ export class User implements Express.User {
     const preferredCurrency = validator.optionalEnum(
       "preferred_currency",
       Object.values(Currency) as Currency[],
-    ); // Validate the new field
+    );
 
     const error = validator.getFirstError();
     if (error) {
