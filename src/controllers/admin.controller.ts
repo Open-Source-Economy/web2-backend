@@ -158,13 +158,13 @@ export class AdminController {
     const createRepositoryUserPermissionTokenDto: CreateRepositoryUserPermissionTokenDto =
       {
         userName: req.body.userName,
-        userEmail: req.body.userEmail,
+        userEmail: req.body.userEmail ?? null,
         userGithubOwnerLogin: req.body.userGithubOwnerLogin,
         token: token,
         repositoryId: repository.id,
         repositoryUserRole: req.body.repositoryUserRole,
-        dowRate: new Decimal(req.body.dowRate),
-        dowCurrency: req.body.dowCurrency,
+        dowRate: req.body.dowRate ? new Decimal(req.body.dowRate) : null,
+        dowCurrency: req.body.dowCurrency ? req.body.dowCurrency : null,
         expiresAt: expiresAt,
       };
 
@@ -191,14 +191,16 @@ export class AdminController {
       createRepositoryUserPermissionTokenDto,
     );
 
-    await mailService.sendRepositoryAdminInvite(
-      req.body.userName,
-      req.body.userEmail,
-      user,
-      owner,
-      repository,
-      token,
-    );
+    if (req.body.userEmail && req.body.sendEmail) {
+      await mailService.sendRepositoryAdminInvite(
+        req.body.userName,
+        req.body.userEmail,
+        user,
+        owner,
+        repository,
+        token,
+      );
+    }
 
     const response: SendRepositoryRoleInviteResponse = {};
     res.status(StatusCodes.OK).send({ success: response });

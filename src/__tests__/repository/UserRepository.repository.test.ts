@@ -35,6 +35,28 @@ describe("UserRepositoryRepository", () => {
       const created = await userRepositoryRepo.create(userRepository);
       expect(created.repositoryId).toEqual(repositoryId);
     });
+
+    it("create with null dowCurrency", async () => {
+      const userRepository = {
+        ...Fixture.userRepository(userId, repositoryId),
+        dowCurrency: null,
+      };
+
+      const created = await userRepositoryRepo.create(userRepository);
+
+      expect(created.dowCurrency).toBeNull();
+    });
+
+    it("create with null dowRate", async () => {
+      const userRepository = {
+        ...Fixture.userRepository(userId, repositoryId),
+        dowRate: null,
+      };
+
+      const created = await userRepositoryRepo.create(userRepository);
+
+      expect(created.dowRate).toBeNull();
+    });
   });
 
   describe("getById", () => {

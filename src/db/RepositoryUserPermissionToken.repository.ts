@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import {
-  DowCurrency,
+  Currency,
   RepositoryId,
   RepositoryUserPermissionToken,
   RepositoryUserPermissionTokenId,
@@ -13,15 +13,16 @@ import Decimal from "decimal.js";
 export function getRepositoryUserPermissionTokenRepository(): RepositoryUserPermissionTokenRepository {
   return new RepositoryUserPermissionTokenRepositoryImpl(pool);
 }
+
 export interface CreateRepositoryUserPermissionTokenDto {
   userName: string | null;
-  userEmail: string;
+  userEmail: string | null;
   userGithubOwnerLogin: string;
   token: string;
   repositoryId: RepositoryId;
   repositoryUserRole: RepositoryUserRole;
-  dowRate: Decimal;
-  dowCurrency: DowCurrency;
+  dowRate: Decimal | null;
+  dowCurrency: Currency | null;
   expiresAt: Date;
 }
 
@@ -156,7 +157,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
           token.repositoryId.githubId,
           token.repositoryId.name,
           token.repositoryUserRole,
-          token.dowRate.toString(),
+          token.dowRate ? token.dowRate.toString() : null,
           token.dowCurrency,
           token.expiresAt,
           false, // Default for has_been_used
@@ -207,8 +208,8 @@ class RepositoryUserPermissionTokenRepositoryImpl
           token.repositoryId.githubId,
           token.repositoryId.name,
           token.repositoryUserRole,
-          token.dowRate.toString(),
-          token.dowCurrency.toString(),
+          token.dowRate ? token.dowRate.toString() : null,
+          token.dowCurrency,
           token.expiresAt,
           token.id.uuid,
         ],

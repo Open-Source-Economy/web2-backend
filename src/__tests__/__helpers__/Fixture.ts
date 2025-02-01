@@ -8,7 +8,6 @@ import {
   CompanyUserRole,
   ContributorVisibility,
   Currency,
-  DowCurrency,
   GithubData,
   Issue,
   IssueFunding,
@@ -425,7 +424,7 @@ export const Fixture = {
       repositoryId,
       repositoryUserRole: RepositoryUserRole.READ,
       dowRate: new Decimal(1.0),
-      dowCurrency: DowCurrency.USD,
+      dowCurrency: Currency.USD,
       expiresAt,
     };
   },
@@ -454,7 +453,7 @@ export const Fixture = {
     repositoryId: RepositoryId,
     repositoryUserRole: RepositoryUserRole = RepositoryUserRole.READ,
     dowRate: number = 1.0,
-    dowCurrency: string = "USD",
+    dowCurrency: Currency = Currency.USD,
   ): UserRepository {
     return new UserRepository(
       userId,

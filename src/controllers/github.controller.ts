@@ -328,7 +328,7 @@ export class GithubController {
       projectId.ownerId.login === "apache" &&
       projectId.name === "pekko"
     ) {
-      targetAmount$ = 4500000;
+      targetAmount$ = 3000000;
     } else if (
       projectId instanceof OwnerId &&
       projectId.login === "Open-Source-Economy"
@@ -336,7 +336,9 @@ export class GithubController {
       targetAmount$ = 1000000;
     }
 
-    if (targetAmount$ !== null) {
+    if (targetAmount$ === null) {
+      throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Not implemented yet");
+    } else {
       const response: GetCampaignResponse = {
         raisedAmount: raisedAmount,
         targetAmount: Object.values(Currency).reduce(
@@ -354,8 +356,6 @@ export class GithubController {
         description: null,
       };
       res.status(StatusCodes.OK).send({ success: response });
-    } else {
-      throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Not implemented yet");
     }
   }
 }

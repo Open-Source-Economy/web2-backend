@@ -32,6 +32,50 @@ describe("RepositoryUserPermissionTokenRepository", () => {
         Fixture.repositoryUserPermissionTokenFromBody(created.id, tokenBody),
       );
     });
+
+    it("should create a token with null userName", async () => {
+      const tokenBody = {
+        ...Fixture.createRepositoryUserPermissionTokenBody(repositoryId),
+        userName: null,
+      };
+
+      const created = await tokenRepo.create(tokenBody);
+
+      expect(created.userName).toBeNull();
+    });
+
+    it("should create a token with null userEmail", async () => {
+      const tokenBody = {
+        ...Fixture.createRepositoryUserPermissionTokenBody(repositoryId),
+        userEmail: null,
+      };
+
+      const created = await tokenRepo.create(tokenBody);
+
+      expect(created.userEmail).toBeNull();
+    });
+
+    it("should create a token with null dowCurrency", async () => {
+      const tokenBody = {
+        ...Fixture.createRepositoryUserPermissionTokenBody(repositoryId),
+        dowCurrency: null,
+      };
+
+      const created = await tokenRepo.create(tokenBody);
+
+      expect(created.dowCurrency).toBeNull();
+    });
+
+    it("should create a token with null dowRate", async () => {
+      const tokenBody = {
+        ...Fixture.createRepositoryUserPermissionTokenBody(repositoryId),
+        dowRate: null,
+      };
+
+      const created = await tokenRepo.create(tokenBody);
+
+      expect(created.dowRate).toBeNull();
+    });
   });
 
   describe("update", () => {
