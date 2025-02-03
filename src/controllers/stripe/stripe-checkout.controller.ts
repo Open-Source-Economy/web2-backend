@@ -12,7 +12,7 @@ import { ApiError } from "../../model/error/ApiError";
 import { StripeHelper } from "./stripe-helper";
 import { stripe } from "./index";
 import { logger } from "../../config";
-import { StripeCustomerUser } from "../../model";
+import { StripeCustomerUser, userUtils } from "../../model";
 
 export class StripeCheckoutController {
   // TODO ? : Save payment details: https://docs.stripe.com/payments/checkout/save-during-payment
@@ -59,7 +59,11 @@ export class StripeCheckoutController {
         req.body.mode === `payment` ? { enabled: true } : undefined,
       line_items: items,
       customer: customer?.stripeCustomerId.id,
-      customer_email: customer ? undefined : req.user?.email() ?? undefined,
+      customer_email: customer
+        ? undefined
+        : req.user
+          ? userUtils.email(req.user) ?? undefined
+          : undefined,
       // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
       // the actual Session ID is returned in the query parameter when your customer
       // is redirected to the success page.

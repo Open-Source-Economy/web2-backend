@@ -233,7 +233,7 @@ export const Fixture = {
 
   stripeCustomer(
     stripeId: StripeCustomerId,
-    currency: string = "USD",
+    currency: string = "usd",
     email: string = "default@example.com",
     name: string = "Default Name",
     phone?: string,

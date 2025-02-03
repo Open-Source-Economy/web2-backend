@@ -36,7 +36,6 @@ export class FinancialIssue {
   //   }
 
   static amountCollected(m: FinancialIssue): Decimal {
-    // @ts-ignore
     return (
       m.issueFundings?.reduce(
         (acc, funding) => acc.plus(funding.milliDowAmount),
@@ -46,7 +45,7 @@ export class FinancialIssue {
   }
 
   static amountRequested(m: FinancialIssue): number | undefined {
-    return m.managedIssue?.requestedMilliDowAmount;
+    return m.managedIssue?.requestedMilliDowAmount ?? undefined;
   }
 
   static successfullyFunded(m: FinancialIssue): boolean {

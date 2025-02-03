@@ -1,5 +1,10 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
-import { ManagedIssueId, ManagedIssueState, UserId } from "../../model";
+import {
+  IssueId,
+  ManagedIssueId,
+  ManagedIssueState,
+  UserId,
+} from "../../model";
 import {
   getIssueRepository,
   getManagedIssueRepository,
@@ -20,30 +25,49 @@ describe("ManagedIssueRepository", () => {
 
   setupTestDB();
   let validUserId: UserId;
+  let validIssueId: IssueId;
 
   beforeEach(async () => {
     const validUser = await userRepo.insert(
       Fixture.createUser(Fixture.localUser()),
     );
     validUserId = validUser.id;
+
+    const ownerId = Fixture.ownerId();
+    await ownerRepo.insertOrUpdate(Fixture.owner(ownerId));
+
+    const repositoryId = Fixture.repositoryId(ownerId);
+    await repoRepo.insertOrUpdate(Fixture.repository(repositoryId));
+
+    validIssueId = Fixture.issueId(repositoryId);
+    const issue = Fixture.issue(validIssueId, ownerId);
+    await issueRepo.createOrUpdate(issue);
   });
 
   describe("create", () => {
     it("should create a new managed issue record", async () => {
-      const ownerId = Fixture.ownerId();
-      await ownerRepo.insertOrUpdate(Fixture.owner(ownerId));
-
-      const repositoryId = Fixture.repositoryId(ownerId);
-      await repoRepo.insertOrUpdate(Fixture.repository(repositoryId));
-
-      const issueId = Fixture.issueId(repositoryId);
-      const issue = Fixture.issue(issueId, ownerId);
-      await issueRepo.createOrUpdate(issue);
-
       const managedIssueBody = Fixture.createManagedIssueBody(
-        issueId,
+        validIssueId,
         validUserId,
       );
+
+      const created = await managedIssueRepo.create(managedIssueBody);
+
+      expect(created).toEqual(
+        Fixture.managedIssueFromBody(created.id, managedIssueBody),
+      );
+
+      const found = await managedIssueRepo.getById(
+        new ManagedIssueId(created.id.uuid),
+      );
+      expect(found).toEqual(created);
+    });
+
+    it("should create with requested amount null", async () => {
+      const managedIssueBody = {
+        ...Fixture.createManagedIssueBody(validIssueId, validUserId),
+        requestedMilliDowAmount: null,
+      };
 
       const created = await managedIssueRepo.create(managedIssueBody);
 
@@ -64,18 +88,8 @@ describe("ManagedIssueRepository", () => {
 
   describe("update", () => {
     it("should update an existing managed issue record", async () => {
-      const ownerId = Fixture.ownerId();
-      await ownerRepo.insertOrUpdate(Fixture.owner(ownerId));
-
-      const repositoryId = Fixture.repositoryId(ownerId);
-      await repoRepo.insertOrUpdate(Fixture.repository(repositoryId));
-
-      const issueId = Fixture.issueId(repositoryId);
-      const issue = Fixture.issue(issueId, ownerId);
-      await issueRepo.createOrUpdate(issue);
-
       const managedIssueBody = Fixture.createManagedIssueBody(
-        issueId,
+        validIssueId,
         validUserId,
       );
 

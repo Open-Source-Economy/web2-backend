@@ -20,6 +20,7 @@ import {
   StripePrice,
   StripeProduct,
   StripeProductId,
+  userUtils,
 } from "../../model";
 import { ApiError } from "../../model/error/ApiError";
 import { StatusCodes } from "http-status-codes";
@@ -108,7 +109,7 @@ export class StripeHelper {
 
       const customerCreateParams: Stripe.CustomerCreateParams = {
         description: user.id.uuid,
-        email: user.email() ?? undefined,
+        email: userUtils.email(user) ?? undefined,
         address: stripeAddress,
       };
 

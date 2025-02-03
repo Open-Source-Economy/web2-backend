@@ -8,7 +8,7 @@ import {
 // TODO: put that somewhere else
 export interface CreateManagedIssueBody {
   githubIssueId: IssueId;
-  requestedMilliDowAmount: number;
+  requestedMilliDowAmount: number | null;
   managerId: UserId;
   contributorVisibility: ContributorVisibility;
   state: ManagedIssueState;

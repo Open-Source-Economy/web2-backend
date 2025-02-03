@@ -1,0 +1,1 @@
+ALTER TABLE managed_issue ALTER COLUMN requested_milli_dow_amount DROP NOT NULL;

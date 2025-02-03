@@ -16,6 +16,7 @@ export class Migration {
       "4.sql",
       "5.sql",
       "6.sql",
+      "7.sql",
     ];
 
     const migrations = migrationFiles.map((file) => {

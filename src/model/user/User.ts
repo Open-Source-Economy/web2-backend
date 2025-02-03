@@ -17,6 +17,24 @@ export enum UserRole {
   USER = "user",
 }
 
+export const userUtils = {
+  githubData(user: User): GithubData | null {
+    if ("providerData" in user.data) {
+      return user.data.providerData;
+    } else {
+      return null;
+    }
+  },
+
+  email(user: User): string | null {
+    if (user.data instanceof LocalUser) {
+      return user.data.email;
+    } else {
+      return user.data.email;
+    }
+  },
+};
+
 export class User implements Express.User {
   id: UserId;
   name: string | null;
@@ -36,22 +54,6 @@ export class User implements Express.User {
     this.data = data;
     this.role = role;
     this.preferredCurrency = preferredCurrency;
-  }
-
-  email(): string | null {
-    if (this.data instanceof LocalUser) {
-      return this.data.email;
-    } else {
-      return this.data.email;
-    }
-  }
-
-  githubData(): GithubData | null {
-    if (this.data instanceof ThirdPartyUser) {
-      return this.data.providerData;
-    } else {
-      return null;
-    }
   }
 
   static fromRaw(row: any, owner: Owner | null = null): User | ValidationError {
