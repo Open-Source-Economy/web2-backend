@@ -323,17 +323,21 @@ export class GithubController {
     logger.debug(`Raised amount`, raisedAmount);
 
     let targetAmount$: number | null = null;
-    if (
-      projectId instanceof RepositoryId &&
-      projectId.ownerId.login === "apache" &&
-      projectId.name === "pekko"
-    ) {
-      targetAmount$ = 3000000;
-    } else if (
-      projectId instanceof OwnerId &&
-      projectId.login === "Open-Source-Economy"
-    ) {
-      targetAmount$ = 1000000;
+    if (projectId instanceof RepositoryId) {
+      if (projectId.ownerId.login === "apache" && projectId.name === "pekko")
+        targetAmount$ = 3000000;
+      else if (
+        projectId.ownerId.login === "join-the-flock" &&
+        projectId.name === "flock"
+      )
+        targetAmount$ = 1000000;
+      else if (
+        projectId.ownerId.login === "slick" &&
+        projectId.name === "slick"
+      )
+        targetAmount$ = 300000;
+    } else if (projectId instanceof OwnerId) {
+      if (projectId.login === "open-source-economy") targetAmount$ = 100000;
     }
 
     if (targetAmount$ === null) {
