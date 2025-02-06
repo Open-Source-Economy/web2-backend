@@ -1,4 +1,4 @@
-import { config } from "../config";
+import { config, logger } from "../config";
 import jwt from "jsonwebtoken";
 import { ApiError } from "../model/error/ApiError";
 import { StatusCodes } from "http-status-codes";
@@ -13,15 +13,19 @@ export class secureToken {
   /**
    *
    * @param data data email or userId
+   * @param setExpiration set expiration date to the token. Depends if the expiration date is verified by the function `verify` (set to true) or not (set to false)   *
    *
    * @returns token and the expiration date
    */
-  static generate(data: TokenData): [string, Date] {
+  static generate(
+    data: TokenData,
+    setExpiration: boolean = false,
+  ): [string, Date] {
     const expiresSecond = config.jwt.accessExpirationMinutes * 60;
     const expiresAt = new Date(Date.now() + expiresSecond * 1000);
     const token = jwt.sign(
       {
-        exp: Math.floor(Date.now() / 1000) + expiresSecond,
+        exp: setExpiration ? Math.floor(expiresAt.getTime() / 1000) : undefined,
         jti: uuidv4(),
         ...data,
       },
@@ -34,7 +38,13 @@ export class secureToken {
     try {
       return jwt.verify(token, config.jwt.secret) as TokenData;
     } catch (err) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, `Invalid token: ${err}`);
+      if (err instanceof jwt.TokenExpiredError) {
+        logger.error(`Token expired:`, err);
+        throw new ApiError(StatusCodes.UNAUTHORIZED, `Token expired`);
+      } else {
+        logger.error(`Invalid token:`, err);
+        throw new ApiError(StatusCodes.BAD_REQUEST, `Invalid token`);
+      }
     }
   }
 }
