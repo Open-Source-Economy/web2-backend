@@ -57,7 +57,8 @@ import {
 } from "../../dtos";
 import { v4 as uuid } from "uuid";
 import Decimal from "decimal.js";
-import { CreateRepositoryUserPermissionTokenDto, CreateUser } from "../../db";
+import { CreateUser } from "../../db";
+import { CreateRepositoryUserPermissionTokenDto } from "../../db/user/RepositoryUserPermissionToken.repository";
 
 export const Fixture = {
   id(): number {

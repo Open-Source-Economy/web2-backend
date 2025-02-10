@@ -41,8 +41,7 @@ import {
   GetRepositoryUserInviteInfoQuery,
   GetRepositoryUserInviteInfoResponse,
 } from "../dtos/auth/GetRepositoryUserInviteInfo.dto";
-import { config, logger } from "../config";
-import { use } from "passport";
+import { config } from "../config";
 
 export class AuthController {
   // TODO: probably put info of the company in the session, to to much avoid request to the DB.

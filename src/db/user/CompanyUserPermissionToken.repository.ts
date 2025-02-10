@@ -3,10 +3,10 @@ import {
   CompanyId,
   CompanyUserPermissionToken,
   CompanyUserPermissionTokenId,
-} from "../model";
-import { pool } from "../dbPool";
-import { CreateCompanyUserPermissionTokenBody } from "../dtos";
-import { logger } from "../config";
+} from "../../model";
+import { pool } from "../../dbPool";
+import { CreateCompanyUserPermissionTokenBody } from "../../dtos";
+import { logger } from "../../config";
 
 export function getCompanyUserPermissionTokenRepository(): CompanyUserPermissionTokenRepository {
   return new CompanyUserPermissionTokenRepositoryImpl(pool);

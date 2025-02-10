@@ -1,17 +1,16 @@
-import { setupTestDB } from "../__helpers__/jest.setup";
+import { setupTestDB } from "../../__helpers__/jest.setup";
+
+import { Fixture } from "../../__helpers__/Fixture";
+import { RepositoryUserPermissionTokenId } from "../../../model";
 import {
-  CreateRepositoryUserPermissionTokenDto,
-  getOwnerRepository,
-  getRepositoryRepository,
-  getRepositoryUserPermissionTokenRepository,
-} from "../../db";
-import { Fixture } from "../__helpers__/Fixture";
-import { RepositoryUserPermissionTokenId } from "../../model";
+  ownerRepo,
+  repositoryRepo,
+  repositoryUserPermissionTokenRepo,
+} from "../../../db";
+import { CreateRepositoryUserPermissionTokenDto } from "../../../db/user/RepositoryUserPermissionToken.repository";
 
 describe("RepositoryUserPermissionTokenRepository", () => {
-  const ownerRepo = getOwnerRepository();
-  const repositoryRepo = getRepositoryRepository();
-  const tokenRepo = getRepositoryUserPermissionTokenRepository();
+  const tokenRepo = repositoryUserPermissionTokenRepo;
 
   setupTestDB();
   const ownerId = Fixture.ownerId();

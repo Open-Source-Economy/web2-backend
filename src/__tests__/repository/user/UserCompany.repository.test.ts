@@ -1,18 +1,10 @@
-import { setupTestDB } from "../__helpers__/jest.setup";
-import { CompanyId, CompanyUserRole, UserId } from "../../model";
-import { Fixture } from "../__helpers__/Fixture";
-import {
-  getCompanyRepository,
-  getUserCompanyRepository,
-  getUserRepository,
-} from "../../db/";
-import { CreateCompanyBody } from "../../dtos";
+import { setupTestDB } from "../../__helpers__/jest.setup";
+import { CompanyId, CompanyUserRole, UserId } from "../../../model";
+import { Fixture } from "../../__helpers__/Fixture";
+import { CreateCompanyBody } from "../../../dtos";
+import { companyRepo, userCompanyRepo, userRepo } from "../../../db";
 
 describe("UserCompanyRepository", () => {
-  const userRepo = getUserRepository();
-  const companyRepo = getCompanyRepository();
-  const userCompanyRepo = getUserCompanyRepository();
-
   setupTestDB();
 
   let validUserId: UserId;

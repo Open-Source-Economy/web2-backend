@@ -11,28 +11,21 @@ import {
   UserId,
 } from "../../model";
 
-import {
-  getIssueFundingRepository,
-  getIssueRepository,
-  getManagedIssueRepository,
-  getOwnerRepository,
-  getRepositoryRepository,
-  getUserRepository,
-} from "../../db/";
 import { CreateIssueFundingBody } from "../../dtos";
 import { Fixture } from "../__helpers__/Fixture";
 import { getFinancialIssueRepository } from "../../db/FinancialIssue.repository";
 import { GitHubApi } from "../../services";
+import {
+  issueFundingRepo,
+  issueRepo,
+  managedIssueRepo,
+  ownerRepo,
+  repositoryRepo,
+  userRepo,
+} from "../../db";
 
 describe("FinancialIssueRepository", () => {
   setupTestDB();
-
-  const userRepo = getUserRepository();
-  const ownerRepo = getOwnerRepository();
-  const repoRepo = getRepositoryRepository();
-  const issueRepo = getIssueRepository();
-  const managedIssueRepo = getManagedIssueRepository();
-  const issueFundingRepo = getIssueFundingRepository();
 
   class GitHubApiMock implements GitHubApi {
     owner: Owner;
@@ -107,7 +100,7 @@ describe("FinancialIssueRepository", () => {
       const owner = await ownerRepo.getById(ownerId1);
       expect(owner).toEqual(owner1);
 
-      const repo = await repoRepo.getById(repositoryId1);
+      const repo = await repositoryRepo.getById(repositoryId1);
       expect(repo).toEqual(repository1);
 
       const issue = await issueRepo.getById(issueId1);
@@ -122,7 +115,7 @@ describe("FinancialIssueRepository", () => {
       );
 
       await ownerRepo.insertOrUpdate(owner1);
-      await repoRepo.insertOrUpdate(repository1);
+      await repositoryRepo.insertOrUpdate(repository1);
       await issueRepo.createOrUpdate(issue1);
 
       /* Inserting issue fundings */
@@ -166,11 +159,11 @@ describe("FinancialIssueRepository", () => {
       );
 
       await ownerRepo.insertOrUpdate(owner1);
-      await repoRepo.insertOrUpdate(repository1);
+      await repositoryRepo.insertOrUpdate(repository1);
       await issueRepo.createOrUpdate(issue1);
 
       await ownerRepo.insertOrUpdate(owner2);
-      await repoRepo.insertOrUpdate(repository2);
+      await repositoryRepo.insertOrUpdate(repository2);
       await issueRepo.createOrUpdate(issue2);
 
       /* Inserting issue fundings */

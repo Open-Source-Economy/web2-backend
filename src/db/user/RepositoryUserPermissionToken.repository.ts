@@ -5,9 +5,9 @@ import {
   RepositoryUserPermissionToken,
   RepositoryUserPermissionTokenId,
   RepositoryUserRole,
-} from "../model";
-import { pool } from "../dbPool";
-import { logger } from "../config";
+} from "../../model";
+import { pool } from "../../dbPool";
+import { logger } from "../../config";
 import Decimal from "decimal.js";
 
 export function getRepositoryUserPermissionTokenRepository(): RepositoryUserPermissionTokenRepository {

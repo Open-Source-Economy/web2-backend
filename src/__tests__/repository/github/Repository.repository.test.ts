@@ -1,12 +1,9 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { OwnerId, RepositoryId } from "../../../model";
 import { Fixture } from "../../__helpers__/Fixture";
-import { getOwnerRepository, getRepositoryRepository } from "../../../db";
+import { ownerRepo, repositoryRepo } from "../../../db";
 
 describe("RepositoryRepository", () => {
-  const ownerRepo = getOwnerRepository();
-  const repo = getRepositoryRepository();
-
   setupTestDB();
   describe("insertOrUpdate", () => {
     describe("insert", () => {
@@ -16,11 +13,11 @@ describe("RepositoryRepository", () => {
 
         const repositoryId = Fixture.repositoryId(ownerId);
         const repository = Fixture.repository(repositoryId);
-        const created = await repo.insertOrUpdate(repository);
+        const created = await repositoryRepo.insertOrUpdate(repository);
 
         expect(created).toEqual(repository);
 
-        const found = await repo.getById(repository.id);
+        const found = await repositoryRepo.getById(repository.id);
         expect(found).toEqual(repository);
       });
 
@@ -31,7 +28,7 @@ describe("RepositoryRepository", () => {
         const repository = Fixture.repository(repositoryId);
 
         try {
-          await repo.insertOrUpdate(repository);
+          await repositoryRepo.insertOrUpdate(repository);
           // If the insertion doesn't throw, fail the test
           fail(
             "Expected foreign key constraint violation, but no error was thrown.",
@@ -50,17 +47,17 @@ describe("RepositoryRepository", () => {
 
         const repositoryId = Fixture.repositoryId(ownerId);
         const repository = Fixture.repository(repositoryId);
-        await repo.insertOrUpdate(repository);
+        await repositoryRepo.insertOrUpdate(repository);
 
         const updatedRepository = Fixture.repository(
           repositoryId,
           "updated-payload",
         );
-        const updated = await repo.insertOrUpdate(updatedRepository);
+        const updated = await repositoryRepo.insertOrUpdate(updatedRepository);
 
         expect(updated).toEqual(updatedRepository);
 
-        const found = await repo.getById(repository.id);
+        const found = await repositoryRepo.getById(repository.id);
         expect(found).toEqual(updatedRepository);
       });
     });
@@ -70,7 +67,7 @@ describe("RepositoryRepository", () => {
     it("should return null if repository not found", async () => {
       const ownerId = Fixture.ownerId();
       const nonExistentRepoId = Fixture.repositoryId(ownerId);
-      const found = await repo.getById(nonExistentRepoId);
+      const found = await repositoryRepo.getById(nonExistentRepoId);
 
       expect(found).toBeNull();
     });
@@ -81,7 +78,7 @@ describe("RepositoryRepository", () => {
 
       const repositoryId = Fixture.repositoryId(ownerId);
       const repository = Fixture.repository(repositoryId);
-      await repo.insertOrUpdate(repository);
+      await repositoryRepo.insertOrUpdate(repository);
 
       const undefinedOwnerId = new OwnerId(ownerId.login, undefined);
       const undefinedRepositoryId = new RepositoryId(
@@ -90,7 +87,7 @@ describe("RepositoryRepository", () => {
         undefined,
       );
 
-      const found = await repo.getById(undefinedRepositoryId);
+      const found = await repositoryRepo.getById(undefinedRepositoryId);
       expect(found).toEqual(repository);
     });
   });
@@ -108,10 +105,10 @@ describe("RepositoryRepository", () => {
       const repo1 = Fixture.repository(repositoryId1, "payload1");
       const repo2 = Fixture.repository(repositoryId2, "payload2");
 
-      await repo.insertOrUpdate(repo1);
-      await repo.insertOrUpdate(repo2);
+      await repositoryRepo.insertOrUpdate(repo1);
+      await repositoryRepo.insertOrUpdate(repo2);
 
-      const allRepos = await repo.getAll();
+      const allRepos = await repositoryRepo.getAll();
 
       expect(allRepos).toHaveLength(2);
       expect(allRepos).toContainEqual(repo1);
@@ -119,7 +116,7 @@ describe("RepositoryRepository", () => {
     });
 
     it("should return an empty array if no repositories exist", async () => {
-      const allRepos = await repo.getAll();
+      const allRepos = await repositoryRepo.getAll();
 
       expect(allRepos).toEqual([]);
     });

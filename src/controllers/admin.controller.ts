@@ -24,13 +24,12 @@ import {
   addressRepo,
   companyRepo,
   companyUserPermissionTokenRepo,
-  CreateRepositoryUserPermissionTokenDto,
   financialIssueRepo,
   manualInvoiceRepo,
   repositoryUserPermissionTokenRepo,
 } from "../db";
 import { secureToken } from "../utils";
-import { MailService } from "../services";
+import { mailService } from "../services";
 import Decimal from "decimal.js";
 import { OwnerId, Project } from "../model";
 import { ApiError } from "../model/error/ApiError";
@@ -42,8 +41,7 @@ import {
   CreateProductAndPriceResponse,
 } from "../dtos/stripe/CreateProductAndPrice";
 import { StripeHelper } from "./stripe";
-
-const mailService = new MailService();
+import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUserPermissionToken.repository";
 
 export class AdminController {
   static async createAddress(

@@ -21,16 +21,20 @@ export class secureToken {
     data: TokenData,
     setExpiration: boolean = false,
   ): [string, Date] {
-    const expiresSecond = config.jwt.accessExpirationMinutes * 60;
-    const expiresAt = new Date(Date.now() + expiresSecond * 1000);
-    const token = jwt.sign(
-      {
-        exp: setExpiration ? Math.floor(expiresAt.getTime() / 1000) : undefined,
-        jti: uuidv4(),
-        ...data,
-      },
-      config.jwt.secret,
-    );
+    const expiresInSeconds = config.jwt.accessExpirationMinutes * 60;
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+
+    const tokenPayload: any = {
+      jti: uuidv4(),
+      ...data,
+    };
+
+    if (setExpiration) {
+      tokenPayload.exp = Math.floor(expiresAt.getTime() / 1000);
+    }
+
+    const token = jwt.sign(tokenPayload, config.jwt.secret);
+
     return [token, expiresAt];
   }
 

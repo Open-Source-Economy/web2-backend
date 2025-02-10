@@ -1,10 +1,10 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
 import {
-  getOwnerRepository,
-  getRepositoryRepository,
   getStripePriceRepository,
   getStripeProductRepository,
+  ownerRepo,
+  repositoryRepo,
 } from "../../../db";
 import { StripeHelper } from "../../../controllers";
 
@@ -53,12 +53,9 @@ describe("StripeHelper.getPrices", () => {
   const productRepo = getStripeProductRepository();
   const priceRepo = getStripePriceRepository();
 
-  const ownerRepo = getOwnerRepository();
-  const repoRepo = getRepositoryRepository();
-
   beforeEach(async () => {
     await ownerRepo.insertOrUpdate(Fixture.owner(ownerId));
-    await repoRepo.insertOrUpdate(Fixture.repository(repositoryId));
+    await repositoryRepo.insertOrUpdate(Fixture.repository(repositoryId));
   });
 
   it("should return prices for products", async () => {

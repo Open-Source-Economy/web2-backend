@@ -47,7 +47,7 @@ import {
   dowNumberRepo,
   financialIssueRepo,
   issueFundingRepo,
-  issueRepository,
+  issueRepo,
   managedIssueRepo,
   stripeMiscellaneousRepository,
 } from "../db";
@@ -159,7 +159,7 @@ export class GithubController {
     // TODO: fix this mess with optional githubId
     const ownerId = new OwnerId(req.params.owner);
     const repositoryId = new RepositoryId(ownerId, req.params.repo);
-    const issue = await issueRepository.getById(
+    const issue = await issueRepo.getById(
       new IssueId(repositoryId, req.params.number),
     );
 
@@ -224,7 +224,7 @@ export class GithubController {
 
     const ownerId = new OwnerId(req.params.owner);
     const repositoryId = new RepositoryId(ownerId, req.params.repo);
-    const issue = await issueRepository.getById(
+    const issue = await issueRepo.getById(
       new IssueId(repositoryId, req.params.number),
     );
 

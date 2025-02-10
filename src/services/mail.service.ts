@@ -110,4 +110,8 @@ export class MailService {
     // Send email with both text and HTML
     await this.sendMail(toEmail, subject, htmlContent);
   }
+
+  async sendWebsiteAdminNotification(subject: string, message: string) {
+    await this.sendMail(config.email.from, subject, message);
+  }
 }

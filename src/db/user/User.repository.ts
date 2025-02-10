@@ -9,9 +9,9 @@ import {
   User,
   UserId,
   UserRole,
-} from "../model";
-import { pool } from "../dbPool";
-import { encrypt } from "../utils";
+} from "../../model";
+import { pool } from "../../dbPool";
+import { encrypt } from "../../utils";
 
 export function getUserRepository(): UserRepository {
   return new UserRepositoryImpl(pool);

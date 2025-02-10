@@ -1,19 +1,14 @@
-import { setupTestDB } from "../__helpers__/jest.setup";
+import { setupTestDB } from "../../__helpers__/jest.setup";
 import {
-  getOwnerRepository,
-  getRepositoryRepository,
-  getUserRepository,
-  getUserRepositoryRepository,
-} from "../../db";
-import { Fixture } from "../__helpers__/Fixture";
-import { Currency, RepositoryUserRole, UserId } from "../../model";
+  ownerRepo,
+  repositoryRepo,
+  userRepo,
+  userRepositoryRepo,
+} from "../../../db";
+import { Fixture } from "../../__helpers__/Fixture";
+import { Currency, RepositoryUserRole, UserId } from "../../../model";
 
 describe("UserRepositoryRepository", () => {
-  const userRepo = getUserRepository();
-  const ownerRepo = getOwnerRepository();
-  const repositoryRepo = getRepositoryRepository();
-  const userRepositoryRepo = getUserRepositoryRepository();
-
   setupTestDB();
   let userId: UserId;
   const ownerId = Fixture.ownerId();

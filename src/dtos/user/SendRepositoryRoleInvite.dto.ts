@@ -1,4 +1,4 @@
-import { Currency, RepositoryId, RepositoryUserRole } from "../model";
+import { Currency, RepositoryId, RepositoryUserRole } from "../../model";
 
 export interface SendRepositoryRoleInviteParams {}
 

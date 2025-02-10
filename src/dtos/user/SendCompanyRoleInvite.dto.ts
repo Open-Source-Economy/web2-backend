@@ -1,4 +1,4 @@
-import { CompanyId, CompanyUserRole } from "../model";
+import { CompanyId, CompanyUserRole } from "../../model";
 
 export interface SendCompanyRoleInviteParams {}
 

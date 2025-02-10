@@ -1,4 +1,6 @@
 import {
+  ownerRepo,
+  repositoryRepo,
   stripeCustomerRepo,
   stripeInvoiceRepo,
   stripeMiscellaneousRepository,
@@ -8,7 +10,6 @@ import {
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
 import { Currency } from "../../../model";
-import { ownerRepo, repoRepo } from "../github";
 
 describe("StripeMiscellaneousRepository", () => {
   setupTestDB();
@@ -22,7 +23,7 @@ describe("StripeMiscellaneousRepository", () => {
 
   beforeEach(async () => {
     await ownerRepo.insertOrUpdate(Fixture.owner(validOwnerId));
-    await repoRepo.insertOrUpdate(Fixture.repository(validRepositoryId));
+    await repositoryRepo.insertOrUpdate(Fixture.repository(validRepositoryId));
 
     const stripeCustomer = Fixture.stripeCustomer(validCustomerId);
     await stripeCustomerRepo.insert(stripeCustomer);

@@ -1,23 +1,17 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
 import { UserId } from "../../model";
 
-import {
-  getIssueFundingRepository,
-  getIssueRepository,
-  getOwnerRepository,
-  getRepositoryRepository,
-  getUserRepository,
-} from "../../db/";
 import { CreateIssueFundingBody } from "../../dtos";
 import { Fixture } from "../__helpers__/Fixture";
+import {
+  issueFundingRepo,
+  issueRepo,
+  ownerRepo,
+  repositoryRepo,
+  userRepo,
+} from "../../db";
 
 describe("IssueFundingRepository", () => {
-  const userRepo = getUserRepository();
-  const ownerRepo = getOwnerRepository();
-  const repoRepo = getRepositoryRepository();
-  const issueRepo = getIssueRepository();
-  const issueFundingRepo = getIssueFundingRepository();
-
   setupTestDB();
   let validUserId: UserId;
 
@@ -34,7 +28,7 @@ describe("IssueFundingRepository", () => {
       await ownerRepo.insertOrUpdate(Fixture.owner(ownerId));
 
       const repositoryId = Fixture.repositoryId(ownerId);
-      await repoRepo.insertOrUpdate(Fixture.repository(repositoryId));
+      await repositoryRepo.insertOrUpdate(Fixture.repository(repositoryId));
 
       const issueId = Fixture.issueId(repositoryId);
       const issue = Fixture.issue(issueId, ownerId);
@@ -83,7 +77,7 @@ describe("IssueFundingRepository", () => {
       await ownerRepo.insertOrUpdate(Fixture.owner(ownerId));
 
       const repositoryId = Fixture.repositoryId(ownerId);
-      await repoRepo.insertOrUpdate(Fixture.repository(repositoryId));
+      await repositoryRepo.insertOrUpdate(Fixture.repository(repositoryId));
 
       const issueId = Fixture.issueId(repositoryId);
       const issue = Fixture.issue(issueId, ownerId);

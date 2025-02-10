@@ -1,13 +1,13 @@
-import { setupTestDB } from "../__helpers__/jest.setup";
+import { setupTestDB } from "../../__helpers__/jest.setup";
 import {
   LocalUser,
   Provider,
   ThirdPartyUser,
   ThirdPartyUserId,
   UserRole,
-} from "../../model";
-import { Fixture } from "../__helpers__/Fixture";
-import { getUserRepository } from "../../db/";
+} from "../../../model";
+import { Fixture } from "../../__helpers__/Fixture";
+import { getUserRepository } from "../../../db";
 
 describe("UserRepository", () => {
   setupTestDB();

@@ -14,16 +14,11 @@ import {
   User,
 } from "../model";
 import { pool } from "../dbPool";
-import {
-  getIssueRepository,
-  getOwnerRepository,
-  getRepositoryRepository,
-} from "./github";
-import { getManagedIssueRepository } from "./ManagedIssue.repository";
-import { getIssueFundingRepository } from "./IssueFunding.repository";
 import { getGitHubAPI, GitHubApi } from "../services";
 import { logger } from "../config";
-import { getUserRepository } from "./User.repository";
+import { issueRepo, ownerRepo, repositoryRepo } from "./github";
+import { userRepo } from "./user";
+import { issueFundingRepo, managedIssueRepo } from "./index";
 
 export function getFinancialIssueRepository(
   gitHubApi: GitHubApi = getGitHubAPI(),
@@ -49,13 +44,6 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
   pool: Pool;
   githubService: GitHubApi;
 
-  ownerRepo = getOwnerRepository();
-  repoRepo = getRepositoryRepository();
-  issueRepo = getIssueRepository();
-  userRepo = getUserRepository();
-  managedIssueRepo = getManagedIssueRepository();
-  issueFundingRepo = getIssueFundingRepository();
-
   constructor(pool: Pool, githubService = getGitHubAPI()) {
     this.pool = pool;
     this.githubService = githubService;
@@ -65,13 +53,13 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
     const githubOwnerPromise = this.githubService.getOwner(ownerId);
     githubOwnerPromise
       .then(async (owner) => {
-        await this.ownerRepo.insertOrUpdate(owner as Owner);
+        await ownerRepo.insertOrUpdate(owner as Owner);
       })
       .catch((error) => {
         logger.error("Error fetching GitHub data:", error);
       });
 
-    const owner = await this.ownerRepo
+    const owner = await ownerRepo
       .getById(ownerId)
       .then(async (owner) => {
         if (!owner) {
@@ -104,10 +92,10 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
 
     githubRepoPromise
       .then(async ([owner, repo]) => {
-        this.ownerRepo
+        ownerRepo
           .insertOrUpdate(owner as Owner)
           .then(async () => {
-            await this.repoRepo.insertOrUpdate(repo as Repository);
+            await repositoryRepo.insertOrUpdate(repo as Repository);
           })
           .catch((error) => {
             logger.error("Error updating the DB", error);
@@ -120,7 +108,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
         return null;
       });
 
-    const owner: Owner | null = await this.ownerRepo
+    const owner: Owner | null = await ownerRepo
       .getById(repositoryId.ownerId)
       .then(async (owner) => {
         if (!owner) {
@@ -137,7 +125,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
         return null;
       });
 
-    const repo: Repository | null = await this.repoRepo
+    const repo: Repository | null = await repositoryRepo
       .getById(repositoryId)
       .then(async (repo) => {
         if (!repo) {
@@ -186,25 +174,25 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
         const [owner, repo] = repoResult;
         const [issue, issueCreatedBy] = issueResult;
 
-        await this.ownerRepo
+        await ownerRepo
           .insertOrUpdate(owner as Owner)
           .then(async () => {
-            await this.repoRepo.insertOrUpdate(repo as Repository);
+            await repositoryRepo.insertOrUpdate(repo as Repository);
           })
           .then(async () => {
-            await this.ownerRepo.insertOrUpdate(issueCreatedBy as Owner);
+            await ownerRepo.insertOrUpdate(issueCreatedBy as Owner);
           })
           .then(async () => {
             const i = issue as Issue;
             i.setRepositoryId((repo as Repository).id); // TODO: not very elegant way to deal with the fact that github query doesn't return repository id nor owner id
-            await this.issueRepo.createOrUpdate(i);
+            await issueRepo.createOrUpdate(i);
           });
       })
       .catch((error) => {
         logger.error("Error fetching GitHub data:", error);
       });
 
-    const owner: Promise<Owner | null> = this.ownerRepo
+    const owner: Promise<Owner | null> = ownerRepo
       .getById(issueId.repositoryId.ownerId)
       .then(async (owner) => {
         if (!owner) {
@@ -221,7 +209,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
         return null;
       });
 
-    const repo: Promise<Repository | null> = this.repoRepo
+    const repo: Promise<Repository | null> = repositoryRepo
       .getById(issueId.repositoryId)
       .then(async (repo) => {
         if (!repo) {
@@ -238,7 +226,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
         return null;
       });
 
-    const issue: Promise<Issue | null> = this.issueRepo
+    const issue: Promise<Issue | null> = issueRepo
       .getById(issueId)
       .then(async (issue) => {
         if (!issue) {
@@ -255,13 +243,13 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
         return null;
       });
 
-    const managedIssue = this.managedIssueRepo.getByIssueId(issueId);
+    const managedIssue = managedIssueRepo.getByIssueId(issueId);
     const issueManager = managedIssue
       .then((managedIssue) => {
         if (!managedIssue) {
           return null;
         } else {
-          return this.userRepo.getById(managedIssue.managerId);
+          return userRepo.getById(managedIssue.managerId);
         }
       })
       .catch((error) => {
@@ -277,7 +265,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
     const i = await issue;
 
     if (o && r && i) {
-      const issueFundings = this.issueFundingRepo.getAll(issueId);
+      const issueFundings = issueFundingRepo.getAll(issueId);
       return new FinancialIssue(
         o,
         r,
@@ -294,7 +282,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
   }
 
   async getAll(): Promise<FinancialIssue[]> {
-    const allManagedIssues = await this.managedIssueRepo.getAll();
+    const allManagedIssues = await managedIssueRepo.getAll();
     logger.debug(`Got ${allManagedIssues.length} managed issues from the DB`);
     const managedIssues: Map<number | undefined, ManagedIssue> = new Map(
       allManagedIssues.map((m) => {
@@ -308,7 +296,7 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
     );
 
     const issueFundings: Map<number, IssueFunding[]> = new Map();
-    const allIssueFundings = await this.issueFundingRepo.getAll();
+    const allIssueFundings = await issueFundingRepo.getAll();
     logger.debug(`Got ${allIssueFundings.length} issue fundings from the DB`);
     allIssueFundings.forEach((i) => {
       const githubId = i.githubIssueId?.githubId;
@@ -363,13 +351,13 @@ class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       const managedIssue = managedIssues.get(githubId) ?? null;
       let issueManager: User | null = null;
       if (managedIssue !== null) {
-        issueManager = await this.userRepo.getById(managedIssue.managerId);
+        issueManager = await userRepo.getById(managedIssue.managerId);
       }
       const fundings = issueFundings.get(githubId) ?? [];
 
-      const owner = await this.ownerRepo.getById(issueId.repositoryId.ownerId);
-      const repo = await this.repoRepo.getById(issueId.repositoryId);
-      const issue = await this.issueRepo.getById(issueId);
+      const owner = await ownerRepo.getById(issueId.repositoryId.ownerId);
+      const repo = await repositoryRepo.getById(issueId.repositoryId);
+      const issue = await issueRepo.getById(issueId);
 
       if (!owner || !repo || !issue) {
         logger.error(

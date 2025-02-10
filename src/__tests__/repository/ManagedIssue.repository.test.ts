@@ -5,24 +5,19 @@ import {
   ManagedIssueState,
   UserId,
 } from "../../model";
-import {
-  getIssueRepository,
-  getManagedIssueRepository,
-  getOwnerRepository,
-  getRepositoryRepository,
-  getUserRepository,
-} from "../../db/";
+
 import { CreateManagedIssueBody } from "../../dtos";
 import { Fixture } from "../__helpers__/Fixture";
 import { v4 as uuidv } from "uuid";
+import {
+  issueRepo,
+  managedIssueRepo,
+  ownerRepo,
+  repositoryRepo,
+  userRepo,
+} from "../../db";
 
 describe("ManagedIssueRepository", () => {
-  const userRepo = getUserRepository();
-  const ownerRepo = getOwnerRepository();
-  const repoRepo = getRepositoryRepository();
-  const issueRepo = getIssueRepository();
-  const managedIssueRepo = getManagedIssueRepository();
-
   setupTestDB();
   let validUserId: UserId;
   let validIssueId: IssueId;
@@ -37,7 +32,7 @@ describe("ManagedIssueRepository", () => {
     await ownerRepo.insertOrUpdate(Fixture.owner(ownerId));
 
     const repositoryId = Fixture.repositoryId(ownerId);
-    await repoRepo.insertOrUpdate(Fixture.repository(repositoryId));
+    await repositoryRepo.insertOrUpdate(Fixture.repository(repositoryId));
 
     validIssueId = Fixture.issueId(repositoryId);
     const issue = Fixture.issue(validIssueId, ownerId);

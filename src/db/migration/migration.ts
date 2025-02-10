@@ -17,6 +17,7 @@ export class Migration {
       "5.sql",
       "6.sql",
       "7.sql",
+      "8.sql",
     ];
 
     const migrations = migrationFiles.map((file) => {
@@ -54,6 +55,7 @@ export class Migration {
         DROP TABLE IF EXISTS repository_user_permission_token CASCADE;
         DROP TABLE IF EXISTS manual_invoice CASCADE;
         DROP TABLE IF EXISTS user_repository CASCADE;
+        DROP TABLE IF EXISTS newsletter_subscription CASCADE;
     `);
   }
 }

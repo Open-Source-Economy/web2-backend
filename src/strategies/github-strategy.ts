@@ -2,9 +2,8 @@ import passport from "passport";
 import { Strategy } from "passport-github";
 import {
   CreateUser,
-  getRepositoryUserPermissionTokenRepository,
-  getUserRepository,
-  UserRepository,
+  repositoryUserPermissionTokenRepo,
+  userRepo,
 } from "../db/";
 import { Provider, ThirdPartyUser, ThirdPartyUserId, UserRole } from "../model";
 import { config } from "../config";
@@ -12,10 +11,6 @@ import { ValidationError } from "../model/error";
 import { ApiError } from "../model/error/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { ensureNoEndingTrailingSlash } from "../utils";
-
-const repo: UserRepository = getUserRepository();
-const repositoryUserPermissionTokenRepo =
-  getRepositoryUserPermissionTokenRepository();
 
 passport.use(
   <passport.Strategy>new Strategy(
@@ -29,7 +24,7 @@ passport.use(
     async (req, accessToken, refreshToken, profile, done) => {
       try {
         const thirdPartyUserId = new ThirdPartyUserId(profile.id);
-        const findUser = await repo.findByThirdPartyId(
+        const findUser = await userRepo.findByThirdPartyId(
           thirdPartyUserId,
           Provider.Github,
         );
@@ -76,7 +71,7 @@ passport.use(
             };
           }
 
-          const newSavedUser = await repo.insert(createUser);
+          const newSavedUser = await userRepo.insert(createUser);
           return done(null, newSavedUser);
         }
 
