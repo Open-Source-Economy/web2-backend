@@ -47,7 +47,8 @@ export class MailService {
     htmlContent = htmlContent
       .replace("{{toName}}", toName || "")
       .replace("{{companyName}}", company.name)
-      .replace("{{setUpYourAccountLink}}", setUpYourAccountLink);
+      .replace("{{setUpYourAccountLink}}", setUpYourAccountLink)
+      .replace("{{websiteLink}}", config.frontEndUrl);
 
     // htmlContent = htmlContent
     //     .replace(/{{toName}}/g, toName || "")
@@ -96,7 +97,8 @@ export class MailService {
       .replace("{{userProfileUrl}}", userProfileUrl)
       .replace("{{repositoryName}}", repositoryName)
       .replace("{{repositoryUrl}}", repositoryUrl || "")
-      .replace("{{repositoryAvatarUrl}}", repositoryAvatarUrl);
+      .replace("{{repositoryAvatarUrl}}", repositoryAvatarUrl)
+      .replace("{{websiteLink}}", config.frontEndUrl);
 
     // htmlContent = htmlContent
     //     .replace(/{{toName}}/g, toName || userLogin)
