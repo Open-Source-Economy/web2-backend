@@ -1,25 +1,13 @@
 import { Request, Response } from "express";
-import { dowNumberRepo, newsletterSubscriptionRepo, userRepo } from "../db/";
-import {
-  GetAvailableDowBody,
-  GetAvailableDowParams,
-  GetAvailableDowQuery,
-  GetAvailableDowResponse,
-  ResponseBody,
-  SetUserPreferredCurrencyBody,
-  SetUserPreferredCurrencyParams,
-  SetUserPreferredCurrencyQuery,
-  SetUserPreferredCurrencyResponse,
-} from "../dtos";
-import { StatusCodes } from "http-status-codes";
-import { CompanyId, Currency, UserId } from "../model";
-import { ApiError } from "../model/error/ApiError";
+import { newsletterSubscriptionRepo } from "../db/";
 import {
   NewsletterSubscriptionBody,
   NewsletterSubscriptionParams,
   NewsletterSubscriptionQuery,
   NewsletterSubscriptionResponse,
-} from "../dtos/NewsletterSubscription.dto";
+  ResponseBody,
+} from "../dtos";
+import { StatusCodes } from "http-status-codes";
 import { NewsletterSubscription } from "../model/NewsletterSubscription";
 import { mailService } from "../services";
 

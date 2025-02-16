@@ -44,8 +44,8 @@ import {
 } from "../model";
 import { StatusCodes } from "http-status-codes";
 import {
-  dowNumberRepo,
-  financialIssueRepo,
+  creditRepo,
+  getFinancialIssueRepository,
   issueFundingRepo,
   issueRepo,
   managedIssueRepo,
@@ -55,6 +55,8 @@ import { ApiError } from "../model/error/ApiError";
 import { CURRENCY_PRICE_CONFIGS, StripeHelper } from "./stripe";
 import { currencyAPI } from "../services";
 import { logger } from "../config";
+
+const financialIssueRepo = getFinancialIssueRepository();
 
 export class GithubController {
   static async getOwner(
@@ -142,7 +144,7 @@ export class GithubController {
     }
   }
 
-  // TODO: security issue - this operation does not have an atomic check for the user's DoWs, user can spend DoWs that they don't have
+  // TODO: security issue - this operation does not have an atomic check for the user's credit, user can spend credit that they don't have
   static async fundIssue(
     req: Request<
       FundIssueParams,
@@ -171,7 +173,7 @@ export class GithubController {
     const companyId = req.body.companyId
       ? new CompanyId(req.body.companyId)
       : undefined;
-    const dowAmount = req.body.milliDowAmount;
+    const creditAmount = req.body.creditAmount;
 
     const managedIssue = await managedIssueRepo.getByIssueId(issue.id);
     if (
@@ -184,24 +186,24 @@ export class GithubController {
       );
     }
 
-    const availableDoWs = await dowNumberRepo.getAvailableMilliDoWs(
+    const availableCredit = await creditRepo.getAvailableCredit(
       req.user.id,
       companyId,
     );
-    if (dowAmount > availableDoWs) {
-      throw new ApiError(StatusCodes.PAYMENT_REQUIRED, "Not enough DoWs");
+    if (creditAmount > availableCredit) {
+      throw new ApiError(StatusCodes.PAYMENT_REQUIRED, "Not enough credits");
     }
-    if (availableDoWs < 0) {
+    if (availableCredit < 0) {
       throw new ApiError(
         StatusCodes.INTERNAL_SERVER_ERROR,
-        "The amount of available DoWs is negative",
+        "The amount of available credit is negative",
       );
     }
 
     const issueFunding: CreateIssueFundingBody = {
       githubIssueId: issue.id,
       userId: req.user.id,
-      milliDowAmount: dowAmount,
+      creditAmount: creditAmount,
     };
 
     await issueFundingRepo.create(issueFunding);
@@ -240,7 +242,7 @@ export class GithubController {
     if (managedIssue === null) {
       const createManagedIssueBody: CreateManagedIssueBody = {
         githubIssueId: issue.id,
-        requestedMilliDowAmount: req.body.milliDowAmount,
+        requestedCreditAmount: req.body.creditAmount,
         managerId: req.user.id,
         contributorVisibility: ContributorVisibility.PRIVATE,
         state: ManagedIssueState.OPEN,
@@ -258,7 +260,7 @@ export class GithubController {
         "This issue funding is already being REJECTED or SOLVED",
       );
     } else {
-      managedIssue.requestedMilliDowAmount = req.body.milliDowAmount;
+      managedIssue.requestedCreditAmount = req.body.creditAmount;
       await managedIssueRepo.update(managedIssue);
       res.status(StatusCodes.OK).send({ success: {} });
     }
@@ -322,22 +324,23 @@ export class GithubController {
     logger.debug(`Raised amount per currency`, raisedAmountPerCurrency);
     logger.debug(`Raised amount`, raisedAmount);
 
-    let targetAmount$: number | null = null;
+    let targetAmount$: number = 2_000 * 100; // default target amount
+
     if (projectId instanceof RepositoryId) {
       if (projectId.ownerId.login === "apache" && projectId.name === "pekko")
-        targetAmount$ = 3000000;
+        targetAmount$ = 30_000 * 100;
       else if (
         projectId.ownerId.login === "join-the-flock" &&
         projectId.name === "flock"
       )
-        targetAmount$ = 1000000;
+        targetAmount$ = 10_000 * 100;
       else if (
         projectId.ownerId.login === "slick" &&
         projectId.name === "slick"
       )
-        targetAmount$ = 300000;
+        targetAmount$ = 3_000 * 100;
     } else if (projectId instanceof OwnerId) {
-      if (projectId.login === "open-source-economy") targetAmount$ = 100000;
+      if (projectId.login === "open-source-economy") targetAmount$ = 1000 * 100;
     }
 
     if (targetAmount$ === null) {

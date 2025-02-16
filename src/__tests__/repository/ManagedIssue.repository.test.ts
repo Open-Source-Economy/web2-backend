@@ -61,7 +61,7 @@ describe("ManagedIssueRepository", () => {
     it("should create with requested amount null", async () => {
       const managedIssueBody = {
         ...Fixture.createManagedIssueBody(validIssueId, validUserId),
-        requestedMilliDowAmount: null,
+        requestedCreditAmount: null,
       };
 
       const created = await managedIssueRepo.create(managedIssueBody);

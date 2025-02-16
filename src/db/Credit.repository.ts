@@ -4,21 +4,21 @@ import { pool } from "../dbPool";
 import { getManualInvoiceRepository } from "./ManualInvoice.repository";
 import { logger } from "../config";
 
-export function getDowNumberRepository(): DowNumberRepository {
-  return new DowNumberRepositoryImpl(pool);
+export function getCreditRepository(): CreditRepository {
+  return new CreditRepositoryImpl(pool);
 }
 
 // TODO: optimize this implementation
-export interface DowNumberRepository {
+export interface CreditRepository {
   /**
-   *
+   * Return minutes of credit available for the user.
    * @param userId
    * @param companyId If provided, returns the amount of the company
    */
-  getAvailableMilliDoWs(userId: UserId, companyId?: CompanyId): Promise<number>;
+  getAvailableCredit(userId: UserId, companyId?: CompanyId): Promise<number>;
 }
 
-class DowNumberRepositoryImpl implements DowNumberRepository {
+class CreditRepositoryImpl implements CreditRepository {
   pool: Pool;
 
   manualInvoiceRepo = getManualInvoiceRepository();
@@ -27,46 +27,46 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
     this.pool = pool;
   }
 
-  async getAvailableMilliDoWs(
+  async getAvailableCredit(
     userId: UserId,
     companyId?: CompanyId,
   ): Promise<number> {
     logger.debug(
-      `Getting available milliDoW for user ${userId} and company ${companyId}...`,
+      `Getting available credit for user ${userId} and company ${companyId}...`,
     );
-    let totalDoWsPaid: number = 0;
+    let totalCreditsPaid: number = 0;
 
-    // Calculate total DoW from manual invoices
+    // Calculate total Credit from manual invoices
     const manualInvoices = await this.manualInvoiceRepo.getAllInvoicePaidBy(
       companyId ?? userId,
     );
 
-    totalDoWsPaid += manualInvoices.reduce((acc, invoice) => {
-      return acc + invoice.milliDowAmount; // invoice.milliDowAmount is an integer
+    totalCreditsPaid += manualInvoices.reduce((acc, invoice) => {
+      return acc + invoice.creditAmount; // invoice.milliDowAmount is an integer
     }, 0);
-    logger.debug(`Total DoW from manual invoices: ${totalDoWsPaid}`);
+    logger.debug(`Total Credit from manual invoices: ${totalCreditsPaid}`);
 
-    // Calculate total DoW from Stripe invoices
+    // Calculate total Credit from Stripe invoices
     const amountPaidWithStripe = await this.getAllStripeInvoicePaidBy(
       companyId ?? userId,
     );
-    logger.debug(`Total DoW from Stripe invoices: ${amountPaidWithStripe}`);
-    totalDoWsPaid += amountPaidWithStripe;
+    logger.debug(`Total Credit from Stripe invoices: ${amountPaidWithStripe}`);
+    totalCreditsPaid += amountPaidWithStripe;
 
     const totalFunding = await this.getIssueFundingFrom(companyId ?? userId);
-    const availableMilliDoWs = totalDoWsPaid - totalFunding;
+    const availableMilliCredits = totalCreditsPaid - totalFunding;
     logger.debug(`Total issue funding: ${totalFunding}`);
     if (totalFunding < 0) {
       logger.error(
         `The amount dow amount (${totalFunding}) is negative for userId ${userId.uuid}, companyId ${companyId ? companyId.uuid : ""}`,
       );
-    } else if (availableMilliDoWs < 0) {
+    } else if (availableMilliCredits < 0) {
       logger.error(
-        `The total DoW paid (${totalDoWsPaid}) is less than the total funding (${totalFunding}) for userId ${userId.uuid}, companyId ${companyId ? companyId.uuid : ""}`,
+        `The total Credit paid (${totalCreditsPaid}) is less than the total funding (${totalFunding}) for userId ${userId.uuid}, companyId ${companyId ? companyId.uuid : ""}`,
       );
     }
 
-    return availableMilliDoWs;
+    return availableMilliCredits;
   }
 
   private async getAllStripeInvoicePaidBy(
@@ -85,7 +85,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
                 (SELECT sc.stripe_customer_id
                  FROM user_company uc
                           JOIN stripe_customer_user sc ON uc.company_id = $1 AND uc.user_id = sc.user_id)
-            AND sp.type = '${ProductType.milliDow}'
+            AND sp.type = '${ProductType.credit}'
             AND si.paid = TRUE
       `;
       result = await this.pool.query(query, [id.uuid]);
@@ -97,7 +97,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
                JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id
                JOIN stripe_customer_user sc ON sl.stripe_customer_id = sc.stripe_customer_id
         WHERE sc.user_id = $1
-          AND sp.type = '${ProductType.milliDow}'
+          AND sp.type = '${ProductType.credit}'
           AND si.paid = true
             `;
       result = await this.pool.query(query, [id.uuid]);
@@ -111,7 +111,7 @@ class DowNumberRepositoryImpl implements DowNumberRepository {
     }
   }
 
-  // result is in milli DoW
+  // result is in milli Credit
   private async getIssueFundingFrom(id: CompanyId | UserId): Promise<number> {
     let result;
 

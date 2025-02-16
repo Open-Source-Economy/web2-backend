@@ -54,26 +54,26 @@ describe("RepositoryUserPermissionTokenRepository", () => {
       expect(created.userEmail).toBeNull();
     });
 
-    it("should create a token with null dowCurrency", async () => {
+    it("should create a token with null currency", async () => {
       const tokenBody = {
         ...Fixture.createRepositoryUserPermissionTokenBody(repositoryId),
-        dowCurrency: null,
+        currency: null,
       };
 
       const created = await tokenRepo.create(tokenBody);
 
-      expect(created.dowCurrency).toBeNull();
+      expect(created.currency).toBeNull();
     });
 
-    it("should create a token with null dowRate", async () => {
+    it("should create a token with null rate", async () => {
       const tokenBody = {
         ...Fixture.createRepositoryUserPermissionTokenBody(repositoryId),
-        dowRate: null,
+        rate: null,
       };
 
       const created = await tokenRepo.create(tokenBody);
 
-      expect(created.dowRate).toBeNull();
+      expect(created.rate).toBeNull();
     });
   });
 

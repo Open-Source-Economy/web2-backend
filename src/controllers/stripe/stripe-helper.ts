@@ -30,17 +30,17 @@ import { Price } from "../../dtos";
 import { ValidationError } from "../../model/error";
 import { currencyAPI } from "../../services";
 
-// 1 DoW - recurring payment: 1200$
-// 1 DoW - one-time payment: 1500$
+// 1 credit - one-time payment  = 2.3$
+// 1 credit - recurring payment = 1.84$
 
-// 1 milliDoW (0.001 DoW) - recurring payment = 1.2$
-// 1 milliDoW (0.001 DoW) - one-time payment  = 1.5$
+// If the user pays 15$ - one-time payment - they receive 1 credit * 15$ / 2.3$ = 6 credit (6.52, rounded down)
+// If the user pays 15$ - recurring payment - they receive 1 credit * 15$ / 1.84$ = 8 credit (8.15, rounded down)
 
-// If the user pays 10$ - recurring payment - they receive 1 DoW * 15$ / 1.2$ = 12 milliDoW (12.5, rounded down)
-// If the user pays 10$ - one-time payment - they receive 1 DoW * 15$ / 1.5$ = 10 DoW
+// const creditOneTime$CentsPrice: number = 2.3 * 100;
+// const creditRecurring$CentsPrice: number = 1.84 * 100;
 
-const milliDowRecurring$CentsPrice: number = 120;
-const milliDowOneTime$CentsPrice: number = 150;
+const creditOneTime$CentsPrice: number = 4 * 100;
+const creditRecurring$CentsPrice: number = 3.3 * 100;
 const donationUnits: Record<Currency, number> = {
   [Currency.USD]: 100,
   [Currency.EUR]: 100,
@@ -59,16 +59,16 @@ function getPrices($price: number): Record<Currency, number> {
   return record;
 }
 
-export function getRoundedMilliDowAmount(
+export function getRoundedCreditAmount(
   price: number, // in cents
   currency: Currency,
   priceType: PriceType,
 ): number {
   const $amount = currencyAPI.convertPrice(price, currency, Currency.USD);
   if (priceType === PriceType.ONE_TIME) {
-    return Math.floor($amount / milliDowOneTime$CentsPrice);
+    return Math.floor($amount / creditOneTime$CentsPrice);
   } else if (priceType === PriceType.RECURRING) {
-    return Math.floor($amount / milliDowRecurring$CentsPrice);
+    return Math.floor($amount / creditRecurring$CentsPrice);
   } else {
     throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Price type not supported");
   }
@@ -141,24 +141,24 @@ export class StripeHelper {
       ? [project.owner.avatarUrl]
       : undefined;
 
-    // --- milliDoW product ---
+    // --- credit product ---
 
-    const milliDowParams: Stripe.ProductCreateParams = {
-      name: `DoW for ${repoName}`,
+    const creditParams: Stripe.ProductCreateParams = {
+      name: `Get Credits`,
       type: "service",
       images: images,
       shippable: false,
-      unit_label: "milliDoW",
-      description: `Support the development of ${repoName} and receive DoW credits to prioritize your needs.`,
+      unit_label: "credit",
+      description: `Support the development of ${repoName} and receive credits to prioritize your needs.`,
       // url: frontendUrl,
     };
 
     await StripeHelper.createProductAndPrices(
       project.id,
-      ProductType.milliDow,
-      milliDowParams,
-      getPrices(milliDowRecurring$CentsPrice),
-      getPrices(milliDowOneTime$CentsPrice),
+      ProductType.credit,
+      creditParams,
+      getPrices(creditRecurring$CentsPrice),
+      getPrices(creditOneTime$CentsPrice),
     );
 
     const donationParams: Stripe.ProductCreateParams = {

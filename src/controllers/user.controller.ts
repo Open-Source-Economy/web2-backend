@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { dowNumberRepo, userRepo } from "../db/";
+import { creditRepo, userRepo } from "../db/";
 import {
-  GetAvailableDowBody,
-  GetAvailableDowParams,
-  GetAvailableDowQuery,
-  GetAvailableDowResponse,
+  GetAvailableCreditsBody,
+  GetAvailableCreditsParams,
+  GetAvailableCreditsQuery,
+  GetAvailableCreditsResponse,
   ResponseBody,
   SetUserPreferredCurrencyBody,
   SetUserPreferredCurrencyParams,
@@ -16,14 +16,14 @@ import { CompanyId, Currency, UserId } from "../model";
 import { ApiError } from "../model/error/ApiError";
 
 export class UserController {
-  static async getAvailableDow(
+  static async getAvailableCredit(
     req: Request<
-      GetAvailableDowParams,
-      ResponseBody<GetAvailableDowResponse>,
-      GetAvailableDowBody,
-      GetAvailableDowQuery
+      GetAvailableCreditsParams,
+      ResponseBody<GetAvailableCreditsResponse>,
+      GetAvailableCreditsBody,
+      GetAvailableCreditsQuery
     >,
-    res: Response<ResponseBody<GetAvailableDowResponse>>,
+    res: Response<ResponseBody<GetAvailableCreditsResponse>>,
   ) {
     if (!req.user) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized");
@@ -33,12 +33,9 @@ export class UserController {
       ? new CompanyId(req.query.companyId)
       : undefined;
 
-    const dowAmount = await dowNumberRepo.getAvailableMilliDoWs(
-      userId,
-      companyId,
-    );
-    const response: GetAvailableDowResponse = {
-      dowAmount: dowAmount.toString(),
+    const creditAmount = await creditRepo.getAvailableCredit(userId, companyId);
+    const response: GetAvailableCreditsResponse = {
+      creditAmount: creditAmount,
     };
 
     return res.status(StatusCodes.OK).send({ success: response });
