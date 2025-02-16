@@ -21,8 +21,8 @@ export interface CreateRepositoryUserPermissionTokenDto {
   token: string;
   repositoryId: RepositoryId;
   repositoryUserRole: RepositoryUserRole;
-  dowRate: Decimal | null;
-  dowCurrency: Currency | null;
+  rate: Decimal | null;
+  currency: Currency | null;
   expiresAt: Date;
 }
 
@@ -139,8 +139,8 @@ class RepositoryUserPermissionTokenRepositoryImpl
             github_repository_id,
             github_repository_name,
             repository_user_role,
-            dow_rate,
-            dow_currency,
+            rate,
+            currency,
             expires_at,
             has_been_used
           )
@@ -157,8 +157,8 @@ class RepositoryUserPermissionTokenRepositoryImpl
           token.repositoryId.githubId,
           token.repositoryId.name,
           token.repositoryUserRole,
-          token.dowRate ? token.dowRate.toString() : null,
-          token.dowCurrency,
+          token.rate ? token.rate.toString() : null,
+          token.currency,
           token.expiresAt,
           false, // Default for has_been_used
         ],
@@ -192,8 +192,8 @@ class RepositoryUserPermissionTokenRepositoryImpl
                         github_repository_id = $6,
                         github_repository_name = $7,
                         repository_user_role = $8,
-                        dow_rate = $9,
-                        dow_currency = $10,
+                        rate = $9,
+                        currency = $10,
                         expires_at = $11,
                         updated_at = now()
                     WHERE id = $12
@@ -208,8 +208,8 @@ class RepositoryUserPermissionTokenRepositoryImpl
           token.repositoryId.githubId,
           token.repositoryId.name,
           token.repositoryUserRole,
-          token.dowRate ? token.dowRate.toString() : null,
-          token.dowCurrency,
+          token.rate ? token.rate.toString() : null,
+          token.currency,
           token.expiresAt,
           token.id.uuid,
         ],

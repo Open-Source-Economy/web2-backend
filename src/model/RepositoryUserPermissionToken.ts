@@ -23,8 +23,8 @@ export class RepositoryUserPermissionToken {
   token: string;
   repositoryId: RepositoryId;
   repositoryUserRole: RepositoryUserRole;
-  dowRate: Decimal | null;
-  dowCurrency: Currency | null;
+  rate: Decimal | null;
+  currency: Currency | null;
   expiresAt: Date;
   hasBeenUsed: boolean; // TODO: not used for the moment
 
@@ -36,8 +36,8 @@ export class RepositoryUserPermissionToken {
     token: string,
     repositoryId: RepositoryId,
     repositoryUserRole: RepositoryUserRole,
-    dowRate: Decimal | null,
-    dowCurrency: Currency | null,
+    rate: Decimal | null,
+    currency: Currency | null,
     expiresAt: Date,
     hasBeenUsed: boolean,
   ) {
@@ -48,8 +48,8 @@ export class RepositoryUserPermissionToken {
     this.token = token;
     this.repositoryId = repositoryId;
     this.repositoryUserRole = repositoryUserRole;
-    this.dowRate = dowRate;
-    this.dowCurrency = dowCurrency;
+    this.rate = rate;
+    this.currency = currency;
     this.expiresAt = expiresAt;
     this.hasBeenUsed = hasBeenUsed;
   }
@@ -73,9 +73,9 @@ export class RepositoryUserPermissionToken {
       "repository_user_role",
       Object.values(RepositoryUserRole) as RepositoryUserRole[],
     );
-    const dowRate = validator.optionalDecimal("dow_rate");
-    const dowCurrency = validator.optionalEnum(
-      "dow_currency",
+    const rate = validator.optionalDecimal("rate");
+    const currency = validator.optionalEnum(
+      "currency",
       Object.values(Currency) as Currency[],
     );
     const expiresAt = validator.requiredDate("expires_at");
@@ -94,8 +94,8 @@ export class RepositoryUserPermissionToken {
       token,
       repositoryId,
       repositoryUserRole,
-      dowRate ?? null,
-      dowCurrency ?? null,
+      rate ?? null,
+      currency ?? null,
       expiresAt,
       hasBeenUsed,
     );

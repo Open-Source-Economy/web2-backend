@@ -2,7 +2,7 @@ import { setupTestDB } from "../__helpers__/jest.setup";
 import { CompanyId, CompanyUserRole, IssueId, UserId } from "../../model";
 import {
   companyRepo,
-  dowNumberRepo,
+  creditRepo,
   issueFundingRepo,
   manualInvoiceRepo,
   userCompanyRepo,
@@ -12,7 +12,7 @@ import { Fixture } from "../__helpers__/Fixture";
 import { CreateIssueFundingBody, CreateManualInvoiceBody } from "../../dtos";
 import { issueRepo, ownerRepo, repositoryRepo } from "../../db";
 
-describe("DowNumberRepository", () => {
+describe("CreditRepository", () => {
   setupTestDB();
   let lonelyUserId: UserId;
   let companyUserId1: UserId;
@@ -59,21 +59,20 @@ describe("DowNumberRepository", () => {
     await issueRepo.createOrUpdate(Fixture.issue(validIssueId, ownerId));
   });
 
-  describe("getAvailableDoWs", () => {
+  describe("getAvailableCredits", () => {
     describe("should return 0", () => {
       it("for a user with no invoices nor issue funding", async () => {
-        const totalDoWs =
-          await dowNumberRepo.getAvailableMilliDoWs(lonelyUserId);
-        expect(totalDoWs).toEqual(0);
+        const totalCredits = await creditRepo.getAvailableCredit(lonelyUserId);
+        expect(totalCredits).toEqual(0);
       });
 
       it("for a company with no invoices nor issue funding", async () => {
-        const totalDoWs = await dowNumberRepo.getAvailableMilliDoWs(
+        const totalCredits = await creditRepo.getAvailableCredit(
           companyUserId1,
           validCompanyId,
         );
 
-        expect(totalDoWs).toEqual(0);
+        expect(totalCredits).toEqual(0);
       });
     });
 
@@ -81,25 +80,24 @@ describe("DowNumberRepository", () => {
       it("for a user", async () => {
         const manualInvoiceBody: CreateManualInvoiceBody = {
           ...Fixture.createManualInvoiceBody(undefined, lonelyUserId),
-          milliDowAmount: 200,
+          creditAmount: 200,
         };
         await manualInvoiceRepo.create(manualInvoiceBody);
-        const totalDoWs =
-          await dowNumberRepo.getAvailableMilliDoWs(lonelyUserId);
-        expect(totalDoWs).toEqual(200);
+        const totalCredits = await creditRepo.getAvailableCredit(lonelyUserId);
+        expect(totalCredits).toEqual(200);
       });
 
       it("for a company", async () => {
         const manualInvoiceBody: CreateManualInvoiceBody = {
           ...Fixture.createManualInvoiceBody(validCompanyId),
-          milliDowAmount: 200,
+          creditAmount: 200,
         };
         await manualInvoiceRepo.create(manualInvoiceBody);
-        const totalDoWs = await dowNumberRepo.getAvailableMilliDoWs(
+        const totalCredits = await creditRepo.getAvailableCredit(
           companyUserId1,
           validCompanyId,
         );
-        expect(totalDoWs).toEqual(200);
+        expect(totalCredits).toEqual(200);
       });
     });
 
@@ -127,60 +125,59 @@ describe("DowNumberRepository", () => {
       it("for a user", async () => {
         const manualInvoiceBody: CreateManualInvoiceBody = {
           ...Fixture.createManualInvoiceBody(undefined, lonelyUserId),
-          milliDowAmount: 200,
+          creditAmount: 200,
         };
         await manualInvoiceRepo.create(manualInvoiceBody);
 
         const issueFundingBody1: CreateIssueFundingBody = {
           githubIssueId: validIssueId,
           userId: lonelyUserId,
-          milliDowAmount: 50,
+          creditAmount: 50,
         };
         const issueFundingBody2: CreateIssueFundingBody = {
           ...issueFundingBody1,
-          milliDowAmount: 20,
+          creditAmount: 20,
         };
         await issueFundingRepo.create(issueFundingBody1);
         await issueFundingRepo.create(issueFundingBody2);
 
-        const totalDoWs =
-          await dowNumberRepo.getAvailableMilliDoWs(lonelyUserId);
-        expect(totalDoWs).toEqual(200 - 50 - 20);
+        const totalCredits = await creditRepo.getAvailableCredit(lonelyUserId);
+        expect(totalCredits).toEqual(200 - 50 - 20);
       });
 
       it("for a company", async () => {
         const manualInvoiceBody: CreateManualInvoiceBody = {
           ...Fixture.createManualInvoiceBody(validCompanyId),
-          milliDowAmount: 200,
+          creditAmount: 200,
         };
         await manualInvoiceRepo.create(manualInvoiceBody);
 
         const issueFundingBody1: CreateIssueFundingBody = {
           githubIssueId: validIssueId,
           userId: companyUserId2,
-          milliDowAmount: 50,
+          creditAmount: 50,
         };
         const issueFundingBody2: CreateIssueFundingBody = {
           ...issueFundingBody1,
-          milliDowAmount: 20,
+          creditAmount: 20,
         };
         await issueFundingRepo.create(issueFundingBody1);
         await issueFundingRepo.create(issueFundingBody2);
 
         const expected = 200 - 50 - 20;
-        const totalDoWs1 = await dowNumberRepo.getAvailableMilliDoWs(
+        const totalCredits1 = await creditRepo.getAvailableCredit(
           companyUserId1,
           validCompanyId,
         );
-        expect(totalDoWs1).toEqual(expected);
-        const totalDoWs2 = await dowNumberRepo.getAvailableMilliDoWs(
+        expect(totalCredits1).toEqual(expected);
+        const totalCredits2 = await creditRepo.getAvailableCredit(
           companyUserId2,
           validCompanyId,
         );
-        expect(totalDoWs2).toEqual(expected);
+        expect(totalCredits2).toEqual(expected);
       });
     });
 
-    // TODO: Add all the possible test cases for `getAvailableDoWs`:
+    // TODO: Add all the possible test cases for `getAvailableCredits`:
   });
 });

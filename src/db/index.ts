@@ -1,6 +1,5 @@
 import { getAddressRepository } from "./Address.repository";
-import { getDowNumberRepository } from "./DowNumber.repository";
-import { getFinancialIssueRepository } from "./FinancialIssue.repository";
+import { getCreditRepository } from "./Credit.repository";
 import { getManagedIssueRepository } from "./ManagedIssue.repository";
 import { getIssueFundingRepository } from "./IssueFunding.repository";
 import { getManualInvoiceRepository } from "./ManualInvoice.repository";
@@ -13,16 +12,17 @@ export * from "./user/User.repository";
 export * from "./Company.repository";
 export * from "./Address.repository";
 export * from "./ManagedIssue.repository";
+export * from "./FinancialIssue.repository";
 export * from "./IssueFunding.repository";
 export * from "./ManualInvoice.repository";
-export * from "./DowNumber.repository";
+export * from "./Credit.repository";
 
 export const addressRepo = getAddressRepository();
-export const dowNumberRepo = getDowNumberRepository();
+export const creditRepo = getCreditRepository();
 
-export const financialIssueRepo = getFinancialIssueRepository();
 export const managedIssueRepo = getManagedIssueRepository();
 export const issueFundingRepo = getIssueFundingRepository();
+// export const financialIssueRepo = getFinancialIssueRepository(); // Dependency injection problem
 export const manualInvoiceRepo = getManualInvoiceRepository();
 
 export const newsletterSubscriptionRepo = getNewsletterSubscriptionRepository();

@@ -37,7 +37,7 @@ describe("IssueFundingRepository", () => {
       const issueFundingBody: CreateIssueFundingBody = {
         githubIssueId: issueId,
         userId: validUserId,
-        milliDowAmount: 5000,
+        creditAmount: 5000,
       };
 
       expect(true).toEqual(true);
@@ -86,13 +86,13 @@ describe("IssueFundingRepository", () => {
       const issueFundingBody1: CreateIssueFundingBody = {
         githubIssueId: issueId,
         userId: validUserId,
-        milliDowAmount: 5000,
+        creditAmount: 5000,
       };
 
       const issueFundingBody2: CreateIssueFundingBody = {
         githubIssueId: issueId,
         userId: validUserId,
-        milliDowAmount: 10000,
+        creditAmount: 10000,
       };
 
       const issueFunding1 = await issueFundingRepo.create(issueFundingBody1);

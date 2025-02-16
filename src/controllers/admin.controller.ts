@@ -24,7 +24,7 @@ import {
   addressRepo,
   companyRepo,
   companyUserPermissionTokenRepo,
-  financialIssueRepo,
+  getFinancialIssueRepository,
   manualInvoiceRepo,
   repositoryUserPermissionTokenRepo,
 } from "../db";
@@ -42,6 +42,8 @@ import {
 } from "../dtos/stripe/CreateProductAndPrice";
 import { StripeHelper } from "./stripe";
 import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUserPermissionToken.repository";
+
+const financialIssueRepo = getFinancialIssueRepository();
 
 export class AdminController {
   static async createAddress(
@@ -161,8 +163,8 @@ export class AdminController {
         token: token,
         repositoryId: repository.id,
         repositoryUserRole: req.body.repositoryUserRole,
-        dowRate: req.body.dowRate ? new Decimal(req.body.dowRate) : null,
-        dowCurrency: req.body.dowCurrency ? req.body.dowCurrency : null,
+        rate: req.body.rate ? new Decimal(req.body.rate) : null,
+        currency: req.body.currency ? req.body.currency : null,
         expiresAt: expiresAt,
       };
 

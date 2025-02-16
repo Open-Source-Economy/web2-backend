@@ -66,15 +66,16 @@ export function createApp() {
 
   app.use(
     session({
-      secret: "your-secret-key",
+      secret: "your-secret-key", // TODO: lolo
       saveUninitialized: true,
       resave: false,
       proxy: true,
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000,
-        secure: true,
+        // Only use secure cookies in production
+        secure: config.env === NodeEnv.Production,
         httpOnly: true,
-        sameSite: "none",
+        sameSite: config.env === NodeEnv.Production ? "none" : "lax",
       },
       store: new pgSession({
         pool: pool,

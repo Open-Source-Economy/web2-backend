@@ -2,7 +2,6 @@ import { getUserCompanyRepository } from "./UserCompany.repository";
 import { getCompanyUserPermissionTokenRepository } from "./CompanyUserPermissionToken.repository";
 import { getRepositoryUserPermissionTokenRepository } from "./RepositoryUserPermissionToken.repository";
 import { getUserRepositoryRepository } from "./UserRepository.repository";
-import { getNewsletterSubscriptionRepository } from "../NewsletterSubscription.repository";
 import { getUserRepository } from "./User.repository";
 import { getCompanyRepository } from "../Company.repository";
 

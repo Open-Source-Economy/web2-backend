@@ -40,7 +40,7 @@ export interface FinancialIssueRepository {
   getAll(): Promise<FinancialIssue[]>;
 }
 
-class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
+export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
   pool: Pool;
   githubService: GitHubApi;
 

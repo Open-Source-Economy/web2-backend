@@ -74,8 +74,8 @@ export class AuthController {
     return userRepos.map((userRepo) => {
       const info: RepositoryInfo = {
         role: userRepo.repositoryUserRole,
-        dowRate: userRepo.dowRate ? userRepo.dowRate.toString() : null,
-        dowCurrency: userRepo.dowCurrency,
+        rate: userRepo.rate ? userRepo.rate.toString() : null,
+        currency: userRepo.currency,
       };
       return [userRepo.repositoryId, info];
     });
@@ -239,8 +239,8 @@ export class AuthController {
         userId,
         repositoryUserPermissionToken.repositoryId,
         repositoryUserPermissionToken.repositoryUserRole,
-        repositoryUserPermissionToken.dowRate,
-        repositoryUserPermissionToken.dowCurrency,
+        repositoryUserPermissionToken.rate,
+        repositoryUserPermissionToken.currency,
       );
 
       await userRepositoryRepo.create(userRepository);

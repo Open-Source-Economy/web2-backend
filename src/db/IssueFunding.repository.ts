@@ -70,7 +70,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
                                                github_issue_id,
                                                github_issue_number,
                                                user_id,
-                                               milli_dow_amount)
+                                               credit_amount)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                     RETURNING id,
                         github_owner_id,
@@ -80,7 +80,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
                         github_issue_id,
                         github_issue_number,
                         user_id,
-                        milli_dow_amount
+                        credit_amount
                 `,
         [
           issueFunding.githubIssueId.repositoryId.ownerId.githubId,
@@ -90,7 +90,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
           issueFunding.githubIssueId.githubId,
           issueFunding.githubIssueId.number,
           issueFunding.userId.uuid,
-          issueFunding.milliDowAmount,
+          issueFunding.creditAmount,
         ],
       );
 

@@ -62,7 +62,7 @@ describe("StripeHelper.getPrices", () => {
     const product = Fixture.stripeProduct(
       new StripeProductId("product-1"),
       repositoryId,
-      ProductType.milliDow,
+      ProductType.credit,
     );
 
     await productRepo.insert(product);

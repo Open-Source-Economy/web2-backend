@@ -64,7 +64,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
         `
           INSERT INTO user_repository (
             user_id, github_owner_id, github_owner_login, github_repository_id, github_repository_name,
-            repository_user_role, dow_rate, dow_currency
+            repository_user_role, rate, currency
           )
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           RETURNING *
@@ -76,8 +76,8 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
           userRepository.repositoryId.githubId,
           userRepository.repositoryId.name,
           userRepository.repositoryUserRole,
-          userRepository.dowRate ? userRepository.dowRate.toNumber() : null,
-          userRepository.dowCurrency,
+          userRepository.rate ? userRepository.rate.toNumber() : null,
+          userRepository.currency,
         ],
       );
       return this.getOne(result.rows);
@@ -115,14 +115,14 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
       const result = await client.query(
         `
           UPDATE user_repository
-          SET repository_user_role = $1, dow_rate = $2, dow_currency = $3, updated_at = now()
+          SET repository_user_role = $1, rate = $2, currency = $3, updated_at = now()
           WHERE user_id = $4 AND github_owner_login = $5 AND github_repository_name = $6
           RETURNING *
         `,
         [
           userRepository.repositoryUserRole,
-          userRepository.dowRate ? userRepository.dowRate.toNumber() : null,
-          userRepository.dowCurrency,
+          userRepository.rate ? userRepository.rate.toNumber() : null,
+          userRepository.currency,
           userRepository.userId.uuid,
           userRepository.repositoryId.ownerId.login,
           userRepository.repositoryId.name,

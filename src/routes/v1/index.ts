@@ -4,7 +4,6 @@ import userRoute from "./user.route";
 import stripeRoute from "./stripe.route";
 import adminRoute from "./admin.route";
 import githubRoute from "./github.route";
-import { UserController } from "../../controllers";
 import { MiscellaneousController } from "../../controllers/miscellaneous.controller";
 
 const router = express.Router();

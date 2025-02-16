@@ -200,7 +200,7 @@ export const Fixture = {
   stripeProduct(
     productId: StripeProductId,
     projectId: ProjectId | null,
-    productType: ProductType = ProductType.milliDow,
+    productType: ProductType = ProductType.credit,
   ): StripeProduct {
     return new StripeProduct(productId, projectId, productType);
   },
@@ -310,14 +310,14 @@ export const Fixture = {
     companyId?: CompanyId,
     userId?: UserId,
     paid: boolean = true,
-    dowAmount: number = 100.0,
+    creditAmount: number = 100.0,
   ): CreateManualInvoiceBody {
     return {
       number: 1,
       companyId: companyId,
       userId: userId,
       paid: paid,
-      milliDowAmount: dowAmount,
+      creditAmount: creditAmount,
     };
   },
   manualInvoiceFromBody(
@@ -330,7 +330,7 @@ export const Fixture = {
       dto.companyId,
       dto.userId,
       dto.paid,
-      dto.milliDowAmount,
+      dto.creditAmount,
     );
   },
 
@@ -347,7 +347,7 @@ export const Fixture = {
       issueFundingId,
       dto.githubIssueId,
       dto.userId,
-      dto.milliDowAmount,
+      dto.creditAmount,
     );
   },
   managedIssueId(): ManagedIssueId {
@@ -357,11 +357,11 @@ export const Fixture = {
   createManagedIssueBody(
     githubIssueId: IssueId,
     managerId: UserId,
-    requestedDowAmount: number = 5000,
+    requestedCreditAmount: number = 5000,
   ): CreateManagedIssueBody {
     return {
       githubIssueId,
-      requestedMilliDowAmount: requestedDowAmount,
+      requestedCreditAmount: requestedCreditAmount,
       managerId,
       contributorVisibility: ContributorVisibility.PUBLIC,
       state: ManagedIssueState.OPEN,
@@ -374,7 +374,7 @@ export const Fixture = {
     return new ManagedIssue(
       managedIssueId,
       dto.githubIssueId,
-      dto.requestedMilliDowAmount,
+      dto.requestedCreditAmount,
       dto.managerId,
       dto.contributorVisibility,
       dto.state,
@@ -424,8 +424,8 @@ export const Fixture = {
       token: `token-${Math.floor(Math.random() * 1000000)}`,
       repositoryId,
       repositoryUserRole: RepositoryUserRole.READ,
-      dowRate: new Decimal(1.0),
-      dowCurrency: Currency.USD,
+      rate: new Decimal(1.0),
+      currency: Currency.USD,
       expiresAt,
     };
   },
@@ -442,8 +442,8 @@ export const Fixture = {
       dto.token,
       dto.repositoryId,
       dto.repositoryUserRole,
-      dto.dowRate,
-      dto.dowCurrency,
+      dto.rate,
+      dto.currency,
       dto.expiresAt,
       false,
     );
@@ -453,15 +453,15 @@ export const Fixture = {
     userId: UserId,
     repositoryId: RepositoryId,
     repositoryUserRole: RepositoryUserRole = RepositoryUserRole.READ,
-    dowRate: number = 1.0,
-    dowCurrency: Currency = Currency.USD,
+    rate: number = 1.0,
+    currency: Currency = Currency.USD,
   ): UserRepository {
     return new UserRepository(
       userId,
       repositoryId,
       repositoryUserRole,
-      new Decimal(dowRate),
-      dowCurrency,
+      new Decimal(rate),
+      currency,
     );
   },
 };

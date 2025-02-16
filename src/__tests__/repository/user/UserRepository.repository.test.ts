@@ -31,26 +31,26 @@ describe("UserRepositoryRepository", () => {
       expect(created.repositoryId).toEqual(repositoryId);
     });
 
-    it("create with null dowCurrency", async () => {
+    it("create with null currency", async () => {
       const userRepository = {
         ...Fixture.userRepository(userId, repositoryId),
-        dowCurrency: null,
+        currency: null,
       };
 
       const created = await userRepositoryRepo.create(userRepository);
 
-      expect(created.dowCurrency).toBeNull();
+      expect(created.currency).toBeNull();
     });
 
-    it("create with null dowRate", async () => {
+    it("create with null rate", async () => {
       const userRepository = {
         ...Fixture.userRepository(userId, repositoryId),
-        dowRate: null,
+        rate: null,
       };
 
       const created = await userRepositoryRepo.create(userRepository);
 
-      expect(created.dowRate).toBeNull();
+      expect(created.rate).toBeNull();
     });
   });
 

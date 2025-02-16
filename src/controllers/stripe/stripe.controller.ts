@@ -8,7 +8,7 @@ import {
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { Currency, PriceType, ProductType, Project } from "../../model";
-import { getRoundedMilliDowAmount, StripeHelper } from "./stripe-helper";
+import { getRoundedCreditAmount, StripeHelper } from "./stripe-helper";
 
 const DONATION_LABELS = [
   "This made my day! 😄",
@@ -51,9 +51,9 @@ export const CURRENCY_PRICE_CONFIGS: Record<
           [PriceType.ONE_TIME]: DONATION_LABELS[index],
           [PriceType.RECURRING]: DONATION_LABELS[index],
         },
-        [ProductType.milliDow]: {
-          [PriceType.ONE_TIME]: `${getRoundedMilliDowAmount(amount, currency as Currency, PriceType.ONE_TIME)} milliDoW`,
-          [PriceType.RECURRING]: `${getRoundedMilliDowAmount(amount, currency as Currency, PriceType.RECURRING)} milliDoW/mo`,
+        [ProductType.credit]: {
+          [PriceType.ONE_TIME]: `${getRoundedCreditAmount(amount, currency as Currency, PriceType.ONE_TIME)} credit`,
+          [PriceType.RECURRING]: `${getRoundedCreditAmount(amount, currency as Currency, PriceType.RECURRING)} credit/mo`,
         },
       },
     ]);

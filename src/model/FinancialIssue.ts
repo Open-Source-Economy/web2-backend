@@ -38,14 +38,14 @@ export class FinancialIssue {
   static amountCollected(m: FinancialIssue): Decimal {
     return (
       m.issueFundings?.reduce(
-        (acc, funding) => acc.plus(funding.milliDowAmount),
+        (acc, funding) => acc.plus(funding.credit),
         new Decimal(0),
       ) ?? new Decimal(0)
     );
   }
 
   static amountRequested(m: FinancialIssue): number | undefined {
-    return m.managedIssue?.requestedMilliDowAmount ?? undefined;
+    return m.managedIssue?.requestedCreditAmount ?? undefined;
   }
 
   static successfullyFunded(m: FinancialIssue): boolean {

@@ -71,7 +71,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
                                                github_repository_name,
                                                github_issue_id,
                                                github_issue_number,
-                                               requested_milli_dow_amount,
+                                               requested_credit_amount,
                                                manager_id,
                                                contributor_visibility,
                                                state)
@@ -83,7 +83,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
                         github_repository_name,
                         github_issue_id,
                         github_issue_number,
-                        requested_milli_dow_amount,
+                        requested_credit_amount,
                         manager_id,
                         contributor_visibility,
                         state
@@ -95,7 +95,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
           managedIssue.githubIssueId.repositoryId.name,
           managedIssue.githubIssueId.githubId,
           managedIssue.githubIssueId.number,
-          managedIssue.requestedMilliDowAmount,
+          managedIssue.requestedCreditAmount,
           managedIssue.managerId.uuid,
           managedIssue.contributorVisibility,
           managedIssue.state,
@@ -121,7 +121,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
                         github_repository_name     = $4,
                         github_issue_id            = $5,
                         github_issue_number        = $6,
-                        requested_milli_dow_amount = $7,
+                        requested_credit_amount = $7,
                         manager_id                 = $8,
                         contributor_visibility     = $9,
                         state                      = $10
@@ -133,7 +133,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
                         github_repository_name,
                         github_issue_id,
                         github_issue_number,
-                        requested_milli_dow_amount,
+                        requested_credit_amount,
                         manager_id,
                         contributor_visibility,
                         state
@@ -145,7 +145,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
           managedIssue.githubIssueId.repositoryId.name,
           managedIssue.githubIssueId.githubId,
           managedIssue.githubIssueId.number,
-          managedIssue.requestedMilliDowAmount,
+          managedIssue.requestedCreditAmount,
           managedIssue.managerId.uuid,
           managedIssue.contributorVisibility,
           managedIssue.state,
