@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { pool } from "../../dbPool";
 import {
+  CampaignProductType,
   Project,
   ProjectId,
   RepositoryId,
@@ -17,7 +18,9 @@ export interface StripeProductRepository {
 
   getById(id: StripeProductId): Promise<StripeProduct | null>;
 
-  getByProjectId(projectId: ProjectId): Promise<StripeProduct[]>;
+  getCampaignProduct(
+    projectId: ProjectId,
+  ): Promise<[CampaignProductType, StripeProduct][]>;
 
   getAll(): Promise<StripeProduct[]>;
 }
@@ -84,30 +87,49 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
     return this.getOptionalProduct(result.rows);
   }
 
-  async getByProjectId(projectId: ProjectId): Promise<StripeProduct[]> {
+  async getCampaignProduct(
+    projectId: ProjectId,
+  ): Promise<[CampaignProductType, StripeProduct][]> {
+    const campaignProductTypesClause = `
+    AND type IN (${Object.values(CampaignProductType)
+      .map((type) => `'${type}'`)
+      .join(", ")})
+  `;
+
+    let result;
     if (projectId instanceof RepositoryId) {
-      const result = await this.pool.query(
+      result = await this.pool.query(
         `
-                    SELECT *
-                    FROM stripe_product
-                    WHERE github_owner_login = $1
-                      AND github_repository_name = $2
-                `,
+        SELECT *
+        FROM stripe_product
+        WHERE github_owner_login = $1
+          AND github_repository_name = $2
+          ${campaignProductTypesClause}
+      `,
         [projectId.ownerId.login, projectId.name],
       );
-      return this.getProductList(result.rows);
     } else {
-      const result = await this.pool.query(
+      result = await this.pool.query(
         `
-                    SELECT *
-                    FROM stripe_product
-                    WHERE github_owner_login = $1
-                      AND github_repository_name IS NULL
-                `,
+        SELECT *
+        FROM stripe_product
+        WHERE github_owner_login = $1
+          AND github_repository_name IS NULL
+          ${campaignProductTypesClause}
+      `,
         [projectId.login],
       );
-      return this.getProductList(result.rows);
     }
+
+    // Use existing helper to get products
+    const products = this.getProductList(result.rows);
+
+    // Convert products to tuples of [CampaignProductType, StripeProduct]
+    return products.map((product) => {
+      // @ts-ignore: Cast is safe because we filtered for campaign product types in the query
+      const campaignProductType = product.type as CampaignProductType;
+      return [campaignProductType, product];
+    });
   }
 
   async insert(product: StripeProduct): Promise<StripeProduct> {

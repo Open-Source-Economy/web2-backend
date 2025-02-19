@@ -81,29 +81,37 @@ class CreditRepositoryImpl implements CreditRepository {
 
     if (id instanceof CompanyId) {
       const query = `
-          SELECT SUM(sl.quantity) AS total_credit_paid
-          FROM stripe_invoice_line sl
-                   JOIN stripe_product sp ON sl.product_id = sp.stripe_id
-                   JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id
-          WHERE sl.stripe_customer_id IN
-                (SELECT sc.stripe_customer_id
-                 FROM user_company uc
-                          JOIN stripe_customer_user sc ON uc.company_id = $1 AND uc.user_id = sc.user_id)
-            AND sp.type = '${ProductType.credit}'
-            AND si.paid = TRUE
-      `;
+        SELECT SUM(
+                 CASE
+                     WHEN sp.type = '${ProductType.CREDIT}' THEN sl.quantity
+                     ELSE 0
+                     END
+         ) AS total_credit_paid
+        FROM stripe_invoice_line sl
+                 JOIN stripe_product sp ON sl.product_id = sp.stripe_id
+                 JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id
+        WHERE sl.stripe_customer_id IN
+              (SELECT sc.stripe_customer_id
+               FROM user_company uc
+                        JOIN stripe_customer_user sc ON uc.company_id = $1 AND uc.user_id = sc.user_id)
+          AND si.paid = TRUE
+    `;
       result = await this.pool.query(query, [id.uuid]);
     } else {
       const query = `
-        SELECT SUM(sl.quantity) AS total_credit_paid
+        SELECT SUM(
+               CASE
+                   WHEN sp.type = '${ProductType.CREDIT}' THEN sl.quantity
+                   ELSE 0
+                   END
+       ) AS total_credit_paid
         FROM stripe_invoice_line sl
-               JOIN stripe_product sp ON sl.product_id = sp.stripe_id
-               JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id
-               JOIN stripe_customer_user sc ON sl.stripe_customer_id = sc.stripe_customer_id
+                 JOIN stripe_product sp ON sl.product_id = sp.stripe_id
+                 JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id
+                 JOIN stripe_customer_user sc ON sl.stripe_customer_id = sc.stripe_customer_id
         WHERE sc.user_id = $1
-          AND sp.type = '${ProductType.credit}'
           AND si.paid = true
-            `;
+        `;
       result = await this.pool.query(query, [id.uuid]);
     }
 

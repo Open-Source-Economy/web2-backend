@@ -6,10 +6,6 @@ import {
   FundIssueParams,
   FundIssueQuery,
   FundIssueResponse,
-  GetCampaignBody,
-  GetCampaignParams,
-  GetCampaignQuery,
-  GetCampaignResponse,
   GetIssueBody,
   GetIssueParams,
   GetIssueQuery,
@@ -35,11 +31,9 @@ import {
 import {
   CompanyId,
   ContributorVisibility,
-  Currency,
   IssueId,
   ManagedIssueState,
   OwnerId,
-  Project,
   RepositoryId,
 } from "../model";
 import { StatusCodes } from "http-status-codes";
@@ -49,12 +43,8 @@ import {
   issueFundingRepo,
   issueRepo,
   managedIssueRepo,
-  stripeMiscellaneousRepository,
 } from "../db";
 import { ApiError } from "../model/error/ApiError";
-import { CURRENCY_PRICE_CONFIGS, StripeHelper } from "./stripe";
-import { currencyAPI } from "../services";
-import { logger } from "../config";
 
 const financialIssueRepo = getFinancialIssueRepository();
 
@@ -263,106 +253,6 @@ export class GithubController {
       managedIssue.requestedCreditAmount = req.body.creditAmount;
       await managedIssueRepo.update(managedIssue);
       res.status(StatusCodes.OK).send({ success: {} });
-    }
-  }
-
-  static async getCampaign(
-    req: Request<
-      GetCampaignParams,
-      ResponseBody<GetCampaignResponse>,
-      GetCampaignBody,
-      GetCampaignQuery
-    >,
-    res: Response<ResponseBody<GetCampaignResponse>>,
-  ) {
-    const projectId = Project.getId(req.params.owner, req.params.repo);
-    const prices = await StripeHelper.getPrices(
-      projectId,
-      CURRENCY_PRICE_CONFIGS,
-    );
-
-    logger.debug(`Prices: `, prices);
-
-    const raisedAmountPerCurrency =
-      await stripeMiscellaneousRepository.getRaisedAmountPerCurrency(projectId);
-
-    if (
-      projectId instanceof RepositoryId &&
-      projectId.ownerId.login === "apache" &&
-      projectId.name === "pekko"
-    ) {
-      raisedAmountPerCurrency[Currency.USD] =
-        raisedAmountPerCurrency[Currency.USD] + 50000; // manual invoice #1
-      raisedAmountPerCurrency[Currency.CHF] =
-        raisedAmountPerCurrency[Currency.CHF] + 100000; // manual invoice #2
-    }
-
-    const raisedAmount: Record<Currency, number> = Object.values(
-      Currency,
-    ).reduce(
-      (acc, currency) => {
-        acc[currency] = 0;
-        return acc;
-      },
-      {} as Record<Currency, number>,
-    );
-
-    // For each target currency
-    Object.values(Currency).forEach((targetCurrency) => {
-      // Sum up converted amounts from all source currencies
-      Object.entries(raisedAmountPerCurrency).forEach(
-        ([sourceCurrency, amount]) => {
-          raisedAmount[targetCurrency] += currencyAPI.convertPrice(
-            amount,
-            sourceCurrency as Currency,
-            targetCurrency as Currency,
-          );
-        },
-      );
-    });
-
-    logger.debug(`Raised amount per currency`, raisedAmountPerCurrency);
-    logger.debug(`Raised amount`, raisedAmount);
-
-    let targetAmount$: number = 2_000 * 100; // default target amount
-
-    if (projectId instanceof RepositoryId) {
-      if (projectId.ownerId.login === "apache" && projectId.name === "pekko")
-        targetAmount$ = 30_000 * 100;
-      else if (
-        projectId.ownerId.login === "join-the-flock" &&
-        projectId.name === "flock"
-      )
-        targetAmount$ = 10_000 * 100;
-      else if (
-        projectId.ownerId.login === "slick" &&
-        projectId.name === "slick"
-      )
-        targetAmount$ = 3_000 * 100;
-    } else if (projectId instanceof OwnerId) {
-      if (projectId.login === "open-source-economy") targetAmount$ = 1000 * 100;
-    }
-
-    if (targetAmount$ === null) {
-      throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Not implemented yet");
-    } else {
-      const response: GetCampaignResponse = {
-        raisedAmount: raisedAmount,
-        targetAmount: Object.values(Currency).reduce(
-          (acc, currency) => {
-            acc[currency] = currencyAPI.convertPrice(
-              targetAmount$,
-              Currency.USD,
-              currency as Currency,
-            );
-            return acc;
-          },
-          {} as Record<Currency, number>,
-        ),
-        prices,
-        description: null,
-      };
-      res.status(StatusCodes.OK).send({ success: response });
     }
   }
 }

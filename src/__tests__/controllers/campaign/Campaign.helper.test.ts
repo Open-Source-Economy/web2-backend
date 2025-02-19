@@ -6,15 +6,17 @@ import {
   ownerRepo,
   repositoryRepo,
 } from "../../../db";
-import { StripeHelper } from "../../../controllers";
 
 import {
+  CampaignProductType,
+  campaignProductTypeUtils,
   Currency,
   PriceType,
   ProductType,
   StripeProductId,
 } from "../../../model";
 import { Price } from "../../../dtos";
+import { CampaignHelper } from "../../../controllers/campaign/campaign.helper";
 
 const currencyPriceConfigs: Record<
   Currency,
@@ -44,7 +46,7 @@ const currencyPriceConfigs: Record<
   [number, Record<ProductType, Record<PriceType, string>>][]
 >;
 
-describe("StripeHelper.getPrices", () => {
+describe("CampaignHelper.getPrices", () => {
   setupTestDB();
 
   const ownerId = Fixture.ownerId();
@@ -59,10 +61,11 @@ describe("StripeHelper.getPrices", () => {
   });
 
   it("should return prices for products", async () => {
+    const campaignProductType = CampaignProductType.CREDIT;
     const product = Fixture.stripeProduct(
       new StripeProductId("product-1"),
       repositoryId,
-      ProductType.credit,
+      campaignProductTypeUtils.toProductType(campaignProductType),
     );
 
     await productRepo.insert(product);
@@ -89,14 +92,19 @@ describe("StripeHelper.getPrices", () => {
 
     const prices: Record<
       PriceType,
-      Record<Currency, Record<ProductType, Price[]>>
-    > = await StripeHelper.getPrices(repositoryId, currencyPriceConfigs);
+      Record<Currency, Record<CampaignProductType, Price[]>>
+    > = await CampaignHelper.getCampaignPrices(
+      repositoryId,
+      currencyPriceConfigs,
+    );
 
     expect(
-      prices[PriceType.RECURRING][Currency.USD][product.type],
+      prices[PriceType.RECURRING][Currency.USD][campaignProductType],
     ).toHaveLength(2);
 
-    expect(prices[PriceType.RECURRING][Currency.USD][product.type]).toEqual(
+    expect(
+      prices[PriceType.RECURRING][Currency.USD][campaignProductType],
+    ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ totalAmount: 500, quantity: 5 }),
         expect.objectContaining({ totalAmount: 1000, quantity: 10 }),
@@ -104,12 +112,12 @@ describe("StripeHelper.getPrices", () => {
     );
 
     Object.values(Currency).forEach((currency) => {
-      expect(prices[PriceType.RECURRING][currency][product.type]).toHaveLength(
-        2,
-      );
-      expect(prices[PriceType.ONE_TIME][currency][product.type]).toHaveLength(
-        2,
-      );
+      expect(
+        prices[PriceType.RECURRING][currency][campaignProductType],
+      ).toHaveLength(2);
+      expect(
+        prices[PriceType.ONE_TIME][currency][campaignProductType],
+      ).toHaveLength(2);
     });
   });
 });

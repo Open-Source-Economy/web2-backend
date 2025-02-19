@@ -50,7 +50,7 @@ export const credit = {
 
   displayAmount: (credit: Credit | null): string => {
     if (!credit) {
-      return "";
+      return "0h";
     } else if (credit.unit === CreditUnit.MINUTE) {
       const amount = credit.amount.toNumber(); // Convert Decimal to a number
       if (amount >= 60) {
@@ -98,5 +98,11 @@ export const credit = {
       unit += "s";
     }
     return unit;
+  },
+
+  percentage: (progress: Credit, total: Credit): number => {
+    const progressMinutes = credit.toMinutes(progress);
+    const totalMinutes = credit.toMinutes(total);
+    return Math.min((progressMinutes / totalMinutes) * 100, 100);
   },
 };

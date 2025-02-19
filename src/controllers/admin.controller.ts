@@ -40,8 +40,8 @@ import {
   CreateProductAndPriceQuery,
   CreateProductAndPriceResponse,
 } from "../dtos/stripe/CreateProductAndPrice";
-import { StripeHelper } from "./stripe";
 import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUserPermissionToken.repository";
+import { CampaignHelper } from "./campaign/campaign.helper";
 
 const financialIssueRepo = getFinancialIssueRepository();
 
@@ -217,6 +217,7 @@ export class AdminController {
     res.status(StatusCodes.CREATED).send({ success: response });
   }
 
+  // TODO: lolo
   static async createProductAndPrice(
     req: Request<
       CreateProductAndPriceParams,
@@ -229,7 +230,7 @@ export class AdminController {
     const projectId = Project.getId(req.params.owner, req.params.repo);
     const project = await financialIssueRepo.getProject(projectId);
 
-    await StripeHelper.createProductAndPrice(project);
+    await CampaignHelper.createCampaignProductAndPrice(project);
 
     const response: CreateProductAndPriceResponse = {};
     res.status(StatusCodes.CREATED).send({ success: response });

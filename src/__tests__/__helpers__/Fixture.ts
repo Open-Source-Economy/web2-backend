@@ -200,7 +200,7 @@ export const Fixture = {
   stripeProduct(
     productId: StripeProductId,
     projectId: ProjectId | null,
-    productType: ProductType = ProductType.credit,
+    productType: ProductType = ProductType.CREDIT,
   ): StripeProduct {
     return new StripeProduct(productId, projectId, productType);
   },

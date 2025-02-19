@@ -242,7 +242,7 @@ describe("CreditRepository", () => {
           await createStripeInvoice(
             testedUser,
             projectId,
-            ProductType.donation,
+            ProductType.DONATION,
             200,
           );
           await expected(testedUser, 0);
@@ -264,7 +264,7 @@ describe("CreditRepository", () => {
           await createStripeInvoice(
             testedUser,
             projectId,
-            ProductType.credit,
+            ProductType.CREDIT,
             200,
           );
           await expected(testedUser, 200);
@@ -288,7 +288,7 @@ describe("CreditRepository", () => {
           await createStripeInvoice(
             testedUser,
             projectId,
-            ProductType.credit,
+            ProductType.CREDIT,
             200,
           );
 
