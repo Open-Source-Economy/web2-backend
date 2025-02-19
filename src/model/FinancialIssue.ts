@@ -51,7 +51,7 @@ export class FinancialIssue {
     if (m.managedIssue?.requestedCreditAmount) {
       return {
         unit: CreditUnit.MINUTE,
-        amount: new Decimal(m.managedIssue?.requestedCreditAmount),
+        amount: new Decimal(m.managedIssue?.requestedCreditAmount || 0),
       };
     } else {
       return undefined;

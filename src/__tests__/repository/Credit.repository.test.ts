@@ -1,10 +1,24 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
-import { CompanyId, CompanyUserRole, IssueId, UserId } from "../../model";
+import {
+  CompanyId,
+  CompanyUserRole,
+  OwnerId,
+  ProductType,
+  RepositoryId,
+  StripeCustomerId,
+  StripeCustomerUser,
+  UserId,
+} from "../../model";
 import {
   companyRepo,
   creditRepo,
   issueFundingRepo,
   manualInvoiceRepo,
+  stripeCustomerRepo,
+  stripeCustomerUserRepo,
+  stripeInvoiceRepo,
+  stripePriceRepo,
+  stripeProductRepo,
   userCompanyRepo,
   userRepo,
 } from "../../db/";
@@ -14,13 +28,98 @@ import { issueRepo, ownerRepo, repositoryRepo } from "../../db";
 
 describe("CreditRepository", () => {
   setupTestDB();
+
+  // users and companies
   let lonelyUserId: UserId;
   let companyUserId1: UserId;
   let companyUserId2: UserId;
   let validCompanyId: CompanyId;
-  let validIssueId: IssueId;
+
+  // github
+  const ownerId = Fixture.ownerId();
+  const repositoryId = Fixture.repositoryId(ownerId);
+  const validIssueId = Fixture.issueId(repositoryId);
+
+  // stripe
+  const lonelyUserStripeCustomerId: StripeCustomerId =
+    Fixture.stripeCustomerId();
+  const companyUserStripeCustomerId1: StripeCustomerId =
+    Fixture.stripeCustomerId();
+  const companyUserStripeCustomerId2: StripeCustomerId =
+    Fixture.stripeCustomerId();
+
+  const validStripeProductId = Fixture.stripeProductId();
+  const validStripePriceId = Fixture.stripePriceId();
+  const validStripeInvoiceId = Fixture.stripeInvoiceId();
+  const stripeInvoiceLineId = Fixture.stripeInvoiceLineId();
+
+  // testing helpers
+  type TestedUser = {
+    stripeCustomerId: StripeCustomerId;
+    userId: UserId;
+    companyId?: CompanyId | undefined;
+  };
+  let testUser: TestedUser;
+  let testCompanyUsers: TestedUser;
+
+  /**
+   * Creates a manual invoice with the specified credit amount
+   */
+  async function createManualInvoice(
+    testedUser: TestedUser,
+    creditAmount: number,
+  ): Promise<void> {
+    const manualInvoiceBody: CreateManualInvoiceBody = {
+      ...Fixture.createManualInvoiceBody(
+        testedUser.companyId,
+        testedUser.companyId ? undefined : testedUser.userId,
+      ),
+      creditAmount,
+    };
+    await manualInvoiceRepo.create(manualInvoiceBody);
+  }
+
+  /**
+   * Creates a stripe invoice with the specified product type and quantity
+   */
+  async function createStripeInvoice(
+    testedUser: TestedUser,
+    projectId: OwnerId | RepositoryId | null,
+    productType: ProductType,
+    priceQuantity: number,
+  ): Promise<void> {
+    const product = Fixture.stripeProduct(
+      validStripeProductId,
+      projectId,
+      productType,
+    );
+    await stripeProductRepo.insert(product);
+
+    const price = Fixture.stripePrice(validStripePriceId, validStripeProductId);
+    await stripePriceRepo.insert(price);
+
+    const lines = [
+      Fixture.stripeInvoiceLine(
+        stripeInvoiceLineId,
+        validStripeInvoiceId,
+        testedUser.stripeCustomerId,
+        validStripeProductId,
+        validStripePriceId,
+        priceQuantity,
+      ),
+    ];
+
+    const invoice = Fixture.stripeInvoice(
+      validStripeInvoiceId,
+      testedUser.stripeCustomerId,
+      lines,
+    );
+
+    await stripeInvoiceRepo.insert(invoice);
+  }
 
   beforeEach(async () => {
+    // users and companies
     const lonelyUser = await userRepo.insert(
       Fixture.createUser(Fixture.localUser()),
     );
@@ -49,135 +148,196 @@ describe("CreditRepository", () => {
       CompanyUserRole.ADMIN,
     );
 
-    const ownerId = Fixture.ownerId();
+    // github
     await ownerRepo.insertOrUpdate(Fixture.owner(ownerId));
-
-    const repositoryId = Fixture.repositoryId(ownerId);
     await repositoryRepo.insertOrUpdate(Fixture.repository(repositoryId));
-
-    validIssueId = Fixture.issueId(repositoryId);
     await issueRepo.createOrUpdate(Fixture.issue(validIssueId, ownerId));
+
+    // stripe
+    await stripeCustomerRepo.insert(
+      Fixture.stripeCustomer(lonelyUserStripeCustomerId),
+    );
+    await stripeCustomerRepo.insert(
+      Fixture.stripeCustomer(companyUserStripeCustomerId1),
+    );
+    await stripeCustomerRepo.insert(
+      Fixture.stripeCustomer(companyUserStripeCustomerId2),
+    );
+
+    await stripeCustomerUserRepo.insert(
+      new StripeCustomerUser(lonelyUserStripeCustomerId, lonelyUserId),
+    );
+
+    await stripeCustomerUserRepo.insert(
+      new StripeCustomerUser(companyUserStripeCustomerId1, companyUserId1),
+    );
+    await stripeCustomerUserRepo.insert(
+      new StripeCustomerUser(companyUserStripeCustomerId2, companyUserId2),
+    );
+
+    testUser = {
+      stripeCustomerId: lonelyUserStripeCustomerId,
+      userId: lonelyUserId,
+      companyId: undefined,
+    };
+
+    testCompanyUsers = {
+      stripeCustomerId: companyUserStripeCustomerId1,
+      userId: companyUserId1,
+      companyId: validCompanyId,
+    };
   });
 
+  const expected = async (
+    testedUser: TestedUser,
+    expectedCreditAmount: number,
+  ) => {
+    if (testedUser.companyId) {
+      const totalCredits = await creditRepo.getAvailableCredit(
+        companyUserId1,
+        validCompanyId,
+      );
+      expect(totalCredits).toEqual(expectedCreditAmount);
+
+      const totalCredits2 = await creditRepo.getAvailableCredit(
+        companyUserId2,
+        validCompanyId,
+      );
+      expect(totalCredits2).toEqual(expectedCreditAmount);
+    } else {
+      const totalCredits = await creditRepo.getAvailableCredit(lonelyUserId);
+      expect(totalCredits).toEqual(expectedCreditAmount);
+    }
+  };
+
   describe("getAvailableCredits", () => {
-    describe("should return 0", () => {
-      it("for a user with no invoices nor issue funding", async () => {
-        const totalCredits = await creditRepo.getAvailableCredit(lonelyUserId);
-        expect(totalCredits).toEqual(0);
+    describe("should return 0 when no invoices", () => {
+      const test = async (testedUser: TestedUser) => {
+        await expected(testedUser, 0);
+      };
+      it("for lonely user", async () => {
+        await test(testUser);
       });
-
-      it("for a company with no invoices nor issue funding", async () => {
-        const totalCredits = await creditRepo.getAvailableCredit(
-          companyUserId1,
-          validCompanyId,
-        );
-
-        expect(totalCredits).toEqual(0);
+      it("for company", async () => {
+        await test(testCompanyUsers);
       });
     });
 
     describe("should return the amount manually added", () => {
-      it("for a user", async () => {
-        const manualInvoiceBody: CreateManualInvoiceBody = {
-          ...Fixture.createManualInvoiceBody(undefined, lonelyUserId),
-          creditAmount: 200,
-        };
-        await manualInvoiceRepo.create(manualInvoiceBody);
-        const totalCredits = await creditRepo.getAvailableCredit(lonelyUserId);
-        expect(totalCredits).toEqual(200);
+      const test = async (testedUser: TestedUser) => {
+        await createManualInvoice(testedUser, 100);
+        await expected(testedUser, 100);
+      };
+      it("for lonely user", async () => {
+        await test(testUser);
       });
+      it("for company", async () => {
+        await test(testCompanyUsers);
+      });
+    });
 
-      it("for a company", async () => {
-        const manualInvoiceBody: CreateManualInvoiceBody = {
-          ...Fixture.createManualInvoiceBody(validCompanyId),
-          creditAmount: 200,
+    describe("should not count donations", () => {
+      [ownerId, repositoryId, null].map((projectId) => {
+        const test = async (testedUser: TestedUser) => {
+          await createStripeInvoice(
+            testedUser,
+            projectId,
+            ProductType.donation,
+            200,
+          );
+          await expected(testedUser, 0);
         };
-        await manualInvoiceRepo.create(manualInvoiceBody);
-        const totalCredits = await creditRepo.getAvailableCredit(
-          companyUserId1,
-          validCompanyId,
-        );
-        expect(totalCredits).toEqual(200);
+        describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+          it("for lonely user", async () => {
+            await test(testUser);
+          });
+          it("for company", async () => {
+            await test(testCompanyUsers);
+          });
+        });
       });
     });
 
     describe("should return the amount added with stripe", () => {
-      it("for a user", async () => {
-        // TODO
-      });
-
-      it("for a company", async () => {
-        // TODO
-      });
-    });
-
-    describe("should return the sum added with stripe and manually added", () => {
-      it("for a user", async () => {
-        // TODO
-      });
-
-      it("for a company", async () => {
-        // TODO
+      [ownerId, repositoryId, null].map((projectId) => {
+        const test = async (testedUser: TestedUser) => {
+          await createStripeInvoice(
+            testedUser,
+            projectId,
+            ProductType.credit,
+            200,
+          );
+          await expected(testedUser, 200);
+        };
+        describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+          it("for lonely user", async () => {
+            await test(testUser);
+          });
+          it("for company", async () => {
+            await test(testCompanyUsers);
+          });
+        });
       });
     });
 
     describe("should deduct a funding issue", () => {
-      it("for a user", async () => {
-        const manualInvoiceBody: CreateManualInvoiceBody = {
-          ...Fixture.createManualInvoiceBody(undefined, lonelyUserId),
-          creditAmount: 200,
-        };
-        await manualInvoiceRepo.create(manualInvoiceBody);
+      [ownerId, repositoryId, null].map((projectId) => {
+        const test = async (testedUser: TestedUser) => {
+          // Add credits via manual and stripe invoices
+          await createManualInvoice(testedUser, 100);
+          await createStripeInvoice(
+            testedUser,
+            projectId,
+            ProductType.credit,
+            200,
+          );
 
-        const issueFundingBody1: CreateIssueFundingBody = {
-          githubIssueId: validIssueId,
-          userId: lonelyUserId,
-          creditAmount: 50,
-        };
-        const issueFundingBody2: CreateIssueFundingBody = {
-          ...issueFundingBody1,
-          creditAmount: 20,
-        };
-        await issueFundingRepo.create(issueFundingBody1);
-        await issueFundingRepo.create(issueFundingBody2);
+          // issue funding
+          const issueFundingBody1: CreateIssueFundingBody = {
+            githubIssueId: validIssueId,
+            userId: testedUser.userId,
+            creditAmount: 20,
+          };
+          const issueFundingBody2: CreateIssueFundingBody = {
+            githubIssueId: validIssueId,
+            userId: testedUser.userId,
+            creditAmount: 50,
+          };
+          await issueFundingRepo.create(issueFundingBody1);
+          await issueFundingRepo.create(issueFundingBody2);
 
-        const totalCredits = await creditRepo.getAvailableCredit(lonelyUserId);
-        expect(totalCredits).toEqual(200 - 50 - 20);
-      });
+          // test if all company user funding are counting
+          if (testedUser.companyId) {
+            const issueFundingBody3: CreateIssueFundingBody = {
+              githubIssueId: validIssueId,
+              userId: companyUserId2,
+              creditAmount: 10,
+            };
+            await issueFundingRepo.create(issueFundingBody3);
+          }
 
-      it("for a company", async () => {
-        const manualInvoiceBody: CreateManualInvoiceBody = {
-          ...Fixture.createManualInvoiceBody(validCompanyId),
-          creditAmount: 200,
+          const totalCredits = await creditRepo.getAvailableCredit(
+            testedUser.userId,
+            testedUser.companyId,
+          );
+          expect(totalCredits).toEqual(
+            200 + 100 - 50 - 20 - (testedUser.companyId ? 10 : 0),
+          );
         };
-        await manualInvoiceRepo.create(manualInvoiceBody);
 
-        const issueFundingBody1: CreateIssueFundingBody = {
-          githubIssueId: validIssueId,
-          userId: companyUserId2,
-          creditAmount: 50,
-        };
-        const issueFundingBody2: CreateIssueFundingBody = {
-          ...issueFundingBody1,
-          creditAmount: 20,
-        };
-        await issueFundingRepo.create(issueFundingBody1);
-        await issueFundingRepo.create(issueFundingBody2);
-
-        const expected = 200 - 50 - 20;
-        const totalCredits1 = await creditRepo.getAvailableCredit(
-          companyUserId1,
-          validCompanyId,
-        );
-        expect(totalCredits1).toEqual(expected);
-        const totalCredits2 = await creditRepo.getAvailableCredit(
-          companyUserId2,
-          validCompanyId,
-        );
-        expect(totalCredits2).toEqual(expected);
+        describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+          it("for lonely user", async () => {
+            await test(testUser);
+          });
+          it("for company", async () => {
+            await test(testCompanyUsers);
+          });
+        });
       });
     });
 
-    // TODO: Add all the possible test cases for `getAvailableCredits`:
+    describe("should not deduct issue that was rejected", () => {
+      //   TODO: Implement this test
+    });
   });
 });

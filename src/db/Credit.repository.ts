@@ -42,31 +42,36 @@ class CreditRepositoryImpl implements CreditRepository {
     );
 
     totalCreditsPaid += manualInvoices.reduce((acc, invoice) => {
-      return acc + invoice.creditAmount; // invoice.milliDowAmount is an integer
+      return acc + invoice.creditAmount; // invoice.creditAmount is an integer
     }, 0);
     logger.debug(`Total Credit from manual invoices: ${totalCreditsPaid}`);
 
     // Calculate total Credit from Stripe invoices
-    const amountPaidWithStripe = await this.getAllStripeInvoicePaidBy(
+    const amountPaidWithStripe: number = await this.getAllStripeInvoicePaidBy(
       companyId ?? userId,
     );
     logger.debug(`Total Credit from Stripe invoices: ${amountPaidWithStripe}`);
     totalCreditsPaid += amountPaidWithStripe;
 
-    const totalFunding = await this.getIssueFundingFrom(companyId ?? userId);
-    const availableMilliCredits = totalCreditsPaid - totalFunding;
+    const totalFunding: number = await this.getIssueFundingFrom(
+      companyId ?? userId,
+    );
     logger.debug(`Total issue funding: ${totalFunding}`);
+
+    const availableCredits = totalCreditsPaid - totalFunding;
+    logger.debug(`Total available credits: ${availableCredits}`);
+
     if (totalFunding < 0) {
       logger.error(
         `The amount dow amount (${totalFunding}) is negative for userId ${userId.uuid}, companyId ${companyId ? companyId.uuid : ""}`,
       );
-    } else if (availableMilliCredits < 0) {
+    } else if (availableCredits < 0) {
       logger.error(
         `The total Credit paid (${totalCreditsPaid}) is less than the total funding (${totalFunding}) for userId ${userId.uuid}, companyId ${companyId ? companyId.uuid : ""}`,
       );
     }
 
-    return availableMilliCredits;
+    return availableCredits;
   }
 
   private async getAllStripeInvoicePaidBy(
@@ -74,10 +79,9 @@ class CreditRepositoryImpl implements CreditRepository {
   ): Promise<number> {
     let result;
 
-    // TODO: potential lost of precision with the numbers
     if (id instanceof CompanyId) {
       const query = `
-          SELECT SUM(sl.quantity) AS total_milli_dow_paid
+          SELECT SUM(sl.quantity) AS total_credit_paid
           FROM stripe_invoice_line sl
                    JOIN stripe_product sp ON sl.product_id = sp.stripe_id
                    JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id
@@ -91,7 +95,7 @@ class CreditRepositoryImpl implements CreditRepository {
       result = await this.pool.query(query, [id.uuid]);
     } else {
       const query = `
-        SELECT SUM(sl.quantity) AS total_milli_dow_paid
+        SELECT SUM(sl.quantity) AS total_credit_paid
         FROM stripe_invoice_line sl
                JOIN stripe_product sp ON sl.product_id = sp.stripe_id
                JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id
@@ -104,7 +108,8 @@ class CreditRepositoryImpl implements CreditRepository {
     }
 
     try {
-      return result.rows[0]?.total_milli_dow_paid ?? 0;
+      const total = result.rows[0]?.total_credit_paid ?? 0;
+      return Number(total);
     } catch (error) {
       logger.error("Error executing query", error);
       throw new Error("Failed to retrieve paid invoice total");
@@ -118,7 +123,7 @@ class CreditRepositoryImpl implements CreditRepository {
     // TODO: potential lost of precision with the numbers
     if (id instanceof CompanyId) {
       const query = `
-                SELECT SUM(if.milli_dow_amount) AS total_funding
+                SELECT SUM(if.credit_amount) AS total_funding
                 FROM issue_funding if
                          JOIN user_company uc ON if.user_id = uc.user_id
                          LEFT JOIN managed_issue mi ON if.github_issue_id = mi.github_issue_id
@@ -128,7 +133,7 @@ class CreditRepositoryImpl implements CreditRepository {
       result = await this.pool.query(query, [id.uuid]);
     } else {
       const query = `
-                SELECT SUM(if.milli_dow_amount) AS total_funding
+                SELECT SUM(if.credit_amount) AS total_funding
                 FROM issue_funding if
                          LEFT JOIN managed_issue mi ON if.github_issue_id = mi.github_issue_id
                 WHERE if.user_id = $1
@@ -138,7 +143,8 @@ class CreditRepositoryImpl implements CreditRepository {
     }
 
     try {
-      return result.rows[0]?.total_funding ?? 0;
+      const total = result.rows[0]?.total_funding ?? 0;
+      return Number(total);
     } catch (error) {
       logger.error("Error executing query", error);
       throw new Error("Failed to retrieve total funding amount");

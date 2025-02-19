@@ -12,6 +12,7 @@ import {
 } from "../../model";
 import { pool } from "../../dbPool";
 import { encrypt } from "../../utils";
+import { v4 as uuid } from "uuid";
 
 export function getUserRepository(): UserRepository {
   return new UserRepositoryImpl(pool);

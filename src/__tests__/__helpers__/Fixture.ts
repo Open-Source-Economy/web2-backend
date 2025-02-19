@@ -290,6 +290,7 @@ export const Fixture = {
     customerId: StripeCustomerId,
     productId: StripeProductId,
     priceId: StripePriceId,
+    quantity: number = 100,
   ): StripeInvoiceLine {
     return new StripeInvoiceLine(
       stripeId,
@@ -297,7 +298,7 @@ export const Fixture = {
       customerId,
       productId,
       priceId,
-      100,
+      quantity,
     );
   },
 

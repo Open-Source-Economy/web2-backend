@@ -16,41 +16,34 @@ import {
 
 describe("StripeInvoiceRepository", () => {
   setupTestDB();
+  const customerId = Fixture.stripeCustomerId();
+  const invoiceId = Fixture.stripeInvoiceId();
+  const productId = Fixture.stripeProductId();
+  const priceId = Fixture.stripePriceId();
 
-  let validUserId: UserId;
+  const stripeInvoiceLineId1 = Fixture.stripeInvoiceLineId();
+  const stripeInvoiceLineId2 = Fixture.stripeInvoiceLineId();
+
+  const stripeCustomer = Fixture.stripeCustomer(customerId);
 
   beforeEach(async () => {
-    const validUser = await userRepo.insert(
-      Fixture.createUser(Fixture.localUser()),
-    );
-    validUserId = validUser.id;
+    await stripeCustomerRepo.insert(stripeCustomer);
+    await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
+    await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
   });
 
   describe("create", () => {
     it("should insert an invoice with lines and number", async () => {
-      const customerId = Fixture.stripeCustomerId();
-      const invoiceId = Fixture.stripeInvoiceId();
-      const productId = Fixture.stripeProductId();
-      const priceId = Fixture.stripePriceId();
-
-      const stripeId1 = Fixture.stripeInvoiceLineId();
-      const stripeId2 = Fixture.stripeInvoiceLineId();
-
-      const stripeCustomer = Fixture.stripeCustomer(customerId);
-      await stripeCustomerRepo.insert(stripeCustomer);
-      await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
-      await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
-
       const lines = [
         Fixture.stripeInvoiceLine(
-          stripeId1,
+          stripeInvoiceLineId1,
           invoiceId,
           customerId,
           productId,
           priceId,
         ),
         Fixture.stripeInvoiceLine(
-          stripeId2,
+          stripeInvoiceLineId2,
           invoiceId,
           customerId,
           productId,
@@ -67,29 +60,16 @@ describe("StripeInvoiceRepository", () => {
     });
 
     it("should insert an invoice with null number", async () => {
-      const customerId = Fixture.stripeCustomerId();
-      const invoiceId = Fixture.stripeInvoiceId();
-      const productId = Fixture.stripeProductId();
-      const priceId = Fixture.stripePriceId();
-
-      const stripeId1 = Fixture.stripeInvoiceLineId();
-      const stripeId2 = Fixture.stripeInvoiceLineId();
-
-      const stripeCustomer = Fixture.stripeCustomer(customerId);
-      await stripeCustomerRepo.insert(stripeCustomer);
-      await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
-      await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
-
       const lines = [
         Fixture.stripeInvoiceLine(
-          stripeId1,
+          stripeInvoiceLineId1,
           invoiceId,
           customerId,
           productId,
           priceId,
         ),
         Fixture.stripeInvoiceLine(
-          stripeId2,
+          stripeInvoiceLineId2,
           invoiceId,
           customerId,
           productId,
@@ -113,22 +93,9 @@ describe("StripeInvoiceRepository", () => {
     });
 
     it("should rollback transaction if inserting lines fails", async () => {
-      const customerId = Fixture.stripeCustomerId();
-      const invoiceId = Fixture.stripeInvoiceId();
-      const productId = Fixture.stripeProductId();
-      const priceId = Fixture.stripePriceId();
-
-      const stripeId1 = Fixture.stripeInvoiceLineId();
-      const stripeId2 = Fixture.stripeInvoiceLineId();
-
-      const stripeCustomer = Fixture.stripeCustomer(customerId);
-      await stripeCustomerRepo.insert(stripeCustomer);
-      await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
-      await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
-
       const lines = [
         Fixture.stripeInvoiceLine(
-          stripeId1,
+          stripeInvoiceLineId1,
           invoiceId,
           customerId,
           productId,
@@ -136,7 +103,7 @@ describe("StripeInvoiceRepository", () => {
         ),
         // @ts-ignore
         new StripeInvoiceLine(
-          stripeId2,
+          stripeInvoiceLineId2,
           invoiceId,
           customerId,
           productId,
