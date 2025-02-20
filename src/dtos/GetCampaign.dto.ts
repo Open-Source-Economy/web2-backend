@@ -1,4 +1,4 @@
-import { CampaignProductType, Currency, PriceType } from "../model";
+import { CampaignPriceType, CampaignProductType, Currency } from "../model";
 import { Price } from "./stripe";
 
 export interface GetCampaignParams {
@@ -12,7 +12,7 @@ export interface GetCampaignResponse {
   numberOfBackers?: number;
   numberOfDaysLeft?: number;
   prices: Record<
-    PriceType,
+    CampaignPriceType,
     Record<Currency, Record<CampaignProductType, Price[]>>
   >;
   description: CampaignDescription | null; // TODO: when description will come from the backend, remove null

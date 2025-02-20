@@ -3,8 +3,14 @@ import { StripeProductId } from "./StripeProduct";
 import { Currency } from "./Currency";
 
 export enum PriceType {
-  RECURRING = "monthly",
+  ANNUALLY = "annually",
+  MONTHLY = "monthly",
   ONE_TIME = "one_time",
+}
+
+export enum CampaignPriceType {
+  MONTHLY = PriceType.MONTHLY,
+  ONE_TIME = PriceType.ONE_TIME,
 }
 
 export class StripePriceId {
@@ -68,7 +74,7 @@ export class StripePrice {
     const active = validator.requiredBoolean("active");
     let type = PriceType.ONE_TIME;
     if (json.recurring) {
-      type = PriceType.RECURRING;
+      type = PriceType.MONTHLY;
     }
     const error = validator.getFirstError();
     if (error) {

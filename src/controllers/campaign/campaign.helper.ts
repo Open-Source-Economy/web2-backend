@@ -1,9 +1,9 @@
 import { Price } from "../../dtos";
 import {
+  CampaignPriceType,
   CampaignProductType,
   campaignProductTypeUtils,
   Currency,
-  PriceType,
   Project,
   ProjectId,
   StripePrice,
@@ -40,12 +40,12 @@ const donationUnits: Record<Currency, number> = {
 export function getRoundedCreditAmount(
   price: number, // in cents
   currency: Currency,
-  priceType: PriceType,
+  priceType: CampaignPriceType,
 ): number {
   const $amount = currencyAPI.convertPrice(price, currency, Currency.USD);
-  if (priceType === PriceType.ONE_TIME) {
+  if (priceType === CampaignPriceType.ONE_TIME) {
     return Math.floor($amount / creditOneTime$CentsPrice);
-  } else if (priceType === PriceType.RECURRING) {
+  } else if (priceType === CampaignPriceType.MONTHLY) {
     return Math.floor($amount / creditRecurring$CentsPrice);
   } else {
     throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Price type not supported");
@@ -120,7 +120,10 @@ export class CampaignHelper {
     projectId: ProjectId,
     currencyPriceConfigs: CampaignProductPriceConfig,
   ): Promise<
-    Record<PriceType, Record<Currency, Record<CampaignProductType, Price[]>>>
+    Record<
+      CampaignPriceType,
+      Record<Currency, Record<CampaignProductType, Price[]>>
+    >
   > {
     const prices = CampaignHelper.initializePrices();
 
@@ -129,9 +132,10 @@ export class CampaignHelper {
     logger.debug("Products", products);
 
     for (const [campaignProductType, product] of products) {
-      const productPrices = await stripePriceRepo.getActivePricesByProductId(
-        product.stripeId,
-      );
+      const productPrices =
+        await stripePriceRepo.getActiveCampaignPricesByProductId(
+          product.stripeId,
+        );
       logger.debug("Product prices", productPrices);
 
       for (const [currency, stripePrices] of Object.entries(productPrices)) {
@@ -139,20 +143,18 @@ export class CampaignHelper {
         const currencyConfigs = currencyPriceConfigs[parsedCurrency];
         if (
           !stripePrices ||
-          stripePrices.length !== Object.keys(PriceType).length
+          stripePrices.length !== Object.keys(CampaignPriceType).length
         ) {
-          logger.error("Unexpected price configuration for product", {
-            productStripeId: product.stripeId,
-            currency: currency,
-            stripePrices: stripePrices,
-            message: "Expected exactly one price per product and price type",
-          });
+          logger.error(
+            "Unexpected price configuration for product",
+            JSON.stringify(stripePrices),
+          );
           throw new Error(
-            `Expected exactly one price per price type in product ${product.stripeId} in currency ${currency}`,
+            `Expected exactly one price per price type in product ${product.stripeId.id} in currency ${currency}`,
           );
         }
 
-        for (const stripePrice of stripePrices) {
+        for (const [priceType, stripePrice] of stripePrices) {
           if (stripePrice.unitAmount <= 0) {
             logger.error("Stripe price unit amount is not strictly positive", {
               productStripeId: product.stripeId,
@@ -166,10 +168,10 @@ export class CampaignHelper {
           }
 
           for (const [amount, labels] of currencyConfigs) {
-            prices[stripePrice.type][parsedCurrency][campaignProductType].push({
+            prices[priceType][parsedCurrency][campaignProductType].push({
               totalAmount: amount,
               quantity: Math.floor(amount / stripePrice.unitAmount),
-              label: labels[campaignProductType][stripePrice.type],
+              label: labels[campaignProductType][priceType],
               price: stripePrice,
             });
           }
@@ -181,10 +183,10 @@ export class CampaignHelper {
   }
 
   private static initializePrices(): Record<
-    PriceType,
+    CampaignPriceType,
     Record<Currency, Record<CampaignProductType, Price[]>>
   > {
-    return Object.values(PriceType).reduce(
+    return Object.values(CampaignPriceType).reduce(
       (priceTypeAcc, priceType) => {
         priceTypeAcc[priceType] = Object.values(Currency).reduce(
           (currencyAcc, currency) => {
@@ -202,7 +204,7 @@ export class CampaignHelper {
         return priceTypeAcc;
       },
       {} as Record<
-        PriceType,
+        CampaignPriceType,
         Record<Currency, Record<CampaignProductType, Price[]>>
       >,
     );

@@ -7,10 +7,10 @@ import {
   ResponseBody,
 } from "../../dtos";
 import {
+  CampaignPriceType,
   CampaignProductType,
   Currency,
   OwnerId,
-  PriceType,
   Project,
   RepositoryId,
 } from "../../model";
@@ -23,7 +23,7 @@ import { CampaignHelper, getRoundedCreditAmount } from "./campaign.helper";
 
 export type CampaignProductPriceConfig = Record<
   Currency,
-  [number, Record<CampaignProductType, Record<PriceType, string>>][]
+  [number, Record<CampaignProductType, Record<CampaignPriceType, string>>][]
 >;
 
 const CAMPAIGN_DONATION_LABELS = [
@@ -62,12 +62,12 @@ export const CAMPAIGN_PRICE_CONFIGS: CampaignProductPriceConfig =
         amount,
         {
           [CampaignProductType.DONATION]: {
-            [PriceType.ONE_TIME]: CAMPAIGN_DONATION_LABELS[index],
-            [PriceType.RECURRING]: CAMPAIGN_DONATION_LABELS[index],
+            [CampaignPriceType.ONE_TIME]: CAMPAIGN_DONATION_LABELS[index],
+            [CampaignPriceType.MONTHLY]: CAMPAIGN_DONATION_LABELS[index],
           },
           [CampaignProductType.CREDIT]: {
-            [PriceType.ONE_TIME]: `${getRoundedCreditAmount(amount, currency as Currency, PriceType.ONE_TIME)} credit`,
-            [PriceType.RECURRING]: `${getRoundedCreditAmount(amount, currency as Currency, PriceType.RECURRING)} credit/mo`,
+            [CampaignPriceType.ONE_TIME]: `${getRoundedCreditAmount(amount, currency as Currency, CampaignPriceType.ONE_TIME)} credit`,
+            [CampaignPriceType.MONTHLY]: `${getRoundedCreditAmount(amount, currency as Currency, CampaignPriceType.MONTHLY)} credit/mo`,
           },
         },
       ]);

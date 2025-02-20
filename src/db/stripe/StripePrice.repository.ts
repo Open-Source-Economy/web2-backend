@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { pool } from "../../dbPool";
 import {
+  CampaignPriceType,
   Currency,
   StripePrice,
   StripePriceId,
@@ -14,9 +15,9 @@ export function getStripePriceRepository(): StripePriceRepository {
 export interface StripePriceRepository {
   insert(price: StripePrice): Promise<StripePrice>;
   getById(id: StripePriceId): Promise<StripePrice | null>;
-  getActivePricesByProductId(
+  getActiveCampaignPricesByProductId(
     productId: StripeProductId,
-  ): Promise<Record<Currency, StripePrice[]>>;
+  ): Promise<Record<Currency, [CampaignPriceType, StripePrice][]>>;
   getAll(): Promise<StripePrice[]>;
 }
 
@@ -73,31 +74,38 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
     return this.getOptionalPrice(result.rows);
   }
 
-  async getActivePricesByProductId(
+  async getActiveCampaignPricesByProductId(
     productId: StripeProductId,
-  ): Promise<Record<Currency, StripePrice[]>> {
+  ): Promise<Record<Currency, [CampaignPriceType, StripePrice][]>> {
     const result = await this.pool.query(
       `
         SELECT *
         FROM stripe_price
-        WHERE product_id = $1
+        WHERE product_id = $1 
+          AND type IN (${Object.values(CampaignPriceType)
+            .map((type) => `'${type}'`)
+            .join(", ")})
       `,
       [productId.id],
     );
 
     const priceList = this.getPriceList(result.rows);
 
-    const pricesByCurrency: Record<Currency, StripePrice[]> = {} as Record<
+    const pricesByCurrency: Record<
       Currency,
-      StripePrice[]
-    >;
+      [CampaignPriceType, StripePrice][]
+    > = {} as Record<Currency, [CampaignPriceType, StripePrice][]>;
     // Group prices by currency
     for (const price of priceList) {
       if (!pricesByCurrency[price.currency]) {
         pricesByCurrency[price.currency] = [];
       }
       if (price.active) {
-        pricesByCurrency[price.currency].push(price);
+        pricesByCurrency[price.currency].push([
+          // @ts-ignore: Cast is safe because we filtered for campaign price types in the query
+          price.type as CampaignPriceType,
+          price,
+        ]);
       }
     }
 

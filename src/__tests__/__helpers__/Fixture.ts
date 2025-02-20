@@ -215,7 +215,7 @@ export const Fixture = {
     productId: StripeProductId,
     unitAmount: number = 200,
     currency: Currency = Currency.USD,
-    priceType: PriceType = PriceType.RECURRING,
+    priceType: PriceType = PriceType.MONTHLY,
   ): StripePrice {
     return new StripePrice(
       stripeId,
