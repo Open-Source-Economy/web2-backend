@@ -96,30 +96,22 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
       .join(", ")})
   `;
 
-    let result;
-    if (projectId instanceof RepositoryId) {
-      result = await this.pool.query(
-        `
+    const login =
+      projectId instanceof RepositoryId
+        ? projectId.ownerId.login
+        : projectId.login;
+    const name = projectId instanceof RepositoryId ? projectId.name : null;
+
+    let result = await this.pool.query(
+      `
         SELECT *
         FROM stripe_product
         WHERE github_owner_login = $1
           AND github_repository_name = $2
           ${campaignProductTypesClause}
       `,
-        [projectId.ownerId.login, projectId.name],
-      );
-    } else {
-      result = await this.pool.query(
-        `
-        SELECT *
-        FROM stripe_product
-        WHERE github_owner_login = $1
-          AND github_repository_name IS NULL
-          ${campaignProductTypesClause}
-      `,
-        [projectId.login],
-      );
-    }
+      [login, name],
+    );
 
     // Use existing helper to get products
     const products = this.getProductList(result.rows);

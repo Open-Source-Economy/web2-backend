@@ -10,6 +10,10 @@ import {
   CreateManualInvoiceBody,
   CreateManualInvoiceQuery,
   CreateManualInvoiceResponse,
+  CreateProductAndPriceBody,
+  CreateProductAndPriceParams,
+  CreateProductAndPriceQuery,
+  CreateProductAndPriceResponse,
   ResponseBody,
   SendCompanyRoleInviteBody,
   SendCompanyRoleInviteParams,
@@ -34,12 +38,6 @@ import Decimal from "decimal.js";
 import { OwnerId, Project } from "../model";
 import { ApiError } from "../model/error/ApiError";
 import { logger } from "../config";
-import {
-  CreateProductAndPriceBody,
-  CreateProductAndPriceParams,
-  CreateProductAndPriceQuery,
-  CreateProductAndPriceResponse,
-} from "../dtos/stripe/CreateProductAndPrice";
 import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUserPermissionToken.repository";
 import { CampaignHelper } from "./campaign/campaign.helper";
 

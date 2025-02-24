@@ -74,7 +74,7 @@ describe("CampaignHelper.getPrices", () => {
 
     await productRepo.insert(product);
 
-    Object.values(Currency).forEach(async (currency) => {
+    for (const currency of Object.values(Currency)) {
       const price1 = Fixture.stripePrice(
         Fixture.stripePriceId(),
         product.stripeId,
@@ -92,7 +92,7 @@ describe("CampaignHelper.getPrices", () => {
 
       await priceRepo.insert(price1);
       await priceRepo.insert(price2);
-    });
+    }
 
     const prices: Record<
       CampaignPriceType,

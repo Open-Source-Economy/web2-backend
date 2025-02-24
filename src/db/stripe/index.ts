@@ -5,6 +5,7 @@ import { getStripeProductRepository } from "./StripeProduct.repository";
 import { getStripePriceRepository } from "./StripePrice.repository";
 import { getStripeCustomerRepository } from "./StripeCustomer.repository";
 import { getStripeMiscellaneousRepository } from "./StripeMiscellaneous.repository";
+import { getCombinedStripeRepository } from "./CombinedStripe.repository";
 
 export * from "./StripeInvoiceLine.repository";
 export * from "./StripeInvoice.repository";
@@ -21,3 +22,4 @@ export const stripePriceRepo = getStripePriceRepository();
 export const stripeInvoiceLineRepo = getStripeInvoiceLineRepository();
 export const stripeInvoiceRepo = getStripeInvoiceRepository();
 export const stripeMiscellaneousRepository = getStripeMiscellaneousRepository();
+export const combinedStripeRepo = getCombinedStripeRepository();

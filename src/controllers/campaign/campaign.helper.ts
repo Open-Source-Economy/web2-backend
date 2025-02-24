@@ -11,7 +11,11 @@ import {
   StripeProductId,
 } from "../../model";
 import { StatusCodes } from "http-status-codes";
-import { stripePriceRepo, stripeProductRepo } from "../../db";
+import {
+  combinedStripeRepo,
+  stripePriceRepo,
+  stripeProductRepo,
+} from "../../db";
 import { ApiError } from "../../model/error/ApiError";
 import { stripe } from "../stripe";
 import { currencyAPI } from "../../services";
@@ -127,18 +131,23 @@ export class CampaignHelper {
   > {
     const prices = CampaignHelper.initializePrices();
 
-    const products = await stripeProductRepo.getCampaignProduct(projectId);
+    // // Usage example:
+    const productsWithPrices =
+      await combinedStripeRepo.getCampaignProductsWithPrices(projectId);
 
-    logger.debug("Products", products);
+    for (const [
+      campaignProductType,
+      product,
+      pricesByCurrency,
+    ] of productsWithPrices) {
+      logger.debug("Product type:", campaignProductType);
+      logger.debug("Product:", product);
+      logger.debug("Product prices", pricesByCurrency);
 
-    for (const [campaignProductType, product] of products) {
-      const productPrices =
-        await stripePriceRepo.getActiveCampaignPricesByProductId(
-          product.stripeId,
-        );
-      logger.debug("Product prices", productPrices);
+      for (const [currency, stripePrices] of Object.entries(pricesByCurrency)) {
 
-      for (const [currency, stripePrices] of Object.entries(productPrices)) {
+        logger.debug(`Priced for ${currency}: `, stripePrices);
+
         const parsedCurrency = currency as Currency;
         const currencyConfigs = currencyPriceConfigs[parsedCurrency];
         if (
