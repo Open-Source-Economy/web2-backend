@@ -36,7 +36,7 @@ describe("StripeMiscellaneousRepository", () => {
       const product = Fixture.stripeProduct(productId, projectId);
       await stripeProductRepo.insert(product);
       const price = Fixture.stripePrice(validPriceId, productId);
-      await stripePriceRepo.insert(price);
+      await stripePriceRepo.createOrUpdate(price);
 
       const invoiceLineId = Fixture.stripeInvoiceLineId();
       const invoiceLine = Fixture.stripeInvoiceLine(
@@ -70,7 +70,7 @@ describe("StripeMiscellaneousRepository", () => {
       const product = Fixture.stripeProduct(productId, projectId);
       await stripeProductRepo.insert(product);
       const price = Fixture.stripePrice(validPriceId, productId);
-      await stripePriceRepo.insert(price);
+      await stripePriceRepo.createOrUpdate(price);
 
       const invoiceLineId = Fixture.stripeInvoiceLineId();
       const invoiceLine = Fixture.stripeInvoiceLine(

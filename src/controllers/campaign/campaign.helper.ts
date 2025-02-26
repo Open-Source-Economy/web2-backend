@@ -256,7 +256,7 @@ export class CampaignHelper {
         const stripePrice = StripePrice.fromStripeApi(priceResponse);
 
         if (stripePrice instanceof StripePrice) {
-          await stripePriceRepo.insert(stripePrice);
+          await stripePriceRepo.createOrUpdate(stripePrice);
         } else {
           logger.error(
             `${stripePrice} - received from Stripe: ${priceResponse}`,

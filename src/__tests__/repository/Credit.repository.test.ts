@@ -96,7 +96,7 @@ describe("CreditRepository", () => {
     await stripeProductRepo.insert(product);
 
     const price = Fixture.stripePrice(validStripePriceId, validStripeProductId);
-    await stripePriceRepo.insert(price);
+    await stripePriceRepo.createOrUpdate(price);
 
     const lines = [
       Fixture.stripeInvoiceLine(

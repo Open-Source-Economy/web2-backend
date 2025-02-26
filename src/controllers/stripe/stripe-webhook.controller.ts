@@ -6,10 +6,16 @@ import {
   StripeCustomer,
   StripeCustomerId,
   StripeInvoice,
+  StripePrice,
 } from "../../model";
 import { config, logger } from "../../config";
 import { stripe } from "./index";
-import { addressRepo, stripeCustomerRepo, stripeInvoiceRepo } from "../../db";
+import {
+  addressRepo,
+  stripeCustomerRepo,
+  stripeInvoiceRepo,
+  stripePriceRepo,
+} from "../../db";
 import { ValidationError } from "../../model/error";
 import { CreateAddressBody } from "../../dtos";
 
@@ -73,6 +79,27 @@ export class StripeWebhookController {
         case "payment_intent.payment_failed": {
           const paymentIntent = data.object as Stripe.PaymentIntent;
           logger.debug(`❌ Payment failed for amount: ${paymentIntent.amount}`);
+          break;
+        }
+
+        case "price.created": {
+          const price = data.object as Stripe.Price;
+          logger.debug(`🔔 price.created`, price);
+          await StripeWebhookController.createOrUpdateStripePrice(price);
+          break;
+        }
+
+        case "price.updated": {
+          const price = data.object as Stripe.Price;
+          logger.debug(`🔔 price.updated`, price);
+          await StripeWebhookController.createOrUpdateStripePrice(price);
+          break;
+        }
+
+        case "price.deleted": {
+          const price = data.object as Stripe.Price;
+          logger.debug(`🔔 price.deleted`, price);
+          await StripeWebhookController.createOrUpdateStripePrice(price);
           break;
         }
       }
@@ -215,11 +242,23 @@ export class StripeWebhookController {
     await stripeCustomerRepo.insert(newStripeCustomer);
   }
 
-  static async invoicePaid(stripeInvoice: Stripe.Invoice): Promise<void> {
+  private static async invoicePaid(
+    stripeInvoice: Stripe.Invoice,
+  ): Promise<void> {
     const invoice = StripeInvoice.fromStripeApi(stripeInvoice);
     if (invoice instanceof ValidationError) {
       throw invoice;
     }
     await stripeInvoiceRepo.insert(invoice);
+  }
+
+  private static async createOrUpdateStripePrice(
+    price: Stripe.Price,
+  ): Promise<void> {
+    const stripePrice = StripePrice.fromStripeApi(price);
+    if (stripePrice instanceof ValidationError) {
+      throw stripePrice;
+    }
+    await stripePriceRepo.createOrUpdate(stripePrice);
   }
 }

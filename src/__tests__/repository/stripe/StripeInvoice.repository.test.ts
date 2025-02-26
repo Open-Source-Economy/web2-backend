@@ -23,7 +23,9 @@ describe("StripeInvoiceRepository", () => {
   beforeEach(async () => {
     await stripeCustomerRepo.insert(stripeCustomer);
     await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
-    await stripePriceRepo.insert(Fixture.stripePrice(priceId, productId));
+    await stripePriceRepo.createOrUpdate(
+      Fixture.stripePrice(priceId, productId),
+    );
   });
 
   describe("create", () => {

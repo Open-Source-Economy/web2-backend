@@ -90,8 +90,8 @@ describe("CampaignHelper.getPrices", () => {
         PriceType.ONE_TIME,
       );
 
-      await priceRepo.insert(price1);
-      await priceRepo.insert(price2);
+      await priceRepo.createOrUpdate(price1);
+      await priceRepo.createOrUpdate(price2);
     }
 
     try {
@@ -131,7 +131,7 @@ describe("CampaignHelper.getPrices", () => {
           PriceType.MONTHLY,
         );
 
-        await priceRepo.insert(price1);
+        await priceRepo.createOrUpdate(price1);
       }
     }
 
@@ -179,8 +179,8 @@ describe("CampaignHelper.getPrices", () => {
           PriceType.ONE_TIME,
         );
 
-        await priceRepo.insert(price1);
-        await priceRepo.insert(price2);
+        await priceRepo.createOrUpdate(price1);
+        await priceRepo.createOrUpdate(price2);
       }
     }
 

@@ -13,7 +13,7 @@ export function getStripePriceRepository(): StripePriceRepository {
 }
 
 export interface StripePriceRepository {
-  insert(price: StripePrice): Promise<StripePrice>;
+  createOrUpdate(price: StripePrice): Promise<StripePrice>;
   getById(id: StripePriceId): Promise<StripePrice | null>;
   getActiveCampaignPricesByProductId(
     productId: StripeProductId,
@@ -121,7 +121,7 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
     return this.getPriceList(result.rows);
   }
 
-  async insert(price: StripePrice): Promise<StripePrice> {
+  async createOrUpdate(price: StripePrice): Promise<StripePrice> {
     if (price.unitAmount <= 0) {
       throw new Error("Unit amount must be greater than 0");
     }
@@ -131,15 +131,21 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
     try {
       const result = await client.query(
         `
-        INSERT INTO stripe_price (stripe_id,
-                                  product_id,
-                                  unit_amount,
-                                  currency,
-                                  active,
-                                  type)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING stripe_id, product_id, unit_amount, currency, active, type
-      `,
+      INSERT INTO stripe_price (stripe_id,
+                                product_id,
+                                unit_amount,
+                                currency,
+                                active,
+                                type)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (stripe_id) DO UPDATE SET
+        product_id = $2,
+        unit_amount = $3,
+        currency = $4,
+        active = $5,
+        type = $6
+      RETURNING stripe_id, product_id, unit_amount, currency, active, type
+    `,
         [
           price.stripeId.id,
           price.productId.id,

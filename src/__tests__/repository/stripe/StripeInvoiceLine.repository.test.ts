@@ -27,7 +27,7 @@ describe("StripeInvoiceLineRepository", () => {
     const product = Fixture.stripeProduct(validProductId, null);
     await stripeProductRepo.insert(product);
     const price = Fixture.stripePrice(validPriceId, validProductId);
-    await stripePriceRepo.insert(price);
+    await stripePriceRepo.createOrUpdate(price);
   });
 
   describe("create", () => {
