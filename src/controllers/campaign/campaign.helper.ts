@@ -2,7 +2,7 @@ import { Price } from "../../dtos";
 import {
   CampaignPriceType,
   CampaignProductType,
-  campaignProductTypeUtils,
+  productTypeUtils,
   Currency,
   Project,
   ProjectId,
@@ -216,7 +216,7 @@ export class CampaignHelper {
       new StripeProduct(
         new StripeProductId(product.id),
         projectId,
-        campaignProductTypeUtils.toProductType(campaignProductType),
+        productTypeUtils.toProductType(campaignProductType),
       ),
     );
 

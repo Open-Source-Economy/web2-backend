@@ -48,7 +48,7 @@ export enum PlanProductType {
   ENTERPRISE_PLAN = ProductType.ENTERPRISE_PLAN,
 }
 
-export const campaignProductTypeUtils = {
+export const productTypeUtils = {
   toProductType: (campaignProductType: CampaignProductType): ProductType => {
     switch (campaignProductType) {
       case CampaignProductType.CREDIT:

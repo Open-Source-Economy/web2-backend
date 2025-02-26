@@ -1,5 +1,6 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
 import {
+  productTypeUtils,
   CompanyId,
   CompanyUserRole,
   OwnerId,
@@ -26,7 +27,7 @@ import { Fixture } from "../__helpers__/Fixture";
 import { CreateIssueFundingBody, CreateManualInvoiceBody } from "../../dtos";
 import { issueRepo, ownerRepo, repositoryRepo } from "../../db";
 
-describe("CreditRepository", () => {
+describe("PlanAndCreditsRepository", () => {
   setupTestDB();
 
   // users and companies
@@ -47,11 +48,6 @@ describe("CreditRepository", () => {
     Fixture.stripeCustomerId();
   const companyUserStripeCustomerId2: StripeCustomerId =
     Fixture.stripeCustomerId();
-
-  const validStripeProductId = Fixture.stripeProductId();
-  const validStripePriceId = Fixture.stripePriceId();
-  const validStripeInvoiceId = Fixture.stripeInvoiceId();
-  const stripeInvoiceLineId = Fixture.stripeInvoiceLineId();
 
   // testing helpers
   type TestedUser = {
@@ -88,6 +84,11 @@ describe("CreditRepository", () => {
     productType: ProductType,
     priceQuantity: number,
   ): Promise<void> {
+    const validStripeProductId = Fixture.stripeProductId();
+    const validStripePriceId = Fixture.stripePriceId();
+    const validStripeInvoiceId = Fixture.stripeInvoiceId();
+    const stripeInvoiceLineId = Fixture.stripeInvoiceLineId();
+
     const product = Fixture.stripeProduct(
       validStripeProductId,
       projectId,
@@ -281,6 +282,34 @@ describe("CreditRepository", () => {
       });
     });
 
+    describe("plan credits", () => {
+      [ownerId, repositoryId, null].map((projectId) => {
+        const test = async (testedUser: TestedUser) => {
+          await createStripeInvoice(
+            testedUser,
+            projectId,
+            ProductType.ENTERPRISE_PLAN,
+            1,
+          );
+          await expected(
+            testedUser,
+            productTypeUtils
+              .credits(ProductType.ENTERPRISE_PLAN)
+              .amount.toNumber(),
+          );
+        };
+
+        describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+          it("for lonely user", async () => {
+            await test(testUser);
+          });
+          it("for company", async () => {
+            await test(testCompanyUsers);
+          });
+        });
+      });
+    });
+
     describe("should deduct a funding issue", () => {
       [ownerId, repositoryId, null].map((projectId) => {
         const test = async (testedUser: TestedUser) => {
@@ -339,6 +368,216 @@ describe("CreditRepository", () => {
 
     describe("should not deduct issue that was rejected", () => {
       //   TODO: Implement this test
+    });
+  });
+
+  describe("getPlanProductType", () => {
+    describe("should return null when no invoices", () => {
+      const test = async (testedUser: TestedUser) => {
+        const planType = await planAndCreditsRepo.getPlan(
+          testedUser.userId,
+          testedUser.companyId,
+        );
+        expect(planType).toBeNull();
+      };
+
+      it("for lonely user", async () => {
+        await test(testUser);
+      });
+
+      it("for company", async () => {
+        await test(testCompanyUsers);
+      });
+    });
+
+    describe("one invoice: should return the plan type from stripe invoice", () => {
+      [ownerId, repositoryId, null].map((projectId) => {
+        const planTypes = [
+          ProductType.INDIVIDUAL_PLAN,
+          ProductType.START_UP_PLAN,
+          ProductType.SCALE_UP_PLAN,
+          ProductType.ENTERPRISE_PLAN,
+        ];
+
+        planTypes.forEach((planType) => {
+          describe(`with ${planType}`, () => {
+            const test = async (testedUser: TestedUser) => {
+              await createStripeInvoice(
+                testedUser,
+                projectId,
+                planType as ProductType,
+                1,
+              );
+
+              const result = await planAndCreditsRepo.getPlan(
+                testedUser.userId,
+                testedUser.companyId,
+              );
+
+              expect(result).toEqual(planType);
+            };
+
+            describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+              it("for lonely user", async () => {
+                await test(testUser);
+              });
+
+              it("for company", async () => {
+                await test(testCompanyUsers);
+              });
+            });
+          });
+        });
+      });
+    });
+
+    describe("should not return non-plan product types", () => {
+      [ProductType.CREDIT, ProductType.DONATION].forEach((nonPlanType) => {
+        const test = async (testedUser: TestedUser) => {
+          await createStripeInvoice(testedUser, null, nonPlanType, 1);
+
+          const result = await planAndCreditsRepo.getPlan(
+            testedUser.userId,
+            testedUser.companyId,
+          );
+
+          expect(result).toBeNull();
+        };
+
+        describe(`with ${nonPlanType}`, () => {
+          it("for lonely user", async () => {
+            await test(testUser);
+          });
+
+          it("for company", async () => {
+            await test(testCompanyUsers);
+          });
+        });
+      });
+    });
+
+    describe("getPlanProductType", () => {
+      describe("should return null when no invoices", () => {
+        const test = async (testedUser: TestedUser) => {
+          const planType = await planAndCreditsRepo.getPlan(
+            testedUser.userId,
+            testedUser.companyId,
+          );
+          expect(planType).toBeNull();
+        };
+
+        it("for lonely user", async () => {
+          await test(testUser);
+        });
+
+        it("for company", async () => {
+          await test(testCompanyUsers);
+        });
+      });
+
+      describe("should return the plan type from stripe invoice", () => {
+        [ownerId, repositoryId, null].map((projectId) => {
+          const planTypes = [
+            ProductType.INDIVIDUAL_PLAN,
+            ProductType.START_UP_PLAN,
+            ProductType.SCALE_UP_PLAN,
+            ProductType.ENTERPRISE_PLAN,
+          ];
+
+          planTypes.forEach((planType) => {
+            describe(`with ${planType}`, () => {
+              const test = async (testedUser: TestedUser) => {
+                await createStripeInvoice(
+                  testedUser,
+                  projectId,
+                  planType as ProductType,
+                  1,
+                );
+
+                const result = await planAndCreditsRepo.getPlan(
+                  testedUser.userId,
+                  testedUser.companyId,
+                );
+
+                expect(result).toEqual(planType);
+              };
+
+              describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+                it("for lonely user", async () => {
+                  await test(testUser);
+                });
+
+                it("for company", async () => {
+                  await test(testCompanyUsers);
+                });
+              });
+            });
+          });
+        });
+      });
+
+      describe("should not return non-plan product types", () => {
+        [ProductType.CREDIT, ProductType.DONATION].forEach((nonPlanType) => {
+          const test = async (testedUser: TestedUser) => {
+            await createStripeInvoice(testedUser, null, nonPlanType, 1);
+
+            const result = await planAndCreditsRepo.getPlan(
+              testedUser.userId,
+              testedUser.companyId,
+            );
+
+            expect(result).toBeNull();
+          };
+
+          describe(`with ${nonPlanType}`, () => {
+            it("for lonely user", async () => {
+              await test(testUser);
+            });
+
+            it("for company", async () => {
+              await test(testCompanyUsers);
+            });
+          });
+        });
+      });
+
+      describe("should return the most recent plan type when multiple invoices exist", () => {
+        const test = async (testedUser: TestedUser) => {
+          // Create older invoice with individual plan
+          await createStripeInvoice(
+            testedUser,
+            null,
+            ProductType.INDIVIDUAL_PLAN,
+            1,
+          );
+
+          // For the multiple invoice test, we need to ensure the second invoice
+          // is processed after the first one so it becomes the "most recent"
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          await createStripeInvoice(
+            testedUser,
+            null,
+            ProductType.ENTERPRISE_PLAN,
+            1,
+          );
+
+          const result = await planAndCreditsRepo.getPlan(
+            testedUser.userId,
+            testedUser.companyId,
+          );
+
+          expect(result).toEqual(ProductType.ENTERPRISE_PLAN);
+        };
+
+        it("for lonely user", async () => {
+          await test(testUser);
+        });
+
+        it("for company", async () => {
+          await test(testCompanyUsers);
+        });
+      });
     });
   });
 });

@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import {
-  campaignProductTypeUtils,
+  productTypeUtils,
   CompanyId,
   PlanProductType,
   ProductType,
@@ -23,7 +23,7 @@ export interface PlanAndCreditsRepository {
    */
   getAvailableCredit(userId: UserId, companyId?: CompanyId): Promise<number>;
 
-  getPlanProductType(
+  getPlan(
     userId: UserId,
     companyId?: CompanyId,
   ): Promise<PlanProductType | null>;
@@ -91,10 +91,11 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
    * @param companyId - Optional company ID if checking company plan
    * @returns The plan product type or null if no plan exists
    */
-  async getPlanProductType(
+  async getPlan(
     userId: UserId,
     companyId?: CompanyId,
   ): Promise<PlanProductType | null> {
+    // TODO: hack solution, refactor to use Stripe API subscription
     try {
       // Get all plan product types from the enum
       const planTypes = Object.values(PlanProductType);
@@ -117,7 +118,7 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
         JOIN user_company uc ON scu.user_id = uc.user_id
         WHERE uc.company_id = $1
         AND sp.type IN (${planTypes.map((_, i) => `$${i + 2}`).join(", ")})
-        ORDER BY si.created DESC
+        ORDER BY si.created_at DESC
         LIMIT 1
       `;
         params = [companyId.uuid, ...planTypes];
@@ -128,7 +129,7 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
         JOIN stripe_customer_user scu ON si.stripe_customer_id = scu.stripe_customer_id
         WHERE scu.user_id = $1
         AND sp.type IN (${planTypes.map((_, i) => `$${i + 2}`).join(", ")})
-        ORDER BY si.created DESC
+        ORDER BY si.created_at DESC
         LIMIT 1
       `;
         params = [userId.uuid, ...planTypes];
@@ -166,10 +167,10 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
     const creditCalcCase = `
     CASE
       WHEN sp.type = '${ProductType.CREDIT}' THEN sl.quantity
-      WHEN sp.type = '${ProductType.INDIVIDUAL_PLAN}' THEN sl.quantity * ${campaignProductTypeUtils.credits(ProductType.INDIVIDUAL_PLAN).amount.toNumber()}
-      WHEN sp.type = '${ProductType.START_UP_PLAN}' THEN sl.quantity * ${campaignProductTypeUtils.credits(ProductType.START_UP_PLAN).amount.toNumber()}
-      WHEN sp.type = '${ProductType.SCALE_UP_PLAN}' THEN sl.quantity * ${campaignProductTypeUtils.credits(ProductType.SCALE_UP_PLAN).amount.toNumber()}
-      WHEN sp.type = '${ProductType.ENTERPRISE_PLAN}' THEN sl.quantity * ${campaignProductTypeUtils.credits(ProductType.ENTERPRISE_PLAN).amount.toNumber()}
+      WHEN sp.type = '${ProductType.INDIVIDUAL_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.INDIVIDUAL_PLAN).amount.toNumber()}
+      WHEN sp.type = '${ProductType.START_UP_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.START_UP_PLAN).amount.toNumber()}
+      WHEN sp.type = '${ProductType.SCALE_UP_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.SCALE_UP_PLAN).amount.toNumber()}
+      WHEN sp.type = '${ProductType.ENTERPRISE_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.ENTERPRISE_PLAN).amount.toNumber()}
       ELSE 0
     END`;
 

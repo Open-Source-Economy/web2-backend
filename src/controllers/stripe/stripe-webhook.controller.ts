@@ -102,6 +102,33 @@ export class StripeWebhookController {
           await StripeWebhookController.createOrUpdateStripePrice(price);
           break;
         }
+
+        case "product.created": {
+          const product = data.object as Stripe.Price;
+          logger.debug(`🔔 product.created`, product);
+          // await StripeWebhookController.createOrUpdateStripeProduct(product);
+          break;
+        }
+
+        case "product.updated": {
+          const product = data.object as Stripe.Product;
+          logger.debug(`🔔 product.updated`, product);
+          // await StripeWebhookController.createOrUpdateStripeProduct(product);
+          break;
+        }
+
+        case "product.deleted": {
+          const product = data.object as Stripe.Product;
+          logger.debug(`🔔 product.deleted`, product);
+          // await StripeWebhookController.createOrUpdateStripeProduct(product);
+          break;
+        }
+
+        case "customer.subscription.created": {
+          const subscription = data.object as Stripe.Subscription;
+          logger.debug(`🔔 subscription.deleted`, subscription);
+          break;
+        }
       }
 
       res.sendStatus(StatusCodes.OK);

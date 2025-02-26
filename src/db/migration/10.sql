@@ -12,6 +12,7 @@ ALTER TABLE stripe_product
 
 ALTER TABLE stripe_product
     ADD CONSTRAINT stripe_product_type_check
-        CHECK (type IN ('credit', 'donation', 'campaign_one_time', 'campaign_open_collective', 'campaign_github'));
+        CHECK (type IN ('credit', 'donation',
+                        'individual_plan', 'start_up_plan', 'scale_up_plan', 'enterprise_plan'));
 
 COMMIT;

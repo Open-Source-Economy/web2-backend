@@ -10,7 +10,7 @@ import {
 import {
   CampaignPriceType,
   CampaignProductType,
-  campaignProductTypeUtils,
+  productTypeUtils,
   Currency,
   PriceType,
   ProductType,
@@ -69,7 +69,7 @@ describe("CampaignHelper.getPrices", () => {
     const product = Fixture.stripeProduct(
       new StripeProductId("product-1"),
       repositoryId,
-      campaignProductTypeUtils.toProductType(campaignProductType),
+      productTypeUtils.toProductType(campaignProductType),
     );
 
     await productRepo.insert(product);
@@ -117,7 +117,7 @@ describe("CampaignHelper.getPrices", () => {
       const product = Fixture.stripeProduct(
         Fixture.stripeProductId(),
         repositoryId,
-        campaignProductTypeUtils.toProductType(campaignProductType),
+        productTypeUtils.toProductType(campaignProductType),
       );
 
       await productRepo.insert(product);
@@ -158,7 +158,7 @@ describe("CampaignHelper.getPrices", () => {
       const product = Fixture.stripeProduct(
         Fixture.stripeProductId(),
         repositoryId,
-        campaignProductTypeUtils.toProductType(campaignProductType),
+        productTypeUtils.toProductType(campaignProductType),
       );
 
       await productRepo.insert(product);
