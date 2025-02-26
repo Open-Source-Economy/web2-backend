@@ -2,6 +2,8 @@ import { ValidationError, Validator } from "../error";
 import { OwnerId, ProjectId, RepositoryId } from "../github";
 import { ApiError } from "../error/ApiError";
 import { StatusCodes } from "http-status-codes";
+import { Credit, CreditUnit } from "../credit";
+import Decimal from "decimal.js";
 
 export class StripeProductId {
   id: string;
@@ -26,11 +28,24 @@ export class StripeProductId {
 export enum ProductType {
   CREDIT = "credit",
   DONATION = "donation",
+  INDIVIDUAL_PLAN = "individual_plan",
+  START_UP_PLAN = "start_up_plan",
+  SCALE_UP_PLAN = "scale_up_plan",
+  ENTERPRISE_PLAN = "enterprise_plan",
 }
 
+// to enable match exhaustiveness
 export enum CampaignProductType {
   CREDIT = ProductType.CREDIT,
   DONATION = ProductType.DONATION,
+}
+
+// to enable match exhaustiveness
+export enum PlanProductType {
+  INDIVIDUAL_PLAN = ProductType.INDIVIDUAL_PLAN,
+  START_UP_PLAN = ProductType.START_UP_PLAN,
+  SCALE_UP_PLAN = ProductType.SCALE_UP_PLAN,
+  ENTERPRISE_PLAN = ProductType.ENTERPRISE_PLAN,
 }
 
 export const campaignProductTypeUtils = {
@@ -57,6 +72,29 @@ export const campaignProductTypeUtils = {
       default:
         throw new Error(
           `Product type ${productType} cannot be used in campaigns`,
+        );
+    }
+  },
+
+  credits: (
+    productType: ProductType,
+    unit: CreditUnit = CreditUnit.MINUTE,
+  ): Credit => {
+    switch (productType) {
+      case ProductType.CREDIT:
+        return { amount: new Decimal(1), unit: CreditUnit.MINUTE };
+      case ProductType.INDIVIDUAL_PLAN:
+        return { amount: new Decimal(15), unit: CreditUnit.MINUTE };
+      case ProductType.START_UP_PLAN:
+        return { amount: new Decimal(15), unit: CreditUnit.MINUTE };
+      case ProductType.SCALE_UP_PLAN:
+        return { amount: new Decimal(15), unit: CreditUnit.MINUTE };
+      case ProductType.ENTERPRISE_PLAN:
+        return { amount: new Decimal(15), unit: CreditUnit.MINUTE };
+      default:
+        throw new ApiError(
+          StatusCodes.NOT_IMPLEMENTED,
+          `Unknown product type: ${productType}`,
         );
     }
   },

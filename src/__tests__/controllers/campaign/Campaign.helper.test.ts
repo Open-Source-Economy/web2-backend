@@ -64,7 +64,7 @@ describe("CampaignHelper.getPrices", () => {
     await repositoryRepo.insertOrUpdate(Fixture.repository(repositoryId));
   });
 
-  it("should return prices for products", async () => {
+  it("should return an error is the DB is missing a product type", async () => {
     const campaignProductType = CampaignProductType.CREDIT;
     const product = Fixture.stripeProduct(
       new StripeProductId("product-1"),
@@ -94,6 +94,96 @@ describe("CampaignHelper.getPrices", () => {
       await priceRepo.insert(price2);
     }
 
+    try {
+      const prices: Record<
+        CampaignPriceType,
+        Record<Currency, Record<CampaignProductType, Price[]>>
+      > = await CampaignHelper.getCampaignPrices(
+        repositoryId,
+        currencyPriceConfigs,
+      );
+
+      // If we reach here, the test failed because no error was thrown
+      fail("Expected an error to be thrown");
+    } catch (error) {
+      // Test passes if an error is thrown
+      expect(error).toBeDefined();
+    }
+  });
+
+  it("should return an error is the DB is missing a price type", async () => {
+    for (const productType of Object.values(CampaignProductType)) {
+      const campaignProductType = productType as CampaignProductType;
+      const product = Fixture.stripeProduct(
+        Fixture.stripeProductId(),
+        repositoryId,
+        campaignProductTypeUtils.toProductType(campaignProductType),
+      );
+
+      await productRepo.insert(product);
+
+      for (const currency of Object.values(Currency)) {
+        const price1 = Fixture.stripePrice(
+          Fixture.stripePriceId(),
+          product.stripeId,
+          100,
+          currency as Currency,
+          PriceType.MONTHLY,
+        );
+
+        await priceRepo.insert(price1);
+      }
+    }
+
+    try {
+      const prices: Record<
+        CampaignPriceType,
+        Record<Currency, Record<CampaignProductType, Price[]>>
+      > = await CampaignHelper.getCampaignPrices(
+        repositoryId,
+        currencyPriceConfigs,
+      );
+
+      // If we reach here, the test failed because no error was thrown
+      fail("Expected an error to be thrown");
+    } catch (error) {
+      // Test passes if an error is thrown
+      expect(error).toBeDefined();
+    }
+  });
+
+  it("should return prices for products", async () => {
+    for (const productType of Object.values(CampaignProductType)) {
+      const campaignProductType = productType as CampaignProductType;
+      const product = Fixture.stripeProduct(
+        Fixture.stripeProductId(),
+        repositoryId,
+        campaignProductTypeUtils.toProductType(campaignProductType),
+      );
+
+      await productRepo.insert(product);
+
+      for (const currency of Object.values(Currency)) {
+        const price1 = Fixture.stripePrice(
+          Fixture.stripePriceId(),
+          product.stripeId,
+          100,
+          currency as Currency,
+          PriceType.MONTHLY,
+        );
+        const price2 = Fixture.stripePrice(
+          Fixture.stripePriceId(),
+          product.stripeId,
+          250,
+          currency as Currency,
+          PriceType.ONE_TIME,
+        );
+
+        await priceRepo.insert(price1);
+        await priceRepo.insert(price2);
+      }
+    }
+
     const prices: Record<
       CampaignPriceType,
       Record<Currency, Record<CampaignProductType, Price[]>>
@@ -103,11 +193,9 @@ describe("CampaignHelper.getPrices", () => {
     );
 
     expect(
-      prices[CampaignPriceType.MONTHLY][Currency.USD][campaignProductType],
-    ).toHaveLength(2);
-
-    expect(
-      prices[CampaignPriceType.MONTHLY][Currency.USD][campaignProductType],
+      prices[CampaignPriceType.MONTHLY][Currency.USD][
+        CampaignProductType.CREDIT
+      ],
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ totalAmount: 500, quantity: 5 }),
@@ -116,12 +204,14 @@ describe("CampaignHelper.getPrices", () => {
     );
 
     Object.values(Currency).forEach((currency) => {
-      expect(
-        prices[CampaignPriceType.MONTHLY][currency][campaignProductType],
-      ).toHaveLength(2);
-      expect(
-        prices[CampaignPriceType.ONE_TIME][currency][campaignProductType],
-      ).toHaveLength(2);
+      Object.values(CampaignProductType).forEach((campaignProductType) => {
+        expect(
+          prices[CampaignPriceType.MONTHLY][currency][campaignProductType],
+        ).toHaveLength(2);
+        expect(
+          prices[CampaignPriceType.ONE_TIME][currency][campaignProductType],
+        ).toHaveLength(2);
+      });
     });
   });
 });

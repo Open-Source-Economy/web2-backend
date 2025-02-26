@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { creditRepo, userRepo } from "../db/";
+import { planAndCreditsRepo, userRepo } from "../db/";
 import {
   GetAvailableCreditsBody,
   GetAvailableCreditsParams,
@@ -33,7 +33,10 @@ export class UserController {
       ? new CompanyId(req.query.companyId)
       : undefined;
 
-    const creditAmount = await creditRepo.getAvailableCredit(userId, companyId);
+    const creditAmount = await planAndCreditsRepo.getAvailableCredit(
+      userId,
+      companyId,
+    );
     const response: GetAvailableCreditsResponse = {
       creditAmount: creditAmount,
     };

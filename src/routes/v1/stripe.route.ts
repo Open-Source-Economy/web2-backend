@@ -4,10 +4,12 @@ import {
   StripeCheckoutController,
   StripeWebhookController,
 } from "../../controllers";
+import { PlanController } from "../../controllers/plan.controller";
 
 const router = Router();
 
 router.post("/checkout", StripeCheckoutController.checkout);
+router.get("/plans", PlanController.getPlan);
 
 router.post(
   "/webhook",

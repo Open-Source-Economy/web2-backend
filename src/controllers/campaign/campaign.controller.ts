@@ -16,7 +16,6 @@ import {
 } from "../../model";
 import { StatusCodes } from "http-status-codes";
 import { stripeMiscellaneousRepository } from "../../db";
-import { ApiError } from "../../model/error/ApiError";
 import { currencyAPI } from "../../services";
 import { logger } from "../../config";
 import { CampaignHelper, getRoundedCreditAmount } from "./campaign.helper";
@@ -154,26 +153,22 @@ export class CampaignController {
       if (projectId.login === "open-source-economy") targetAmount$ = 1000 * 100;
     }
 
-    if (targetAmount$ === null) {
-      throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Not implemented yet");
-    } else {
-      const response: GetCampaignResponse = {
-        raisedAmount: raisedAmount,
-        targetAmount: Object.values(Currency).reduce(
-          (acc, currency) => {
-            acc[currency] = currencyAPI.convertPrice(
-              targetAmount$,
-              Currency.USD,
-              currency as Currency,
-            );
-            return acc;
-          },
-          {} as Record<Currency, number>,
-        ),
-        prices,
-        description: null,
-      };
-      res.status(StatusCodes.OK).send({ success: response });
-    }
+    const response: GetCampaignResponse = {
+      raisedAmount: raisedAmount,
+      targetAmount: Object.values(Currency).reduce(
+        (acc, currency) => {
+          acc[currency] = currencyAPI.convertPrice(
+            targetAmount$,
+            Currency.USD,
+            currency as Currency,
+          );
+          return acc;
+        },
+        {} as Record<Currency, number>,
+      ),
+      prices,
+      description: null,
+    };
+    res.status(StatusCodes.OK).send({ success: response });
   }
 }

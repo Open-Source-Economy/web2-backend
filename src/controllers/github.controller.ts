@@ -38,11 +38,11 @@ import {
 } from "../model";
 import { StatusCodes } from "http-status-codes";
 import {
-  creditRepo,
   getFinancialIssueRepository,
   issueFundingRepo,
   issueRepo,
   managedIssueRepo,
+  planAndCreditsRepo,
 } from "../db";
 import { ApiError } from "../model/error/ApiError";
 
@@ -176,7 +176,7 @@ export class GithubController {
       );
     }
 
-    const availableCredit = await creditRepo.getAvailableCredit(
+    const availableCredit = await planAndCreditsRepo.getAvailableCredit(
       req.user.id,
       companyId,
     );

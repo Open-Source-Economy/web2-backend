@@ -131,56 +131,40 @@ export class CampaignHelper {
   > {
     const prices = CampaignHelper.initializePrices();
 
-    // // Usage example:
-    const productsWithPrices =
-      await combinedStripeRepo.getCampaignProductsWithPrices(projectId);
+    // Get campaign products with their prices
+    const productsWithPrices: Record<
+      CampaignProductType,
+      [StripeProduct, Record<Currency, Record<CampaignPriceType, StripePrice>>]
+    > = await combinedStripeRepo.getCampaignProductsWithPrices(projectId);
 
-    for (const [
-      campaignProductType,
-      product,
-      pricesByCurrency,
-    ] of productsWithPrices) {
-      logger.debug("Product type:", campaignProductType);
+    // Iterate over the products - fix is here
+    for (const campaignProductType in productsWithPrices) {
+      const typedProductType = campaignProductType as CampaignProductType;
+      const [product, pricesByCurrency] = productsWithPrices[typedProductType];
+
+      logger.debug("Product type:", typedProductType);
       logger.debug("Product:", product);
       logger.debug("Product prices", pricesByCurrency);
 
-      for (const [currency, stripePrices] of Object.entries(pricesByCurrency)) {
-
-        logger.debug(`Priced for ${currency}: `, stripePrices);
+      // Process each currency
+      for (const currency in pricesByCurrency) {
+        const stripePrices = pricesByCurrency[currency as Currency];
+        logger.debug(`Prices for ${currency}: `, stripePrices);
 
         const parsedCurrency = currency as Currency;
         const currencyConfigs = currencyPriceConfigs[parsedCurrency];
-        if (
-          !stripePrices ||
-          stripePrices.length !== Object.keys(CampaignPriceType).length
-        ) {
-          logger.error(
-            "Unexpected price configuration for product",
-            JSON.stringify(stripePrices),
-          );
-          throw new Error(
-            `Expected exactly one price per price type in product ${product.stripeId.id} in currency ${currency}`,
-          );
-        }
 
-        for (const [priceType, stripePrice] of stripePrices) {
-          if (stripePrice.unitAmount <= 0) {
-            logger.error("Stripe price unit amount is not strictly positive", {
-              productStripeId: product.stripeId,
-              unitAmount: stripePrice.unitAmount,
-              message:
-                "The unit amount for the given Stripe price is invalid (non-positive)",
-            });
-            throw new Error(
-              `Stripe price unit amount is not strictly positive for product ${product.stripeId}`,
-            );
-          }
+        // Process each price type
+        for (const priceType in stripePrices) {
+          const typedPriceType = priceType as CampaignPriceType;
+          const stripePrice = stripePrices[typedPriceType];
 
+          // Create prices for each configured amount
           for (const [amount, labels] of currencyConfigs) {
-            prices[priceType][parsedCurrency][campaignProductType].push({
-              totalAmount: amount,
-              quantity: Math.floor(amount / stripePrice.unitAmount),
-              label: labels[campaignProductType][priceType],
+            prices[typedPriceType][parsedCurrency][typedProductType].push({
+              totalAmount: Number(amount),
+              quantity: Math.floor(Number(amount) / stripePrice.unitAmount),
+              label: labels[typedProductType][typedPriceType],
               price: stripePrice,
             });
           }

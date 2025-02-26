@@ -3,14 +3,15 @@ import {
   CampaignPriceType,
   CampaignProductType,
   Currency,
+  OwnerId,
+  PlanPriceType,
+  PlanProductType,
   ProjectId,
   RepositoryId,
   StripePrice,
   StripeProduct,
 } from "../../model";
 import { pool } from "../../dbPool";
-
-type CurrencyPrices<PriceType> = Record<Currency, [PriceType, StripePrice][]>;
 
 export function getCombinedStripeRepository(): CombinedStripeRepository {
   return new CombinedStripeRepositoryImpl(pool);
@@ -20,7 +21,17 @@ export interface CombinedStripeRepository {
   getCampaignProductsWithPrices(
     projectId: ProjectId,
   ): Promise<
-    [CampaignProductType, StripeProduct, CurrencyPrices<CampaignPriceType>][]
+    Record<
+      CampaignProductType,
+      [StripeProduct, Record<Currency, Record<CampaignPriceType, StripePrice>>]
+    >
+  >;
+
+  getPlanProductsWithPrices(): Promise<
+    Record<
+      PlanProductType,
+      [StripeProduct, Record<Currency, Record<PlanPriceType, StripePrice>>]
+    >
   >;
 }
 
@@ -47,47 +58,52 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     return price;
   }
 
-  async getCampaignProductsWithPrices(
-    projectId: ProjectId,
+  private async getProductsWithPrices(
+    productTypes: string[],
+    priceTypes: string[],
+    projectId?: ProjectId,
   ): Promise<
-    [CampaignProductType, StripeProduct, CurrencyPrices<CampaignPriceType>][]
+    Record<
+      string,
+      [StripeProduct, Record<Currency, Record<string, StripePrice>>]
+    >
   > {
-    const campaignProductTypesClause = `
-            AND stripe_product.type IN (${Object.values(CampaignProductType)
-              .map((type) => `'${type}'`)
-              .join(", ")})
-        `;
+    const productTypesClause = `
+      AND stripe_product.type IN (${productTypes
+        .map((type) => `'${type}'`)
+        .join(", ")})
+    `;
 
-    const campaignPriceTypesClause = `
-            AND stripe_price.type IN (${Object.values(CampaignPriceType)
-              .map((type) => `'${type}'`)
-              .join(", ")})
-        `;
+    const priceTypesClause = `
+      AND stripe_price.type IN (${priceTypes
+        .map((type) => `'${type}'`)
+        .join(", ")})
+    `;
 
-    let params;
+    let params: [string | null, string | null] = [null, null];
     if (projectId instanceof RepositoryId) {
       params = [projectId.ownerId.login, projectId.name];
-    } else {
+    } else if (projectId instanceof OwnerId) {
       params = [projectId.login, null];
     }
 
     const result = await this.pool.query(
       `
-                SELECT 
-                    stripe_product.*,
-                    stripe_price.stripe_id as price_stripe_id,
-                    stripe_price.product_id,
-                    stripe_price.unit_amount,
-                    stripe_price.currency,
-                    stripe_price.active as price_active,
-                    stripe_price.type as price_type
-                FROM stripe_product
-                LEFT JOIN stripe_price ON stripe_product.stripe_id = stripe_price.product_id
-                WHERE stripe_product.github_owner_login = $1
-                    AND stripe_product.github_repository_name = $2
-                    ${campaignProductTypesClause}
-                    ${campaignPriceTypesClause}
-            `,
+          SELECT
+            stripe_product.*,
+            stripe_price.stripe_id as price_stripe_id,
+            stripe_price.product_id,
+            stripe_price.unit_amount,
+            stripe_price.currency,
+            stripe_price.active as price_active,
+            stripe_price.type as price_type
+          FROM stripe_product
+                 LEFT JOIN stripe_price ON stripe_product.stripe_id = stripe_price.product_id
+          WHERE stripe_product.github_owner_login = $1
+            AND stripe_product.github_repository_name = $2
+            ${productTypesClause}
+            ${priceTypesClause}
+        `,
       params,
     );
 
@@ -103,20 +119,20 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     }
 
     // Process each product and its prices
-    const output: [
-      CampaignProductType,
-      StripeProduct,
-      CurrencyPrices<CampaignPriceType>,
-    ][] = [];
+    const output: Record<
+      string,
+      [StripeProduct, Record<Currency, Record<string, StripePrice>>]
+    > = {};
 
     for (const rows of productMap.values()) {
       const product = this.getProductFromRow(rows[0]);
-      // @ts-ignore: Cast is safe because we filtered for campaign price types in the query
-      const campaignProductType = product.type as CampaignProductType;
+      const productType = product.type;
 
-      // Initialize prices by currency using the CurrencyPrices type
-      const pricesByCurrency: CurrencyPrices<CampaignPriceType> =
-        {} as CurrencyPrices<CampaignPriceType>;
+      // Initialize prices by currency
+      const pricesByCurrency: Record<
+        Currency,
+        Record<string, StripePrice>
+      > = {} as Record<Currency, Record<string, StripePrice>>;
 
       for (const row of rows) {
         if (row.price_stripe_id) {
@@ -131,20 +147,92 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
 
           if (price.active) {
             if (!pricesByCurrency[price.currency]) {
-              pricesByCurrency[price.currency] = [];
+              pricesByCurrency[price.currency] = {};
             }
-            pricesByCurrency[price.currency].push([
-              //   @ts-ignore: Cast is safe because we filtered for campaign price types in the query
-              price.type as CampaignPriceType,
-              price,
-            ]);
+            // Store price by its type
+            pricesByCurrency[price.currency][price.type] = price;
           }
         }
       }
 
-      output.push([campaignProductType, product, pricesByCurrency]);
+      // Store the product and its prices in the output object
+      output[productType] = [product, pricesByCurrency];
     }
 
+    console.debug("Output", output);
+    // Validate that all expected entries are present
+    this.validateProductRecordCompleteness(output, productTypes);
+
     return output;
+  }
+
+  private validateProductRecordCompleteness(
+    productRecord: Record<
+      string,
+      [StripeProduct, Record<Currency, Record<string, StripePrice>>]
+    >,
+    expectedProductTypes: string[],
+  ): void {
+    // Check if all expected product types are present
+    for (const productType of expectedProductTypes) {
+      if (!productRecord[productType]) {
+        throw new Error(`Missing product type: ${productType}`);
+      }
+
+      const [_, pricesByCurrency] = productRecord[productType];
+
+      // Check if there's at least one currency with prices
+      if (Object.keys(pricesByCurrency).length === 0) {
+        throw new Error(`No currencies found for product type: ${productType}`);
+      }
+
+      // Check each currency has all required price types
+      for (const currency of Object.keys(pricesByCurrency) as Currency[]) {
+        const pricesByType = pricesByCurrency[currency];
+
+        if (Object.keys(pricesByType).length === 0) {
+          throw new Error(
+            `No prices found for product type: ${productType}, currency: ${currency}`,
+          );
+        }
+      }
+    }
+  }
+
+  async getCampaignProductsWithPrices(
+    projectId: ProjectId,
+  ): Promise<
+    Record<
+      CampaignProductType,
+      [StripeProduct, Record<Currency, Record<CampaignPriceType, StripePrice>>]
+    >
+  > {
+    const result = await this.getProductsWithPrices(
+      Object.values(CampaignProductType),
+      Object.values(CampaignPriceType),
+      projectId,
+    );
+
+    return result as unknown as Record<
+      CampaignProductType,
+      [StripeProduct, Record<Currency, Record<CampaignPriceType, StripePrice>>]
+    >;
+  }
+
+  async getPlanProductsWithPrices(): Promise<
+    Record<
+      PlanProductType,
+      [StripeProduct, Record<Currency, Record<PlanPriceType, StripePrice>>]
+    >
+  > {
+    const result = await this.getProductsWithPrices(
+      Object.values(PlanProductType),
+      Object.values(PlanPriceType),
+    );
+
+    return result as unknown as Record<
+      PlanProductType,
+      [StripeProduct, Record<Currency, Record<PlanPriceType, StripePrice>>]
+    >;
   }
 }

@@ -11,9 +11,9 @@ import {
 } from "../../model";
 import {
   companyRepo,
-  creditRepo,
   issueFundingRepo,
   manualInvoiceRepo,
+  planAndCreditsRepo,
   stripeCustomerRepo,
   stripeCustomerUserRepo,
   stripeInvoiceRepo,
@@ -193,19 +193,20 @@ describe("CreditRepository", () => {
     expectedCreditAmount: number,
   ) => {
     if (testedUser.companyId) {
-      const totalCredits = await creditRepo.getAvailableCredit(
+      const totalCredits = await planAndCreditsRepo.getAvailableCredit(
         companyUserId1,
         validCompanyId,
       );
       expect(totalCredits).toEqual(expectedCreditAmount);
 
-      const totalCredits2 = await creditRepo.getAvailableCredit(
+      const totalCredits2 = await planAndCreditsRepo.getAvailableCredit(
         companyUserId2,
         validCompanyId,
       );
       expect(totalCredits2).toEqual(expectedCreditAmount);
     } else {
-      const totalCredits = await creditRepo.getAvailableCredit(lonelyUserId);
+      const totalCredits =
+        await planAndCreditsRepo.getAvailableCredit(lonelyUserId);
       expect(totalCredits).toEqual(expectedCreditAmount);
     }
   };
@@ -316,7 +317,7 @@ describe("CreditRepository", () => {
             await issueFundingRepo.create(issueFundingBody3);
           }
 
-          const totalCredits = await creditRepo.getAvailableCredit(
+          const totalCredits = await planAndCreditsRepo.getAvailableCredit(
             testedUser.userId,
             testedUser.companyId,
           );
