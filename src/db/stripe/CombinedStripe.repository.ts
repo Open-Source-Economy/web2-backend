@@ -110,7 +110,6 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     // Group rows by product
     const productMap = new Map<string, any[]>();
     for (const row of result.rows) {
-      console.debug("From DB", row);
       const productId = row.stripe_id;
       if (!productMap.has(productId)) {
         productMap.set(productId, []);
@@ -159,7 +158,6 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
       output[productType] = [product, pricesByCurrency];
     }
 
-    console.debug("Output", output);
     // Validate that all expected entries are present
     this.validateProductRecordCompleteness(output, productTypes);
 

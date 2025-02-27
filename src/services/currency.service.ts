@@ -22,10 +22,10 @@ export function getCurrencyAPI(
 export interface CurrencyApi {
   /**
    * Convert an amount from one currency to another using current exchange rates
-   * @param amount Amount in smallest currency unit - in the [fromCurrency] (e.g., cents for USD/EUR, pence for GBP, centimes for CHF)
+   * @param amount Amount in the smallest currency unit - in the [fromCurrency] (e.g., cents for USD/EUR, pence for GBP, centimes for CHF)
    * @param fromCurrency Source currency to convert from
    * @param toCurrency Target currency to convert to
-   * @returns Converted amount in smallest unit of target currency, rounded to nearest integer
+   * @returns Converted amount in the smallest unit of target currency, rounded to nearest integer
    * @throws {Error} If amount is negative
    * @example
    * // Convert $50.00 USD to GBP
@@ -36,6 +36,13 @@ export interface CurrencyApi {
     fromCurrency: Currency,
     toCurrency: Currency,
   ): number;
+
+  /**
+   * Get converted prices for all currencies
+   *
+   * @param $price Price in USD cents
+   */
+  getConvertedPrices($price: number): Record<Currency, number>;
 }
 
 class CurrencyApiImpl implements CurrencyApi {
@@ -76,5 +83,15 @@ class CurrencyApiImpl implements CurrencyApi {
 
     const rate = this.conversionRates[fromCurrency][toCurrency];
     return Math.round(amount * rate);
+  }
+
+  getConvertedPrices($price: number): Record<Currency, number> {
+    const record = {} as Record<Currency, number>;
+
+    for (const currency of Object.values(Currency) as Currency[]) {
+      record[currency] = this.convertPrice($price, Currency.USD, currency);
+    }
+
+    return record;
   }
 }

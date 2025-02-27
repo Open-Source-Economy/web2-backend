@@ -49,16 +49,27 @@ export enum PlanProductType {
 }
 
 export const productTypeUtils = {
-  toProductType: (campaignProductType: CampaignProductType): ProductType => {
-    switch (campaignProductType) {
+  toProductType: (
+    productType: CampaignProductType | PlanProductType,
+  ): ProductType => {
+    switch (productType) {
       case CampaignProductType.CREDIT:
         return ProductType.CREDIT;
       case CampaignProductType.DONATION:
         return ProductType.DONATION;
+
+      case PlanProductType.INDIVIDUAL_PLAN:
+        return ProductType.INDIVIDUAL_PLAN;
+      case PlanProductType.START_UP_PLAN:
+        return ProductType.START_UP_PLAN;
+      case PlanProductType.SCALE_UP_PLAN:
+        return ProductType.SCALE_UP_PLAN;
+      case PlanProductType.ENTERPRISE_PLAN:
+        return ProductType.ENTERPRISE_PLAN;
       default:
         throw new ApiError(
           StatusCodes.NOT_IMPLEMENTED,
-          `Unknown campaign product type: ${campaignProductType}`,
+          `Unknown product type: ${productType}`,
         );
     }
   },

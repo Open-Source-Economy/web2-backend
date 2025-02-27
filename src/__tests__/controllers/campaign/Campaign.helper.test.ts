@@ -10,10 +10,10 @@ import {
 import {
   CampaignPriceType,
   CampaignProductType,
-  productTypeUtils,
   Currency,
   PriceType,
   ProductType,
+  productTypeUtils,
   StripeProductId,
 } from "../../../model";
 import { Price } from "../../../dtos";
@@ -98,10 +98,7 @@ describe("CampaignHelper.getPrices", () => {
       const prices: Record<
         CampaignPriceType,
         Record<Currency, Record<CampaignProductType, Price[]>>
-      > = await CampaignHelper.getCampaignPrices(
-        repositoryId,
-        currencyPriceConfigs,
-      );
+      > = await CampaignHelper.getPrices(repositoryId, currencyPriceConfigs);
 
       // If we reach here, the test failed because no error was thrown
       fail("Expected an error to be thrown");
@@ -139,10 +136,7 @@ describe("CampaignHelper.getPrices", () => {
       const prices: Record<
         CampaignPriceType,
         Record<Currency, Record<CampaignProductType, Price[]>>
-      > = await CampaignHelper.getCampaignPrices(
-        repositoryId,
-        currencyPriceConfigs,
-      );
+      > = await CampaignHelper.getPrices(repositoryId, currencyPriceConfigs);
 
       // If we reach here, the test failed because no error was thrown
       fail("Expected an error to be thrown");
@@ -187,10 +181,7 @@ describe("CampaignHelper.getPrices", () => {
     const prices: Record<
       CampaignPriceType,
       Record<Currency, Record<CampaignProductType, Price[]>>
-    > = await CampaignHelper.getCampaignPrices(
-      repositoryId,
-      currencyPriceConfigs,
-    );
+    > = await CampaignHelper.getPrices(repositoryId, currencyPriceConfigs);
 
     expect(
       prices[CampaignPriceType.MONTHLY][Currency.USD][

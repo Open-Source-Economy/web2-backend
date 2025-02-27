@@ -5,7 +5,7 @@ import {
   GetPlanPricesQuery,
   GetPlanPricesResponse,
   ResponseBody,
-} from "../dtos";
+} from "../../dtos";
 import { StatusCodes } from "http-status-codes";
 import {
   Currency,
@@ -13,8 +13,8 @@ import {
   PlanProductType,
   StripePrice,
   StripeProduct,
-} from "../model";
-import { combinedStripeRepo } from "../db";
+} from "../../model";
+import { combinedStripeRepo } from "../../db";
 
 export class PlanController {
   static async getPlan(

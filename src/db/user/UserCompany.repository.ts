@@ -32,7 +32,7 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
   ): Promise<[UserId, CompanyId, CompanyUserRole]> {
     const client = await this.pool.connect();
     logger.debug(
-      `Inserting user ${userId} to company ${companyId} with role ${role}...`,
+      `Inserting user ${userId.uuid} to company ${companyId.uuid} with role ${role}...`,
     );
 
     try {

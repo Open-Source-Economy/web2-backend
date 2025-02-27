@@ -27,12 +27,12 @@ router.post(
 router.post(
   "/owners/:owner/stripe/product-and-price",
   isWebsiteAdmin,
-  AdminController.createProductAndPrice,
+  AdminController.createCampaignProductAndPrice,
 );
 router.post(
-  "/repos/:owner/:repo/stripe/product-and-price",
+  "/plan/product-and-price",
   isWebsiteAdmin,
-  AdminController.createProductAndPrice,
+  AdminController.createPlanProductAndPrice,
 );
 
 export default router;

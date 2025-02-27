@@ -4,7 +4,7 @@ import {
   StripeCheckoutController,
   StripeWebhookController,
 } from "../../controllers";
-import { PlanController } from "../../controllers/plan.controller";
+import { PlanController } from "../../controllers/plan/plan.controller";
 
 const router = Router();
 

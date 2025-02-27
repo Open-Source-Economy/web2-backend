@@ -1,10 +1,10 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
 import {
-  productTypeUtils,
   CompanyId,
   CompanyUserRole,
   OwnerId,
   ProductType,
+  productTypeUtils,
   RepositoryId,
   StripeCustomerId,
   StripeCustomerUser,

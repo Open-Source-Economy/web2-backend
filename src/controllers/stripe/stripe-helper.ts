@@ -1,15 +1,18 @@
 import {
   stripeCustomerRepo,
   stripeCustomerUserRepo,
+  stripePriceRepo,
   userCompanyRepo,
 } from "../../db/";
 import Stripe from "stripe";
 import {
   CompanyId,
   CompanyUserRole,
+  Currency,
   StripeCustomer,
   StripeCustomerId,
   StripeCustomerUser,
+  StripePrice,
   userUtils,
 } from "../../model";
 import { ApiError } from "../../model/error/ApiError";
@@ -72,6 +75,40 @@ export class StripeHelper {
       await stripeCustomerUserRepo.insert(stripeCustomerUser);
 
       return stripeCustomerUser;
+    }
+  }
+
+  static async createAndStoreStripePrices(
+    product: Stripe.Product,
+    prices: Record<Currency, number>,
+    options?: Stripe.PriceCreateParams.Recurring,
+  ) {
+    const creationPromises = Object.entries(prices).map(
+      async ([currency, price]) => {
+        const priceParams: Stripe.PriceCreateParams = {
+          currency: currency.toLowerCase(),
+          unit_amount: price,
+          product: product.id,
+          recurring: options,
+        };
+
+        const priceResponse = await stripe.prices.create(priceParams);
+        const stripePrice = StripePrice.fromStripeApi(priceResponse);
+
+        if (stripePrice instanceof StripePrice) {
+          await stripePriceRepo.createOrUpdate(stripePrice);
+        } else {
+          logger.error(`${stripePrice} - received from Stripe}`, priceResponse);
+          throw stripePrice;
+        }
+      },
+    );
+
+    try {
+      await Promise.all(creationPromises);
+    } catch (error) {
+      logger.error("Error creating a stripe price:", error);
+      throw error;
     }
   }
 }

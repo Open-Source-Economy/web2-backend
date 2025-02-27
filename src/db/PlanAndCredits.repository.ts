@@ -1,9 +1,9 @@
 import { Pool } from "pg";
 import {
-  productTypeUtils,
   CompanyId,
   PlanProductType,
   ProductType,
+  productTypeUtils,
   UserId,
 } from "../model";
 import { pool } from "../dbPool";

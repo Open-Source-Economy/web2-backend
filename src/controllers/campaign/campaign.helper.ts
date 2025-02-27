@@ -2,8 +2,8 @@ import { Price } from "../../dtos";
 import {
   CampaignPriceType,
   CampaignProductType,
-  productTypeUtils,
   Currency,
+  productTypeUtils,
   Project,
   ProjectId,
   StripePrice,
@@ -11,13 +11,9 @@ import {
   StripeProductId,
 } from "../../model";
 import { StatusCodes } from "http-status-codes";
-import {
-  combinedStripeRepo,
-  stripePriceRepo,
-  stripeProductRepo,
-} from "../../db";
+import { combinedStripeRepo, stripeProductRepo } from "../../db";
 import { ApiError } from "../../model/error/ApiError";
-import { stripe } from "../stripe";
+import { stripe, StripeHelper } from "../stripe";
 import { currencyAPI } from "../../services";
 import { logger } from "../../config";
 import Stripe from "stripe";
@@ -59,7 +55,7 @@ export function getRoundedCreditAmount(
 export class CampaignHelper {
   // Donation to Pekko: One product, several prices (100$, 200$, 500$), several currencies (USD, EUR, GBP)
   // To read: https://support.stripe.com/questions/how-to-accept-donations-through-stripe
-  static async createCampaignProductAndPrice(project: Project) {
+  static async createProductsAndPrices(project: Project) {
     let repoName = `${project.owner.id.login}`;
     if (project.repository) repoName += `/${project.repository.id.name}`;
 
@@ -79,12 +75,12 @@ export class CampaignHelper {
       // url: frontendUrl,
     };
 
-    await CampaignHelper.createCampaignProductAndPrices(
+    await CampaignHelper.createProductAndPrices(
       project.id,
       CampaignProductType.CREDIT,
       creditParams,
-      CampaignHelper.getPrices(creditRecurring$CentsPrice),
-      CampaignHelper.getPrices(creditOneTime$CentsPrice),
+      currencyAPI.getConvertedPrices(creditRecurring$CentsPrice),
+      currencyAPI.getConvertedPrices(creditOneTime$CentsPrice),
     );
 
     const donationParams: Stripe.ProductCreateParams = {
@@ -96,7 +92,7 @@ export class CampaignHelper {
       // url: frontendUrl,
     };
 
-    await CampaignHelper.createCampaignProductAndPrices(
+    await CampaignHelper.createProductAndPrices(
       project.id,
       CampaignProductType.DONATION,
       donationParams,
@@ -105,22 +101,7 @@ export class CampaignHelper {
     );
   }
 
-  // price number is in $ cents
-  static getPrices($price: number): Record<Currency, number> {
-    const record = {} as Record<Currency, number>;
-
-    for (const currency of Object.values(Currency) as Currency[]) {
-      record[currency] = currencyAPI.convertPrice(
-        $price,
-        Currency.USD,
-        currency,
-      );
-    }
-
-    return record;
-  }
-
-  static async getCampaignPrices(
+  static async getPrices(
     projectId: ProjectId,
     currencyPriceConfigs: CampaignProductPriceConfig,
   ): Promise<
@@ -203,7 +184,7 @@ export class CampaignHelper {
     );
   }
 
-  private static async createCampaignProductAndPrices(
+  private static async createProductAndPrices(
     projectId: ProjectId,
     campaignProductType: CampaignProductType,
     params: Stripe.ProductCreateParams,
@@ -225,52 +206,13 @@ export class CampaignHelper {
     };
 
     // --- recurring price ---
-    await CampaignHelper.createAndStoreStripePrices(
+    await StripeHelper.createAndStoreStripePrices(
       product,
       recurringCentsPrices,
       recurringOptions,
     );
 
     // --- one time price ---
-    await CampaignHelper.createAndStoreStripePrices(
-      product,
-      oneTimeCentsPrices,
-    );
-  }
-
-  private static async createAndStoreStripePrices(
-    product: Stripe.Product,
-    prices: Record<Currency, number>,
-    options?: Stripe.PriceCreateParams.Recurring,
-  ) {
-    const creationPromises = Object.entries(prices).map(
-      async ([currency, price]) => {
-        const priceParams: Stripe.PriceCreateParams = {
-          currency: currency.toLowerCase(),
-          unit_amount: price,
-          product: product.id,
-          recurring: options,
-        };
-
-        const priceResponse = await stripe.prices.create(priceParams);
-        const stripePrice = StripePrice.fromStripeApi(priceResponse);
-
-        if (stripePrice instanceof StripePrice) {
-          await stripePriceRepo.createOrUpdate(stripePrice);
-        } else {
-          logger.error(
-            `${stripePrice} - received from Stripe: ${priceResponse}`,
-          );
-          throw stripePrice;
-        }
-      },
-    );
-
-    try {
-      await Promise.all(creationPromises);
-    } catch (error) {
-      logger.error("Error creating a stripe price:", error);
-      throw error;
-    }
+    await StripeHelper.createAndStoreStripePrices(product, oneTimeCentsPrices);
   }
 }
