@@ -2,7 +2,11 @@ import { setupTestDB } from "../__helpers__/jest.setup";
 import {
   CompanyId,
   CompanyUserRole,
+  Currency,
   OwnerId,
+  PlanPriceType,
+  PlanProductType,
+  PriceType,
   ProductType,
   productTypeUtils,
   RepositoryId,
@@ -83,6 +87,7 @@ describe("PlanAndCreditsRepository", () => {
     projectId: OwnerId | RepositoryId | null,
     productType: ProductType,
     priceQuantity: number,
+    priceType: PriceType = PriceType.ANNUALLY,
   ): Promise<void> {
     const validStripeProductId = Fixture.stripeProductId();
     const validStripePriceId = Fixture.stripePriceId();
@@ -96,7 +101,13 @@ describe("PlanAndCreditsRepository", () => {
     );
     await stripeProductRepo.insert(product);
 
-    const price = Fixture.stripePrice(validStripePriceId, validStripeProductId);
+    const price = Fixture.stripePrice(
+      validStripePriceId,
+      validStripeProductId,
+      200,
+      Currency.EUR,
+      priceType,
+    );
     await stripePriceRepo.createOrUpdate(price);
 
     const lines = [
@@ -390,38 +401,43 @@ describe("PlanAndCreditsRepository", () => {
 
     describe("one invoice: should return the plan type from stripe invoice", () => {
       [ownerId, repositoryId, null].map((projectId) => {
-        const planTypes = [
-          ProductType.INDIVIDUAL_PLAN,
-          ProductType.START_UP_PLAN,
-          ProductType.SCALE_UP_PLAN,
-          ProductType.ENTERPRISE_PLAN,
-        ];
+        const planTypes = Object.values(
+          PlanProductType,
+        ) as unknown as ProductType[];
+        const priceTypes = Object.values(
+          PlanPriceType,
+        ) as unknown as PriceType[];
 
         planTypes.forEach((planType) => {
-          describe(`with ${planType}`, () => {
-            const test = async (testedUser: TestedUser) => {
-              await createStripeInvoice(
-                testedUser,
-                projectId,
-                planType as ProductType,
-                1,
-              );
+          priceTypes.forEach((priceType) => {
+            describe(`with ${planType}`, () => {
+              const test = async (testedUser: TestedUser) => {
+                await createStripeInvoice(
+                  testedUser,
+                  projectId,
+                  planType as ProductType,
+                  1,
+                  priceType,
+                );
 
-              const result = await planAndCreditsRepo.getPlan(
-                testedUser.userId,
-                testedUser.companyId,
-              );
+                const [productResult, priceResult] =
+                  (await planAndCreditsRepo.getPlan(
+                    testedUser.userId,
+                    testedUser.companyId,
+                  )) ?? [];
 
-              expect(result).toEqual(planType);
-            };
+                expect(productResult).toEqual(planType);
+                expect(priceResult).toEqual(priceType);
+              };
 
-            describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
-              it("for lonely user", async () => {
-                await test(testUser);
-              });
+              describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+                it("for lonely user", async () => {
+                  await test(testUser);
+                });
 
-              it("for company", async () => {
-                await test(testCompanyUsers);
+                it("for company", async () => {
+                  await test(testCompanyUsers);
+                });
               });
             });
           });
@@ -475,65 +491,70 @@ describe("PlanAndCreditsRepository", () => {
 
       describe("should return the plan type from stripe invoice", () => {
         [ownerId, repositoryId, null].map((projectId) => {
-          const planTypes = [
-            ProductType.INDIVIDUAL_PLAN,
-            ProductType.START_UP_PLAN,
-            ProductType.SCALE_UP_PLAN,
-            ProductType.ENTERPRISE_PLAN,
-          ];
+          const planTypes = Object.values(
+            PlanProductType,
+          ) as unknown as ProductType[];
+          const priceTypes = Object.values(
+            PlanPriceType,
+          ) as unknown as PriceType[];
 
           planTypes.forEach((planType) => {
-            describe(`with ${planType}`, () => {
-              const test = async (testedUser: TestedUser) => {
-                await createStripeInvoice(
-                  testedUser,
-                  projectId,
-                  planType as ProductType,
-                  1,
-                );
+            priceTypes.forEach((priceType) => {
+              describe(`with ${planType}`, () => {
+                const test = async (testedUser: TestedUser) => {
+                  await createStripeInvoice(
+                    testedUser,
+                    projectId,
+                    planType as ProductType,
+                    1,
+                    priceType,
+                  );
 
-                const result = await planAndCreditsRepo.getPlan(
-                  testedUser.userId,
-                  testedUser.companyId,
-                );
+                  const [productResult, priceResult] =
+                    (await planAndCreditsRepo.getPlan(
+                      testedUser.userId,
+                      testedUser.companyId,
+                    )) ?? [];
 
-                expect(result).toEqual(planType);
-              };
+                  expect(productResult).toEqual(planType);
+                  expect(priceResult).toEqual(priceType);
+                };
 
-              describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
-                it("for lonely user", async () => {
-                  await test(testUser);
-                });
+                describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+                  it("for lonely user", async () => {
+                    await test(testUser);
+                  });
 
-                it("for company", async () => {
-                  await test(testCompanyUsers);
+                  it("for company", async () => {
+                    await test(testCompanyUsers);
+                  });
                 });
               });
             });
           });
         });
-      });
 
-      describe("should not return non-plan product types", () => {
-        [ProductType.CREDIT, ProductType.DONATION].forEach((nonPlanType) => {
-          const test = async (testedUser: TestedUser) => {
-            await createStripeInvoice(testedUser, null, nonPlanType, 1);
+        describe("should not return non-plan product types", () => {
+          [ProductType.CREDIT, ProductType.DONATION].forEach((nonPlanType) => {
+            const test = async (testedUser: TestedUser) => {
+              await createStripeInvoice(testedUser, null, nonPlanType, 1);
 
-            const result = await planAndCreditsRepo.getPlan(
-              testedUser.userId,
-              testedUser.companyId,
-            );
+              const result = await planAndCreditsRepo.getPlan(
+                testedUser.userId,
+                testedUser.companyId,
+              );
 
-            expect(result).toBeNull();
-          };
+              expect(result).toBeNull();
+            };
 
-          describe(`with ${nonPlanType}`, () => {
-            it("for lonely user", async () => {
-              await test(testUser);
-            });
+            describe(`with ${nonPlanType}`, () => {
+              it("for lonely user", async () => {
+                await test(testUser);
+              });
 
-            it("for company", async () => {
-              await test(testCompanyUsers);
+              it("for company", async () => {
+                await test(testCompanyUsers);
+              });
             });
           });
         });
@@ -560,12 +581,13 @@ describe("PlanAndCreditsRepository", () => {
             1,
           );
 
-          const result = await planAndCreditsRepo.getPlan(
-            testedUser.userId,
-            testedUser.companyId,
-          );
+          const [productResult, _] =
+            (await planAndCreditsRepo.getPlan(
+              testedUser.userId,
+              testedUser.companyId,
+            )) ?? [];
 
-          expect(result).toEqual(ProductType.ENTERPRISE_PLAN);
+          expect(productResult).toEqual(ProductType.ENTERPRISE_PLAN);
         };
 
         it("for lonely user", async () => {

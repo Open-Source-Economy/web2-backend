@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import {
   CompanyId,
+  PlanPriceType,
   PlanProductType,
   ProductType,
   productTypeUtils,
@@ -26,7 +27,7 @@ export interface PlanAndCreditsRepository {
   getPlan(
     userId: UserId,
     companyId?: CompanyId,
-  ): Promise<PlanProductType | null>;
+  ): Promise<[PlanProductType, PlanPriceType] | null>;
 }
 
 class CreditRepositoryImpl implements PlanAndCreditsRepository {
@@ -94,17 +95,26 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
   async getPlan(
     userId: UserId,
     companyId?: CompanyId,
-  ): Promise<PlanProductType | null> {
+  ): Promise<[PlanProductType, PlanPriceType] | null> {
     // TODO: hack solution, refactor to use Stripe API subscription
     try {
       // Get all plan product types from the enum
-      const planTypes = Object.values(PlanProductType);
+      const planProductTypes = Object.values(PlanProductType);
+      const planPriceTypes = Object.values(PlanPriceType);
 
       const selectClause = `
-      SELECT sp.type as product_type
-      FROM stripe_invoice si
-      JOIN stripe_invoice_line sil ON si.stripe_id = sil.invoice_id
-      JOIN stripe_product sp ON sil.product_id = sp.stripe_id
+    SELECT sp.type as product_type, spr.type as price_type
+    FROM stripe_invoice si
+    JOIN stripe_invoice_line sil ON si.stripe_id = sil.invoice_id
+    JOIN stripe_product sp ON sil.product_id = sp.stripe_id
+    JOIN stripe_price spr ON sil.price_id = spr.stripe_id
+  `;
+
+      const planFilterClause = `
+    AND sp.type IN (${planProductTypes.map((_, i) => `$${i + 2}`).join(", ")})
+      AND spr.type IN (${planPriceTypes.map((_, i) => `$${i + 2 + planProductTypes.length}`).join(", ")})
+      ORDER BY si.created_at DESC
+      LIMIT 1
     `;
 
       let query: string;
@@ -113,26 +123,23 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
       if (companyId) {
         // Query for company's last invoice plan type
         query = `
-        ${selectClause}
-        JOIN stripe_customer_user scu ON si.stripe_customer_id = scu.stripe_customer_id
-        JOIN user_company uc ON scu.user_id = uc.user_id
-        WHERE uc.company_id = $1
-        AND sp.type IN (${planTypes.map((_, i) => `$${i + 2}`).join(", ")})
-        ORDER BY si.created_at DESC
-        LIMIT 1
-      `;
-        params = [companyId.uuid, ...planTypes];
+      ${selectClause}
+      JOIN stripe_customer_user scu ON si.stripe_customer_id = scu.stripe_customer_id
+      JOIN user_company uc ON scu.user_id = uc.user_id
+      WHERE uc.company_id = $1
+      ${planFilterClause}
+      
+    `;
+        params = [companyId.uuid, ...planProductTypes, ...planPriceTypes];
       } else {
         // Query for individual user's last invoice plan type
         query = `
-        ${selectClause}
-        JOIN stripe_customer_user scu ON si.stripe_customer_id = scu.stripe_customer_id
-        WHERE scu.user_id = $1
-        AND sp.type IN (${planTypes.map((_, i) => `$${i + 2}`).join(", ")})
-        ORDER BY si.created_at DESC
-        LIMIT 1
-      `;
-        params = [userId.uuid, ...planTypes];
+      ${selectClause}
+      JOIN stripe_customer_user scu ON si.stripe_customer_id = scu.stripe_customer_id
+      WHERE scu.user_id = $1
+       ${planFilterClause}
+    `;
+        params = [userId.uuid, ...planProductTypes, ...planPriceTypes];
       }
 
       const result = await this.pool.query(query, params);
@@ -142,15 +149,22 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
       }
 
       const productType = result.rows[0].product_type as string;
+      const priceType = result.rows[0].price_type as string;
 
       // Check if it's a valid plan product type
       if (
-        Object.values(PlanProductType).includes(productType as PlanProductType)
+        Object.values(PlanProductType).includes(
+          productType as PlanProductType,
+        ) &&
+        Object.values(PlanPriceType).includes(priceType as PlanPriceType)
       ) {
-        return productType as PlanProductType;
+        return [productType as PlanProductType, priceType as PlanPriceType];
+      } else {
+        logger.error(
+          `Invalid plan product type ${productType} or price type ${priceType} from last invoice`,
+        );
+        return null;
       }
-
-      return null;
     } catch (error) {
       logger.error(
         "Error retrieving plan product type from last invoice",

@@ -37,11 +37,11 @@ export class UserController {
   static async getPlan(
     req: Request<
       dto.GetPlansParams,
-      dto.ResponseBody<dto.GetPlanResponse>,
-      dto.GetPlanBody,
-      dto.GetPlanQuery
+      dto.ResponseBody<dto.GetUserPlanResponse>,
+      dto.GetUserPlanBody,
+      dto.GetUserPlanQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetPlanResponse>>,
+    res: Response<dto.ResponseBody<dto.GetUserPlanResponse>>,
   ) {
     if (!req.user) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized");
@@ -51,9 +51,10 @@ export class UserController {
       ? new CompanyId(req.query.companyId)
       : undefined;
 
-    const productType = await planAndCreditsRepo.getPlan(userId, companyId);
-    const response: dto.GetPlanResponse = {
-      productType: productType,
+    const types = await planAndCreditsRepo.getPlan(userId, companyId);
+    const response: dto.GetUserPlanResponse = {
+      productType: types ? types[0] : null,
+      priceType: types ? types[1] : null,
     };
 
     return res.status(StatusCodes.OK).send({ success: response });

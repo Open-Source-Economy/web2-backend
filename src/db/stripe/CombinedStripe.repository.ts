@@ -75,11 +75,23 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
         .join(", ")})
     `;
 
-    let params: [string | null, string | null] = [null, null];
-    if (projectId instanceof RepositoryId) {
-      params = [projectId.ownerId.login, projectId.name];
-    } else if (projectId instanceof OwnerId) {
-      params = [projectId.login, null];
+    let whereClause = "";
+    let params: any[] = [];
+
+    if (projectId) {
+      // Only apply GitHub repository/owner filters when projectId is provided
+      whereClause = `WHERE stripe_product.github_owner_login = $1
+        AND stripe_product.github_repository_name = $2`;
+
+      if (projectId instanceof RepositoryId) {
+        params = [projectId.ownerId.login, projectId.name];
+      } else if (projectId instanceof OwnerId) {
+        params = [projectId.login, null];
+      }
+    } else {
+      // For plans, we don't want to filter by GitHub owner/repo
+      whereClause = "WHERE 1=1"; // Always true condition
+      params = [];
     }
 
     const result = await this.pool.query(
@@ -94,14 +106,14 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
             stripe_price.type as price_type
           FROM stripe_product
                  LEFT JOIN stripe_price ON stripe_product.stripe_id = stripe_price.product_id
-          WHERE stripe_product.github_owner_login = $1
-            AND stripe_product.github_repository_name = $2
+          ${whereClause}
             ${productTypesClause}
             ${priceTypesClause}
         `,
       params,
     );
 
+    // Rest of the method remains the same
     // Group rows by product
     const productMap = new Map<string, any[]>();
     for (const row of result.rows) {
@@ -123,10 +135,10 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
       const productType = product.type;
 
       // Initialize prices by currency
-      const pricesByCurrency: Record<
+      const pricesByCurrency = {} as Record<
         Currency,
         Record<string, StripePrice>
-      > = {} as Record<Currency, Record<string, StripePrice>>;
+      >;
 
       for (const row of rows) {
         if (row.price_stripe_id) {
@@ -154,39 +166,50 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     }
 
     // Validate that all expected entries are present
-    this.validateProductRecordCompleteness(output, productTypes);
+    this.validateResultCompleteness(output, productTypes, priceTypes);
 
     return output;
   }
 
-  private validateProductRecordCompleteness(
-    productRecord: Record<
-      string,
-      Record<Currency, Record<string, StripePrice>>
-    >,
+  private validateResultCompleteness(
+    output: Record<string, Record<Currency, Record<string, StripePrice>>>,
     expectedProductTypes: string[],
+    expectedPriceTypes: string[],
   ): void {
-    // Check if all expected product types are present
+    // 1. Validate product types
     for (const productType of expectedProductTypes) {
-      if (!productRecord[productType]) {
+      if (!output[productType]) {
         throw new Error(`Missing product type: ${productType}`);
       }
+    }
 
-      const pricesByCurrency = productRecord[productType];
+    // 2. Collect all currencies from all products
+    const allCurrencies = new Set<Currency>();
+    for (const productType in output) {
+      const currencies = Object.keys(output[productType]) as Currency[];
+      currencies.forEach((currency) => allCurrencies.add(currency));
+    }
 
-      // Check if there's at least one currency with prices
-      if (Object.keys(pricesByCurrency).length === 0) {
-        throw new Error(`No currencies found for product type: ${productType}`);
-      }
+    // 3. Check each product for price types and currencies
+    for (const productType in output) {
+      const productPrices = output[productType];
 
-      // Check each currency has all required price types
-      for (const currency of Object.keys(pricesByCurrency) as Currency[]) {
-        const pricesByType = pricesByCurrency[currency];
-
-        if (Object.keys(pricesByType).length === 0) {
+      // Check that the product has all currencies
+      for (const currency of allCurrencies) {
+        if (!productPrices[currency]) {
           throw new Error(
-            `No prices found for product type: ${productType}, currency: ${currency}`,
+            `Missing currency "${currency}" for product "${productType}". All products must support the same set of currencies.`,
           );
+        }
+
+        // Check that all price types exist for each currency
+        const currencyPrices = productPrices[currency];
+        for (const priceType of expectedPriceTypes) {
+          if (!currencyPrices[priceType]) {
+            throw new Error(
+              `Missing price type "${priceType}" for product "${productType}" in currency "${currency}"`,
+            );
+          }
         }
       }
     }

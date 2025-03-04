@@ -78,8 +78,10 @@ export class StripePrice {
     );
     const active = validator.requiredBoolean("active");
     let type = PriceType.ONE_TIME;
-    if (json.recurring) {
+    if (json.recurring && json.recurring.interval === "month") {
       type = PriceType.MONTHLY;
+    } else if (json.recurring && json.recurring.interval === "year") {
+      type = PriceType.ANNUALLY;
     }
     const error = validator.getFirstError();
     if (error) {
