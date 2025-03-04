@@ -48,7 +48,7 @@ import { ApiError } from "../api/model/error/ApiError";
 
 const financialIssueRepo = getFinancialIssueRepository();
 
-export class GithubController {
+export class ProjectController {
   static async getOwner(
     req: Request<
       GetOwnerParams,

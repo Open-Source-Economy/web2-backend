@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import {
-  GetPlanPricesBody,
-  GetPlanPricesParams,
-  GetPlanPricesQuery,
-  GetPlanPricesResponse,
+  GetPlansBody,
+  GetPlansParams,
+  GetPlansQuery,
+  GetPlansResponse,
   ResponseBody,
 } from "../../api/dto";
 import { StatusCodes } from "http-status-codes";
@@ -12,27 +12,26 @@ import {
   PlanPriceType,
   PlanProductType,
   StripePrice,
-  StripeProduct,
 } from "../../api/model";
 import { combinedStripeRepo } from "../../db";
 
 export class PlanController {
-  static async getPlan(
+  static async getPlans(
     req: Request<
-      GetPlanPricesParams,
-      ResponseBody<GetPlanPricesResponse>,
-      GetPlanPricesBody,
-      GetPlanPricesQuery
+      GetPlansParams,
+      ResponseBody<GetPlansResponse>,
+      GetPlansBody,
+      GetPlansQuery
     >,
-    res: Response<ResponseBody<GetPlanPricesResponse>>,
+    res: Response<ResponseBody<GetPlansResponse>>,
   ) {
     const prices: Record<
       PlanProductType,
-      [StripeProduct, Record<Currency, Record<PlanPriceType, StripePrice>>]
+      Record<Currency, Record<PlanPriceType, StripePrice>>
     > = await combinedStripeRepo.getPlanProductsWithPrices();
 
-    const response: GetPlanPricesResponse = {
-      prices,
+    const response: GetPlansResponse = {
+      plans: prices,
     };
 
     return res.status(StatusCodes.OK).send({ success: response });

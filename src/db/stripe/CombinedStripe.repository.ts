@@ -23,14 +23,14 @@ export interface CombinedStripeRepository {
   ): Promise<
     Record<
       CampaignProductType,
-      [StripeProduct, Record<Currency, Record<CampaignPriceType, StripePrice>>]
+      Record<Currency, Record<CampaignPriceType, StripePrice>>
     >
   >;
 
   getPlanProductsWithPrices(): Promise<
     Record<
       PlanProductType,
-      [StripeProduct, Record<Currency, Record<PlanPriceType, StripePrice>>]
+      Record<Currency, Record<PlanPriceType, StripePrice>>
     >
   >;
 }
@@ -62,12 +62,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     productTypes: string[],
     priceTypes: string[],
     projectId?: ProjectId,
-  ): Promise<
-    Record<
-      string,
-      [StripeProduct, Record<Currency, Record<string, StripePrice>>]
-    >
-  > {
+  ): Promise<Record<string, Record<Currency, Record<string, StripePrice>>>> {
     const productTypesClause = `
       AND stripe_product.type IN (${productTypes
         .map((type) => `'${type}'`)
@@ -120,7 +115,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     // Process each product and its prices
     const output: Record<
       string,
-      [StripeProduct, Record<Currency, Record<string, StripePrice>>]
+      Record<Currency, Record<string, StripePrice>>
     > = {};
 
     for (const rows of productMap.values()) {
@@ -155,7 +150,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
       }
 
       // Store the product and its prices in the output object
-      output[productType] = [product, pricesByCurrency];
+      output[productType] = pricesByCurrency;
     }
 
     // Validate that all expected entries are present
@@ -167,7 +162,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
   private validateProductRecordCompleteness(
     productRecord: Record<
       string,
-      [StripeProduct, Record<Currency, Record<string, StripePrice>>]
+      Record<Currency, Record<string, StripePrice>>
     >,
     expectedProductTypes: string[],
   ): void {
@@ -177,7 +172,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
         throw new Error(`Missing product type: ${productType}`);
       }
 
-      const [_, pricesByCurrency] = productRecord[productType];
+      const pricesByCurrency = productRecord[productType];
 
       // Check if there's at least one currency with prices
       if (Object.keys(pricesByCurrency).length === 0) {
@@ -202,7 +197,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
   ): Promise<
     Record<
       CampaignProductType,
-      [StripeProduct, Record<Currency, Record<CampaignPriceType, StripePrice>>]
+      Record<Currency, Record<CampaignPriceType, StripePrice>>
     >
   > {
     const result = await this.getProductsWithPrices(
@@ -213,14 +208,14 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
 
     return result as unknown as Record<
       CampaignProductType,
-      [StripeProduct, Record<Currency, Record<CampaignPriceType, StripePrice>>]
+      Record<Currency, Record<CampaignPriceType, StripePrice>>
     >;
   }
 
   async getPlanProductsWithPrices(): Promise<
     Record<
       PlanProductType,
-      [StripeProduct, Record<Currency, Record<PlanPriceType, StripePrice>>]
+      Record<Currency, Record<PlanPriceType, StripePrice>>
     >
   > {
     const result = await this.getProductsWithPrices(
@@ -230,7 +225,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
 
     return result as unknown as Record<
       PlanProductType,
-      [StripeProduct, Record<Currency, Record<PlanPriceType, StripePrice>>]
+      Record<Currency, Record<PlanPriceType, StripePrice>>
     >;
   }
 }

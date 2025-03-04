@@ -1,4 +1,3 @@
-import { Price } from "../../api/dto";
 import {
   CampaignPriceType,
   CampaignProductType,
@@ -18,6 +17,7 @@ import { currencyAPI } from "../../services";
 import { logger } from "../../config";
 import Stripe from "stripe";
 import { CampaignProductPriceConfig } from "./campaign.controller";
+import { Price } from "../../api/dto";
 
 // 1 credit - one-time payment  = 2.3$
 // 1 credit - recurring payment = 1.84$
@@ -115,16 +115,15 @@ export class CampaignHelper {
     // Get campaign products with their prices
     const productsWithPrices: Record<
       CampaignProductType,
-      [StripeProduct, Record<Currency, Record<CampaignPriceType, StripePrice>>]
+      Record<Currency, Record<CampaignPriceType, StripePrice>>
     > = await combinedStripeRepo.getCampaignProductsWithPrices(projectId);
 
     // Iterate over the products - fix is here
     for (const campaignProductType in productsWithPrices) {
       const typedProductType = campaignProductType as CampaignProductType;
-      const [product, pricesByCurrency] = productsWithPrices[typedProductType];
+      const pricesByCurrency = productsWithPrices[typedProductType];
 
       logger.debug("Product type:", typedProductType);
-      logger.debug("Product:", product);
       logger.debug("Product prices", pricesByCurrency);
 
       // Process each currency

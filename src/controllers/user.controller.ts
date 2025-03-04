@@ -36,7 +36,7 @@ export class UserController {
 
   static async getPlan(
     req: Request<
-      dto.GetPlanParams,
+      dto.GetPlansParams,
       dto.ResponseBody<dto.GetPlanResponse>,
       dto.GetPlanBody,
       dto.GetPlanQuery
