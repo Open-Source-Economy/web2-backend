@@ -1,7 +1,7 @@
 import { Pool, QueryResult } from "pg";
-import { IssueFunding, IssueFundingId, IssueId } from "../model";
+import { IssueFunding, IssueFundingId, IssueId } from "../api/model";
 import { pool } from "../dbPool";
-import { CreateIssueFundingBody } from "../dtos";
+import { CreateIssueFundingBody } from "../api/dto";
 import { logger } from "../config";
 
 export function getIssueFundingRepository(): IssueFundingRepository {

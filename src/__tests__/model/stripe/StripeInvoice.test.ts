@@ -1,6 +1,6 @@
-import { StripeInvoice } from "../../../model";
+import { StripeInvoice } from "../../../api/model";
 import * as fs from "fs";
-import { ValidationError } from "../../../model/error";
+import { ValidationError } from "../../../api/model/error";
 
 describe("StripeInvoice", () => {
   it("fromStripeApi does not throw an error", () => {

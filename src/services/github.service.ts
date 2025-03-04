@@ -5,9 +5,9 @@ import {
   OwnerId,
   Repository,
   RepositoryId,
-} from "../model";
+} from "../api/model";
 import { config, logger } from "../config";
-import { ValidationError } from "../model/error";
+import { ValidationError } from "../api/model/error";
 
 export function getGitHubAPI(): GitHubApi {
   return new GitHubApiImpl();

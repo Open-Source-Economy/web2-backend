@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { Currency, Project, ProjectId } from "../../model";
+import { Currency, Project, ProjectId } from "../../api/model";
 import { pool } from "../../dbPool";
 
 export function getStripeMiscellaneousRepository(): StripeMiscellaneousRepository {

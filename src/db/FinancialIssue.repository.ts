@@ -12,7 +12,7 @@ import {
   Repository,
   RepositoryId,
   User,
-} from "../model";
+} from "../api/model";
 import { pool } from "../dbPool";
 import { getGitHubAPI, GitHubApi } from "../services";
 import { logger } from "../config";

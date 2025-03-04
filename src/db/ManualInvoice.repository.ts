@@ -1,7 +1,12 @@
 import { Pool } from "pg";
-import { CompanyId, ManualInvoice, ManualInvoiceId, UserId } from "../model";
+import {
+  CompanyId,
+  ManualInvoice,
+  ManualInvoiceId,
+  UserId,
+} from "../api/model";
 import { pool } from "../dbPool";
-import { CreateManualInvoiceBody } from "../dtos";
+import { CreateManualInvoiceBody } from "../api/dto";
 import { logger } from "../config";
 
 export function getManualInvoiceRepository(): ManualInvoiceRepository {

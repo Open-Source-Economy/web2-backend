@@ -7,7 +7,7 @@ import {
   StripeCustomerId,
   StripeInvoice,
   StripePrice,
-} from "../../model";
+} from "../../api/model";
 import { config, logger } from "../../config";
 import { stripe } from "./index";
 import {
@@ -16,8 +16,8 @@ import {
   stripeInvoiceRepo,
   stripePriceRepo,
 } from "../../db";
-import { ValidationError } from "../../model/error";
-import { CreateAddressBody } from "../../dtos";
+import { ValidationError } from "../../api/model/error";
+import { CreateAddressBody } from "../../api/dto";
 
 export class StripeWebhookController {
   static async webhook(req: Request, res: Response) {

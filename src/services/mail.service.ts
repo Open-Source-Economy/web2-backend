@@ -1,6 +1,6 @@
 import { ServerClient } from "postmark";
 import { config, logger } from "../config";
-import { Company, Owner, Repository } from "../model";
+import { Company, Owner, Repository } from "../api/model";
 import { promises as fs } from "fs";
 import path from "path";
 

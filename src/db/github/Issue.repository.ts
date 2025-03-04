@@ -1,7 +1,7 @@
 import { Pool } from "pg";
-import { Issue, IssueId } from "../../model";
+import { Issue, IssueId } from "../../api/model";
 import { pool } from "../../dbPool";
-import { ValidationError } from "../../model/error";
+import { ValidationError } from "../../api/model/error";
 
 export function getIssueRepository(): IssueRepository {
   return new IssueRepositoryImpl(pool);

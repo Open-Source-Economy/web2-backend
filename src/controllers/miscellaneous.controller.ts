@@ -6,9 +6,9 @@ import {
   NewsletterSubscriptionQuery,
   NewsletterSubscriptionResponse,
   ResponseBody,
-} from "../dtos";
+} from "../api/dto";
 import { StatusCodes } from "http-status-codes";
-import { NewsletterSubscription } from "../model/NewsletterSubscription";
+import { NewsletterSubscription } from "../api/model/NewsletterSubscription";
 import { mailService } from "../services";
 
 export class MiscellaneousController {

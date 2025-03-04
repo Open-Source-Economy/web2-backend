@@ -1,5 +1,5 @@
 import fs from "fs";
-import { OwnerId, Repository, RepositoryId } from "../../../model";
+import { OwnerId, Repository, RepositoryId } from "../../../api/model";
 import { logger } from "../../../config";
 
 describe("Repository", () => {

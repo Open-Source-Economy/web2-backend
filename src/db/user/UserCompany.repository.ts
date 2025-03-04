@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { CompanyId, CompanyUserRole, UserId } from "../../model";
+import { CompanyId, CompanyUserRole, UserId } from "../../api/model";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 

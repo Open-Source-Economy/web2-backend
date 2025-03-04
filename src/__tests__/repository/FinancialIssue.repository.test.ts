@@ -9,12 +9,12 @@ import {
   RepositoryId,
   User,
   UserId,
-} from "../../model";
+} from "../../api/model";
 import {
   FinancialIssueRepository,
   getFinancialIssueRepository,
 } from "../../db/FinancialIssue.repository";
-import { CreateIssueFundingBody } from "../../dtos";
+import { CreateIssueFundingBody } from "../../api/dto";
 import { Fixture } from "../__helpers__/Fixture";
 import { GitHubApi } from "../../services";
 import {

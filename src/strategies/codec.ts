@@ -1,6 +1,6 @@
 import passport from "passport";
 import { getUserRepository, UserRepository } from "../db/";
-import { User, UserId } from "../model";
+import { User, UserId } from "../api/model";
 
 const userRepository: UserRepository = getUserRepository();
 

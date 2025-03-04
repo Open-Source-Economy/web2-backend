@@ -15,8 +15,8 @@ import {
   ProductType,
   productTypeUtils,
   StripeProductId,
-} from "../../../model";
-import { Price } from "../../../dtos";
+} from "../../../api/model";
+import { Price } from "../../../api/dto";
 import { CampaignHelper } from "../../../controllers/campaign/campaign.helper";
 
 const currencyPriceConfigs: Record<

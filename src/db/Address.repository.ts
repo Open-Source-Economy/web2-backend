@@ -1,7 +1,7 @@
 import { Pool } from "pg";
-import { Address, AddressId, CompanyId, UserId } from "../model";
+import { Address, AddressId, CompanyId, UserId } from "../api/model";
 import { pool } from "../dbPool";
-import { CreateAddressBody } from "../dtos";
+import { CreateAddressBody } from "../api/dto";
 
 export function getAddressRepository(): AddressRepository {
   return new AddressRepositoryImpl(pool);

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as dto from "../dtos";
+import * as dto from "../api/dto";
 import { StatusCodes } from "http-status-codes";
 import {
   addressRepo,
@@ -12,8 +12,8 @@ import {
 import { secureToken } from "../utils";
 import { mailService } from "../services";
 import Decimal from "decimal.js";
-import { OwnerId, Project } from "../model";
-import { ApiError } from "../model/error/ApiError";
+import { OwnerId, Project } from "../api/model";
+import { ApiError } from "../api/model/error/ApiError";
 import { logger } from "../config";
 import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUserPermissionToken.repository";
 import { CampaignHelper } from "./campaign/campaign.helper";

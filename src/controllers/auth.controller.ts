@@ -9,7 +9,7 @@ import {
   User,
   UserId,
   UserRepository,
-} from "../model";
+} from "../api/model";
 import { StatusCodes } from "http-status-codes";
 import {
   AuthInfo,
@@ -26,7 +26,7 @@ import {
   StatusBody,
   StatusQuery,
   StatusResponse,
-} from "../dtos";
+} from "../api/dto";
 import { ensureNoEndingTrailingSlash, secureToken } from "../utils";
 import {
   companyRepo,
@@ -36,11 +36,11 @@ import {
   userRepo,
   userRepositoryRepo,
 } from "../db";
-import { ApiError } from "../model/error/ApiError";
+import { ApiError } from "../api/model/error/ApiError";
 import {
   GetRepositoryUserInviteInfoQuery,
   GetRepositoryUserInviteInfoResponse,
-} from "../dtos/auth/GetRepositoryUserInviteInfo.dto";
+} from "../api/dto/auth/GetRepositoryUserInviteInfo.dto";
 import { config } from "../config";
 
 export class AuthController {

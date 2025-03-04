@@ -9,7 +9,7 @@ import {
   User,
   UserId,
   UserRole,
-} from "../../model";
+} from "../../api/model";
 import { pool } from "../../dbPool";
 import { encrypt } from "../../utils";
 

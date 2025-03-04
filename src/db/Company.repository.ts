@@ -1,7 +1,7 @@
 import { Pool } from "pg";
-import { Company, CompanyId } from "../model";
+import { Company, CompanyId } from "../api/model";
 import { pool } from "../dbPool";
-import { CreateCompanyBody } from "../dtos";
+import { CreateCompanyBody } from "../api/dto";
 import { logger } from "../config";
 
 export function getCompanyRepository(): CompanyRepository {

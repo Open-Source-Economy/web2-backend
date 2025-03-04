@@ -1,7 +1,7 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import { CompanyId, CompanyUserRole, UserId } from "../../../model";
+import { CompanyId, CompanyUserRole, UserId } from "../../../api/model";
 import { Fixture } from "../../__helpers__/Fixture";
-import { CreateCompanyBody } from "../../../dtos";
+import { CreateCompanyBody } from "../../../api/dto";
 import { companyRepo, userCompanyRepo, userRepo } from "../../../db";
 
 describe("UserCompanyRepository", () => {

@@ -10,7 +10,7 @@ import {
   RepositoryId,
   StripePrice,
   StripeProduct,
-} from "../../model";
+} from "../../api/model";
 import { pool } from "../../dbPool";
 
 export function getCombinedStripeRepository(): CombinedStripeRepository {

@@ -7,7 +7,7 @@ import {
   OwnerId,
   Repository,
   RepositoryId,
-} from "../../../model";
+} from "../../../api/model";
 import fs from "fs";
 import { logger } from "../../../config";
 import { issueRepo, ownerRepo, repositoryRepo } from "../../../db";

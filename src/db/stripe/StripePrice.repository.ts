@@ -6,7 +6,7 @@ import {
   StripePrice,
   StripePriceId,
   StripeProductId,
-} from "../../model";
+} from "../../api/model";
 
 export function getStripePriceRepository(): StripePriceRepository {
   return new StripePriceRepositoryImpl(pool);

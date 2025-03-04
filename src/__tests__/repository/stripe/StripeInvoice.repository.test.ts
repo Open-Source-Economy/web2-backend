@@ -1,5 +1,5 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import { Currency, StripeInvoiceLine, StripePriceId } from "../../../model";
+import { Currency, StripeInvoiceLine, StripePriceId } from "../../../api/model";
 import { Fixture } from "../../__helpers__/Fixture";
 import {
   stripeCustomerRepo,

@@ -4,7 +4,7 @@ import {
   GetPricesQuery,
   GetPricesResponse,
   ResponseBody,
-} from "../../dtos";
+} from "../../api/dto";
 import { Request, Response } from "express";
 
 export class StripeController {

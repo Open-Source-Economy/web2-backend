@@ -5,7 +5,7 @@ import {
   ProductType,
   productTypeUtils,
   UserId,
-} from "../model";
+} from "../api/model";
 import { pool } from "../dbPool";
 import { getManualInvoiceRepository } from "./ManualInvoice.repository";
 import { logger } from "../config";
@@ -167,10 +167,10 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
     const creditCalcCase = `
     CASE
       WHEN sp.type = '${ProductType.CREDIT}' THEN sl.quantity
-      WHEN sp.type = '${ProductType.INDIVIDUAL_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.INDIVIDUAL_PLAN).amount.toNumber()}
-      WHEN sp.type = '${ProductType.START_UP_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.START_UP_PLAN).amount.toNumber()}
-      WHEN sp.type = '${ProductType.SCALE_UP_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.SCALE_UP_PLAN).amount.toNumber()}
-      WHEN sp.type = '${ProductType.ENTERPRISE_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.ENTERPRISE_PLAN).amount.toNumber()}
+      WHEN sp.type = '${ProductType.INDIVIDUAL_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.INDIVIDUAL_PLAN)}
+      WHEN sp.type = '${ProductType.START_UP_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.START_UP_PLAN)}
+      WHEN sp.type = '${ProductType.SCALE_UP_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.SCALE_UP_PLAN)}
+      WHEN sp.type = '${ProductType.ENTERPRISE_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.ENTERPRISE_PLAN)}
       ELSE 0
     END`;
 

@@ -1,5 +1,5 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import { OwnerId, RepositoryId } from "../../../model";
+import { OwnerId, RepositoryId } from "../../../api/model";
 import { Fixture } from "../../__helpers__/Fixture";
 import { ownerRepo, repositoryRepo } from "../../../db";
 

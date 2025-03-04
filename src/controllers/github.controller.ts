@@ -27,7 +27,7 @@ import {
   RequestIssueFundingQuery,
   RequestIssueFundingResponse,
   ResponseBody,
-} from "../dtos";
+} from "../api/dto";
 import {
   CompanyId,
   ContributorVisibility,
@@ -35,7 +35,7 @@ import {
   ManagedIssueState,
   OwnerId,
   RepositoryId,
-} from "../model";
+} from "../api/model";
 import { StatusCodes } from "http-status-codes";
 import {
   getFinancialIssueRepository,
@@ -44,7 +44,7 @@ import {
   managedIssueRepo,
   planAndCreditsRepo,
 } from "../db";
-import { ApiError } from "../model/error/ApiError";
+import { ApiError } from "../api/model/error/ApiError";
 
 const financialIssueRepo = getFinancialIssueRepository();
 

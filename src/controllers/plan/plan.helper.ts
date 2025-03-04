@@ -4,10 +4,10 @@ import {
   productTypeUtils,
   StripeProduct,
   StripeProductId,
-} from "../../model";
+} from "../../api/model";
 import { StatusCodes } from "http-status-codes";
 import { stripeProductRepo } from "../../db";
-import { ApiError } from "../../model/error/ApiError";
+import { ApiError } from "../../api/model/error/ApiError";
 import { stripe, StripeHelper } from "../stripe";
 import Stripe from "stripe";
 

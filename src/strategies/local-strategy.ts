@@ -3,7 +3,7 @@ import { Strategy } from "passport-local";
 
 import { encrypt } from "../utils";
 import { CreateUser, getUserRepository, UserRepository } from "../db/";
-import { LocalUser, User, UserRole } from "../model";
+import { LocalUser, User, UserRole } from "../api/model";
 
 const repo: UserRepository = getUserRepository();
 

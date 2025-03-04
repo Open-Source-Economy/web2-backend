@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { planAndCreditsRepo, userRepo } from "../db/";
-import * as dto from "../dtos";
+import * as dto from "../api/dto";
 import { StatusCodes } from "http-status-codes";
-import { CompanyId, Currency, UserId } from "../model";
-import { ApiError } from "../model/error/ApiError";
+import { CompanyId, Currency, UserId } from "../api/model";
+import { ApiError } from "../api/model/error/ApiError";
 
 export class UserController {
   static async getAvailableCredit(

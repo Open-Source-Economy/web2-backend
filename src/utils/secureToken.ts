@@ -1,6 +1,6 @@
 import { config, logger } from "../config";
 import jwt from "jsonwebtoken";
-import { ApiError } from "../model/error/ApiError";
+import { ApiError } from "../api/model/error/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
 

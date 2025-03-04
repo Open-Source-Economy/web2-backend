@@ -2,8 +2,6 @@ import { ValidationError, Validator } from "../error";
 import { OwnerId, ProjectId, RepositoryId } from "../github";
 import { ApiError } from "../error/ApiError";
 import { StatusCodes } from "http-status-codes";
-import { Credit, CreditUnit } from "../credit";
-import Decimal from "decimal.js";
 
 export class StripeProductId {
   id: string;
@@ -87,21 +85,18 @@ export const productTypeUtils = {
     }
   },
 
-  credits: (
-    productType: ProductType,
-    unit: CreditUnit = CreditUnit.MINUTE,
-  ): Credit => {
+  credits: (productType: ProductType): number => {
     switch (productType) {
       case ProductType.CREDIT:
-        return { amount: new Decimal(1), unit: CreditUnit.MINUTE };
+        return 1;
       case ProductType.INDIVIDUAL_PLAN:
-        return { amount: new Decimal(15), unit: CreditUnit.MINUTE };
+        return 30;
       case ProductType.START_UP_PLAN:
-        return { amount: new Decimal(15), unit: CreditUnit.MINUTE };
+        return 2 * 60;
       case ProductType.SCALE_UP_PLAN:
-        return { amount: new Decimal(15), unit: CreditUnit.MINUTE };
+        return 5 * 60;
       case ProductType.ENTERPRISE_PLAN:
-        return { amount: new Decimal(15), unit: CreditUnit.MINUTE };
+        return 10 * 60;
       default:
         throw new ApiError(
           StatusCodes.NOT_IMPLEMENTED,

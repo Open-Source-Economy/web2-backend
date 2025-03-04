@@ -1,5 +1,5 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
-import { NewsletterSubscription } from "../../model/NewsletterSubscription";
+import { NewsletterSubscription } from "../../api/model/NewsletterSubscription";
 import { v4 as uuidv } from "uuid";
 import { newsletterSubscriptionRepo } from "../../db";
 

@@ -4,9 +4,9 @@ import {
   ManagedIssueId,
   ManagedIssueState,
   UserId,
-} from "../../model";
+} from "../../api/model";
 
-import { CreateManagedIssueBody } from "../../dtos";
+import { CreateManagedIssueBody } from "../../api/dto";
 import { Fixture } from "../__helpers__/Fixture";
 import { v4 as uuidv } from "uuid";
 import {

@@ -3,9 +3,9 @@ import {
   CompanyId,
   CompanyUserPermissionToken,
   CompanyUserPermissionTokenId,
-} from "../../model";
+} from "../../api/model";
 import { pool } from "../../dbPool";
-import { CreateCompanyUserPermissionTokenBody } from "../../dtos";
+import { CreateCompanyUserPermissionTokenBody } from "../../api/dto";
 import { logger } from "../../config";
 
 export function getCompanyUserPermissionTokenRepository(): CompanyUserPermissionTokenRepository {

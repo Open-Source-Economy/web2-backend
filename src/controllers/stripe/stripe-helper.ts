@@ -14,12 +14,12 @@ import {
   StripeCustomerUser,
   StripePrice,
   userUtils,
-} from "../../model";
-import { ApiError } from "../../model/error/ApiError";
+} from "../../api/model";
+import { ApiError } from "../../api/model/error/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { stripe } from "./index";
 import { logger } from "../../config";
-import { ValidationError } from "../../model/error";
+import { ValidationError } from "../../api/model/error";
 
 export class StripeHelper {
   // to read:

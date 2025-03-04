@@ -1,7 +1,7 @@
 import { Pool } from "pg";
-import { Repository, RepositoryId } from "../../model";
+import { Repository, RepositoryId } from "../../api/model";
 import { pool } from "../../dbPool";
-import { ValidationError } from "../../model/error";
+import { ValidationError } from "../../api/model/error";
 
 export function getRepositoryRepository(): RepositoryRepository {
   return new RepositoryRepositoryImpl(pool);

@@ -9,7 +9,7 @@ import {
   StripeCustomerId,
   StripeCustomerUser,
   UserId,
-} from "../../model";
+} from "../../api/model";
 import {
   companyRepo,
   issueFundingRepo,
@@ -24,7 +24,7 @@ import {
   userRepo,
 } from "../../db/";
 import { Fixture } from "../__helpers__/Fixture";
-import { CreateIssueFundingBody, CreateManualInvoiceBody } from "../../dtos";
+import { CreateIssueFundingBody, CreateManualInvoiceBody } from "../../api/dto";
 import { issueRepo, ownerRepo, repositoryRepo } from "../../db";
 
 describe("PlanAndCreditsRepository", () => {
@@ -293,9 +293,7 @@ describe("PlanAndCreditsRepository", () => {
           );
           await expected(
             testedUser,
-            productTypeUtils
-              .credits(ProductType.ENTERPRISE_PLAN)
-              .amount.toNumber(),
+            productTypeUtils.credits(ProductType.ENTERPRISE_PLAN),
           );
         };
 

@@ -1,7 +1,7 @@
 import {
   CompanyUserPermissionToken,
   RepositoryUserPermissionToken,
-} from "../model";
+} from "../api/model";
 
 declare global {
   namespace Express {

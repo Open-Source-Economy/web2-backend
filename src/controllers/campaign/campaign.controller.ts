@@ -5,7 +5,7 @@ import {
   GetCampaignQuery,
   GetCampaignResponse,
   ResponseBody,
-} from "../../dtos";
+} from "../../api/dto";
 import {
   CampaignPriceType,
   CampaignProductType,
@@ -13,7 +13,7 @@ import {
   OwnerId,
   Project,
   RepositoryId,
-} from "../../model";
+} from "../../api/model";
 import { StatusCodes } from "http-status-codes";
 import { stripeMiscellaneousRepository } from "../../db";
 import { currencyAPI } from "../../services";
@@ -167,7 +167,6 @@ export class CampaignController {
         {} as Record<Currency, number>,
       ),
       prices,
-      description: null,
     };
     res.status(StatusCodes.OK).send({ success: response });
   }

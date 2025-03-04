@@ -11,8 +11,8 @@ import {
   CreateSubscriptionQuery,
   CreateSubscriptionResponse,
   ResponseBody,
-} from "../../dtos";
-import { ApiError } from "../../model/error/ApiError";
+} from "../../api/dto";
+import { ApiError } from "../../api/model/error/ApiError";
 import { StripeHelper } from "./stripe-helper";
 import { stripe } from "./index";
 

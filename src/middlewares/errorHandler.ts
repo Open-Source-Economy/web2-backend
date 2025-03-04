@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { config, logger, NodeEnv } from "../config";
 import { StatusCodes } from "http-status-codes";
-import { ApiError } from "../model/error/ApiError";
-import { ErrorResponse } from "../dtos";
+import { ApiError } from "../api/model/error/ApiError";
+import { ErrorResponse } from "../api/dto";
 
 export function errorConverter(
   err: Error,

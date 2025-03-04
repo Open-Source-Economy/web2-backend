@@ -3,7 +3,7 @@ import {
   IssueId,
   ManagedIssueState,
   UserId,
-} from "../model/";
+} from "../model";
 
 // TODO: put that somewhere else
 export interface CreateManagedIssueBody {

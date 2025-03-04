@@ -6,7 +6,7 @@ import {
   userRepositoryRepo,
 } from "../../../db";
 import { Fixture } from "../../__helpers__/Fixture";
-import { Currency, RepositoryUserRole, UserId } from "../../../model";
+import { Currency, RepositoryUserRole, UserId } from "../../../api/model";
 
 describe("UserRepositoryRepository", () => {
   setupTestDB();

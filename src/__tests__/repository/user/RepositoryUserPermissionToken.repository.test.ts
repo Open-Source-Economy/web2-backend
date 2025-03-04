@@ -1,7 +1,7 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 
 import { Fixture } from "../../__helpers__/Fixture";
-import { RepositoryUserPermissionTokenId } from "../../../model";
+import { RepositoryUserPermissionTokenId } from "../../../api/model";
 import {
   ownerRepo,
   repositoryRepo,

@@ -5,7 +5,7 @@ import {
   ThirdPartyUser,
   ThirdPartyUserId,
   UserRole,
-} from "../../../model";
+} from "../../../api/model";
 import { Fixture } from "../../__helpers__/Fixture";
 import { getUserRepository } from "../../../db";
 

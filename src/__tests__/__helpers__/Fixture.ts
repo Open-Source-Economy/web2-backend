@@ -46,7 +46,7 @@ import {
   UserId,
   UserRepository,
   UserRole,
-} from "../../model";
+} from "../../api/model";
 import {
   CreateAddressBody,
   CreateCompanyBody,
@@ -54,7 +54,7 @@ import {
   CreateIssueFundingBody,
   CreateManagedIssueBody,
   CreateManualInvoiceBody,
-} from "../../dtos";
+} from "../../api/dto";
 import { v4 as uuid } from "uuid";
 import Decimal from "decimal.js";
 import { CreateUser } from "../../db";

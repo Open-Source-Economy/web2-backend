@@ -1,7 +1,7 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import { CompanyId, CompanyUserPermissionTokenId } from "../../../model";
+import { CompanyId, CompanyUserPermissionTokenId } from "../../../api/model";
 import { companyRepo, companyUserPermissionTokenRepo } from "../../../db";
-import { CreateCompanyUserPermissionTokenBody } from "../../../dtos";
+import { CreateCompanyUserPermissionTokenBody } from "../../../api/dto";
 import { Fixture } from "../../__helpers__/Fixture";
 
 describe("CompanyUserPermissionTokenRepository", () => {

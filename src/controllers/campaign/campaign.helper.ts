@@ -1,4 +1,4 @@
-import { Price } from "../../dtos";
+import { Price } from "../../api/dto";
 import {
   CampaignPriceType,
   CampaignProductType,
@@ -9,10 +9,10 @@ import {
   StripePrice,
   StripeProduct,
   StripeProductId,
-} from "../../model";
+} from "../../api/model";
 import { StatusCodes } from "http-status-codes";
 import { combinedStripeRepo, stripeProductRepo } from "../../db";
-import { ApiError } from "../../model/error/ApiError";
+import { ApiError } from "../../api/model/error/ApiError";
 import { stripe, StripeHelper } from "../stripe";
 import { currencyAPI } from "../../services";
 import { logger } from "../../config";

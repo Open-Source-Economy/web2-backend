@@ -5,10 +5,15 @@ import {
   repositoryUserPermissionTokenRepo,
   userRepo,
 } from "../db/";
-import { Provider, ThirdPartyUser, ThirdPartyUserId, UserRole } from "../model";
+import {
+  Provider,
+  ThirdPartyUser,
+  ThirdPartyUserId,
+  UserRole,
+} from "../api/model";
 import { config } from "../config";
-import { ValidationError } from "../model/error";
-import { ApiError } from "../model/error/ApiError";
+import { ValidationError } from "../api/model/error";
+import { ApiError } from "../api/model/error/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { ensureNoEndingTrailingSlash } from "../utils";
 

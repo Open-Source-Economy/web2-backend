@@ -1,11 +1,11 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
-import { CompanyId, ManualInvoiceId, UserId } from "../../model";
+import { CompanyId, ManualInvoiceId, UserId } from "../../api/model";
 import {
   getCompanyRepository,
   getManualInvoiceRepository,
   getUserRepository,
 } from "../../db/";
-import { CreateManualInvoiceBody } from "../../dtos";
+import { CreateManualInvoiceBody } from "../../api/dto";
 import { Fixture } from "../__helpers__/Fixture";
 import { v4 as uuidv } from "uuid";
 

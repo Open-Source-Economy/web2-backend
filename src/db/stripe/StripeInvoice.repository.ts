@@ -5,7 +5,7 @@ import {
   StripeInvoiceId,
   StripeInvoiceLine,
   UserId,
-} from "../../model";
+} from "../../api/model";
 import { pool } from "../../dbPool";
 import {
   getStripeInvoiceLineRepository,
