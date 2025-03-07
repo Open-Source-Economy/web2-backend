@@ -49,7 +49,7 @@ export class StripeCheckoutController {
 
     const items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     for (const item of req.body.priceItems) {
-      items.push({ price: item.priceId.id, quantity: item.quantity });
+      items.push({ price: item.priceId.id, quantity: item.quantity });   
     }
     logger.debug("Creating checkout session with items:", items);
 
