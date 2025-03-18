@@ -12,6 +12,7 @@ import {
   StripeProduct,
 } from "../../api/model";
 import { pool } from "../../dbPool";
+import { logger } from "../../config";
 
 export function getCombinedStripeRepository(): CombinedStripeRepository {
   return new CombinedStripeRepositoryImpl(pool);
@@ -78,15 +79,20 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     let whereClause = "";
     let params: any[] = [];
 
+    // Only apply GitHub repository/owner filters when projectId is provided
     if (projectId) {
-      // Only apply GitHub repository/owner filters when projectId is provided
-      whereClause = `WHERE stripe_product.github_owner_login = $1
-        AND stripe_product.github_repository_name = $2`;
-
       if (projectId instanceof RepositoryId) {
+        logger.debug(
+          `Fetching products for repository ${projectId.ownerId.login}/${projectId.name}`,
+        );
+        whereClause = `WHERE stripe_product.github_owner_login = $1
+        AND stripe_product.github_repository_name = $2`;
         params = [projectId.ownerId.login, projectId.name];
       } else if (projectId instanceof OwnerId) {
-        params = [projectId.login, null];
+        logger.debug(`Fetching products for owner ${projectId.login}`);
+        whereClause = `WHERE stripe_product.github_owner_login = $1
+        AND (stripe_product.github_repository_name IS NULL)`;
+        params = [projectId.login];
       }
     } else {
       // For plans, we don't want to filter by GitHub owner/repo
@@ -112,6 +118,8 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
         `,
       params,
     );
+
+    logger.debug("Fetched products with prices", result.rows);
 
     // Rest of the method remains the same
     // Group rows by product
@@ -179,6 +187,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     // 1. Validate product types
     for (const productType of expectedProductTypes) {
       if (!output[productType]) {
+        logger.error(`Missing product type: ${productType}`, output);
         throw new Error(`Missing product type: ${productType}`);
       }
     }
@@ -197,6 +206,10 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
       // Check that the product has all currencies
       for (const currency of allCurrencies) {
         if (!productPrices[currency]) {
+          logger.error(
+            `Missing currency "${currency}" for product "${productType}"`,
+            output,
+          );
           throw new Error(
             `Missing currency "${currency}" for product "${productType}". All products must support the same set of currencies.`,
           );
@@ -206,6 +219,10 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
         const currencyPrices = productPrices[currency];
         for (const priceType of expectedPriceTypes) {
           if (!currencyPrices[priceType]) {
+            logger.error(
+              `Missing price type "${priceType}" for product "${productType}" in currency "${currency}"`,
+              output,
+            );
             throw new Error(
               `Missing price type "${priceType}" for product "${productType}" in currency "${currency}"`,
             );
