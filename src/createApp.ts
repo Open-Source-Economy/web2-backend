@@ -11,6 +11,7 @@ import * as morgan from "./config";
 import { config, NodeEnv } from "./config";
 import { authLimiter } from "./middlewares/rateLimiter";
 import { ApiError } from "./api/model/error/ApiError";
+import path from "path";
 
 var cors = require("cors");
 
@@ -27,6 +28,8 @@ export function createApp() {
   };
 
   app.use(cors(corsOptions));
+
+  app.use("/public", express.static(path.join(__dirname, "../public")));
 
   if (config.env !== NodeEnv.Local) {
     app.use(morgan.successHandler);

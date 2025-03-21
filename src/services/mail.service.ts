@@ -3,6 +3,7 @@ import { config, logger } from "../config";
 import { Company, Owner, Repository } from "../api/model";
 import { promises as fs } from "fs";
 import path from "path";
+import { ensureNoEndingTrailingSlash } from "../utils";
 
 export class MailService {
   private registerURL: string = `${config.frontEndUrl}/sign-up`;
@@ -33,7 +34,7 @@ export class MailService {
     const setUpYourAccountLink = `${this.registerURL}?company_token=${token}`;
 
     logger.info(
-      `Sending email to ${toEmail} with compnay invite link ${setUpYourAccountLink}`,
+      `Sending email to ${toEmail} with company invite link ${setUpYourAccountLink}`,
     );
 
     // Read the HTML file
@@ -50,10 +51,28 @@ export class MailService {
       .replace("{{setUpYourAccountLink}}", setUpYourAccountLink)
       .replace("{{websiteLink}}", config.frontEndUrl);
 
-    // htmlContent = htmlContent
-    //     .replace(/{{toName}}/g, toName || "")
-    //     .replace(/{{companyName}}/g, company.name)
-    //     .replace(/{{setUpYourAccountLink}}/g, setUpYourAccountLink);
+    // images replacement
+    htmlContent = htmlContent
+      .replace(
+        "{{background}}",
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img.png`,
+      )
+      .replace(
+        "{{background-mobile}}",
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img_mobile.jpg`,
+      )
+      .replace(
+        "{{ose-logo}}",
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/cat_img.png`,
+      )
+      .replace(
+        /{{checkmark-user-color}}/g,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_checkmark.png`,
+      )
+      .replace(
+        "{{lauriane-signature}}",
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/signature.png`,
+      );
 
     // Send email with both text and HTML
     await this.sendMail(toEmail, subject, htmlContent);
@@ -99,6 +118,32 @@ export class MailService {
       .replace("{{repositoryUrl}}", repositoryUrl || "")
       .replace("{{repositoryAvatarUrl}}", repositoryAvatarUrl)
       .replace("{{websiteLink}}", config.frontEndUrl);
+    // images replacement
+    htmlContent = htmlContent
+      .replace(
+        "{{background}}",
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img.png`,
+      )
+      .replace(
+        "{{background-mobile}}",
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img_mobile.jpg`,
+      )
+      .replace(
+        "{{ose-logo}}",
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/cat_img.png`,
+      )
+      .replace(
+        "{{fragment}}",
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/register-template/fragment.png`,
+      )
+      .replace(
+        /{{checkmark-developer-color}}/g,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/register-template/orange_checkmark.png`,
+      )
+      .replace(
+        "{{lauriane-signature}}",
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/signature.png`,
+      );
 
     // htmlContent = htmlContent
     //     .replace(/{{toName}}/g, toName || userLogin)
