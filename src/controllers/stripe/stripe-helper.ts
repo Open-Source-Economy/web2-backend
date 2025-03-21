@@ -1,4 +1,5 @@
 import {
+  addressRepo,
   stripeCustomerRepo,
   stripeCustomerUserRepo,
   stripePriceRepo,
@@ -41,13 +42,6 @@ export class StripeHelper {
           StatusCodes.NOT_IMPLEMENTED,
           "Multiple companies not supported",
         );
-      } else if (companies.length === 1) {
-        return new ApiError(
-          StatusCodes.NOT_IMPLEMENTED,
-          "Company user not supported yes ",
-        );
-
-        // const address = await addressRepo.getCompanyUserAddress(user.id);
       }
 
       let stripeAddress: Stripe.Emptyable<Stripe.AddressParam> = {

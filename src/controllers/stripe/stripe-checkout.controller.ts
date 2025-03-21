@@ -64,6 +64,7 @@ export class StripeCheckoutController {
         : req.user
           ? userUtils.email(req.user) ?? undefined
           : undefined,
+      allow_promotion_codes: true,
       // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
       // the actual Session ID is returned in the query parameter when your customer
       // is redirected to the success page.
