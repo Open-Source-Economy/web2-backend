@@ -96,17 +96,6 @@ export class CampaignController {
     const raisedAmountPerCurrency =
       await stripeMiscellaneousRepository.getRaisedAmountPerCurrency(projectId);
 
-    if (
-      projectId instanceof RepositoryId &&
-      projectId.ownerId.login === "apache" &&
-      projectId.name === "pekko"
-    ) {
-      raisedAmountPerCurrency[Currency.USD] =
-        raisedAmountPerCurrency[Currency.USD] + 50000; // manual invoice #1
-      raisedAmountPerCurrency[Currency.CHF] =
-        raisedAmountPerCurrency[Currency.CHF] + 100000; // manual invoice #2
-    }
-
     const raisedAmount: Record<Currency, number> = Object.values(
       Currency,
     ).reduce(
