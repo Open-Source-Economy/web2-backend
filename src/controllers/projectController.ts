@@ -45,6 +45,7 @@ import {
   planAndCreditsRepo,
 } from "../db";
 import { ApiError } from "../api/model/error/ApiError";
+import { githubSyncService } from "../services";
 
 const financialIssueRepo = getFinancialIssueRepository();
 
@@ -58,7 +59,7 @@ export class ProjectController {
     >,
     res: Response<ResponseBody<GetOwnerResponse>>,
   ) {
-    const owner = await financialIssueRepo.getOwner(
+    const owner = await githubSyncService.syncOwner(
       new OwnerId(req.params.owner),
     );
 
@@ -82,7 +83,7 @@ export class ProjectController {
       req.params.repo,
     );
     const [owner, repository] =
-      await financialIssueRepo.getRepository(repositoryId);
+      await githubSyncService.syncRepository(repositoryId);
 
     const response: GetRepositoryResponse = {
       owner: owner,

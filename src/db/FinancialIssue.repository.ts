@@ -6,35 +6,24 @@ import {
   IssueId,
   ManagedIssue,
   Owner,
-  OwnerId,
-  Project,
-  ProjectId,
   Repository,
-  RepositoryId,
   User,
 } from "../api/model";
 import { pool } from "../dbPool";
-import { getGitHubAPI, GitHubApi } from "../services";
+import { GitHubApi, githubService } from "../services";
 import { logger } from "../config";
 import { issueRepo, ownerRepo, repositoryRepo } from "./github";
 import { userRepo } from "./user";
 import { issueFundingRepo, managedIssueRepo } from "./index";
 
 export function getFinancialIssueRepository(
-  gitHubApi: GitHubApi = getGitHubAPI(),
+  gitHubApi: GitHubApi = githubService,
 ): FinancialIssueRepository {
   return new FinancialIssueRepositoryImpl(pool, gitHubApi);
 }
 
 // TODO: optimize this implementation
 export interface FinancialIssueRepository {
-  getOwner(ownerId: OwnerId): Promise<Owner>;
-
-  // TODO: this function should not be here. And there is a copy-paste get
-  getRepository(repositoryId: RepositoryId): Promise<[Owner, Repository]>;
-
-  getProject(projectId: ProjectId): Promise<Project>;
-
   get(issueId: IssueId): Promise<FinancialIssue | null>;
 
   getAll(): Promise<FinancialIssue[]>;
@@ -44,123 +33,9 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
   pool: Pool;
   githubService: GitHubApi;
 
-  constructor(pool: Pool, githubService = getGitHubAPI()) {
+  constructor(pool: Pool, githubService: GitHubApi) {
     this.pool = pool;
     this.githubService = githubService;
-  }
-
-  async getOwner(ownerId: OwnerId): Promise<Owner> {
-    const githubOwnerPromise = this.githubService.getOwner(ownerId);
-    githubOwnerPromise
-      .then(async (owner) => {
-        await ownerRepo.insertOrUpdate(owner as Owner);
-      })
-      .catch((error) => {
-        logger.error("Error fetching GitHub data:", error);
-      });
-
-    const owner = await ownerRepo
-      .getById(ownerId)
-      .then(async (owner) => {
-        if (!owner) {
-          return githubOwnerPromise;
-        }
-        return owner;
-      })
-      .catch((error) => {
-        logger.error(
-          `Owner ${JSON.stringify(ownerId)} does not exist in the DB and go an error fetching GitHub data:`,
-          error,
-        );
-        return null;
-      });
-
-    if (owner) {
-      return owner;
-    } else {
-      throw new Error(
-        `Failed to fetch all required data for repository ${JSON.stringify(ownerId)}`,
-      );
-    }
-  }
-
-  async getRepository(
-    repositoryId: RepositoryId,
-  ): Promise<[Owner, Repository]> {
-    const githubRepoPromise: Promise<[Owner, Repository]> =
-      this.githubService.getOwnerAndRepository(repositoryId);
-
-    githubRepoPromise
-      .then(async ([owner, repo]) => {
-        ownerRepo
-          .insertOrUpdate(owner as Owner)
-          .then(async () => {
-            await repositoryRepo.insertOrUpdate(repo as Repository);
-          })
-          .catch((error) => {
-            logger.error("Error updating the DB", error);
-          });
-
-        return [owner, repo];
-      })
-      .catch((error) => {
-        logger.error("Error fetching GitHub data:", error);
-        return null;
-      });
-
-    const owner: Owner | null = await ownerRepo
-      .getById(repositoryId.ownerId)
-      .then(async (owner) => {
-        if (!owner) {
-          const [owner, _] = await githubRepoPromise;
-          return owner;
-        }
-        return owner;
-      })
-      .catch((error) => {
-        logger.error(
-          `Owner ${JSON.stringify(repositoryId.ownerId)} does not exist in the DB and go an error fetching GitHub data:`,
-          error,
-        );
-        return null;
-      });
-
-    const repo: Repository | null = await repositoryRepo
-      .getById(repositoryId)
-      .then(async (repo) => {
-        if (!repo) {
-          const [_, repo] = await githubRepoPromise;
-          return repo;
-        }
-        return repo;
-      })
-      .catch((error) => {
-        logger.error(
-          `Repository ${JSON.stringify(repositoryId)} does not exist in the DB and go an error fetching GitHub data:`,
-          error,
-        );
-        return null;
-      });
-
-    if (owner && repo) {
-      return [owner, repo];
-    } else {
-      throw new Error(
-        `Failed to fetch all required data for repository ${JSON.stringify(repositoryId)}`,
-      );
-    }
-  }
-
-  async getProject(projectId: ProjectId): Promise<Project> {
-    if (projectId instanceof RepositoryId) {
-      const [owner, repository] = await this.getRepository(
-        new RepositoryId(new OwnerId(projectId.ownerId.login), projectId.name),
-      );
-      return new Project(owner, repository);
-    } else {
-      const owner = await this.getOwner(new OwnerId(projectId.login));
-      return new Project(owner);
-    }
   }
 
   async get(issueId: IssueId): Promise<FinancialIssue> {

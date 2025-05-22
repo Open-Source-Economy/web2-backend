@@ -24,6 +24,8 @@ import {
   OwnerType,
   PriceType,
   ProductType,
+  Project,
+  ProjectEcosystem,
   ProjectId,
   Provider,
   Repository,
@@ -464,5 +466,18 @@ export const Fixture = {
       new Decimal(rate),
       currency,
     );
+  },
+
+  project(projectId: ProjectId, ecosystem?: ProjectEcosystem): Project {
+    let owner: Owner;
+    let repository: Repository | undefined = undefined;
+    if (projectId instanceof OwnerId) {
+      owner = this.owner(projectId);
+    } else {
+      owner = this.owner(projectId.ownerId);
+      repository = this.repository(projectId);
+    }
+
+    return new Project(projectId, owner, repository, ecosystem);
   },
 };

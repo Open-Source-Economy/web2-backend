@@ -5,21 +5,18 @@ import {
   addressRepo,
   companyRepo,
   companyUserPermissionTokenRepo,
-  getFinancialIssueRepository,
   manualInvoiceRepo,
   repositoryUserPermissionTokenRepo,
 } from "../db";
 import { secureToken } from "../utils";
-import { mailService } from "../services";
+import { githubSyncService, mailService } from "../services";
 import Decimal from "decimal.js";
-import { OwnerId, Project } from "../api/model";
+import { OwnerId, ProjectUtils } from "../api/model";
 import { ApiError } from "../api/model/error/ApiError";
 import { logger } from "../config";
 import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUserPermissionToken.repository";
 import { CampaignHelper } from "./campaign/campaign.helper";
 import { PlanHelper } from "./plan/plan.helper";
-
-const financialIssueRepo = getFinancialIssueRepository();
 
 export class AdminController {
   static async createAddress(
@@ -134,10 +131,10 @@ export class AdminController {
       email: req.body.userEmail,
     });
 
-    const user = await financialIssueRepo.getOwner(
+    const user = await githubSyncService.syncOwner(
       new OwnerId(req.body.userGithubOwnerLogin),
     );
-    const [owner, repository] = await financialIssueRepo.getRepository(
+    const [owner, repository] = await githubSyncService.syncRepository(
       req.body.repositoryId,
     );
 
@@ -217,8 +214,8 @@ export class AdminController {
     >,
     res: Response<dto.ResponseBody<dto.CreateCampaignProductAndPriceResponse>>,
   ) {
-    const projectId = Project.getId(req.params.owner, req.params.repo);
-    const project = await financialIssueRepo.getProject(projectId);
+    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
+    const project = await githubSyncService.syncProject(projectId);
 
     await CampaignHelper.createProductsAndPrices(project);
 

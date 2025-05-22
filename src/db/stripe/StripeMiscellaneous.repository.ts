@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { Currency, Project, ProjectId } from "../../api/model";
+import { Currency, ProjectId, ProjectUtils } from "../../api/model";
 import { pool } from "../../dbPool";
 
 export function getStripeMiscellaneousRepository(): StripeMiscellaneousRepository {
@@ -24,7 +24,7 @@ class StripeMiscellaneousRepositoryImpl
   async getRaisedAmountPerCurrency(
     projectId: ProjectId,
   ): Promise<Record<Currency, number>> {
-    const { ownerLogin, repoName } = Project.getDBParams(projectId);
+    const { ownerLogin, repoName } = ProjectUtils.getDBParams(projectId);
 
     // Base query with owner condition
     let query = `

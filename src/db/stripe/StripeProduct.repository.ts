@@ -2,8 +2,8 @@ import { Pool } from "pg";
 import { pool } from "../../dbPool";
 import {
   CampaignProductType,
-  Project,
   ProjectId,
+  ProjectUtils,
   RepositoryId,
   StripeProduct,
   StripeProductId,
@@ -126,7 +126,7 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
 
   async insert(product: StripeProduct): Promise<StripeProduct> {
     const client = await this.pool.connect();
-    const { ownerId, ownerLogin, repoId, repoName } = Project.getDBParams(
+    const { ownerId, ownerLogin, repoId, repoName } = ProjectUtils.getDBParams(
       product.projectId,
     );
 

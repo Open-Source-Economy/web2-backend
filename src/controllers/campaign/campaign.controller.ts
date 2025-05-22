@@ -11,7 +11,7 @@ import {
   CampaignProductType,
   Currency,
   OwnerId,
-  Project,
+  ProjectUtils,
   RepositoryId,
 } from "../../api/model";
 import { StatusCodes } from "http-status-codes";
@@ -85,7 +85,7 @@ export class CampaignController {
     >,
     res: Response<ResponseBody<GetCampaignResponse>>,
   ) {
-    const projectId = Project.getId(req.params.owner, req.params.repo);
+    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
     const prices = await CampaignHelper.getPrices(
       projectId,
       CAMPAIGN_PRICE_CONFIGS,
