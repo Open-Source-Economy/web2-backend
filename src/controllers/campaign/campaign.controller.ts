@@ -1,11 +1,5 @@
 import { Request, Response } from "express";
-import {
-  GetCampaignBody,
-  GetCampaignParams,
-  GetCampaignQuery,
-  GetCampaignResponse,
-  ResponseBody,
-} from "../../api/dto";
+import * as dto from "../../api/dto";
 import {
   CampaignPriceType,
   CampaignProductType,
@@ -75,24 +69,23 @@ export const CAMPAIGN_PRICE_CONFIGS: CampaignProductPriceConfig =
     {} as CampaignProductPriceConfig,
   );
 
-export class CampaignController {
-  static async getCampaign(
+export interface CampaignController {
+  getCampaign(
     req: Request<
-      GetCampaignParams,
-      ResponseBody<GetCampaignResponse>,
-      GetCampaignBody,
-      GetCampaignQuery
+      dto.GetCampaignParams,
+      dto.ResponseBody<dto.GetCampaignResponse>,
+      dto.GetCampaignBody,
+      dto.GetCampaignQuery
     >,
-    res: Response<ResponseBody<GetCampaignResponse>>,
-  ) {
-    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
-    const prices = await CampaignHelper.getPrices(
-      projectId,
-      CAMPAIGN_PRICE_CONFIGS,
-    );
+    res: Response<dto.ResponseBody<dto.GetCampaignResponse>>,
+  ): Promise<void>;
+}
 
-    logger.debug(`Prices: `, prices);
-
+// Helper functions
+const CampaignHelpers = {
+  async calculateRaisedAmounts(
+    projectId: RepositoryId | OwnerId,
+  ): Promise<Record<Currency, number>> {
     const raisedAmountPerCurrency =
       await stripeMiscellaneousRepository.getRaisedAmountPerCurrency(projectId);
 
@@ -123,6 +116,10 @@ export class CampaignController {
     logger.debug(`Raised amount per currency`, raisedAmountPerCurrency);
     logger.debug(`Raised amount`, raisedAmount);
 
+    return raisedAmount;
+  },
+
+  getTargetAmount(projectId: RepositoryId | OwnerId): number {
     let targetAmount$: number = 2_000 * 100; // default target amount
 
     if (projectId instanceof RepositoryId) {
@@ -142,21 +139,55 @@ export class CampaignController {
       if (projectId.login === "open-source-economy") targetAmount$ = 1000 * 100;
     }
 
-    const response: GetCampaignResponse = {
+    return targetAmount$;
+  },
+
+  convertTargetAmountToCurrencies(
+    targetAmount$: number,
+  ): Record<Currency, number> {
+    return Object.values(Currency).reduce(
+      (acc, currency) => {
+        acc[currency] = currencyAPI.convertPrice(
+          targetAmount$,
+          Currency.USD,
+          currency as Currency,
+        );
+        return acc;
+      },
+      {} as Record<Currency, number>,
+    );
+  },
+};
+
+export const CampaignController: CampaignController = {
+  async getCampaign(
+    req: Request<
+      dto.GetCampaignParams,
+      dto.ResponseBody<dto.GetCampaignResponse>,
+      dto.GetCampaignBody,
+      dto.GetCampaignQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetCampaignResponse>>,
+  ) {
+    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
+    const prices = await CampaignHelper.getPrices(
+      projectId,
+      CAMPAIGN_PRICE_CONFIGS,
+    );
+
+    logger.debug(`Prices: `, prices);
+
+    const raisedAmount =
+      await CampaignHelpers.calculateRaisedAmounts(projectId);
+    const targetAmount$ = CampaignHelpers.getTargetAmount(projectId);
+    const targetAmount =
+      CampaignHelpers.convertTargetAmountToCurrencies(targetAmount$);
+
+    const response: dto.GetCampaignResponse = {
       raisedAmount: raisedAmount,
-      targetAmount: Object.values(Currency).reduce(
-        (acc, currency) => {
-          acc[currency] = currencyAPI.convertPrice(
-            targetAmount$,
-            Currency.USD,
-            currency as Currency,
-          );
-          return acc;
-        },
-        {} as Record<Currency, number>,
-      ),
+      targetAmount: targetAmount,
       prices,
     };
     res.status(StatusCodes.OK).send({ success: response });
-  }
-}
+  },
+};

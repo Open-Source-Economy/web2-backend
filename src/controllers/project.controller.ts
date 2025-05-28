@@ -1,33 +1,5 @@
 import { Request, Response } from "express";
-import {
-  CreateIssueFundingBody,
-  CreateManagedIssueBody,
-  FundIssueBody,
-  FundIssueParams,
-  FundIssueQuery,
-  FundIssueResponse,
-  GetIssueBody,
-  GetIssueParams,
-  GetIssueQuery,
-  GetIssueResponse,
-  GetIssuesBody,
-  GetIssuesParams,
-  GetIssuesQuery,
-  GetIssuesResponse,
-  GetOwnerBody,
-  GetOwnerParams,
-  GetOwnerQuery,
-  GetOwnerResponse,
-  GetRepositoryBody,
-  GetRepositoryParams,
-  GetRepositoryQuery,
-  GetRepositoryResponse,
-  RequestIssueFundingBody,
-  RequestIssueFundingParams,
-  RequestIssueFundingQuery,
-  RequestIssueFundingResponse,
-  ResponseBody,
-} from "../api/dto";
+import * as dto from "../api/dto";
 import {
   CompanyId,
   ContributorVisibility,
@@ -49,134 +21,169 @@ import { githubSyncService } from "../services";
 
 const financialIssueRepo = getFinancialIssueRepository();
 
-export class ProjectController {
-  static async getOwner(
+export interface ProjectController {
+  getOwner(
     req: Request<
-      GetOwnerParams,
-      ResponseBody<GetOwnerResponse>,
-      GetOwnerBody,
-      GetOwnerQuery
+      dto.GetOwnerParams,
+      dto.ResponseBody<dto.GetOwnerResponse>,
+      dto.GetOwnerBody,
+      dto.GetOwnerQuery
     >,
-    res: Response<ResponseBody<GetOwnerResponse>>,
+    res: Response<dto.ResponseBody<dto.GetOwnerResponse>>,
+  ): Promise<void>;
+
+  getRepository(
+    req: Request<
+      dto.GetRepositoryParams,
+      dto.ResponseBody<dto.GetRepositoryResponse>,
+      dto.GetRepositoryBody,
+      dto.GetRepositoryQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetRepositoryResponse>>,
+  ): Promise<void>;
+
+  getAllFinancialIssues(
+    req: Request<
+      dto.GetIssuesParams,
+      dto.ResponseBody<dto.GetIssuesResponse>,
+      dto.GetIssuesBody,
+      dto.GetIssuesQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetIssuesResponse>>,
+  ): Promise<void>;
+
+  getIssue(
+    req: Request<
+      dto.GetIssueParams,
+      dto.ResponseBody<dto.GetIssueResponse>,
+      dto.GetIssueBody,
+      dto.GetIssueQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetIssueResponse>>,
+  ): Promise<void>;
+
+  fundIssue(
+    req: Request<
+      dto.FundIssueParams,
+      dto.ResponseBody<dto.FundIssueResponse>,
+      dto.FundIssueBody,
+      dto.FundIssueQuery
+    >,
+    res: Response<dto.ResponseBody<dto.FundIssueResponse>>,
+  ): Promise<void>;
+
+  requestIssueFunding(
+    req: Request<
+      dto.RequestIssueFundingParams,
+      dto.ResponseBody<dto.RequestIssueFundingResponse>,
+      dto.RequestIssueFundingBody,
+      dto.RequestIssueFundingQuery
+    >,
+    res: Response<dto.ResponseBody<dto.RequestIssueFundingResponse>>,
+  ): Promise<void>;
+}
+
+export const ProjectController: ProjectController = {
+  async getOwner(
+    req: Request<
+      dto.GetOwnerParams,
+      dto.ResponseBody<dto.GetOwnerResponse>,
+      dto.GetOwnerBody,
+      dto.GetOwnerQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetOwnerResponse>>,
   ) {
     const owner = await githubSyncService.syncOwner(
       new OwnerId(req.params.owner),
     );
-
-    const response: GetOwnerResponse = {
-      owner: owner,
-    };
+    const response: dto.GetOwnerResponse = { owner };
     res.status(StatusCodes.OK).send({ success: response });
-  }
+  },
 
-  static async getRepository(
+  async getRepository(
     req: Request<
-      GetRepositoryParams,
-      ResponseBody<GetRepositoryResponse>,
-      GetRepositoryBody,
-      GetRepositoryQuery
+      dto.GetRepositoryParams,
+      dto.ResponseBody<dto.GetRepositoryResponse>,
+      dto.GetRepositoryBody,
+      dto.GetRepositoryQuery
     >,
-    res: Response<ResponseBody<GetRepositoryResponse>>,
+    res: Response<dto.ResponseBody<dto.GetRepositoryResponse>>,
   ) {
-    const repositoryId = new RepositoryId(
-      new OwnerId(req.params.owner),
-      req.params.repo,
-    );
+    const ownerId = new OwnerId(req.params.owner);
+    const repositoryId = new RepositoryId(ownerId, req.params.repo);
     const [owner, repository] =
       await githubSyncService.syncRepository(repositoryId);
-
-    const response: GetRepositoryResponse = {
-      owner: owner,
-      repository: repository,
-    };
+    const response: dto.GetRepositoryResponse = { owner, repository };
     res.status(StatusCodes.OK).send({ success: response });
-  }
+  },
 
-  static async getAllFinancialIssues(
+  async getAllFinancialIssues(
     req: Request<
-      GetIssuesParams,
-      ResponseBody<GetIssuesResponse>,
-      GetIssuesBody,
-      GetIssuesQuery
+      dto.GetIssuesParams,
+      dto.ResponseBody<dto.GetIssuesResponse>,
+      dto.GetIssuesBody,
+      dto.GetIssuesQuery
     >,
-    res: Response<ResponseBody<GetIssuesResponse>>,
+    res: Response<dto.ResponseBody<dto.GetIssuesResponse>>,
   ) {
     const issues = await financialIssueRepo.getAll();
-
-    const response: GetIssuesResponse = {
-      issues: issues,
-    };
+    const response: dto.GetIssuesResponse = { issues };
     res.status(StatusCodes.OK).send({ success: response });
-  }
+  },
 
-  static async getIssue(
+  async getIssue(
     req: Request<
-      GetIssueParams,
-      ResponseBody<GetIssueResponse>,
-      GetIssueBody,
-      GetIssueQuery
+      dto.GetIssueParams,
+      dto.ResponseBody<dto.GetIssueResponse>,
+      dto.GetIssueBody,
+      dto.GetIssueQuery
     >,
-    res: Response<ResponseBody<GetIssueResponse>>,
+    res: Response<dto.ResponseBody<dto.GetIssueResponse>>,
   ) {
     const ownerId = new OwnerId(req.params.owner);
     const repositoryId = new RepositoryId(ownerId, req.params.repo);
     const issueId = new IssueId(repositoryId, req.params.number);
-
     const issue = await financialIssueRepo.get(issueId);
-
-    if (issue === null) {
+    if (!issue) {
       res.sendStatus(StatusCodes.NOT_FOUND);
     } else {
-      const response: GetIssueResponse = {
-        issue: issue,
-      };
-
+      const response: dto.GetIssueResponse = { issue };
       res.status(StatusCodes.OK).send({ success: response });
     }
-  }
+  },
 
-  // TODO: security issue - this operation does not have an atomic check for the user's credit, user can spend credit that they don't have
-  static async fundIssue(
+  async fundIssue(
     req: Request<
-      FundIssueParams,
-      ResponseBody<FundIssueResponse>,
-      FundIssueBody,
-      FundIssueQuery
+      dto.FundIssueParams,
+      dto.ResponseBody<dto.FundIssueResponse>,
+      dto.FundIssueBody,
+      dto.FundIssueQuery
     >,
-    res: Response<ResponseBody<FundIssueResponse>>,
+    res: Response<dto.ResponseBody<dto.FundIssueResponse>>,
   ) {
     if (!req.user) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized");
     }
-
-    // TODO: fix this mess with optional githubId
     const ownerId = new OwnerId(req.params.owner);
     const repositoryId = new RepositoryId(ownerId, req.params.repo);
     const issue = await issueRepo.getById(
       new IssueId(repositoryId, req.params.number),
     );
-
-    if (issue === null) {
+    if (!issue) {
       res.sendStatus(StatusCodes.NOT_FOUND);
       return;
     }
-
     const companyId = req.body.companyId
       ? new CompanyId(req.body.companyId)
       : undefined;
     const creditAmount = req.body.creditAmount;
-
     const managedIssue = await managedIssueRepo.getByIssueId(issue.id);
-    if (
-      managedIssue !== null &&
-      managedIssue.state === ManagedIssueState.REJECTED
-    ) {
+    if (managedIssue?.state === ManagedIssueState.REJECTED) {
       throw new ApiError(
         StatusCodes.FORBIDDEN,
         "Cannot fund an issue where funding was rejected before.",
       );
     }
-
     const availableCredit = await planAndCreditsRepo.getAvailableCredit(
       req.user.id,
       companyId,
@@ -190,55 +197,51 @@ export class ProjectController {
         "The amount of available credit is negative",
       );
     }
-
-    const issueFunding: CreateIssueFundingBody = {
+    const funding: dto.CreateIssueFundingBody = {
       githubIssueId: issue.id,
       userId: req.user.id,
-      creditAmount: creditAmount,
+      creditAmount,
     };
+    await issueFundingRepo.create(funding);
+    res.sendStatus(StatusCodes.CREATED);
+  },
 
-    await issueFundingRepo.create(issueFunding);
-
-    return res.sendStatus(StatusCodes.CREATED);
-  }
-
-  static async requestIssueFunding(
+  async requestIssueFunding(
     req: Request<
-      RequestIssueFundingParams,
-      ResponseBody<RequestIssueFundingResponse>,
-      RequestIssueFundingBody,
-      RequestIssueFundingQuery
+      dto.RequestIssueFundingParams,
+      dto.ResponseBody<dto.RequestIssueFundingResponse>,
+      dto.RequestIssueFundingBody,
+      dto.RequestIssueFundingQuery
     >,
-    res: Response<ResponseBody<RequestIssueFundingResponse>>,
-  ): Promise<void> {
+    res: Response<dto.ResponseBody<dto.RequestIssueFundingResponse>>,
+  ) {
     if (!req.user) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized");
     }
-
     const ownerId = new OwnerId(req.params.owner);
     const repositoryId = new RepositoryId(ownerId, req.params.repo);
     const issue = await issueRepo.getById(
       new IssueId(repositoryId, req.params.number),
     );
-
-    if (issue === null)
+    if (!issue) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Issue not found in the DB");
-    else if (issue.closedAt !== null)
+    }
+    if (issue.closedAt) {
       throw new ApiError(
         StatusCodes.FORBIDDEN,
         "Cannot request funding for a closed issue",
       );
-
+    }
     const managedIssue = await managedIssueRepo.getByIssueId(issue.id);
-    if (managedIssue === null) {
-      const createManagedIssueBody: CreateManagedIssueBody = {
+    if (!managedIssue) {
+      const body: dto.CreateManagedIssueBody = {
         githubIssueId: issue.id,
         requestedCreditAmount: req.body.creditAmount,
         managerId: req.user.id,
         contributorVisibility: ContributorVisibility.PRIVATE,
         state: ManagedIssueState.OPEN,
       };
-      await managedIssueRepo.create(createManagedIssueBody);
+      await managedIssueRepo.create(body);
       res.status(StatusCodes.CREATED).send({ success: {} });
     } else if (managedIssue.managerId !== req.user.id) {
       throw new ApiError(
@@ -255,5 +258,5 @@ export class ProjectController {
       await managedIssueRepo.update(managedIssue);
       res.status(StatusCodes.OK).send({ success: {} });
     }
-  }
-}
+  },
+};

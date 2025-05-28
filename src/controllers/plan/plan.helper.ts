@@ -11,8 +11,13 @@ import { ApiError } from "../../api/model/error/ApiError";
 import { stripe, StripeHelper } from "../stripe";
 import Stripe from "stripe";
 
-export class PlanHelper {
-  private static productName(productType: PlanProductType): string {
+export interface PlanHelper {
+  createProductsAndPrices(): Promise<void>;
+}
+
+// Helper functions
+const PlanHelpers = {
+  productName(productType: PlanProductType): string {
     switch (productType) {
       case PlanProductType.INDIVIDUAL_PLAN:
         return "Individual Plan";
@@ -28,20 +33,18 @@ export class PlanHelper {
           `Unknown product type: ${productType}`,
         );
     }
-  }
+  },
 
-  private static productDescription(productType: PlanProductType): string {
+  productDescription(productType: PlanProductType): string {
     return "Access expert support. Fund critical dependencies.";
-  }
+  },
 
   /**
    * Returns the monthly prices in cents for each plan type and currency
    * @param productType The plan product type
    * @returns Record mapping each currency to its price in cents
    */
-  private static monthly$CentsPrices(
-    productType: PlanProductType,
-  ): Record<Currency, number> {
+  monthly$CentsPrices(productType: PlanProductType): Record<Currency, number> {
     switch (productType) {
       case PlanProductType.INDIVIDUAL_PLAN:
         return {
@@ -77,18 +80,16 @@ export class PlanHelper {
           `Unknown product type: ${productType}`,
         );
     }
-  }
+  },
 
   /**
    * Returns the yearly prices in cents for each plan type and currency with 20% discount
    * @param productType The plan product type
    * @returns Record mapping each currency to its price in cents
    */
-  private static yearly$CentsPrices(
-    productType: PlanProductType,
-  ): Record<Currency, number> {
+  yearly$CentsPrices(productType: PlanProductType): Record<Currency, number> {
     // Get monthly prices
-    const monthlyPrices = PlanHelper.monthly$CentsPrices(productType);
+    const monthlyPrices = PlanHelpers.monthly$CentsPrices(productType);
 
     // Calculate yearly prices with 20% discount and round to whole dollars
     const result: Record<Currency, number> = {} as Record<Currency, number>;
@@ -102,37 +103,14 @@ export class PlanHelper {
     }
 
     return result;
-  }
+  },
 
-  static async createProductsAndPrices() {
-    const images: string[] | undefined = undefined;
-
-    for (const productType of Object.values(
-      PlanProductType,
-    ) as PlanProductType[]) {
-      const productParams: Stripe.ProductCreateParams = {
-        name: PlanHelper.productName(productType),
-        type: "service",
-        images: images,
-        shippable: false,
-        description: PlanHelper.productDescription(productType),
-      };
-
-      await PlanHelper.createProductAndPrices(
-        productType,
-        productParams,
-        PlanHelper.monthly$CentsPrices(productType),
-        PlanHelper.yearly$CentsPrices(productType),
-      );
-    }
-  }
-
-  private static async createProductAndPrices(
+  async createProductAndPrices(
     productType: PlanProductType,
     params: Stripe.ProductCreateParams,
     monthlyCentsPrices: Record<Currency, number>,
     yearlyCentsPrices: Record<Currency, number>,
-  ) {
+  ): Promise<void> {
     const product: Stripe.Product = await stripe.products.create(params);
 
     await stripeProductRepo.insert(
@@ -162,5 +140,30 @@ export class PlanHelper {
       yearlyCentsPrices,
       yearlyOptions,
     );
-  }
-}
+  },
+};
+
+export const PlanHelper: PlanHelper = {
+  async createProductsAndPrices() {
+    const images: string[] | undefined = undefined;
+
+    for (const productType of Object.values(
+      PlanProductType,
+    ) as PlanProductType[]) {
+      const productParams: Stripe.ProductCreateParams = {
+        name: PlanHelpers.productName(productType),
+        type: "service",
+        images: images,
+        shippable: false,
+        description: PlanHelpers.productDescription(productType),
+      };
+
+      await PlanHelpers.createProductAndPrices(
+        productType,
+        productParams,
+        PlanHelpers.monthly$CentsPrices(productType),
+        PlanHelpers.yearly$CentsPrices(productType),
+      );
+    }
+  },
+};

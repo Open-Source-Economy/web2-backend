@@ -52,10 +52,86 @@ export function getRoundedCreditAmount(
   }
 }
 
-export class CampaignHelper {
+export interface CampaignHelper {
+  createProductsAndPrices(project: Project): Promise<void>;
+  getPrices(
+    projectId: ProjectId,
+    currencyPriceConfigs: CampaignProductPriceConfig,
+  ): Promise<
+    Record<
+      CampaignPriceType,
+      Record<Currency, Record<CampaignProductType, Price[]>>
+    >
+  >;
+}
+
+// Helper functions
+const CampaignHelpers = {
+  initializePrices(): Record<
+    CampaignPriceType,
+    Record<Currency, Record<CampaignProductType, Price[]>>
+  > {
+    return Object.values(CampaignPriceType).reduce(
+      (priceTypeAcc, priceType) => {
+        priceTypeAcc[priceType] = Object.values(Currency).reduce(
+          (currencyAcc, currency) => {
+            currencyAcc[currency] = Object.values(CampaignProductType).reduce(
+              (productAcc, campaignProductType) => {
+                productAcc[campaignProductType] = [];
+                return productAcc;
+              },
+              {} as Record<CampaignProductType, Price[]>,
+            );
+            return currencyAcc;
+          },
+          {} as Record<Currency, Record<CampaignProductType, Price[]>>,
+        );
+        return priceTypeAcc;
+      },
+      {} as Record<
+        CampaignPriceType,
+        Record<Currency, Record<CampaignProductType, Price[]>>
+      >,
+    );
+  },
+
+  async createProductAndPrices(
+    projectId: ProjectId,
+    campaignProductType: CampaignProductType,
+    params: Stripe.ProductCreateParams,
+    recurringCentsPrices: Record<Currency, number>,
+    oneTimeCentsPrices: Record<Currency, number>,
+  ): Promise<void> {
+    const product: Stripe.Product = await stripe.products.create(params);
+
+    await stripeProductRepo.insert(
+      new StripeProduct(
+        new StripeProductId(product.id),
+        projectId,
+        productTypeUtils.toProductType(campaignProductType),
+      ),
+    );
+
+    const recurringOptions: Stripe.PriceCreateParams.Recurring = {
+      interval: "month",
+    };
+
+    // --- recurring price ---
+    await StripeHelper.createAndStoreStripePrices(
+      product,
+      recurringCentsPrices,
+      recurringOptions,
+    );
+
+    // --- one time price ---
+    await StripeHelper.createAndStoreStripePrices(product, oneTimeCentsPrices);
+  },
+};
+
+export const CampaignHelper: CampaignHelper = {
   // Donation to Pekko: One product, several prices (100$, 200$, 500$), several currencies (USD, EUR, GBP)
   // To read: https://support.stripe.com/questions/how-to-accept-donations-through-stripe
-  static async createProductsAndPrices(project: Project) {
+  async createProductsAndPrices(project: Project): Promise<void> {
     let repoName = `${project.owner.id.login}`;
     if (project.repository) repoName += `/${project.repository.id.name}`;
 
@@ -75,7 +151,7 @@ export class CampaignHelper {
       // url: frontendUrl,
     };
 
-    await CampaignHelper.createProductAndPrices(
+    await CampaignHelpers.createProductAndPrices(
       project.id,
       CampaignProductType.CREDIT,
       creditParams,
@@ -92,16 +168,16 @@ export class CampaignHelper {
       // url: frontendUrl,
     };
 
-    await CampaignHelper.createProductAndPrices(
+    await CampaignHelpers.createProductAndPrices(
       project.id,
       CampaignProductType.DONATION,
       donationParams,
       donationUnits,
       donationUnits,
     );
-  }
+  },
 
-  static async getPrices(
+  async getPrices(
     projectId: ProjectId,
     currencyPriceConfigs: CampaignProductPriceConfig,
   ): Promise<
@@ -110,7 +186,7 @@ export class CampaignHelper {
       Record<Currency, Record<CampaignProductType, Price[]>>
     >
   > {
-    const prices = CampaignHelper.initializePrices();
+    const prices = CampaignHelpers.initializePrices();
 
     // Get campaign products with their prices
     const productsWithPrices: Record<
@@ -153,65 +229,5 @@ export class CampaignHelper {
     }
 
     return prices;
-  }
-
-  private static initializePrices(): Record<
-    CampaignPriceType,
-    Record<Currency, Record<CampaignProductType, Price[]>>
-  > {
-    return Object.values(CampaignPriceType).reduce(
-      (priceTypeAcc, priceType) => {
-        priceTypeAcc[priceType] = Object.values(Currency).reduce(
-          (currencyAcc, currency) => {
-            currencyAcc[currency] = Object.values(CampaignProductType).reduce(
-              (productAcc, campaignProductType) => {
-                productAcc[campaignProductType] = [];
-                return productAcc;
-              },
-              {} as Record<CampaignProductType, Price[]>,
-            );
-            return currencyAcc;
-          },
-          {} as Record<Currency, Record<CampaignProductType, Price[]>>,
-        );
-        return priceTypeAcc;
-      },
-      {} as Record<
-        CampaignPriceType,
-        Record<Currency, Record<CampaignProductType, Price[]>>
-      >,
-    );
-  }
-
-  private static async createProductAndPrices(
-    projectId: ProjectId,
-    campaignProductType: CampaignProductType,
-    params: Stripe.ProductCreateParams,
-    recurringCentsPrices: Record<Currency, number>,
-    oneTimeCentsPrices: Record<Currency, number>,
-  ) {
-    const product: Stripe.Product = await stripe.products.create(params);
-
-    await stripeProductRepo.insert(
-      new StripeProduct(
-        new StripeProductId(product.id),
-        projectId,
-        productTypeUtils.toProductType(campaignProductType),
-      ),
-    );
-
-    const recurringOptions: Stripe.PriceCreateParams.Recurring = {
-      interval: "month",
-    };
-
-    // --- recurring price ---
-    await StripeHelper.createAndStoreStripePrices(
-      product,
-      recurringCentsPrices,
-      recurringOptions,
-    );
-
-    // --- one time price ---
-    await StripeHelper.createAndStoreStripePrices(product, oneTimeCentsPrices);
-  }
-}
+  },
+};

@@ -1,36 +1,48 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
-import {
-  CreatePaymentIntentBody,
-  CreatePaymentIntentParams,
-  CreatePaymentIntentQuery,
-  CreatePaymentIntentResponse,
-  CreateSubscriptionBody,
-  CreateSubscriptionParams,
-  CreateSubscriptionQuery,
-  CreateSubscriptionResponse,
-  ResponseBody,
-} from "../../api/dto";
+import * as dto from "../../api/dto";
 import { ApiError } from "../../api/model/error/ApiError";
-import { StripeHelper } from "./stripe-helper";
+import { StripeHelper } from "./stripe.helper";
 import { stripe } from "./index";
 
-export class StripeEmbeddedController {
+export interface StripeEmbeddedController {
+  createSubscription(
+    req: Request<
+      dto.CreateSubscriptionParams,
+      dto.ResponseBody<dto.CreateSubscriptionResponse>,
+      dto.CreateSubscriptionBody,
+      dto.CreateSubscriptionQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CreateSubscriptionResponse>>,
+  ): Promise<void>;
+
+  createPaymentIntentWIP(
+    req: Request<
+      dto.CreatePaymentIntentParams,
+      dto.ResponseBody<dto.CreatePaymentIntentResponse>,
+      dto.CreatePaymentIntentBody,
+      dto.CreatePaymentIntentQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CreatePaymentIntentResponse>>,
+  ): Promise<void>;
+}
+
+export const StripeEmbeddedController: StripeEmbeddedController = {
   // Build-subscriptions: https://docs.stripe.com/billing/subscriptions/build-subscriptions?lang=node
   // 1. createCustomer
   // 2. createSubscription
-  static async createSubscription(
+  async createSubscription(
     req: Request<
-      CreateSubscriptionParams,
-      ResponseBody<CreateSubscriptionResponse>,
-      CreateSubscriptionBody,
-      CreateSubscriptionQuery
+      dto.CreateSubscriptionParams,
+      dto.ResponseBody<dto.CreateSubscriptionResponse>,
+      dto.CreateSubscriptionBody,
+      dto.CreateSubscriptionQuery
     >,
-    res: Response<ResponseBody<CreateSubscriptionResponse>>,
+    res: Response<dto.ResponseBody<dto.CreateSubscriptionResponse>>,
   ) {
     if (!req.user) {
-      return new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
+      throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
     } else {
       const stripeCustomerUser =
         await StripeHelper.getOrCreateStripeCustomerUser(
@@ -58,24 +70,24 @@ export class StripeEmbeddedController {
           expand: ["latest_invoice.payment_intent"],
         });
 
-      const response: CreateSubscriptionResponse = {
+      const response: dto.CreateSubscriptionResponse = {
         subscription: subscription,
       };
 
       // At this point the Subscription is inactive and awaiting payment.
       res.status(StatusCodes.CREATED).send({ success: response });
     }
-  }
+  },
 
   // this function in is WIP
-  static async createPaymentIntentWIP(
+  async createPaymentIntentWIP(
     req: Request<
-      CreatePaymentIntentParams,
-      ResponseBody<CreatePaymentIntentResponse>,
-      CreatePaymentIntentBody,
-      CreatePaymentIntentQuery
+      dto.CreatePaymentIntentParams,
+      dto.ResponseBody<dto.CreatePaymentIntentResponse>,
+      dto.CreatePaymentIntentBody,
+      dto.CreatePaymentIntentQuery
     >,
-    res: Response<ResponseBody<CreatePaymentIntentResponse>>,
+    res: Response<dto.ResponseBody<dto.CreatePaymentIntentResponse>>,
   ) {
     // Step 1: Create an invoice
     // Step 2: Create an invoice item
@@ -109,10 +121,10 @@ export class StripeEmbeddedController {
 
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    const response: CreatePaymentIntentResponse = {
+    const response: dto.CreatePaymentIntentResponse = {
       paymentIntent: paymentIntent,
     };
     // Send publishable key and PaymentIntent client_secret to client.
     res.status(StatusCodes.OK).send({ success: response });
-  }
-}
+  },
+};

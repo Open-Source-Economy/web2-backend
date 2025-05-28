@@ -1,5 +1,5 @@
 export * from "./user.controller";
 export * from "./admin.controller";
-export * from "./projectController";
+export * from "./project.controller";
 export * from "./auth.controller";
 export * from "./stripe";

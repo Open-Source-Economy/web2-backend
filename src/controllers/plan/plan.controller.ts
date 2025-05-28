@@ -1,11 +1,5 @@
 import { Request, Response } from "express";
-import {
-  GetPlansBody,
-  GetPlansParams,
-  GetPlansQuery,
-  GetPlansResponse,
-  ResponseBody,
-} from "../../api/dto";
+import * as dto from "../../api/dto";
 import { StatusCodes } from "http-status-codes";
 import {
   Currency,
@@ -15,25 +9,37 @@ import {
 } from "../../api/model";
 import { combinedStripeRepo } from "../../db";
 
-export class PlanController {
-  static async getPlans(
+export interface PlanController {
+  getPlans(
     req: Request<
-      GetPlansParams,
-      ResponseBody<GetPlansResponse>,
-      GetPlansBody,
-      GetPlansQuery
+      dto.GetPlansParams,
+      dto.ResponseBody<dto.GetPlansResponse>,
+      dto.GetPlansBody,
+      dto.GetPlansQuery
     >,
-    res: Response<ResponseBody<GetPlansResponse>>,
+    res: Response<dto.ResponseBody<dto.GetPlansResponse>>,
+  ): Promise<void>;
+}
+
+export const PlanController: PlanController = {
+  async getPlans(
+    req: Request<
+      dto.GetPlansParams,
+      dto.ResponseBody<dto.GetPlansResponse>,
+      dto.GetPlansBody,
+      dto.GetPlansQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetPlansResponse>>,
   ) {
     const prices: Record<
       PlanProductType,
       Record<Currency, Record<PlanPriceType, StripePrice>>
     > = await combinedStripeRepo.getPlanProductsWithPrices();
 
-    const response: GetPlansResponse = {
+    const response: dto.GetPlansResponse = {
       plans: prices,
     };
 
-    return res.status(StatusCodes.OK).send({ success: response });
-  }
-}
+    res.status(StatusCodes.OK).send({ success: response });
+  },
+};

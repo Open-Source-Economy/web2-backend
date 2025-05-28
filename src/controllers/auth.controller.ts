@@ -11,22 +11,7 @@ import {
   UserRepository,
 } from "../api/model";
 import { StatusCodes } from "http-status-codes";
-import {
-  AuthInfo,
-  GetCompanyUserInviteInfoQuery,
-  GetCompanyUserInviteInfoResponse,
-  LoginBody,
-  LoginQuery,
-  LoginResponse,
-  RegisterBody,
-  RegisterQuery,
-  RegisterResponse,
-  RepositoryInfo,
-  ResponseBody,
-  StatusBody,
-  StatusQuery,
-  StatusResponse,
-} from "../api/dto";
+import * as dto from "../api/dto";
 import { ensureNoEndingTrailingSlash, secureToken } from "../utils";
 import {
   companyRepo,
@@ -37,16 +22,64 @@ import {
   userRepositoryRepo,
 } from "../db";
 import { ApiError } from "../api/model/error/ApiError";
-import {
-  GetRepositoryUserInviteInfoQuery,
-  GetRepositoryUserInviteInfoResponse,
-} from "../api/dto/auth/GetRepositoryUserInviteInfo.dto";
 import { config } from "../config";
 
-export class AuthController {
+export interface AuthController {
+  status(
+    req: Request<{}, {}, dto.StatusBody, dto.StatusQuery>,
+    res: Response<dto.ResponseBody<dto.StatusResponse>>,
+  ): Promise<void>;
+
+  verifyCompanyToken(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    next: NextFunction,
+  ): Promise<void>;
+
+  registerAsCompany(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+  ): Promise<void>;
+
+  verifyRepositoryToken(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    next: NextFunction,
+  ): Promise<void>;
+
+  registerForRepository(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+  ): Promise<void>;
+
+  register(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+  ): Promise<void>;
+
+  login(
+    req: Request<{}, {}, dto.LoginBody, dto.LoginQuery>,
+    res: Response<dto.ResponseBody<dto.LoginResponse>>,
+  ): Promise<void>;
+
+  logout(req: Request, res: Response): Promise<void>;
+
+  getCompanyUserInviteInfo(
+    req: Request<{}, {}, {}, dto.GetCompanyUserInviteInfoQuery>,
+    res: Response<dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>>,
+  ): Promise<void>;
+
+  getRepositoryUserInviteInfo(
+    req: Request<{}, {}, {}, dto.GetRepositoryUserInviteInfoQuery>,
+    res: Response<dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>>,
+  ): Promise<void>;
+}
+
+// Helper functions
+const AuthHelpers = {
   // TODO: probably put info of the company in the session, to to much avoid request to the DB.
   //       Now, it is not the best implementation, but it works for now
-  private static async getCompanyRoles(
+  async getCompanyRoles(
     userId: UserId,
   ): Promise<[Company | null, CompanyUserRole | null]> {
     let company: Company | null = null;
@@ -65,27 +98,25 @@ export class AuthController {
     }
 
     return [company, companyRole];
-  }
+  },
 
-  private static async getRepositoryInfos(
+  async getRepositoryInfos(
     userId: UserId,
-  ): Promise<[RepositoryId, RepositoryInfo][]> {
+  ): Promise<[RepositoryId, dto.RepositoryInfo][]> {
     const userRepos: UserRepository[] = await userRepositoryRepo.getAll(userId);
     return userRepos.map((userRepo) => {
-      const info: RepositoryInfo = {
+      const info: dto.RepositoryInfo = {
         role: userRepo.repositoryUserRole,
         rate: userRepo.rate ? userRepo.rate.toString() : null,
         currency: userRepo.currency,
       };
       return [userRepo.repositoryId, info];
     });
-  }
+  },
 
-  private static async getAuthInfo(user: User): Promise<AuthInfo> {
-    const [company, companyRole] = await AuthController.getCompanyRoles(
-      user.id,
-    );
-    const repositories = await AuthController.getRepositoryInfos(user.id);
+  async getAuthInfo(user: User): Promise<dto.AuthInfo> {
+    const [company, companyRole] = await AuthHelpers.getCompanyRoles(user.id);
+    const repositories = await AuthHelpers.getRepositoryInfos(user.id);
 
     return {
       user: user as User,
@@ -93,31 +124,33 @@ export class AuthController {
       companyRole: companyRole,
       repositories: repositories,
     };
-  }
+  },
+};
 
-  static async status(
-    req: Request<{}, {}, StatusBody, StatusQuery>,
-    res: Response<ResponseBody<StatusResponse>>,
+export const AuthController: AuthController = {
+  async status(
+    req: Request<{}, {}, dto.StatusBody, dto.StatusQuery>,
+    res: Response<dto.ResponseBody<dto.StatusResponse>>,
   ) {
     if (req.isAuthenticated() && req.user) {
-      const response: StatusResponse = await AuthController.getAuthInfo(
+      const response: dto.StatusResponse = await AuthHelpers.getAuthInfo(
         req.user as User,
       );
-      return res.status(StatusCodes.OK).send({ success: response }); // TODO: json instead of send ?
+      res.status(StatusCodes.OK).send({ success: response }); // TODO: json instead of send ?
     } else {
-      const response: StatusResponse = {
+      const response: dto.StatusResponse = {
         user: null,
         company: null,
         companyRole: null,
         repositories: [],
       };
-      return res.status(StatusCodes.OK).send({ success: response });
+      res.status(StatusCodes.OK).send({ success: response });
     }
-  }
+  },
 
-  static async verifyCompanyToken(
-    req: Request<{}, {}, RegisterBody, RegisterQuery>,
-    res: Response<ResponseBody<RegisterResponse>>,
+  async verifyCompanyToken(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
     next: NextFunction,
   ) {
     const token = req.query.companyToken;
@@ -149,15 +182,13 @@ export class AuthController {
         next();
       }
     } else {
-      return next(
-        new ApiError(StatusCodes.BAD_REQUEST, "No company token provided"),
-      );
+      next(new ApiError(StatusCodes.BAD_REQUEST, "No company token provided"));
     }
-  }
+  },
 
-  static async registerAsCompany(
-    req: Request<{}, {}, RegisterBody, RegisterQuery>,
-    res: Response<ResponseBody<RegisterResponse>>,
+  async registerAsCompany(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
   ) {
     if (req.isAuthenticated() && req.user) {
       // @ts-ignore
@@ -175,18 +206,18 @@ export class AuthController {
           companyUserPermissionToken.token,
         );
       }
-      const response: StatusResponse = await AuthController.getAuthInfo(
+      const response: dto.StatusResponse = await AuthHelpers.getAuthInfo(
         req.user as User,
       );
-      return res.status(StatusCodes.CREATED).send({ success: response });
+      res.status(StatusCodes.CREATED).send({ success: response });
     } else {
-      return res.sendStatus(StatusCodes.UNAUTHORIZED);
+      res.sendStatus(StatusCodes.UNAUTHORIZED);
     }
-  }
+  },
 
-  static async verifyRepositoryToken(
-    req: Request<{}, {}, RegisterBody, RegisterQuery>,
-    res: Response<ResponseBody<RegisterResponse>>,
+  async verifyRepositoryToken(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
     next: NextFunction,
   ) {
     const token = req.query.repositoryToken;
@@ -208,15 +239,15 @@ export class AuthController {
         next();
       }
     } else {
-      return next(
+      next(
         new ApiError(StatusCodes.BAD_REQUEST, "No repository token provided"),
       );
     }
-  }
+  },
 
-  static async registerForRepository(
-    req: Request<{}, {}, RegisterBody, RegisterQuery>,
-    res: Response<ResponseBody<RegisterResponse>>,
+  async registerForRepository(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
   ) {
     const userData = req.user?.data!;
     const userId = req.user?.id!; // TODO: improve
@@ -252,74 +283,80 @@ export class AuthController {
       }
     }
     res.redirect(ensureNoEndingTrailingSlash(config.frontEndUrl));
-  }
+  },
 
-  static async register(
-    req: Request<{}, {}, RegisterBody, RegisterQuery>,
-    res: Response<ResponseBody<RegisterResponse>>,
+  async register(
+    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
   ) {
     if (req.isAuthenticated() && req.user) {
-      const response: StatusResponse = await AuthController.getAuthInfo(
+      const response: dto.StatusResponse = await AuthHelpers.getAuthInfo(
         req.user as User,
       );
-      return res.status(StatusCodes.CREATED).send({ success: response });
+      res.status(StatusCodes.CREATED).send({ success: response });
     } else {
-      return res.sendStatus(StatusCodes.UNAUTHORIZED);
+      res.sendStatus(StatusCodes.UNAUTHORIZED);
     }
-  }
+  },
 
-  static async login(
-    req: Request<{}, {}, LoginBody, LoginQuery>,
-    res: Response<ResponseBody<LoginResponse>>,
+  async login(
+    req: Request<{}, {}, dto.LoginBody, dto.LoginQuery>,
+    res: Response<dto.ResponseBody<dto.LoginResponse>>,
   ) {
     if (req.isAuthenticated() && req.user) {
-      const response: StatusResponse = await AuthController.getAuthInfo(
+      const response: dto.StatusResponse = await AuthHelpers.getAuthInfo(
         req.user as User,
       );
-      return res.status(StatusCodes.OK).send({ success: response }); // TODO: json instead of send ?
+      res.status(StatusCodes.OK).send({ success: response }); // TODO: json instead of send ?
     } else {
-      return res.sendStatus(StatusCodes.UNAUTHORIZED);
+      res.sendStatus(StatusCodes.UNAUTHORIZED);
     }
-  }
+  },
 
-  static async logout(req: Request, res: Response) {
-    if (!req.user) return res.sendStatus(StatusCodes.OK);
+  async logout(req: Request, res: Response) {
+    if (!req.user) {
+      res.sendStatus(StatusCodes.OK);
+      return;
+    }
     req.logout((err) => {
-      if (err) return res.sendStatus(StatusCodes.BAD_REQUEST);
+      if (err) {
+        res.sendStatus(StatusCodes.BAD_REQUEST);
+        return;
+      }
       res.sendStatus(StatusCodes.OK);
     });
-  }
+  },
 
-  static async getCompanyUserInviteInfo(
-    req: Request<{}, {}, {}, GetCompanyUserInviteInfoQuery>,
-    res: Response<ResponseBody<GetCompanyUserInviteInfoResponse>>,
+  async getCompanyUserInviteInfo(
+    req: Request<{}, {}, {}, dto.GetCompanyUserInviteInfoQuery>,
+    res: Response<dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>>,
   ) {
-    const query: GetCompanyUserInviteInfoQuery = req.query;
+    const query: dto.GetCompanyUserInviteInfoQuery = req.query;
 
     const companyUserPermissionToken: CompanyUserPermissionToken | null =
       await companyUserPermissionTokenRepo.getByToken(query.token);
 
-    const response: GetCompanyUserInviteInfoResponse = {
+    const response: dto.GetCompanyUserInviteInfoResponse = {
       userName: companyUserPermissionToken?.userName,
       userEmail: companyUserPermissionToken?.userEmail,
     };
-    return res.status(StatusCodes.OK).send({ success: response });
-  }
+    res.status(StatusCodes.OK).send({ success: response });
+  },
 
-  static async getRepositoryUserInviteInfo(
-    req: Request<{}, {}, {}, GetRepositoryUserInviteInfoQuery>,
-    res: Response<ResponseBody<GetRepositoryUserInviteInfoResponse>>,
+  async getRepositoryUserInviteInfo(
+    req: Request<{}, {}, {}, dto.GetRepositoryUserInviteInfoQuery>,
+    res: Response<dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>>,
   ) {
-    const query: GetRepositoryUserInviteInfoQuery = req.query;
+    const query: dto.GetRepositoryUserInviteInfoQuery = req.query;
 
     const repositoryUserPermissionToken: RepositoryUserPermissionToken | null =
       await repositoryUserPermissionTokenRepo.getByToken(query.token);
 
-    const response: GetRepositoryUserInviteInfoResponse = {
+    const response: dto.GetRepositoryUserInviteInfoResponse = {
       userName: repositoryUserPermissionToken?.userName,
       userGithubOwnerLogin: repositoryUserPermissionToken?.userGithubOwnerLogin,
       repositoryId: repositoryUserPermissionToken?.repositoryId,
     };
-    return res.status(StatusCodes.OK).send({ success: response });
-  }
-}
+    res.status(StatusCodes.OK).send({ success: response });
+  },
+};

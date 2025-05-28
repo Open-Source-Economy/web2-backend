@@ -18,8 +18,80 @@ import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUse
 import { CampaignHelper } from "./campaign/campaign.helper";
 import { PlanHelper } from "./plan/plan.helper";
 
-export class AdminController {
-  static async createAddress(
+export interface AdminController {
+  createAddress(
+    req: Request<
+      dto.CreateAddressParams,
+      dto.ResponseBody<dto.CreateAddressResponse>,
+      dto.CreateAddressBody,
+      dto.CreateAddressQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CreateAddressResponse>>,
+  ): Promise<void>;
+
+  createCompany(
+    req: Request<
+      dto.CreateCompanyParams,
+      dto.ResponseBody<dto.CreateCompanyResponse>,
+      dto.CreateCompanyBody,
+      dto.CreateCompanyQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CreateCompanyResponse>>,
+  ): Promise<void>;
+
+  sendCompanyAdminInvite(
+    req: Request<
+      dto.SendCompanyRoleInviteParams,
+      dto.ResponseBody<dto.SendCompanyRoleInviteResponse>,
+      dto.SendCompanyRoleInviteBody,
+      dto.SendCompanyRoleInviteQuery
+    >,
+    res: Response<dto.ResponseBody<dto.SendCompanyRoleInviteResponse>>,
+  ): Promise<void>;
+
+  sendRepositoryAdminInvite(
+    req: Request<
+      dto.SendRepositoryRoleInviteParams,
+      dto.ResponseBody<dto.SendCompanyRoleInviteResponse>,
+      dto.SendRepositoryRoleInviteBody,
+      dto.SendRepositoryRoleInviteQuery
+    >,
+    res: Response<dto.ResponseBody<dto.SendCompanyRoleInviteResponse>>,
+  ): Promise<void>;
+
+  createManualInvoice(
+    req: Request<
+      dto.CreateManualInvoiceParams,
+      dto.ResponseBody<dto.CreateManualInvoiceResponse>,
+      dto.CreateManualInvoiceBody,
+      dto.CreateManualInvoiceQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CreateManualInvoiceResponse>>,
+  ): Promise<void>;
+
+  createCampaignProductAndPrice(
+    req: Request<
+      dto.CreateCampaignProductAndPriceParams,
+      dto.ResponseBody<dto.CreateCampaignProductAndPriceResponse>,
+      dto.CreateCampaignProductAndPriceBody,
+      dto.CreateCampaignProductAndPriceQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CreateCampaignProductAndPriceResponse>>,
+  ): Promise<void>;
+
+  createPlanProductAndPrice(
+    req: Request<
+      dto.CreatePlanProductAndPriceParams,
+      dto.ResponseBody<dto.CreatePlanProductAndPriceResponse>,
+      dto.CreatePlanProductAndPriceBody,
+      dto.CreatePlanProductAndPriceQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CreatePlanProductAndPriceResponse>>,
+  ): Promise<void>;
+}
+
+export const AdminController: AdminController = {
+  async createAddress(
     req: Request<
       dto.CreateAddressParams,
       dto.ResponseBody<dto.CreateAddressResponse>,
@@ -34,9 +106,9 @@ export class AdminController {
       createdAddressId: created.id,
     };
     res.status(StatusCodes.CREATED).send({ success: response });
-  }
+  },
 
-  static async createCompany(
+  async createCompany(
     req: Request<
       dto.CreateCompanyParams,
       dto.ResponseBody<dto.CreateCompanyResponse>,
@@ -50,9 +122,9 @@ export class AdminController {
       createdCompanyId: created.id,
     };
     res.status(StatusCodes.CREATED).send({ success: response });
-  }
+  },
 
-  static async sendCompanyAdminInvite(
+  async sendCompanyAdminInvite(
     req: Request<
       dto.SendCompanyRoleInviteParams,
       dto.ResponseBody<dto.SendCompanyRoleInviteResponse>,
@@ -116,9 +188,9 @@ export class AdminController {
 
     const response: dto.SendCompanyRoleInviteResponse = {};
     res.status(StatusCodes.OK).send({ success: response });
-  }
+  },
 
-  static async sendRepositoryAdminInvite(
+  async sendRepositoryAdminInvite(
     req: Request<
       dto.SendRepositoryRoleInviteParams,
       dto.ResponseBody<dto.SendCompanyRoleInviteResponse>,
@@ -187,9 +259,9 @@ export class AdminController {
 
     const response: dto.SendRepositoryRoleInviteResponse = {};
     res.status(StatusCodes.OK).send({ success: response });
-  }
+  },
 
-  static async createManualInvoice(
+  async createManualInvoice(
     req: Request<
       dto.CreateManualInvoiceParams,
       dto.ResponseBody<dto.CreateManualInvoiceResponse>,
@@ -203,9 +275,9 @@ export class AdminController {
       createdInvoiceId: created.id,
     };
     res.status(StatusCodes.CREATED).send({ success: response });
-  }
+  },
 
-  static async createCampaignProductAndPrice(
+  async createCampaignProductAndPrice(
     req: Request<
       dto.CreateCampaignProductAndPriceParams,
       dto.ResponseBody<dto.CreateCampaignProductAndPriceResponse>,
@@ -221,9 +293,9 @@ export class AdminController {
 
     const response: dto.CreateCampaignProductAndPriceResponse = {};
     res.status(StatusCodes.CREATED).send({ success: response });
-  }
+  },
 
-  static async createPlanProductAndPrice(
+  async createPlanProductAndPrice(
     req: Request<
       dto.CreatePlanProductAndPriceParams,
       dto.ResponseBody<dto.CreatePlanProductAndPriceResponse>,
@@ -236,5 +308,5 @@ export class AdminController {
 
     const response: dto.CreatePlanProductAndPriceResponse = {};
     res.status(StatusCodes.CREATED).send({ success: response });
-  }
-}
+  },
+};

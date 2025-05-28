@@ -17,128 +17,17 @@ import {
   stripePriceRepo,
 } from "../../db";
 import { ValidationError } from "../../api/model/error";
-import { CreateAddressBody } from "../../api/dto";
+import * as dto from "../../api/dto";
 
-export class StripeWebhookController {
-  static async webhook(req: Request, res: Response) {
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        req.headers["stripe-signature"] as string,
-        config.stripe.webhookSecret,
-      );
-    } catch (err) {
-      logger.error(`⚠️  Webhook signature verification failed.`, err);
-      return res.sendStatus(StatusCodes.BAD_REQUEST);
-    }
+export interface StripeWebhookController {
+  webhook(req: Request, res: Response): Promise<void>;
+}
 
-    const data = event.data;
-    const object = data.object;
-    const eventType: string = event.type;
-
-    logger.debug(`🔔  Webhook received an event of type: ${eventType}!`);
-    logger.debug(`🔔  Webhook data:`, data);
-
-    try {
-      // Handle the event
-      // Review important events for Billing webhooks
-      // https://stripe.com/docs/billing/webhooks
-      // Remove comment to see the various objects sent for this sample
-      // Event types: https://docs.stripe.com/api/events/types
-      switch (eventType) {
-        // TODO: https://docs.stripe.com/checkout/fulfillment?payment-ui=embedded-form#create-payment-event-handler
-        case "checkout.session.completed": {
-          logger.debug("🔔 checkout.session.completed, starting!");
-          await StripeWebhookController.checkoutSessionCompleted(
-            event.data.object as Stripe.Checkout.Session,
-          );
-          logger.debug("🔔 checkout.session.completed, done!");
-          break;
-        }
-
-        case "invoice.paid": {
-          logger.debug(`🔔 invoice.paid, starting!`);
-          await StripeWebhookController.invoicePaid(object as Stripe.Invoice);
-          logger.debug(`🔔 invoice.paid, done!`);
-          break;
-        }
-
-        case "invoice.payment_failed":
-          // TODO: Implement payment failure handling
-          break;
-
-        case "payment_intent.succeeded": {
-          const paymentIntent = data.object as Stripe.PaymentIntent;
-          logger.debug(
-            `💰 Payment captured for amount: ${paymentIntent.amount}!`,
-          );
-          break;
-        }
-
-        case "payment_intent.payment_failed": {
-          const paymentIntent = data.object as Stripe.PaymentIntent;
-          logger.debug(`❌ Payment failed for amount: ${paymentIntent.amount}`);
-          break;
-        }
-
-        case "price.created": {
-          const price = data.object as Stripe.Price;
-          logger.debug(`🔔 price.created`, price);
-          await StripeWebhookController.createOrUpdateStripePrice(price);
-          break;
-        }
-
-        case "price.updated": {
-          const price = data.object as Stripe.Price;
-          logger.debug(`🔔 price.updated`, price);
-          await StripeWebhookController.createOrUpdateStripePrice(price);
-          break;
-        }
-
-        case "price.deleted": {
-          const price = data.object as Stripe.Price;
-          logger.debug(`🔔 price.deleted`, price);
-          await StripeWebhookController.createOrUpdateStripePrice(price);
-          break;
-        }
-
-        case "product.created": {
-          const product = data.object as Stripe.Price;
-          logger.debug(`🔔 product.created`, product);
-          // await StripeWebhookController.createOrUpdateStripeProduct(product);
-          break;
-        }
-
-        case "product.updated": {
-          const product = data.object as Stripe.Product;
-          logger.debug(`🔔 product.updated`, product);
-          // await StripeWebhookController.createOrUpdateStripeProduct(product);
-          break;
-        }
-
-        case "product.deleted": {
-          const product = data.object as Stripe.Product;
-          logger.debug(`🔔 product.deleted`, product);
-          // await StripeWebhookController.createOrUpdateStripeProduct(product);
-          break;
-        }
-
-        case "customer.subscription.created": {
-          const subscription = data.object as Stripe.Subscription;
-          logger.debug(`🔔 subscription.deleted`, subscription);
-          break;
-        }
-      }
-
-      res.sendStatus(StatusCodes.OK);
-    } catch (error) {
-      logger.error("Error processing webhook:", error);
-      res.sendStatus(StatusCodes.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  static async checkoutSessionCompleted(session: Stripe.Checkout.Session) {
+// Helper functions
+const StripeWebhookHelpers = {
+  async checkoutSessionCompleted(
+    session: Stripe.Checkout.Session,
+  ): Promise<void> {
     // Stripe comments:
     // Payment is successful and the subscription is created.
     // You should provision the subscription and save the customer ID to your database.
@@ -166,7 +55,7 @@ export class StripeWebhookController {
         logger.debug(
           `🔔 Stripe customer creation, not registered: ${stripeCustomerId}`,
         );
-        await StripeWebhookController.saveAddressAndStripeCustomer(
+        await StripeWebhookHelpers.saveAddressAndStripeCustomer(
           stripeCustomerId,
           email,
           session.customer_details,
@@ -191,11 +80,11 @@ export class StripeWebhookController {
             `🔔  Stripe customer, not registered with email ${email}`,
           );
           const customerId =
-            await StripeWebhookController.createAddressAndStripeCustomer(
+            await StripeWebhookHelpers.createAddressAndStripeCustomer(
               email,
               session.customer_details,
             );
-          await StripeWebhookController.saveAddressAndStripeCustomer(
+          await StripeWebhookHelpers.saveAddressAndStripeCustomer(
             customerId,
             email,
             session.customer_details,
@@ -204,9 +93,9 @@ export class StripeWebhookController {
         }
       }
     }
-  }
+  },
 
-  private static async createAddressAndStripeCustomer(
+  async createAddressAndStripeCustomer(
     email: string | null,
     customerDetails: Stripe.Checkout.Session.CustomerDetails | null,
   ): Promise<StripeCustomerId> {
@@ -229,20 +118,20 @@ export class StripeWebhookController {
     const customer: Stripe.Customer =
       await stripe.customers.create(customerCreateParams);
     return new StripeCustomerId(customer.id);
-  }
+  },
 
-  private static async saveAddressAndStripeCustomer(
+  async saveAddressAndStripeCustomer(
     customerId: StripeCustomerId,
     email: string | null,
     customerDetails: Stripe.Checkout.Session.CustomerDetails | null,
     currency?: string,
-  ) {
+  ): Promise<void> {
     const name = customerDetails?.name ?? undefined;
     const phone = customerDetails?.phone ?? undefined;
 
     let address: Address | null = null;
     if (customerDetails?.address) {
-      const createAddressBody: CreateAddressBody = {
+      const createAddressBody: dto.CreateAddressBody = {
         line1: customerDetails?.address?.line1 ?? undefined,
         line2: customerDetails?.address?.line2 ?? undefined,
         city: customerDetails?.address?.city ?? undefined,
@@ -267,25 +156,142 @@ export class StripeWebhookController {
       `🔔  Stripe customer, not registered, created: ${newStripeCustomer}`,
     );
     await stripeCustomerRepo.insert(newStripeCustomer);
-  }
+  },
 
-  private static async invoicePaid(
-    stripeInvoice: Stripe.Invoice,
-  ): Promise<void> {
+  async invoicePaid(stripeInvoice: Stripe.Invoice): Promise<void> {
     const invoice = StripeInvoice.fromStripeApi(stripeInvoice);
     if (invoice instanceof ValidationError) {
       throw invoice;
     }
     await stripeInvoiceRepo.insert(invoice);
-  }
+  },
 
-  private static async createOrUpdateStripePrice(
-    price: Stripe.Price,
-  ): Promise<void> {
+  async createOrUpdateStripePrice(price: Stripe.Price): Promise<void> {
     const stripePrice = StripePrice.fromStripeApi(price);
     if (stripePrice instanceof ValidationError) {
       throw stripePrice;
     }
     await stripePriceRepo.createOrUpdate(stripePrice);
-  }
-}
+  },
+};
+
+export const StripeWebhookController: StripeWebhookController = {
+  async webhook(req: Request, res: Response) {
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        req.headers["stripe-signature"] as string,
+        config.stripe.webhookSecret,
+      );
+    } catch (err) {
+      logger.error(`⚠️  Webhook signature verification failed.`, err);
+      res.sendStatus(StatusCodes.BAD_REQUEST);
+      return;
+    }
+
+    const data = event.data;
+    const object = data.object;
+    const eventType: string = event.type;
+
+    logger.debug(`🔔  Webhook received an event of type: ${eventType}!`);
+    logger.debug(`🔔  Webhook data:`, data);
+
+    try {
+      // Handle the event
+      // Review important events for Billing webhooks
+      // https://stripe.com/docs/billing/webhooks
+      // Remove comment to see the various objects sent for this sample
+      // Event types: https://docs.stripe.com/api/events/types
+      switch (eventType) {
+        // TODO: https://docs.stripe.com/checkout/fulfillment?payment-ui=embedded-form#create-payment-event-handler
+        case "checkout.session.completed": {
+          logger.debug("🔔 checkout.session.completed, starting!");
+          await StripeWebhookHelpers.checkoutSessionCompleted(
+            event.data.object as Stripe.Checkout.Session,
+          );
+          logger.debug("🔔 checkout.session.completed, done!");
+          break;
+        }
+
+        case "invoice.paid": {
+          logger.debug(`🔔 invoice.paid, starting!`);
+          await StripeWebhookHelpers.invoicePaid(object as Stripe.Invoice);
+          logger.debug(`🔔 invoice.paid, done!`);
+          break;
+        }
+
+        case "invoice.payment_failed":
+          // TODO: Implement payment failure handling
+          break;
+
+        case "payment_intent.succeeded": {
+          const paymentIntent = data.object as Stripe.PaymentIntent;
+          logger.debug(
+            `💰 Payment captured for amount: ${paymentIntent.amount}!`,
+          );
+          break;
+        }
+
+        case "payment_intent.payment_failed": {
+          const paymentIntent = data.object as Stripe.PaymentIntent;
+          logger.debug(`❌ Payment failed for amount: ${paymentIntent.amount}`);
+          break;
+        }
+
+        case "price.created": {
+          const price = data.object as Stripe.Price;
+          logger.debug(`🔔 price.created`, price);
+          await StripeWebhookHelpers.createOrUpdateStripePrice(price);
+          break;
+        }
+
+        case "price.updated": {
+          const price = data.object as Stripe.Price;
+          logger.debug(`🔔 price.updated`, price);
+          await StripeWebhookHelpers.createOrUpdateStripePrice(price);
+          break;
+        }
+
+        case "price.deleted": {
+          const price = data.object as Stripe.Price;
+          logger.debug(`🔔 price.deleted`, price);
+          await StripeWebhookHelpers.createOrUpdateStripePrice(price);
+          break;
+        }
+
+        case "product.created": {
+          const product = data.object as Stripe.Price;
+          logger.debug(`🔔 product.created`, product);
+          // await StripeWebhookHelpers.createOrUpdateStripeProduct(product);
+          break;
+        }
+
+        case "product.updated": {
+          const product = data.object as Stripe.Product;
+          logger.debug(`🔔 product.updated`, product);
+          // await StripeWebhookHelpers.createOrUpdateStripeProduct(product);
+          break;
+        }
+
+        case "product.deleted": {
+          const product = data.object as Stripe.Product;
+          logger.debug(`🔔 product.deleted`, product);
+          // await StripeWebhookHelpers.createOrUpdateStripeProduct(product);
+          break;
+        }
+
+        case "customer.subscription.created": {
+          const subscription = data.object as Stripe.Subscription;
+          logger.debug(`🔔 subscription.deleted`, subscription);
+          break;
+        }
+      }
+
+      res.sendStatus(StatusCodes.OK);
+    } catch (error) {
+      logger.error("Error processing webhook:", error);
+      res.sendStatus(StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  },
+};

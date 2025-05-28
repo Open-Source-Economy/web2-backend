@@ -1,20 +1,26 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
-import {
-  CheckoutBody,
-  CheckoutParams,
-  CheckoutQuery,
-  CheckoutResponse,
-  ResponseBody,
-} from "../../api/dto";
+import * as dto from "../../api/dto";
 import { ApiError } from "../../api/model/error/ApiError";
-import { StripeHelper } from "./stripe-helper";
+import { StripeHelper } from "./stripe.helper";
 import { stripe } from "./index";
 import { logger } from "../../config";
 import { StripeCustomerUser, userUtils } from "../../api/model";
 
-export class StripeCheckoutController {
+export interface StripeCheckoutController {
+  checkout(
+    req: Request<
+      dto.CheckoutParams,
+      dto.ResponseBody<dto.CheckoutResponse>,
+      dto.CheckoutBody,
+      dto.CheckoutQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CheckoutResponse>>,
+  ): Promise<void>;
+}
+
+export const StripeCheckoutController: StripeCheckoutController = {
   // TODO ? : Save payment details: https://docs.stripe.com/payments/checkout/save-during-payment
   /**
    * Create a Checkout Session for the subscription, redirecting the user to the Stripe checkout page
@@ -23,14 +29,14 @@ export class StripeCheckoutController {
    * @param req
    * @param res
    */
-  static async checkout(
+  async checkout(
     req: Request<
-      CheckoutParams,
-      ResponseBody<CheckoutResponse>,
-      CheckoutBody,
-      CheckoutQuery
+      dto.CheckoutParams,
+      dto.ResponseBody<dto.CheckoutResponse>,
+      dto.CheckoutBody,
+      dto.CheckoutQuery
     >,
-    res: Response<ResponseBody<CheckoutResponse>>,
+    res: Response<dto.ResponseBody<dto.CheckoutResponse>>,
   ) {
     let customer: StripeCustomerUser | null = null;
     if (req.user) {
@@ -79,7 +85,7 @@ export class StripeCheckoutController {
       if (session.url) {
         // Needs to redirect returned on the Checkout Session.
         logger.debug("Redirecting to checkout session", session);
-        const response: CheckoutResponse = {
+        const response: dto.CheckoutResponse = {
           redirectUrl: session.url,
         };
         res.status(StatusCodes.CREATED).send({ success: response });
@@ -97,5 +103,5 @@ export class StripeCheckoutController {
         "Failed to create checkout session",
       );
     }
-  }
-}
+  },
+};

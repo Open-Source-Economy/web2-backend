@@ -5,8 +5,40 @@ import { StatusCodes } from "http-status-codes";
 import { CompanyId, Currency, UserId } from "../api/model";
 import { ApiError } from "../api/model/error/ApiError";
 
-export class UserController {
-  static async getAvailableCredit(
+export interface UserController {
+  getAvailableCredit(
+    req: Request<
+      dto.GetAvailableCreditsParams,
+      dto.ResponseBody<dto.GetAvailableCreditsResponse>,
+      dto.GetAvailableCreditsBody,
+      dto.GetAvailableCreditsQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetAvailableCreditsResponse>>,
+  ): Promise<void>;
+
+  getPlan(
+    req: Request<
+      dto.GetPlansParams,
+      dto.ResponseBody<dto.GetUserPlanResponse>,
+      dto.GetUserPlanBody,
+      dto.GetUserPlanQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetUserPlanResponse>>,
+  ): Promise<void>;
+
+  setUserPreferredCurrency(
+    req: Request<
+      dto.SetUserPreferredCurrencyParams,
+      dto.ResponseBody<dto.SetUserPreferredCurrencyResponse>,
+      dto.SetUserPreferredCurrencyBody,
+      dto.SetUserPreferredCurrencyQuery
+    >,
+    res: Response<dto.ResponseBody<dto.SetUserPreferredCurrencyResponse>>,
+  ): Promise<void>;
+}
+
+export const UserController: UserController = {
+  async getAvailableCredit(
     req: Request<
       dto.GetAvailableCreditsParams,
       dto.ResponseBody<dto.GetAvailableCreditsResponse>,
@@ -31,10 +63,10 @@ export class UserController {
       creditAmount: creditAmount,
     };
 
-    return res.status(StatusCodes.OK).send({ success: response });
-  }
+    res.status(StatusCodes.OK).send({ success: response });
+  },
 
-  static async getPlan(
+  async getPlan(
     req: Request<
       dto.GetPlansParams,
       dto.ResponseBody<dto.GetUserPlanResponse>,
@@ -57,10 +89,10 @@ export class UserController {
       priceType: types ? types[1] : null,
     };
 
-    return res.status(StatusCodes.OK).send({ success: response });
-  }
+    res.status(StatusCodes.OK).send({ success: response });
+  },
 
-  static async setUserPreferredCurrency(
+  async setUserPreferredCurrency(
     req: Request<
       dto.SetUserPreferredCurrencyParams,
       dto.ResponseBody<dto.SetUserPreferredCurrencyResponse>,
@@ -79,6 +111,6 @@ export class UserController {
 
     const response: dto.SetUserPreferredCurrencyResponse = {};
 
-    return res.status(StatusCodes.OK).send({ success: response });
-  }
-}
+    res.status(StatusCodes.OK).send({ success: response });
+  },
+};

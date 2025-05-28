@@ -1,33 +1,39 @@
 import { Request, Response } from "express";
 import { newsletterSubscriptionRepo } from "../db/";
-import {
-  NewsletterSubscriptionBody,
-  NewsletterSubscriptionParams,
-  NewsletterSubscriptionQuery,
-  NewsletterSubscriptionResponse,
-  ResponseBody,
-} from "../api/dto";
+import * as dto from "../api/dto";
 import { StatusCodes } from "http-status-codes";
 import { NewsletterSubscription } from "../api/model/NewsletterSubscription";
 import { mailService } from "../services";
 
-export class MiscellaneousController {
-  static async subscribeToNewsletter(
+export interface MiscellaneousController {
+  subscribeToNewsletter(
     req: Request<
-      NewsletterSubscriptionParams,
-      ResponseBody<NewsletterSubscriptionResponse>,
-      NewsletterSubscriptionBody,
-      NewsletterSubscriptionQuery
+      dto.NewsletterSubscriptionParams,
+      dto.ResponseBody<dto.NewsletterSubscriptionResponse>,
+      dto.NewsletterSubscriptionBody,
+      dto.NewsletterSubscriptionQuery
     >,
-    res: Response<ResponseBody<NewsletterSubscriptionResponse>>,
+    res: Response<dto.ResponseBody<dto.NewsletterSubscriptionResponse>>,
+  ): Promise<void>;
+}
+
+export const MiscellaneousController: MiscellaneousController = {
+  async subscribeToNewsletter(
+    req: Request<
+      dto.NewsletterSubscriptionParams,
+      dto.ResponseBody<dto.NewsletterSubscriptionResponse>,
+      dto.NewsletterSubscriptionBody,
+      dto.NewsletterSubscriptionQuery
+    >,
+    res: Response<dto.ResponseBody<dto.NewsletterSubscriptionResponse>>,
   ) {
     const existingSubscription = await newsletterSubscriptionRepo.getByEmail(
       req.body.email,
     );
 
     if (existingSubscription) {
-      const response: NewsletterSubscriptionResponse = {};
-      return res.status(StatusCodes.OK).send({ success: response });
+      const response: dto.NewsletterSubscriptionResponse = {};
+      res.status(StatusCodes.OK).send({ success: response });
     } else {
       const subscription = new NewsletterSubscription(req.body.email);
       await newsletterSubscriptionRepo.create(subscription);
@@ -37,8 +43,8 @@ export class MiscellaneousController {
         `${req.body.email} just subscribed to the newsletter 😁`,
       );
 
-      const response: NewsletterSubscriptionResponse = {};
-      return res.status(StatusCodes.CREATED).send({ success: response });
+      const response: dto.NewsletterSubscriptionResponse = {};
+      res.status(StatusCodes.CREATED).send({ success: response });
     }
-  }
-}
+  },
+};

@@ -21,10 +21,23 @@ import { stripe } from "./index";
 import { logger } from "../../config";
 import { ValidationError } from "../../api/model/error";
 
-export class StripeHelper {
+export interface StripeHelper {
+  getOrCreateStripeCustomerUser(
+    user: Express.User,
+    countryCode: string | null,
+  ): Promise<StripeCustomerUser | ApiError>;
+
+  createAndStoreStripePrices(
+    product: Stripe.Product,
+    prices: Record<Currency, number>,
+    options?: Stripe.PriceCreateParams.Recurring,
+  ): Promise<void>;
+}
+
+export const StripeHelper: StripeHelper = {
   // to read:
   // Subscriptions with multiple products: https://docs.stripe.com/billing/subscriptions/multiple-products
-  static async getOrCreateStripeCustomerUser(
+  async getOrCreateStripeCustomerUser(
     user: Express.User,
     countryCode: string | null,
   ): Promise<StripeCustomerUser | ApiError> {
@@ -69,13 +82,13 @@ export class StripeHelper {
 
       return stripeCustomerUser;
     }
-  }
+  },
 
-  static async createAndStoreStripePrices(
+  async createAndStoreStripePrices(
     product: Stripe.Product,
     prices: Record<Currency, number>,
     options?: Stripe.PriceCreateParams.Recurring,
-  ) {
+  ): Promise<void> {
     const creationPromises = Object.entries(prices).map(
       async ([currency, price]) => {
         const priceParams: Stripe.PriceCreateParams = {
@@ -103,5 +116,5 @@ export class StripeHelper {
       logger.error("Error creating a stripe price:", error);
       throw error;
     }
-  }
-}
+  },
+};
