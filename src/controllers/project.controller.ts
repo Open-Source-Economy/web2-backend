@@ -6,6 +6,8 @@ import {
   IssueId,
   ManagedIssueState,
   OwnerId,
+  Project,
+  ProjectUtils,
   RepositoryId,
 } from "../api/model";
 import { StatusCodes } from "http-status-codes";
@@ -15,6 +17,7 @@ import {
   issueRepo,
   managedIssueRepo,
   planAndCreditsRepo,
+  projectRepo,
 } from "../db";
 import { ApiError } from "../api/model/error/ApiError";
 import { githubSyncService } from "../services";
@@ -22,24 +25,24 @@ import { githubSyncService } from "../services";
 const financialIssueRepo = getFinancialIssueRepository();
 
 export interface ProjectController {
-  getOwner(
+  getProject(
     req: Request<
-      dto.GetOwnerParams,
-      dto.ResponseBody<dto.GetOwnerResponse>,
-      dto.GetOwnerBody,
-      dto.GetOwnerQuery
+      dto.GetProjectParams,
+      dto.ResponseBody<dto.GetProjectResponse>,
+      dto.GetProjectBody,
+      dto.GetProjectQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetOwnerResponse>>,
+    res: Response<dto.ResponseBody<dto.GetProjectResponse>>,
   ): Promise<void>;
 
-  getRepository(
+  getProjects(
     req: Request<
-      dto.GetRepositoryParams,
-      dto.ResponseBody<dto.GetRepositoryResponse>,
-      dto.GetRepositoryBody,
-      dto.GetRepositoryQuery
+      dto.GetProjectsParams,
+      dto.ResponseBody<dto.GetProjectsResponse>,
+      dto.GetProjectsBody,
+      dto.GetProjectsQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetRepositoryResponse>>,
+    res: Response<dto.ResponseBody<dto.GetProjectsResponse>>,
   ): Promise<void>;
 
   getAllFinancialIssues(
@@ -60,6 +63,16 @@ export interface ProjectController {
       dto.GetIssueQuery
     >,
     res: Response<dto.ResponseBody<dto.GetIssueResponse>>,
+  ): Promise<void>;
+
+  createProject(
+    req: Request<
+      dto.CreateProjectParams,
+      dto.ResponseBody<dto.CreateProjectResponse>,
+      dto.CreateProjectBody,
+      dto.CreateProjectQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CreateProjectResponse>>,
   ): Promise<void>;
 
   fundIssue(
@@ -84,36 +97,36 @@ export interface ProjectController {
 }
 
 export const ProjectController: ProjectController = {
-  async getOwner(
+  async getProject(
     req: Request<
-      dto.GetOwnerParams,
-      dto.ResponseBody<dto.GetOwnerResponse>,
-      dto.GetOwnerBody,
-      dto.GetOwnerQuery
+      dto.GetProjectParams,
+      dto.ResponseBody<dto.GetProjectResponse>,
+      dto.GetProjectBody,
+      dto.GetProjectQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetOwnerResponse>>,
-  ) {
-    const owner = await githubSyncService.syncOwner(
-      new OwnerId(req.params.owner),
-    );
-    const response: dto.GetOwnerResponse = { owner };
-    res.status(StatusCodes.OK).send({ success: response });
+    res: Response<dto.ResponseBody<dto.GetProjectResponse>>,
+  ): Promise<void> {
+    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
+    const project = await projectRepo.getById(projectId);
+    if (project === null) {
+      res.sendStatus(StatusCodes.NOT_FOUND);
+    } else {
+      const response: dto.GetProjectResponse = { project: project };
+      res.status(StatusCodes.OK).send({ success: response });
+    }
   },
 
-  async getRepository(
+  async getProjects(
     req: Request<
-      dto.GetRepositoryParams,
-      dto.ResponseBody<dto.GetRepositoryResponse>,
-      dto.GetRepositoryBody,
-      dto.GetRepositoryQuery
+      dto.GetProjectsParams,
+      dto.ResponseBody<dto.GetProjectsResponse>,
+      dto.GetProjectsBody,
+      dto.GetProjectsQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetRepositoryResponse>>,
-  ) {
-    const ownerId = new OwnerId(req.params.owner);
-    const repositoryId = new RepositoryId(ownerId, req.params.repo);
-    const [owner, repository] =
-      await githubSyncService.syncRepository(repositoryId);
-    const response: dto.GetRepositoryResponse = { owner, repository };
+    res: Response<dto.ResponseBody<dto.GetProjectsResponse>>,
+  ): Promise<void> {
+    const projects = await projectRepo.getAll();
+    const response: dto.GetProjectsResponse = { projects: projects };
     res.status(StatusCodes.OK).send({ success: response });
   },
 
@@ -150,6 +163,29 @@ export const ProjectController: ProjectController = {
       const response: dto.GetIssueResponse = { issue };
       res.status(StatusCodes.OK).send({ success: response });
     }
+  },
+
+  async createProject(
+    req: Request<
+      dto.CreateProjectParams,
+      dto.ResponseBody<dto.CreateProjectResponse>,
+      dto.CreateProjectBody,
+      dto.CreateProjectQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CreateProjectResponse>>,
+  ): Promise<void> {
+    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
+    const [owner, repositoryOp] =
+      await githubSyncService.syncProject(projectId);
+    const project = new Project(
+      owner,
+      repositoryOp ?? undefined,
+      req.body.projectEcosystem,
+    );
+    const createdProject = await projectRepo.createOrUpdate(project);
+
+    const response: dto.CreateProjectResponse = { project: createdProject };
+    res.status(StatusCodes.CREATED).send({ success: response });
   },
 
   async fundIssue(

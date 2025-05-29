@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { AdminController } from "../../controllers";
+import { AdminController, ProjectController } from "../../controllers";
 import { isWebsiteAdmin } from "../../middlewares/isWebsiteAdmin";
 
 const router = Router();
@@ -33,6 +33,18 @@ router.post(
   "/plan/product-and-price",
   isWebsiteAdmin,
   AdminController.createPlanProductAndPrice,
+);
+
+router.post(
+  "/projects/owners/:owner",
+  isWebsiteAdmin,
+  ProjectController.createProject,
+);
+
+router.post(
+  "/projects/repos/:owner/:repo",
+  isWebsiteAdmin,
+  ProjectController.createProject,
 );
 
 export default router;

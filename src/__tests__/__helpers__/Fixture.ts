@@ -478,6 +478,6 @@ export const Fixture = {
       repository = this.repository(projectId);
     }
 
-    return new Project(projectId, owner, repository, ecosystem);
+    return new Project(owner, repository, ecosystem);
   },
 };

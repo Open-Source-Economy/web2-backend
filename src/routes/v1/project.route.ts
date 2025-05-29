@@ -5,9 +5,9 @@ import { CampaignController } from "../../controllers/campaign/campaign.controll
 
 const router = Router();
 
-// Project routes (handles both owners and repositories)
-router.get("/owners/:owner", ProjectController.getOwner);
-router.get("/repos/:owner/:repo", ProjectController.getRepository);
+router.get("/", ProjectController.getProjects);
+router.get("/owners/:owner", ProjectController.getProject);
+router.get("/repos/:owner/:repo", ProjectController.getProject);
 
 // Project campaigns (for both owners and repositories)
 router.get("/owners/:owner/campaigns", CampaignController.getCampaign);

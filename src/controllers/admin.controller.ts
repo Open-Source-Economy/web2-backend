@@ -6,6 +6,7 @@ import {
   companyRepo,
   companyUserPermissionTokenRepo,
   manualInvoiceRepo,
+  projectRepo,
   repositoryUserPermissionTokenRepo,
 } from "../db";
 import { secureToken } from "../utils";
@@ -18,6 +19,7 @@ import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUse
 import { CampaignHelper } from "./campaign/campaign.helper";
 import { PlanHelper } from "./plan/plan.helper";
 
+// TODO: at the beginning I thought should we have a admin controller interface but now I am think better to do the admin check only at the rooting level - not be reflected in the controllers classes
 export interface AdminController {
   createAddress(
     req: Request<
@@ -277,6 +279,7 @@ export const AdminController: AdminController = {
     res.status(StatusCodes.CREATED).send({ success: response });
   },
 
+  // TODO: See if this endpoint will need to be updated, since it requires to create a project before using it
   async createCampaignProductAndPrice(
     req: Request<
       dto.CreateCampaignProductAndPriceParams,
@@ -287,12 +290,17 @@ export const AdminController: AdminController = {
     res: Response<dto.ResponseBody<dto.CreateCampaignProductAndPriceResponse>>,
   ) {
     const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
-    const project = await githubSyncService.syncProject(projectId);
-
-    await CampaignHelper.createProductsAndPrices(project);
-
-    const response: dto.CreateCampaignProductAndPriceResponse = {};
-    res.status(StatusCodes.CREATED).send({ success: response });
+    const project = await projectRepo.getById(projectId);
+    if (!project) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        `Project with id ${projectId} not found`,
+      );
+    } else {
+      await CampaignHelper.createProductsAndPrices(project);
+      const response: dto.CreateCampaignProductAndPriceResponse = {};
+      res.status(StatusCodes.CREATED).send({ success: response });
+    }
   },
 
   async createPlanProductAndPrice(
