@@ -17,6 +17,9 @@ var cors = require("cors");
 
 export function createApp() {
   const app = express();
+  
+  app.set("trust proxy", true);
+
   const pgSession = require("connect-pg-simple")(session);
 
   const corsOptions = {
