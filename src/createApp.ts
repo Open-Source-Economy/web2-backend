@@ -17,7 +17,7 @@ var cors = require("cors");
 
 export function createApp() {
   const app = express();
-  
+
   app.set("trust proxy", true);
 
   const pgSession = require("connect-pg-simple")(session);
@@ -33,6 +33,12 @@ export function createApp() {
   app.use(cors(corsOptions));
 
   app.use("/public", express.static(path.join(__dirname, "../public")));
+  app.get("/favicon.ico", (req, res) => {
+    res.sendFile(path.join(__dirname, "../public/favicon-64x64.ico"));
+  });
+  app.get("/favicon.png", (req, res) => {
+    res.sendFile(path.join(__dirname, "../public/favicon-64x64.png"));
+  });
 
   if (config.env !== NodeEnv.Local) {
     app.use(morgan.successHandler);
