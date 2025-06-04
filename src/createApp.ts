@@ -18,7 +18,8 @@ var cors = require("cors");
 export function createApp() {
   const app = express();
 
-  app.set("trust proxy", true);
+  // Trust only the first proxy (AWS ALB/API Gateway)
+  app.set('trust proxy', 1);
 
   const pgSession = require("connect-pg-simple")(session);
 
