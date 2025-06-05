@@ -19,7 +19,7 @@ export function createApp() {
   const app = express();
 
   // Trust only the first proxy (AWS ALB/API Gateway)
-  app.set('trust proxy', 1);
+  app.set("trust proxy", 1);
 
   const pgSession = require("connect-pg-simple")(session);
 
@@ -39,6 +39,17 @@ export function createApp() {
   });
   app.get("/favicon.png", (req, res) => {
     res.sendFile(path.join(__dirname, "../public/favicon-64x64.png"));
+  });
+
+  app.get("/robots.txt", (req, res) => {
+    res.type("text/plain");
+    res.send(`
+        User-agent: *
+        Disallow: /api/
+        Allow: /
+        
+        # This is an API server
+        # For the main website, visit: ${config.frontEndUrl}`);
   });
 
   if (config.env !== NodeEnv.Local) {
