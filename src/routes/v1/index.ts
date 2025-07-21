@@ -7,6 +7,7 @@ import { MiscellaneousController } from "../../controllers/miscellaneous.control
 import projectRoute from "./project.route";
 import { PlanController } from "../../controllers/plan/plan.controller";
 import githubRoute from "./github.route";
+import onboardingRoute from "./onboarding.route";
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.use("/stripe", stripeRoute);
 router.use("/admin", adminRoute);
 router.use("/projects", projectRoute);
 router.use("/github", githubRoute);
+router.use("/onboarding", onboardingRoute);
 
 router.post("/newsletter", MiscellaneousController.subscribeToNewsletter);
 router.get("/plans", PlanController.getPlans);

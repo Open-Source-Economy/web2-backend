@@ -5,6 +5,7 @@ import {
   repositoryUserPermissionTokenRepo,
   userRepo,
 } from "../db/";
+import { getOwnerRepository } from "../db/github";
 import {
   Provider,
   ThirdPartyUser,
@@ -23,11 +24,12 @@ passport.use(
       clientID: config.github.clientId,
       clientSecret: config.github.clientSecret,
       callbackURL: `${ensureNoEndingTrailingSlash(config.host)}/api/v1/auth/redirect/github`,
-      scope: ["user:email"], // Request additional GitHub user data like email
+      scope: ["user:email", "read:org", "repo"], // Add permissions for onboarding functionality
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
+        const ownerRepo = getOwnerRepository();
         const thirdPartyUserId = new ThirdPartyUserId(profile.id);
         const findUser = await userRepo.findByThirdPartyId(
           thirdPartyUserId,
@@ -77,7 +79,32 @@ passport.use(
           }
 
           const newSavedUser = await userRepo.insert(createUser);
+          
+          // Store GitHub token for new user
+          if (newSavedUser.data instanceof ThirdPartyUser) {
+            const githubId = newSavedUser.data.providerData.owner.id.githubId;
+            if (githubId !== undefined) {
+              await ownerRepo.updateTokens(githubId, {
+                accessToken,
+                refreshToken: refreshToken || undefined,
+                scope: "user:email,read:org,repo",
+              });
+            }
+          }
+          
           return done(null, newSavedUser);
+        }
+
+        // Update token for existing user
+        if (findUser.data instanceof ThirdPartyUser) {
+          const githubId = findUser.data.providerData.owner.id.githubId;
+          if (githubId !== undefined) {
+            await ownerRepo.updateTokens(githubId, {
+              accessToken,
+              refreshToken: refreshToken || undefined,
+              scope: "user:email,read:org,repo",
+            });
+          }
         }
 
         return done(null, findUser);
