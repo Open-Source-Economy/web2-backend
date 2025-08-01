@@ -1,14 +1,17 @@
 -- Developer onboarding tables migration
 -- Migration 12: Developer profile, projects, income preferences, availability, and services
 
--- Developer onboarding profile
+-- First, add terms_accepted to app_user (all users need to accept terms)
+ALTER TABLE app_user 
+ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Developer profile (tracks which users are developers and their onboarding status)
+-- Removed duplicates: name, email (already in app_user), github_username (redundant with github_owner_login)
+-- Moved terms_accepted to app_user (all users need this)
+-- Kept onboarding_completed here (only developers have onboarding)
 CREATE TABLE IF NOT EXISTS developer_profile (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL UNIQUE,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    github_username VARCHAR(255),
-    terms_accepted BOOLEAN NOT NULL DEFAULT FALSE,
     onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
