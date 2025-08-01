@@ -62,10 +62,6 @@ export const OnboardingController: OnboardingController = {
         success: true,
         data: {
           id: profile.id.uuid,
-          name: profile.name,
-          email: profile.email,
-          githubUsername: profile.githubUsername,
-          termsAccepted: profile.termsAccepted,
           onboardingCompleted: profile.onboardingCompleted,
         },
       });
@@ -101,10 +97,6 @@ export const OnboardingController: OnboardingController = {
         success: true,
         data: {
           id: updatedProfile.id.uuid,
-          name: updatedProfile.name,
-          email: updatedProfile.email,
-          githubUsername: updatedProfile.githubUsername,
-          termsAccepted: updatedProfile.termsAccepted,
           onboardingCompleted: updatedProfile.onboardingCompleted,
         },
       });

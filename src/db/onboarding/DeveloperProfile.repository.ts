@@ -52,11 +52,11 @@ class DeveloperProfileRepositoryImpl implements DeveloperProfileRepository {
     try {
       const result = await client.query(
         `
-        INSERT INTO developer_profile (user_id, name, email, github_username, terms_accepted)
-        VALUES ($1, $2, $3, $4, $5) 
+        INSERT INTO developer_profile (user_id)
+        VALUES ($1) 
         RETURNING *
         `,
-        [userId, profile.name, profile.email, profile.githubUsername || null, profile.termsAccepted],
+        [userId],
       );
 
       return this.getOneDeveloperProfile(result.rows);
@@ -71,42 +71,15 @@ class DeveloperProfileRepositoryImpl implements DeveloperProfileRepository {
     const client = await this.pool.connect();
 
     try {
-      const setParts: string[] = [];
-      const values: any[] = [];
-      let paramIndex = 1;
-
-      if (updates.name !== undefined) {
-        setParts.push(`name = $${paramIndex}`);
-        values.push(updates.name);
-        paramIndex++;
-      }
-
-      if (updates.email !== undefined) {
-        setParts.push(`email = $${paramIndex}`);
-        values.push(updates.email);
-        paramIndex++;
-      }
-
-      if (updates.githubUsername !== undefined) {
-        setParts.push(`github_username = $${paramIndex}`);
-        values.push(updates.githubUsername);
-        paramIndex++;
-      }
-
-      setParts.push(`updated_at = $${paramIndex}`);
-      values.push(new Date());
-      paramIndex++;
-
-      values.push(profileId);
-
+      // Since all user fields moved to app_user, only update timestamp
       const result = await client.query(
         `
         UPDATE developer_profile
-        SET ${setParts.join(', ')}
-        WHERE id = $${paramIndex}
+        SET updated_at = $1
+        WHERE id = $2
         RETURNING *
         `,
-        values,
+        [new Date(), profileId],
       );
 
       return this.getOneDeveloperProfile(result.rows);

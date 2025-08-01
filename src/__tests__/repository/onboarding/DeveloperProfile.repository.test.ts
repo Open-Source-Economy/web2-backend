@@ -2,19 +2,29 @@ import { setupTestDB } from "../../__helpers__/jest.setup";
 import { getDeveloperProfileRepository } from "../../../db/onboarding";
 import { CreateDeveloperProfileDto } from "../../../api/dto/onboarding";
 import { v4 as uuidv4 } from 'uuid';
+import { pool } from "../../../dbPool";
+import { beforeEach } from "@jest/globals";
 
 describe("DeveloperProfileRepository", () => {
   const developerProfileRepo = getDeveloperProfileRepository();
 
   setupTestDB();
 
-  const validUserId = uuidv4();
+  let validUserId: string;
+
+  beforeEach(async () => {
+    // Create a valid user first
+    validUserId = uuidv4();
+    await pool.query(
+      `INSERT INTO app_user (id, name, email, is_email_verified, role) 
+       VALUES ($1, $2, $3, $4, $5)`,
+      [validUserId, 'Test User', 'test@example.com', true, 'user']
+    );
+  });
 
   const createValidProfileDto = (): CreateDeveloperProfileDto => ({
-    name: "John Developer",
-    email: "john@example.com",
-    githubUsername: "johndeveloper",
-    termsAccepted: true,
+    // All user fields (name, email, githubUsername, termsAccepted) are now in app_user
+    // This DTO is now empty but kept for future developer-specific fields
   });
 
   describe("create", () => {
@@ -23,27 +33,19 @@ describe("DeveloperProfileRepository", () => {
 
       const created = await developerProfileRepo.create(profileDto, validUserId);
 
-      expect(created.name).toBe(profileDto.name);
-      expect(created.email).toBe(profileDto.email);
-      expect(created.githubUsername).toBe(profileDto.githubUsername);
-      expect(created.termsAccepted).toBe(true);
       expect(created.onboardingCompleted).toBe(false);
       expect(created.userId.uuid).toBe(validUserId);
     });
 
-    it("should create a developer profile without GitHub username", async () => {
+    it("should create a developer profile with minimal data", async () => {
       const profileDto: CreateDeveloperProfileDto = {
-        name: "Jane Developer",
-        email: "jane@example.com",
-        termsAccepted: true,
+        // All user fields now in app_user
       };
 
       const created = await developerProfileRepo.create(profileDto, validUserId);
 
-      expect(created.name).toBe(profileDto.name);
-      expect(created.email).toBe(profileDto.email);
-      expect(created.githubUsername).toBe(null);
-      expect(created.termsAccepted).toBe(true);
+      expect(created.onboardingCompleted).toBe(false);
+      expect(created.userId.uuid).toBe(validUserId);
     });
   });
 
@@ -64,26 +66,23 @@ describe("DeveloperProfileRepository", () => {
 
       expect(found).not.toBeNull();
       expect(found!.id.uuid).toBe(created.id.uuid);
-      expect(found!.name).toBe(profileDto.name);
-      expect(found!.email).toBe(profileDto.email);
+      expect(found!.userId.uuid).toBe(validUserId);
     });
   });
 
   describe("update", () => {
-    it("should update profile fields", async () => {
+    it("should update profile (only timestamp since user fields moved to app_user)", async () => {
       const profileDto = createValidProfileDto();
       const created = await developerProfileRepo.create(profileDto, validUserId);
 
       const updates = {
-        name: "Updated Name",
-        email: "updated@example.com",
+        // All user fields now in app_user
       };
 
       const updated = await developerProfileRepo.update(created.id.uuid, updates);
 
-      expect(updated.name).toBe(updates.name);
-      expect(updated.email).toBe(updates.email);
-      expect(updated.githubUsername).toBe(profileDto.githubUsername); // unchanged
+      expect(updated.id.uuid).toBe(created.id.uuid);
+      expect(updated.userId.uuid).toBe(validUserId);
     });
   });
 

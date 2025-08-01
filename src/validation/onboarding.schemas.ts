@@ -1,16 +1,13 @@
 import Joi from 'joi';
 
 export const createProfileSchema = Joi.object({
-  name: Joi.string().min(2).max(255).required(),
-  email: Joi.string().email().required(),
-  githubUsername: Joi.string().optional().allow(null, ''),
-  termsAccepted: Joi.boolean().valid(true).required()
+  // All user fields (name, email, githubUsername, termsAccepted) are now in app_user
+  // This schema can be empty or contain developer-specific fields if needed in the future
 });
 
 export const updateProfileSchema = Joi.object({
-  name: Joi.string().min(2).max(255).optional(),
-  email: Joi.string().email().optional(),
-  githubUsername: Joi.string().optional().allow(null, '')
+  // All user fields (name, email, githubUsername) are now in app_user
+  // This schema can be empty or contain developer-specific fields if needed in the future
 });
 
 export const addProjectSchema = Joi.object({
