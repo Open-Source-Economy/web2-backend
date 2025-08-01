@@ -33,7 +33,7 @@ CREATE TYPE project_item_type AS ENUM (
 CREATE TABLE project_item
 (
     id                     UUID PRIMARY KEY           DEFAULT gen_random_uuid(),
-    project_id             UUID              NOT NULL,
+    project_id             UUID,
     project_item_type      project_item_type NOT NULL,
 
     -- Columns for GITHUB types
