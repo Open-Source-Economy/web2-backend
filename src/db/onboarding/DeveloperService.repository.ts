@@ -1,5 +1,8 @@
 import { Pool } from "pg";
-import { DeveloperService, DeveloperServiceId } from "../../api/model/onboarding";
+import {
+  DeveloperService,
+  DeveloperServiceId,
+} from "../../api/model/onboarding";
 import { AddServiceDto, UpdateServiceDto } from "../../api/dto";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
@@ -10,7 +13,10 @@ export function getDeveloperServiceRepository(): DeveloperServiceRepository {
 
 export interface DeveloperServiceRepository {
   create(service: AddServiceDto, profileId: string): Promise<DeveloperService>;
-  update(serviceId: string, updates: UpdateServiceDto): Promise<DeveloperService>;
+  update(
+    serviceId: string,
+    updates: UpdateServiceDto,
+  ): Promise<DeveloperService>;
   delete(serviceId: string): Promise<void>;
   getByProfileId(profileId: string): Promise<DeveloperService[]>;
   getById(serviceId: string): Promise<DeveloperService | null>;
@@ -58,11 +64,14 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
     });
   }
 
-  async create(service: AddServiceDto, profileId: string): Promise<DeveloperService> {
+  async create(
+    service: AddServiceDto,
+    profileId: string,
+  ): Promise<DeveloperService> {
     const client = await this.pool.connect();
 
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
       const serviceResult = await client.query(
         `
@@ -86,9 +95,9 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
       const createdService = this.getOneDeveloperService(serviceResult.rows);
 
       if (service.projectIds.length > 0) {
-        const projectValues = service.projectIds.map((projectId, index) => 
-          `($1, $${index + 2})`
-        ).join(', ');
+        const projectValues = service.projectIds
+          .map((projectId, index) => `($1, $${index + 2})`)
+          .join(", ");
 
         await client.query(
           `
@@ -99,21 +108,24 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
         );
       }
 
-      await client.query('COMMIT');
+      await client.query("COMMIT");
       return createdService;
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();
     }
   }
 
-  async update(serviceId: string, updates: UpdateServiceDto): Promise<DeveloperService> {
+  async update(
+    serviceId: string,
+    updates: UpdateServiceDto,
+  ): Promise<DeveloperService> {
     const client = await this.pool.connect();
 
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
       const setParts: string[] = [];
       const values: any[] = [];
@@ -152,7 +164,7 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
       const serviceResult = await client.query(
         `
         UPDATE developer_service
-        SET ${setParts.join(', ')}
+        SET ${setParts.join(", ")}
         WHERE id = $${paramIndex}
         RETURNING *
         `,
@@ -168,9 +180,9 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
         );
 
         if (updates.projectIds.length > 0) {
-          const projectValues = updates.projectIds.map((projectId, index) => 
-            `($1, $${index + 2})`
-          ).join(', ');
+          const projectValues = updates.projectIds
+            .map((projectId, index) => `($1, $${index + 2})`)
+            .join(", ");
 
           await client.query(
             `
@@ -182,10 +194,10 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
         }
       }
 
-      await client.query('COMMIT');
+      await client.query("COMMIT");
       return updatedService;
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();
@@ -196,21 +208,20 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
     const client = await this.pool.connect();
 
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
       await client.query(
         `DELETE FROM service_project WHERE developer_service_id = $1`,
         [serviceId],
       );
 
-      await client.query(
-        `DELETE FROM developer_service WHERE id = $1`,
-        [serviceId],
-      );
+      await client.query(`DELETE FROM developer_service WHERE id = $1`, [
+        serviceId,
+      ]);
 
-      await client.query('COMMIT');
+      await client.query("COMMIT");
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();
@@ -246,15 +257,18 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
     return this.getOptionalDeveloperService(result.rows);
   }
 
-  async addServiceProjects(serviceId: string, projectIds: string[]): Promise<void> {
+  async addServiceProjects(
+    serviceId: string,
+    projectIds: string[],
+  ): Promise<void> {
     if (projectIds.length === 0) return;
 
     const client = await this.pool.connect();
 
     try {
-      const projectValues = projectIds.map((projectId, index) => 
-        `($1, $${index + 2})`
-      ).join(', ');
+      const projectValues = projectIds
+        .map((projectId, index) => `($1, $${index + 2})`)
+        .join(", ");
 
       await client.query(
         `
@@ -297,6 +311,6 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
       [serviceId],
     );
 
-    return result.rows.map(row => row.developer_project_id);
+    return result.rows.map((row) => row.developer_project_id);
   }
 }

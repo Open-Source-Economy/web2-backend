@@ -1,7 +1,13 @@
 import { Pool } from "pg";
-import { DeveloperProfile, DeveloperProfileId } from "../../api/model/onboarding";
+import {
+  DeveloperProfile,
+  DeveloperProfileId,
+} from "../../api/model/onboarding";
 import { UserId } from "../../api/model";
-import { CreateDeveloperProfileDto, UpdateDeveloperProfileDto } from "../../api/dto";
+import {
+  CreateDeveloperProfileDto,
+  UpdateDeveloperProfileDto,
+} from "../../api/dto";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 
@@ -10,8 +16,14 @@ export function getDeveloperProfileRepository(): DeveloperProfileRepository {
 }
 
 export interface DeveloperProfileRepository {
-  create(profile: CreateDeveloperProfileDto, userId: string): Promise<DeveloperProfile>;
-  update(profileId: string, updates: UpdateDeveloperProfileDto): Promise<DeveloperProfile>;
+  create(
+    profile: CreateDeveloperProfileDto,
+    userId: string,
+  ): Promise<DeveloperProfile>;
+  update(
+    profileId: string,
+    updates: UpdateDeveloperProfileDto,
+  ): Promise<DeveloperProfile>;
   getByUserId(userId: string): Promise<DeveloperProfile | null>;
   getById(profileId: string): Promise<DeveloperProfile | null>;
   markCompleted(profileId: string): Promise<void>;
@@ -46,7 +58,10 @@ class DeveloperProfileRepositoryImpl implements DeveloperProfileRepository {
     }
   }
 
-  async create(profile: CreateDeveloperProfileDto, userId: string): Promise<DeveloperProfile> {
+  async create(
+    profile: CreateDeveloperProfileDto,
+    userId: string,
+  ): Promise<DeveloperProfile> {
     const client = await this.pool.connect();
 
     try {
@@ -67,7 +82,10 @@ class DeveloperProfileRepositoryImpl implements DeveloperProfileRepository {
     }
   }
 
-  async update(profileId: string, updates: UpdateDeveloperProfileDto): Promise<DeveloperProfile> {
+  async update(
+    profileId: string,
+    updates: UpdateDeveloperProfileDto,
+  ): Promise<DeveloperProfile> {
     const client = await this.pool.connect();
 
     try {

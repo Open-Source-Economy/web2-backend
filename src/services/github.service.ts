@@ -30,7 +30,10 @@ export interface GitHubApi {
 
 export interface GitHubService {
   getUserOrganizations(accessToken: string): Promise<Organization[]>;
-  getOrganizationRepositories(org: string, accessToken: string): Promise<Repository[]>;
+  getOrganizationRepositories(
+    org: string,
+    accessToken: string,
+  ): Promise<Repository[]>;
   getUserRepositories(accessToken: string): Promise<Repository[]>;
 }
 
@@ -203,13 +206,13 @@ class GitHubServiceImpl implements GitHubService {
   async getUserOrganizations(accessToken: string): Promise<Organization[]> {
     try {
       const response: Response = await fetch(
-        'https://api.github.com/user/orgs',
+        "https://api.github.com/user/orgs",
         {
-          method: 'GET',
+          method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json',
+            "Content-Type": "application/json",
+            Accept: "application/vnd.github.v3+json",
           },
         },
       );
@@ -233,35 +236,42 @@ class GitHubServiceImpl implements GitHubService {
         );
       }
     } catch (error) {
-      logger.error(`Failed to call GitHub API for getUserOrganizations: ${error}`);
-      return Promise.reject(new Error('Call to GitHub API failed: ' + error));
+      logger.error(
+        `Failed to call GitHub API for getUserOrganizations: ${error}`,
+      );
+      return Promise.reject(new Error("Call to GitHub API failed: " + error));
     }
   }
 
-  async getOrganizationRepositories(org: string, accessToken: string): Promise<Repository[]> {
+  async getOrganizationRepositories(
+    org: string,
+    accessToken: string,
+  ): Promise<Repository[]> {
     try {
       const response: Response = await fetch(
         `https://api.github.com/orgs/${org}/repos?per_page=100`,
         {
-          method: 'GET',
+          method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json',
+            "Content-Type": "application/json",
+            Accept: "application/vnd.github.v3+json",
           },
         },
       );
 
       if (response.ok) {
         const repos = await response.json();
-        return repos.map((repo: any) => {
-          const repository = Repository.fromGithubApi(repo);
-          if (repository instanceof ValidationError) {
-            logger.warn(`Failed to parse repository: ${repository.message}`);
-            return null;
-          }
-          return repository;
-        }).filter(Boolean);
+        return repos
+          .map((repo: any) => {
+            const repository = Repository.fromGithubApi(repo);
+            if (repository instanceof ValidationError) {
+              logger.warn(`Failed to parse repository: ${repository.message}`);
+              return null;
+            }
+            return repository;
+          })
+          .filter(Boolean);
       } else {
         const errorDetails = `Error fetching organization repositories: Status ${response.status} - ${response.statusText}. URL: ${response.url}`;
         logger.error(errorDetails);
@@ -272,35 +282,39 @@ class GitHubServiceImpl implements GitHubService {
         );
       }
     } catch (error) {
-      logger.error(`Failed to call GitHub API for getOrganizationRepositories: ${error}`);
-      return Promise.reject(new Error('Call to GitHub API failed: ' + error));
+      logger.error(
+        `Failed to call GitHub API for getOrganizationRepositories: ${error}`,
+      );
+      return Promise.reject(new Error("Call to GitHub API failed: " + error));
     }
   }
 
   async getUserRepositories(accessToken: string): Promise<Repository[]> {
     try {
       const response: Response = await fetch(
-        'https://api.github.com/user/repos?per_page=100&affiliation=owner,collaborator',
+        "https://api.github.com/user/repos?per_page=100&affiliation=owner,collaborator",
         {
-          method: 'GET',
+          method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json',
+            "Content-Type": "application/json",
+            Accept: "application/vnd.github.v3+json",
           },
         },
       );
 
       if (response.ok) {
         const repos = await response.json();
-        return repos.map((repo: any) => {
-          const repository = Repository.fromGithubApi(repo);
-          if (repository instanceof ValidationError) {
-            logger.warn(`Failed to parse repository: ${repository.message}`);
-            return null;
-          }
-          return repository;
-        }).filter(Boolean);
+        return repos
+          .map((repo: any) => {
+            const repository = Repository.fromGithubApi(repo);
+            if (repository instanceof ValidationError) {
+              logger.warn(`Failed to parse repository: ${repository.message}`);
+              return null;
+            }
+            return repository;
+          })
+          .filter(Boolean);
       } else {
         const errorDetails = `Error fetching user repositories: Status ${response.status} - ${response.statusText}. URL: ${response.url}`;
         logger.error(errorDetails);
@@ -311,8 +325,10 @@ class GitHubServiceImpl implements GitHubService {
         );
       }
     } catch (error) {
-      logger.error(`Failed to call GitHub API for getUserRepositories: ${error}`);
-      return Promise.reject(new Error('Call to GitHub API failed: ' + error));
+      logger.error(
+        `Failed to call GitHub API for getUserRepositories: ${error}`,
+      );
+      return Promise.reject(new Error("Call to GitHub API failed: " + error));
     }
   }
 }

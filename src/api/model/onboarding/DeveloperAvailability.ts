@@ -9,7 +9,7 @@ export class DeveloperAvailabilityId {
   }
 }
 
-export type LargerOpportunities = 'yes' | 'maybe' | 'no';
+export type LargerOpportunities = "yes" | "maybe" | "no";
 
 export class DeveloperAvailability {
   id: DeveloperAvailabilityId;
@@ -46,7 +46,9 @@ export class DeveloperAvailability {
     const id = validator.requiredString("id");
     const developerProfileId = validator.requiredString("developer_profile_id");
     const weeklyCommitment = validator.requiredNumber("weekly_commitment");
-    const largerOpportunities = validator.requiredString("larger_opportunities") as LargerOpportunities;
+    const largerOpportunities = validator.requiredString(
+      "larger_opportunities",
+    ) as LargerOpportunities;
     const hourlyRate = validator.requiredNumber("hourly_rate");
     const currency = validator.requiredString("currency");
     const createdAt = validator.requiredDate("created_at");

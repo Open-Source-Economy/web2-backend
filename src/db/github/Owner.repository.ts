@@ -21,7 +21,10 @@ export interface OwnerRepository {
   updateTokens(githubId: number, tokens: GitHubTokenData): Promise<void>;
   getTokenByUserId(userId: string): Promise<string | null>;
   getTokenByGithubId(githubId: number): Promise<GitHubTokenData | null>;
-  insertOrUpdateWithTokens(owner: Owner, tokens: GitHubTokenData): Promise<Owner>;
+  insertOrUpdateWithTokens(
+    owner: Owner,
+    tokens: GitHubTokenData,
+  ): Promise<Owner>;
 }
 
 class OwnerRepositoryImpl implements OwnerRepository {
@@ -116,7 +119,7 @@ class OwnerRepositoryImpl implements OwnerRepository {
     try {
       // Encrypt the access token
       const encryptedAccess = encryptToken(tokens.accessToken);
-      
+
       // Encrypt refresh token if provided
       let encryptedRefresh: EncryptedData | null = null;
       if (tokens.refreshToken) {
@@ -147,8 +150,8 @@ class OwnerRepositoryImpl implements OwnerRepository {
           encryptedRefresh?.authTag || null,
           tokens.scope || null,
           tokens.expiresAt || null,
-          githubId
-        ]
+          githubId,
+        ],
       );
     } finally {
       client.release();
@@ -163,7 +166,7 @@ class OwnerRepositoryImpl implements OwnerRepository {
       JOIN app_user au ON au.github_owner_id = go.github_id
       WHERE au.id = $1 AND go.access_token_encrypted IS NOT NULL
       `,
-      [userId]
+      [userId],
     );
 
     if (result.rows.length === 0) {
@@ -175,10 +178,10 @@ class OwnerRepositoryImpl implements OwnerRepository {
       return decryptToken({
         encrypted: row.access_token_encrypted,
         iv: row.access_token_iv,
-        authTag: row.access_token_auth_tag
+        authTag: row.access_token_auth_tag,
       });
     } catch (error) {
-      console.error('Failed to decrypt access token:', error);
+      console.error("Failed to decrypt access token:", error);
       return null;
     }
   }
@@ -192,7 +195,7 @@ class OwnerRepositoryImpl implements OwnerRepository {
       FROM github_owner
       WHERE github_id = $1 AND access_token_encrypted IS NOT NULL
       `,
-      [githubId]
+      [githubId],
     );
 
     if (result.rows.length === 0) {
@@ -204,7 +207,7 @@ class OwnerRepositoryImpl implements OwnerRepository {
       const accessToken = decryptToken({
         encrypted: row.access_token_encrypted,
         iv: row.access_token_iv,
-        authTag: row.access_token_auth_tag
+        authTag: row.access_token_auth_tag,
       });
 
       let refreshToken: string | undefined;
@@ -212,7 +215,7 @@ class OwnerRepositoryImpl implements OwnerRepository {
         refreshToken = decryptToken({
           encrypted: row.refresh_token_encrypted,
           iv: row.refresh_token_iv,
-          authTag: row.refresh_token_auth_tag
+          authTag: row.refresh_token_auth_tag,
         });
       }
 
@@ -223,18 +226,21 @@ class OwnerRepositoryImpl implements OwnerRepository {
         expiresAt: row.token_expires_at,
       };
     } catch (error) {
-      console.error('Failed to decrypt tokens:', error);
+      console.error("Failed to decrypt tokens:", error);
       return null;
     }
   }
 
-  async insertOrUpdateWithTokens(owner: Owner, tokens: GitHubTokenData): Promise<Owner> {
+  async insertOrUpdateWithTokens(
+    owner: Owner,
+    tokens: GitHubTokenData,
+  ): Promise<Owner> {
     const client = await this.pool.connect();
 
     try {
       // Encrypt the access token
       const encryptedAccess = encryptToken(tokens.accessToken);
-      
+
       // Encrypt refresh token if provided
       let encryptedRefresh: EncryptedData | null = null;
       if (tokens.refreshToken) {

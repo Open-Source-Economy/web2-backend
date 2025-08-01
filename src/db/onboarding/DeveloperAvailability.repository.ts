@@ -1,5 +1,8 @@
 import { Pool } from "pg";
-import { DeveloperAvailability, DeveloperAvailabilityId } from "../../api/model/onboarding";
+import {
+  DeveloperAvailability,
+  DeveloperAvailabilityId,
+} from "../../api/model/onboarding";
 import { SetAvailabilityDto, UpdateAvailabilityDto } from "../../api/dto";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
@@ -9,13 +12,21 @@ export function getDeveloperAvailabilityRepository(): DeveloperAvailabilityRepos
 }
 
 export interface DeveloperAvailabilityRepository {
-  createOrUpdate(availability: SetAvailabilityDto, profileId: string): Promise<DeveloperAvailability>;
-  update(profileId: string, updates: UpdateAvailabilityDto): Promise<DeveloperAvailability>;
+  createOrUpdate(
+    availability: SetAvailabilityDto,
+    profileId: string,
+  ): Promise<DeveloperAvailability>;
+  update(
+    profileId: string,
+    updates: UpdateAvailabilityDto,
+  ): Promise<DeveloperAvailability>;
   getByProfileId(profileId: string): Promise<DeveloperAvailability | null>;
   delete(profileId: string): Promise<void>;
 }
 
-class DeveloperAvailabilityRepositoryImpl implements DeveloperAvailabilityRepository {
+class DeveloperAvailabilityRepositoryImpl
+  implements DeveloperAvailabilityRepository
+{
   pool: Pool;
 
   constructor(pool: Pool) {
@@ -30,7 +41,9 @@ class DeveloperAvailabilityRepositoryImpl implements DeveloperAvailabilityReposi
     return availability;
   }
 
-  private getOptionalDeveloperAvailability(rows: any[]): DeveloperAvailability | null {
+  private getOptionalDeveloperAvailability(
+    rows: any[],
+  ): DeveloperAvailability | null {
     if (rows.length === 0) {
       return null;
     } else if (rows.length > 1) {
@@ -44,7 +57,10 @@ class DeveloperAvailabilityRepositoryImpl implements DeveloperAvailabilityReposi
     }
   }
 
-  async createOrUpdate(availability: SetAvailabilityDto, profileId: string): Promise<DeveloperAvailability> {
+  async createOrUpdate(
+    availability: SetAvailabilityDto,
+    profileId: string,
+  ): Promise<DeveloperAvailability> {
     const client = await this.pool.connect();
 
     try {
@@ -81,7 +97,10 @@ class DeveloperAvailabilityRepositoryImpl implements DeveloperAvailabilityReposi
     }
   }
 
-  async update(profileId: string, updates: UpdateAvailabilityDto): Promise<DeveloperAvailability> {
+  async update(
+    profileId: string,
+    updates: UpdateAvailabilityDto,
+  ): Promise<DeveloperAvailability> {
     const client = await this.pool.connect();
 
     try {
@@ -122,7 +141,7 @@ class DeveloperAvailabilityRepositoryImpl implements DeveloperAvailabilityReposi
       const result = await client.query(
         `
         UPDATE developer_availability
-        SET ${setParts.join(', ')}
+        SET ${setParts.join(", ")}
         WHERE developer_profile_id = $${paramIndex}
         RETURNING *
         `,
@@ -137,7 +156,9 @@ class DeveloperAvailabilityRepositoryImpl implements DeveloperAvailabilityReposi
     }
   }
 
-  async getByProfileId(profileId: string): Promise<DeveloperAvailability | null> {
+  async getByProfileId(
+    profileId: string,
+  ): Promise<DeveloperAvailability | null> {
     logger.debug(`Getting developer availability by profile id:`, profileId);
     const result = await this.pool.query(
       `

@@ -1,7 +1,13 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import { getDeveloperProfileRepository, getDeveloperProjectRepository } from "../../../db/onboarding";
-import { CreateDeveloperProfileDto, AddProjectDto } from "../../../api/dto/onboarding";
-import { v4 as uuidv4 } from 'uuid';
+import {
+  getDeveloperProfileRepository,
+  getDeveloperProjectRepository,
+} from "../../../db/onboarding";
+import {
+  CreateDeveloperProfileDto,
+  AddProjectDto,
+} from "../../../api/dto/onboarding";
+import { v4 as uuidv4 } from "uuid";
 
 describe("DeveloperProjectRepository", () => {
   const developerProfileRepo = getDeveloperProfileRepository();
@@ -85,8 +91,8 @@ describe("DeveloperProjectRepository", () => {
       const projects = await developerProjectRepo.getByProfileId(profileId);
 
       expect(projects).toHaveLength(2);
-      expect(projects.find(p => p.projectType === "github")).toBeDefined();
-      expect(projects.find(p => p.projectType === "manual")).toBeDefined();
+      expect(projects.find((p) => p.projectType === "github")).toBeDefined();
+      expect(projects.find((p) => p.projectType === "manual")).toBeDefined();
     });
   });
 
@@ -100,7 +106,10 @@ describe("DeveloperProjectRepository", () => {
         mergeRights: "full_rights" as const,
       };
 
-      const updated = await developerProjectRepo.update(created.id.uuid, updates);
+      const updated = await developerProjectRepo.update(
+        created.id.uuid,
+        updates,
+      );
 
       expect(updated.role).toBe(updates.role);
       expect(updated.mergeRights).toBe(updates.mergeRights);

@@ -79,7 +79,7 @@ passport.use(
           }
 
           const newSavedUser = await userRepo.insert(createUser);
-          
+
           // Store GitHub token for new user
           if (newSavedUser.data instanceof ThirdPartyUser) {
             const githubId = newSavedUser.data.providerData.owner.id.githubId;
@@ -91,7 +91,7 @@ passport.use(
               });
             }
           }
-          
+
           return done(null, newSavedUser);
         }
 

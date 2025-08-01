@@ -34,7 +34,9 @@ export class DeveloperProfile {
     const validator = new Validator(row);
     const id = validator.requiredString("id");
     const userId = validator.requiredString("user_id");
-    const onboardingCompleted = validator.requiredBoolean("onboarding_completed");
+    const onboardingCompleted = validator.requiredBoolean(
+      "onboarding_completed",
+    );
     const createdAt = validator.requiredDate("created_at");
     const updatedAt = validator.requiredDate("updated_at");
 

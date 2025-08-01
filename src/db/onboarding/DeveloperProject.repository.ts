@@ -1,5 +1,8 @@
 import { Pool } from "pg";
-import { DeveloperProject, DeveloperProjectId } from "../../api/model/onboarding";
+import {
+  DeveloperProject,
+  DeveloperProjectId,
+} from "../../api/model/onboarding";
 import { AddProjectDto, UpdateProjectDto } from "../../api/dto";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
@@ -10,7 +13,10 @@ export function getDeveloperProjectRepository(): DeveloperProjectRepository {
 
 export interface DeveloperProjectRepository {
   create(project: AddProjectDto, profileId: string): Promise<DeveloperProject>;
-  update(projectId: string, updates: UpdateProjectDto): Promise<DeveloperProject>;
+  update(
+    projectId: string,
+    updates: UpdateProjectDto,
+  ): Promise<DeveloperProject>;
   delete(projectId: string): Promise<void>;
   getByProfileId(profileId: string): Promise<DeveloperProject[]>;
   getById(projectId: string): Promise<DeveloperProject | null>;
@@ -55,7 +61,10 @@ class DeveloperProjectRepositoryImpl implements DeveloperProjectRepository {
     });
   }
 
-  async create(project: AddProjectDto, profileId: string): Promise<DeveloperProject> {
+  async create(
+    project: AddProjectDto,
+    profileId: string,
+  ): Promise<DeveloperProject> {
     const client = await this.pool.connect();
 
     try {
@@ -88,7 +97,10 @@ class DeveloperProjectRepositoryImpl implements DeveloperProjectRepository {
     }
   }
 
-  async update(projectId: string, updates: UpdateProjectDto): Promise<DeveloperProject> {
+  async update(
+    projectId: string,
+    updates: UpdateProjectDto,
+  ): Promise<DeveloperProject> {
     const client = await this.pool.connect();
 
     try {
@@ -117,7 +129,7 @@ class DeveloperProjectRepositoryImpl implements DeveloperProjectRepository {
       const result = await client.query(
         `
         UPDATE developer_project
-        SET ${setParts.join(', ')}
+        SET ${setParts.join(", ")}
         WHERE id = $${paramIndex}
         RETURNING *
         `,

@@ -9,9 +9,17 @@ export class DeveloperProjectId {
   }
 }
 
-export type ProjectType = 'github' | 'manual';
-export type ProjectRole = 'creator_founder' | 'project_lead' | 'core_developer' | 'maintainer';
-export type MergeRights = 'full_rights' | 'specific_areas' | 'no_rights' | 'formal_process';
+export type ProjectType = "github" | "manual";
+export type ProjectRole =
+  | "creator_founder"
+  | "project_lead"
+  | "core_developer"
+  | "maintainer";
+export type MergeRights =
+  | "full_rights"
+  | "specific_areas"
+  | "no_rights"
+  | "formal_process";
 
 export class DeveloperProject {
   id: DeveloperProjectId;

@@ -1,3 +1,3 @@
 export interface SetIncomePreferenceDto {
-    incomeType: 'royalties' | 'services' | 'donations';
+  incomeType: "royalties" | "services" | "donations";
 }

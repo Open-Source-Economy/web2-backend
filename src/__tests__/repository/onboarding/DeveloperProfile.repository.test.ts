@@ -1,7 +1,7 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { getDeveloperProfileRepository } from "../../../db/onboarding";
 import { CreateDeveloperProfileDto } from "../../../api/dto/onboarding";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import { pool } from "../../../dbPool";
 import { beforeEach } from "@jest/globals";
 
@@ -18,7 +18,7 @@ describe("DeveloperProfileRepository", () => {
     await pool.query(
       `INSERT INTO app_user (id, name, email, is_email_verified, role) 
        VALUES ($1, $2, $3, $4, $5)`,
-      [validUserId, 'Test User', 'test@example.com', true, 'user']
+      [validUserId, "Test User", "test@example.com", true, "user"],
     );
   });
 
@@ -31,7 +31,10 @@ describe("DeveloperProfileRepository", () => {
     it("should create a developer profile successfully", async () => {
       const profileDto = createValidProfileDto();
 
-      const created = await developerProfileRepo.create(profileDto, validUserId);
+      const created = await developerProfileRepo.create(
+        profileDto,
+        validUserId,
+      );
 
       expect(created.onboardingCompleted).toBe(false);
       expect(created.userId.uuid).toBe(validUserId);
@@ -42,7 +45,10 @@ describe("DeveloperProfileRepository", () => {
         // All user fields now in app_user
       };
 
-      const created = await developerProfileRepo.create(profileDto, validUserId);
+      const created = await developerProfileRepo.create(
+        profileDto,
+        validUserId,
+      );
 
       expect(created.onboardingCompleted).toBe(false);
       expect(created.userId.uuid).toBe(validUserId);
@@ -60,7 +66,10 @@ describe("DeveloperProfileRepository", () => {
 
     it("should return profile when it exists", async () => {
       const profileDto = createValidProfileDto();
-      const created = await developerProfileRepo.create(profileDto, validUserId);
+      const created = await developerProfileRepo.create(
+        profileDto,
+        validUserId,
+      );
 
       const found = await developerProfileRepo.getByUserId(validUserId);
 
@@ -73,13 +82,19 @@ describe("DeveloperProfileRepository", () => {
   describe("update", () => {
     it("should update profile (only timestamp since user fields moved to app_user)", async () => {
       const profileDto = createValidProfileDto();
-      const created = await developerProfileRepo.create(profileDto, validUserId);
+      const created = await developerProfileRepo.create(
+        profileDto,
+        validUserId,
+      );
 
       const updates = {
         // All user fields now in app_user
       };
 
-      const updated = await developerProfileRepo.update(created.id.uuid, updates);
+      const updated = await developerProfileRepo.update(
+        created.id.uuid,
+        updates,
+      );
 
       expect(updated.id.uuid).toBe(created.id.uuid);
       expect(updated.userId.uuid).toBe(validUserId);
@@ -89,7 +104,10 @@ describe("DeveloperProfileRepository", () => {
   describe("markCompleted", () => {
     it("should mark onboarding as completed", async () => {
       const profileDto = createValidProfileDto();
-      const created = await developerProfileRepo.create(profileDto, validUserId);
+      const created = await developerProfileRepo.create(
+        profileDto,
+        validUserId,
+      );
 
       await developerProfileRepo.markCompleted(created.id.uuid);
 

@@ -1,5 +1,8 @@
 import { Pool } from "pg";
-import { DeveloperIncomePreference, DeveloperIncomePreferenceId } from "../../api/model/onboarding";
+import {
+  DeveloperIncomePreference,
+  DeveloperIncomePreferenceId,
+} from "../../api/model/onboarding";
 import { SetIncomePreferenceDto } from "../../api/dto";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
@@ -9,19 +12,26 @@ export function getDeveloperIncomePreferenceRepository(): DeveloperIncomePrefere
 }
 
 export interface DeveloperIncomePreferenceRepository {
-  createOrUpdate(preference: SetIncomePreferenceDto, profileId: string): Promise<DeveloperIncomePreference>;
+  createOrUpdate(
+    preference: SetIncomePreferenceDto,
+    profileId: string,
+  ): Promise<DeveloperIncomePreference>;
   getByProfileId(profileId: string): Promise<DeveloperIncomePreference | null>;
   delete(profileId: string): Promise<void>;
 }
 
-class DeveloperIncomePreferenceRepositoryImpl implements DeveloperIncomePreferenceRepository {
+class DeveloperIncomePreferenceRepositoryImpl
+  implements DeveloperIncomePreferenceRepository
+{
   pool: Pool;
 
   constructor(pool: Pool) {
     this.pool = pool;
   }
 
-  private getOneDeveloperIncomePreference(rows: any[]): DeveloperIncomePreference {
+  private getOneDeveloperIncomePreference(
+    rows: any[],
+  ): DeveloperIncomePreference {
     const preference = this.getOptionalDeveloperIncomePreference(rows);
     if (preference === null) {
       throw new Error("Developer income preference not found");
@@ -29,7 +39,9 @@ class DeveloperIncomePreferenceRepositoryImpl implements DeveloperIncomePreferen
     return preference;
   }
 
-  private getOptionalDeveloperIncomePreference(rows: any[]): DeveloperIncomePreference | null {
+  private getOptionalDeveloperIncomePreference(
+    rows: any[],
+  ): DeveloperIncomePreference | null {
     if (rows.length === 0) {
       return null;
     } else if (rows.length > 1) {
@@ -43,7 +55,10 @@ class DeveloperIncomePreferenceRepositoryImpl implements DeveloperIncomePreferen
     }
   }
 
-  async createOrUpdate(preference: SetIncomePreferenceDto, profileId: string): Promise<DeveloperIncomePreference> {
+  async createOrUpdate(
+    preference: SetIncomePreferenceDto,
+    profileId: string,
+  ): Promise<DeveloperIncomePreference> {
     const client = await this.pool.connect();
 
     try {
@@ -68,8 +83,13 @@ class DeveloperIncomePreferenceRepositoryImpl implements DeveloperIncomePreferen
     }
   }
 
-  async getByProfileId(profileId: string): Promise<DeveloperIncomePreference | null> {
-    logger.debug(`Getting developer income preference by profile id:`, profileId);
+  async getByProfileId(
+    profileId: string,
+  ): Promise<DeveloperIncomePreference | null> {
+    logger.debug(
+      `Getting developer income preference by profile id:`,
+      profileId,
+    );
     const result = await this.pool.query(
       `
       SELECT *

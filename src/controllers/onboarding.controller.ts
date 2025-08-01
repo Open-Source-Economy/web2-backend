@@ -51,12 +51,20 @@ export const OnboardingController: OnboardingController = {
       const user = req.user as User;
       const profileData: dto.CreateDeveloperProfileDto = req.body;
 
-      const existingProfile = await developerProfileRepo.getByUserId(user.id.uuid);
+      const existingProfile = await developerProfileRepo.getByUserId(
+        user.id.uuid,
+      );
       if (existingProfile) {
-        throw new ApiError(StatusCodes.CONFLICT, "Developer profile already exists");
+        throw new ApiError(
+          StatusCodes.CONFLICT,
+          "Developer profile already exists",
+        );
       }
 
-      const profile = await developerProfileRepo.create(profileData, user.id.uuid);
+      const profile = await developerProfileRepo.create(
+        profileData,
+        user.id.uuid,
+      );
 
       res.status(StatusCodes.CREATED).json({
         success: true,
@@ -67,7 +75,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -86,12 +96,20 @@ export const OnboardingController: OnboardingController = {
       const user = req.user as User;
       const updates: dto.UpdateDeveloperProfileDto = req.body;
 
-      const existingProfile = await developerProfileRepo.getByUserId(user.id.uuid);
+      const existingProfile = await developerProfileRepo.getByUserId(
+        user.id.uuid,
+      );
       if (!existingProfile) {
-        throw new ApiError(StatusCodes.NOT_FOUND, "Developer profile not found");
+        throw new ApiError(
+          StatusCodes.NOT_FOUND,
+          "Developer profile not found",
+        );
       }
 
-      const updatedProfile = await developerProfileRepo.update(existingProfile.id.uuid, updates);
+      const updatedProfile = await developerProfileRepo.update(
+        existingProfile.id.uuid,
+        updates,
+      );
 
       res.status(StatusCodes.OK).json({
         success: true,
@@ -102,7 +120,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -123,10 +143,16 @@ export const OnboardingController: OnboardingController = {
 
       const profile = await developerProfileRepo.getByUserId(user.id.uuid);
       if (!profile) {
-        throw new ApiError(StatusCodes.NOT_FOUND, "Developer profile not found");
+        throw new ApiError(
+          StatusCodes.NOT_FOUND,
+          "Developer profile not found",
+        );
       }
 
-      const project = await developerProjectRepo.create(projectData, profile.id.uuid);
+      const project = await developerProjectRepo.create(
+        projectData,
+        profile.id.uuid,
+      );
 
       res.status(StatusCodes.CREATED).json({
         success: true,
@@ -143,7 +169,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -190,7 +218,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -227,7 +257,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -246,16 +278,23 @@ export const OnboardingController: OnboardingController = {
       const user = req.user as User;
       const githubData = userUtils.githubData(user);
       if (!githubData) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "GitHub authentication required");
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "GitHub authentication required",
+        );
       }
 
       // Get stored GitHub token
       const githubToken = await ownerRepo.getTokenByUserId(user.id.uuid);
       if (!githubToken) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "GitHub access token not found. Please reconnect your GitHub account.");
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "GitHub access token not found. Please reconnect your GitHub account.",
+        );
       }
 
-      const organizations = await githubService.getUserOrganizations(githubToken);
+      const organizations =
+        await githubService.getUserOrganizations(githubToken);
 
       res.status(StatusCodes.OK).json({
         success: true,
@@ -263,7 +302,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -281,21 +322,28 @@ export const OnboardingController: OnboardingController = {
 
       const { org } = req.params;
       const user = req.user as User;
-      
+
       const githubData = userUtils.githubData(user);
       if (!githubData) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "GitHub authentication required");
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "GitHub authentication required",
+        );
       }
 
       // Get stored GitHub token
       const githubToken = await ownerRepo.getTokenByUserId(user.id.uuid);
       if (!githubToken) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "GitHub access token not found. Please reconnect your GitHub account.");
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "GitHub access token not found. Please reconnect your GitHub account.",
+        );
       }
 
-      const repositories = org === 'user' 
-        ? await githubService.getUserRepositories(githubToken)
-        : await githubService.getOrganizationRepositories(org, githubToken);
+      const repositories =
+        org === "user"
+          ? await githubService.getUserRepositories(githubToken)
+          : await githubService.getOrganizationRepositories(org, githubToken);
 
       res.status(StatusCodes.OK).json({
         success: true,
@@ -303,7 +351,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -324,7 +374,10 @@ export const OnboardingController: OnboardingController = {
 
       const profile = await developerProfileRepo.getByUserId(user.id.uuid);
       if (!profile) {
-        throw new ApiError(StatusCodes.NOT_FOUND, "Developer profile not found");
+        throw new ApiError(
+          StatusCodes.NOT_FOUND,
+          "Developer profile not found",
+        );
       }
 
       const preference = await developerIncomePreferenceRepo.createOrUpdate(
@@ -341,7 +394,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -362,7 +417,10 @@ export const OnboardingController: OnboardingController = {
 
       const profile = await developerProfileRepo.getByUserId(user.id.uuid);
       if (!profile) {
-        throw new ApiError(StatusCodes.NOT_FOUND, "Developer profile not found");
+        throw new ApiError(
+          StatusCodes.NOT_FOUND,
+          "Developer profile not found",
+        );
       }
 
       const availability = await developerAvailabilityRepo.createOrUpdate(
@@ -382,7 +440,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -398,7 +458,7 @@ export const OnboardingController: OnboardingController = {
 
       res.status(StatusCodes.OK).json({
         success: true,
-        data: categories.map(cat => ({
+        data: categories.map((cat) => ({
           id: cat.id.uuid,
           name: cat.name,
           parentCategory: cat.parentCategory,
@@ -424,10 +484,16 @@ export const OnboardingController: OnboardingController = {
 
       const profile = await developerProfileRepo.getByUserId(user.id.uuid);
       if (!profile) {
-        throw new ApiError(StatusCodes.NOT_FOUND, "Developer profile not found");
+        throw new ApiError(
+          StatusCodes.NOT_FOUND,
+          "Developer profile not found",
+        );
       }
 
-      const service = await developerServiceRepo.create(serviceData, profile.id.uuid);
+      const service = await developerServiceRepo.create(
+        serviceData,
+        profile.id.uuid,
+      );
 
       res.status(StatusCodes.CREATED).json({
         success: true,
@@ -442,7 +508,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -487,7 +555,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -524,7 +594,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -544,15 +616,19 @@ export const OnboardingController: OnboardingController = {
 
       const profile = await developerProfileRepo.getByUserId(user.id.uuid);
       if (!profile) {
-        throw new ApiError(StatusCodes.NOT_FOUND, "Developer profile not found");
+        throw new ApiError(
+          StatusCodes.NOT_FOUND,
+          "Developer profile not found",
+        );
       }
 
-      const [projects, incomePreference, availability, services] = await Promise.all([
-        developerProjectRepo.getByProfileId(profile.id.uuid),
-        developerIncomePreferenceRepo.getByProfileId(profile.id.uuid),
-        developerAvailabilityRepo.getByProfileId(profile.id.uuid),
-        developerServiceRepo.getByProfileId(profile.id.uuid),
-      ]);
+      const [projects, incomePreference, availability, services] =
+        await Promise.all([
+          developerProjectRepo.getByProfileId(profile.id.uuid),
+          developerIncomePreferenceRepo.getByProfileId(profile.id.uuid),
+          developerAvailabilityRepo.getByProfileId(profile.id.uuid),
+          developerServiceRepo.getByProfileId(profile.id.uuid),
+        ]);
 
       const servicesWithDetails = await Promise.all(
         services.map(async (service) => {
@@ -561,8 +637,8 @@ export const OnboardingController: OnboardingController = {
             developerServiceRepo.getServiceProjects(service.id.uuid),
           ]);
 
-          const serviceProjectDetails = projects.filter(p => 
-            serviceProjects.includes(p.id.uuid)
+          const serviceProjectDetails = projects.filter((p) =>
+            serviceProjects.includes(p.id.uuid),
           );
 
           return {
@@ -570,7 +646,7 @@ export const OnboardingController: OnboardingController = {
             serviceCategory: category,
             projects: serviceProjectDetails,
           };
-        })
+        }),
       );
 
       const responseData: dto.GetDeveloperProfileDto = {
@@ -587,7 +663,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
@@ -607,7 +685,10 @@ export const OnboardingController: OnboardingController = {
 
       const profile = await developerProfileRepo.getByUserId(user.id.uuid);
       if (!profile) {
-        throw new ApiError(StatusCodes.NOT_FOUND, "Developer profile not found");
+        throw new ApiError(
+          StatusCodes.NOT_FOUND,
+          "Developer profile not found",
+        );
       }
 
       const [projects, incomePreference, availability] = await Promise.all([
@@ -617,15 +698,24 @@ export const OnboardingController: OnboardingController = {
       ]);
 
       if (projects.length === 0) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "At least one project is required");
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "At least one project is required",
+        );
       }
 
       if (!incomePreference) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Income preference is required");
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "Income preference is required",
+        );
       }
 
       if (!availability) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Availability information is required");
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "Availability information is required",
+        );
       }
 
       await developerProfileRepo.markCompleted(profile.id.uuid);
@@ -636,7 +726,9 @@ export const OnboardingController: OnboardingController = {
       });
     } catch (error) {
       if (error instanceof ApiError) {
-        res.status(error.statusCode).json({ success: false, error: error.message });
+        res
+          .status(error.statusCode)
+          .json({ success: false, error: error.message });
       } else {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,

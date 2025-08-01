@@ -9,7 +9,7 @@ export class DeveloperIncomePreferenceId {
   }
 }
 
-export type IncomeType = 'royalties' | 'services' | 'donations';
+export type IncomeType = "royalties" | "services" | "donations";
 
 export class DeveloperIncomePreference {
   id: DeveloperIncomePreferenceId;
