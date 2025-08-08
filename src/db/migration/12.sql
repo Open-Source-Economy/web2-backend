@@ -75,6 +75,21 @@ CREATE TABLE IF NOT EXISTS developer_settings
     CONSTRAINT fk_developer_settings_profile FOREIGN KEY (developer_profile_id) REFERENCES developer_profile (id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS developer_rights
+(
+    id                   UUID PRIMARY KEY      NOT NULL DEFAULT gen_random_uuid(),
+    developer_profile_id UUID                  NOT NULL,
+    project_item_id      UUID                  NOT NULL,
+    merge_rights         merge_rights_type[]   NOT NULL,
+    roles                developer_role_type[] NOT NULL,
+
+    created_at           TIMESTAMP             NOT NULL DEFAULT now(),
+    updated_at           TIMESTAMP             NOT NULL DEFAULT now(),
+
+    CONSTRAINT fk_developer_service_profile FOREIGN KEY (developer_profile_id) REFERENCES developer_profile (id) ON DELETE CASCADE,
+    CONSTRAINT fk_developer_service_project_item FOREIGN KEY (project_item_id) REFERENCES project_item (id) ON DELETE CASCADE
+);
+
 -- This single table holds all service definitions, both predefined and custom.
 CREATE TABLE IF NOT EXISTS services
 (
@@ -92,15 +107,15 @@ CREATE TABLE IF NOT EXISTS services
 -- Services offered by developers, linked to a project item.
 CREATE TABLE IF NOT EXISTS developer_service
 (
-    id                    UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    developer_profile_id  UUID             NOT NULL,
-    project_item_id       UUID             NOT NULL,
-    service_id            UUID             NOT NULL,
-    hourly_rate           DECIMAL(10, 2)   NOT NULL CHECK (hourly_rate >= 0),
-    currency              currency_type    NOT NULL,
-    response_time_hours   INTEGER CHECK (response_time_hours IS NULL OR response_time_hours > 0),
-    created_at            TIMESTAMP        NOT NULL DEFAULT now(),
-    updated_at            TIMESTAMP        NOT NULL DEFAULT now(),
+    id                   UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+    developer_profile_id UUID             NOT NULL,
+    project_item_id      UUID             NOT NULL,
+    service_id           UUID             NOT NULL,
+    hourly_rate          DECIMAL(10, 2)   NOT NULL CHECK (hourly_rate >= 0),
+    currency             currency_type    NOT NULL,
+    response_time_hours  INTEGER CHECK (response_time_hours IS NULL OR response_time_hours > 0),
+    created_at           TIMESTAMP        NOT NULL DEFAULT now(),
+    updated_at           TIMESTAMP        NOT NULL DEFAULT now(),
     CONSTRAINT fk_developer_service_profile FOREIGN KEY (developer_profile_id) REFERENCES developer_profile (id) ON DELETE CASCADE,
     CONSTRAINT fk_developer_service_project_item FOREIGN KEY (project_item_id) REFERENCES project_item (id) ON DELETE CASCADE,
     CONSTRAINT fk_developer_service_definition FOREIGN KEY (service_id) REFERENCES services (id) ON DELETE CASCADE
@@ -115,15 +130,14 @@ CREATE TABLE IF NOT EXISTS developer_service
 -- Use a CTE to insert main categories and then use their returned IDs to insert sub-categories.
 WITH main_services AS (
     INSERT INTO services (name, parent_id, is_custom, has_response_time)
-        VALUES
-            ('Support', NULL, FALSE, TRUE),
-            ('Development', NULL, FALSE, FALSE),
-            ('Operation', NULL, FALSE, TRUE),
-            ('Advisory', NULL, FALSE, FALSE)
+        VALUES ('Support', NULL, FALSE, TRUE),
+               ('Development', NULL, FALSE, FALSE),
+               ('Operation', NULL, FALSE, TRUE),
+               ('Advisory', NULL, FALSE, FALSE)
         ON CONFLICT (name) DO NOTHING -- Avoid errors on re-runs
-        RETURNING id, name
-)
-INSERT INTO services (name, parent_id, is_custom, has_response_time)
+        RETURNING id, name)
+INSERT
+INTO services (name, parent_id, is_custom, has_response_time)
 VALUES
     -- Support (Response time is relevant)
     ('Bug Fixes', (SELECT id FROM main_services WHERE name = 'Support'), FALSE, TRUE),
@@ -141,7 +155,8 @@ VALUES
     ('Architecture Design', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE),
     ('Technology Assessment', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE),
     ('Security & Performance', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE)
-ON CONFLICT (name) DO NOTHING; -- Avoid errors on re-runs
+ON CONFLICT (name) DO NOTHING;
+-- Avoid errors on re-runs
 
 -- -----------------------------------------------------------------------------
 -- ## 4. Indexes

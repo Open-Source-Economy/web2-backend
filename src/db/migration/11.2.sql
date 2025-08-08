@@ -80,6 +80,7 @@ CREATE TABLE project_item
 
 CREATE INDEX idx_project_item_project_id ON project_item (project_id);
 
+-- for SAM:  Step 5 is probably NOT needed, I will need to define the row of the project table my self and project_item will be created automatically on the developer onboarding process.
 
 -- Step 5: Migrate the data from the old table to the new structure.
 -- This part creates a new project for each row in the old table and a corresponding project_item.
