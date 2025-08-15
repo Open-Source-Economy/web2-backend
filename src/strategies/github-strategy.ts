@@ -23,7 +23,7 @@ passport.use(
       clientID: config.github.clientId,
       clientSecret: config.github.clientSecret,
       callbackURL: `${ensureNoEndingTrailingSlash(config.host)}/api/v1/auth/redirect/github`,
-      scope: ["user:email"], // Request additional GitHub user data like email
+      scope: ["user:email", "read:org", "repo"], // Add permissions for onboarding functionality
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
@@ -77,8 +77,23 @@ passport.use(
           }
 
           const newSavedUser = await userRepo.insert(createUser);
+
+          // Store GitHub token for new user
+          await userRepo.updateGitHubTokens(newSavedUser.id, {
+            accessToken,
+            refreshToken: refreshToken || undefined,
+            scope: "user:email,read:org,repo",
+          });
+
           return done(null, newSavedUser);
         }
+
+        // Update token for existing user
+        await userRepo.updateGitHubTokens(findUser.id, {
+          accessToken,
+          refreshToken: refreshToken || undefined,
+          scope: "user:email,read:org,repo",
+        });
 
         return done(null, findUser);
       } catch (err) {

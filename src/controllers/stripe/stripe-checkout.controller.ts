@@ -68,7 +68,7 @@ export const StripeCheckoutController: StripeCheckoutController = {
       customer_email: customer
         ? undefined
         : req.user
-          ? userUtils.email(req.user) ?? undefined
+          ? (userUtils.email(req.user) ?? undefined)
           : undefined,
       allow_promotion_codes: true,
       // {CHECKOUT_SESSION_ID} is a string literal; do not change it!

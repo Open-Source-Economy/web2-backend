@@ -2,6 +2,13 @@ import { Router } from "express";
 import passport from "passport";
 import { AuthController } from "../../controllers";
 
+// Extend session type for this file
+declare module "express-session" {
+  interface SessionData {
+    redirectPath?: string;
+  }
+}
+
 const router = Router();
 
 router.get("/status", AuthController.status);
@@ -31,7 +38,13 @@ router.post(
   AuthController.login,
 );
 
-router.get("/github", passport.authenticate("github"));
+router.get("/github", (req, res, next) => {
+  // Store the redirect path in session if provided
+  if (req.query.redirect) {
+    req.session.redirectPath = req.query.redirect as string;
+  }
+  passport.authenticate("github")(req, res, next);
+});
 
 router.get(
   "/redirect/github",
