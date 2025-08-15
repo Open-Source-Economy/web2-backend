@@ -5,14 +5,16 @@ import { validateBody, validateParams } from "../../middlewares/validation";
 import {
   createProfileSchema,
   updateProfileSchema,
-  addProjectSchema,
-  updateProjectSchema,
-  setIncomePreferenceSchema,
-  setAvailabilitySchema,
-  addServiceSchema,
-  updateServiceSchema,
+  setDeveloperSettingsSchema,
+  setIncomeStreamsSchema,
+  addRepositorySchema,
+  updateDeveloperRightsSchema,
+  createCustomServiceSchema,
+  addDeveloperServiceSchema,
+  updateDeveloperServiceSchema,
   paramIdSchema,
   githubOrgParamSchema,
+  projectItemIdParamSchema,
 } from "../../validation/onboarding.schemas";
 
 const router = Router();
@@ -33,23 +35,32 @@ router.put(
 );
 router.get("/profile", OnboardingController.getDeveloperProfile);
 
-// Projects
+// Developer settings
 router.post(
-  "/projects",
-  validateBody(addProjectSchema),
-  OnboardingController.addProject,
+  "/settings",
+  validateBody(setDeveloperSettingsSchema),
+  OnboardingController.setDeveloperSettings,
 );
-router.put(
-  "/projects/:id",
-  validateParams(paramIdSchema),
-  validateBody(updateProjectSchema),
-  OnboardingController.updateProject,
+
+// Income streams (Step 3)
+router.post(
+  "/income-streams",
+  validateBody(setIncomeStreamsSchema),
+  OnboardingController.setIncomeStreams,
+);
+
+// Repository management
+router.post(
+  "/repositories",
+  validateBody(addRepositorySchema),
+  OnboardingController.addRepository,
 );
 router.delete(
-  "/projects/:id",
-  validateParams(paramIdSchema),
-  OnboardingController.deleteProject,
+  "/repositories/:projectItemId",
+  validateParams(projectItemIdParamSchema),
+  OnboardingController.removeRepository,
 );
+router.get("/repositories", OnboardingController.getRepositories);
 
 // GitHub integration
 router.get(
@@ -61,38 +72,41 @@ router.get(
   validateParams(githubOrgParamSchema),
   OnboardingController.getGithubRepositories,
 );
-
-// Income preferences
-router.post(
-  "/income-preference",
-  validateBody(setIncomePreferenceSchema),
-  OnboardingController.setIncomePreference,
+router.get(
+  "/github/user/repositories",
+  OnboardingController.getUserGithubRepositories,
 );
 
-// Availability
-router.post(
-  "/availability",
-  validateBody(setAvailabilitySchema),
-  OnboardingController.setAvailability,
+// Developer rights management
+router.put(
+  "/rights/:id",
+  validateParams(paramIdSchema),
+  validateBody(updateDeveloperRightsSchema),
+  OnboardingController.updateDeveloperRights,
 );
 
-// Services
-router.get("/service-categories", OnboardingController.getServiceCategories);
+// Service management
+router.get("/services", OnboardingController.getServices);
 router.post(
-  "/services",
-  validateBody(addServiceSchema),
-  OnboardingController.addService,
+  "/custom-services",
+  validateBody(createCustomServiceSchema),
+  OnboardingController.createCustomService,
+);
+router.post(
+  "/developer-services",
+  validateBody(addDeveloperServiceSchema),
+  OnboardingController.addDeveloperService,
 );
 router.put(
-  "/services/:id",
+  "/developer-services/:id",
   validateParams(paramIdSchema),
-  validateBody(updateServiceSchema),
-  OnboardingController.updateService,
+  validateBody(updateDeveloperServiceSchema),
+  OnboardingController.updateDeveloperService,
 );
 router.delete(
-  "/services/:id",
+  "/developer-services/:id",
   validateParams(paramIdSchema),
-  OnboardingController.deleteService,
+  OnboardingController.deleteDeveloperService,
 );
 
 // Complete onboarding

@@ -35,6 +35,7 @@ export interface UserRepository {
     provider: Provider,
   ): Promise<User | null>;
   setPreferredCurrency(userId: UserId, currency: Currency): Promise<void>;
+  updateNameAndEmail(userId: UserId, name: string | null, email: string | null): Promise<User>;
 }
 
 class UserRepositoryImpl implements UserRepository {
@@ -298,5 +299,27 @@ class UserRepositoryImpl implements UserRepository {
     if (result.rowCount === 0) {
       throw new Error(`User with id ${userId.uuid} not found`);
     }
+  }
+
+  async updateNameAndEmail(
+    userId: UserId,
+    name: string | null,
+    email: string | null,
+  ): Promise<User> {
+    const result = await this.pool.query(
+      `
+      UPDATE app_user
+      SET name = $1, email = $2
+      WHERE id = $3
+      RETURNING *
+    `,
+      [name, email, userId.uuid],
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error(`User with id ${userId.uuid} not found`);
+    }
+
+    return this.getOneUser(result.rows);
   }
 }

@@ -21,18 +21,29 @@ export class Migration {
       "9.sql",
       "10.sql",
       "11.sql",
-      "12.sql",
+      "11.2.sql",  // Project polymorphic structure
+      "12.sql",    // Developer onboarding tables
+      "13.sql",    // No-op migration (bug fix)
+      "14.sql",    // GitHub OAuth token storage
     ];
 
     const migrations = migrationFiles.map((file) => {
       return fs.readFileSync(`src/db/migration/${file}`).toString();
     });
 
-    for (const migration of migrations) {
-      await this.pool.query(migration);
+    for (let i = 0; i < migrations.length; i++) {
+      console.log(`Running migration ${migrationFiles[i]}...`);
+      try {
+        await this.pool.query(migrations[i]);
+        console.log(`✓ Migration ${migrationFiles[i]} completed`);
+      } catch (error) {
+        console.error(`✗ Migration ${migrationFiles[i]} failed:`, error);
+        throw error;
+      }
     }
 
     await this.pool.query(`SET timezone = 'UTC';`);
+    console.log("✓ All migrations completed successfully");
   }
 
   public async drop(): Promise<void> {

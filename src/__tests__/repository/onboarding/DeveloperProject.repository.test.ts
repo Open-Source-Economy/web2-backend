@@ -22,7 +22,7 @@ describe("DeveloperProjectRepository", () => {
     const profileDto: CreateDeveloperProfileDto = {
       name: "Test Developer",
       email: "test@example.com",
-      termsAccepted: true,
+      agreedToTerms: true,
     };
     const profile = await developerProfileRepo.create(profileDto, validUserId);
     profileId = profile.id.uuid;

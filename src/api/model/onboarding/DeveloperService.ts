@@ -1,8 +1,24 @@
 import { ValidationError, Validator } from "../error";
 import { DeveloperProfileId } from "./DeveloperProfile";
-import { ServiceCategoryId } from "./ServiceCategory";
+import { CurrencyType } from "./DeveloperSettings";
 
 export class DeveloperServiceId {
+  uuid: string;
+
+  constructor(uuid: string) {
+    this.uuid = uuid;
+  }
+}
+
+export class ServiceId {
+  uuid: string;
+
+  constructor(uuid: string) {
+    this.uuid = uuid;
+  }
+}
+
+export class ProjectItemId {
   uuid: string;
 
   constructor(uuid: string) {
@@ -13,10 +29,10 @@ export class DeveloperServiceId {
 export class DeveloperService {
   id: DeveloperServiceId;
   developerProfileId: DeveloperProfileId;
-  serviceCategoryId: ServiceCategoryId;
-  serviceName: string | null;
+  projectItemId: ProjectItemId;
+  serviceId: ServiceId;
   hourlyRate: number;
-  currency: string;
+  currency: CurrencyType;
   responseTimeHours: number | null;
   createdAt: Date;
   updatedAt: Date;
@@ -24,18 +40,18 @@ export class DeveloperService {
   constructor(
     id: DeveloperServiceId,
     developerProfileId: DeveloperProfileId,
-    serviceCategoryId: ServiceCategoryId,
-    serviceName: string | null,
+    projectItemId: ProjectItemId,
+    serviceId: ServiceId,
     hourlyRate: number,
-    currency: string,
+    currency: CurrencyType,
     responseTimeHours: number | null,
     createdAt: Date,
     updatedAt: Date,
   ) {
     this.id = id;
     this.developerProfileId = developerProfileId;
-    this.serviceCategoryId = serviceCategoryId;
-    this.serviceName = serviceName;
+    this.projectItemId = projectItemId;
+    this.serviceId = serviceId;
     this.hourlyRate = hourlyRate;
     this.currency = currency;
     this.responseTimeHours = responseTimeHours;
@@ -47,10 +63,10 @@ export class DeveloperService {
     const validator = new Validator(row);
     const id = validator.requiredString("id");
     const developerProfileId = validator.requiredString("developer_profile_id");
-    const serviceCategoryId = validator.requiredString("service_category_id");
-    const serviceName = validator.optionalString("service_name");
+    const projectItemId = validator.requiredString("project_item_id");
+    const serviceId = validator.requiredString("service_id");
     const hourlyRate = validator.requiredNumber("hourly_rate");
-    const currency = validator.requiredString("currency");
+    const currency = validator.requiredString("currency") as CurrencyType;
     const responseTimeHours = validator.optionalNumber("response_time_hours");
     const createdAt = validator.requiredDate("created_at");
     const updatedAt = validator.requiredDate("updated_at");
@@ -63,8 +79,8 @@ export class DeveloperService {
     return new DeveloperService(
       new DeveloperServiceId(id),
       new DeveloperProfileId(developerProfileId),
-      new ServiceCategoryId(serviceCategoryId),
-      serviceName ?? null,
+      new ProjectItemId(projectItemId),
+      new ServiceId(serviceId),
       hourlyRate,
       currency,
       responseTimeHours ?? null,

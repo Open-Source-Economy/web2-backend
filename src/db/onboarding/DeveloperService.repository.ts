@@ -1,9 +1,10 @@
 import { Pool } from "pg";
 import {
   DeveloperService,
-  DeveloperServiceId,
+  ProjectItemId,
+  ServiceId,
 } from "../../api/model/onboarding";
-import { AddServiceDto, UpdateServiceDto } from "../../api/dto";
+import { CurrencyType } from "../../api/model/onboarding/DeveloperSettings";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 
@@ -12,17 +13,33 @@ export function getDeveloperServiceRepository(): DeveloperServiceRepository {
 }
 
 export interface DeveloperServiceRepository {
-  create(service: AddServiceDto, profileId: string): Promise<DeveloperService>;
-  update(
+  create(
+    developerProfileId: string,
+    projectItemId: string,
     serviceId: string,
-    updates: UpdateServiceDto,
+    hourlyRate: number,
+    currency: CurrencyType,
+    responseTimeHours?: number | null
   ): Promise<DeveloperService>;
-  delete(serviceId: string): Promise<void>;
+  
+  update(
+    id: string,
+    hourlyRate: number,
+    currency: CurrencyType,
+    responseTimeHours?: number | null
+  ): Promise<DeveloperService>;
+  
+  delete(id: string): Promise<void>;
+  deleteByProjectItemId(projectItemId: string): Promise<void>;
+  
   getByProfileId(profileId: string): Promise<DeveloperService[]>;
-  getById(serviceId: string): Promise<DeveloperService | null>;
-  addServiceProjects(serviceId: string, projectIds: string[]): Promise<void>;
-  removeServiceProjects(serviceId: string): Promise<void>;
-  getServiceProjects(serviceId: string): Promise<string[]>;
+  getByProjectItemId(projectItemId: string): Promise<DeveloperService[]>;
+  getById(id: string): Promise<DeveloperService | null>;
+  
+  getByProfileAndProjectItem(
+    profileId: string,
+    projectItemId: string
+  ): Promise<DeveloperService[]>;
 }
 
 class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
@@ -65,177 +82,85 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
   }
 
   async create(
-    service: AddServiceDto,
-    profileId: string,
+    developerProfileId: string,
+    projectItemId: string,
+    serviceId: string,
+    hourlyRate: number,
+    currency: CurrencyType,
+    responseTimeHours?: number | null
   ): Promise<DeveloperService> {
-    const client = await this.pool.connect();
+    const result = await this.pool.query(
+      `
+      INSERT INTO developer_service (
+        developer_profile_id, 
+        project_item_id,
+        service_id,
+        hourly_rate, 
+        currency, 
+        response_time_hours
+      )
+      VALUES ($1, $2, $3, $4, $5, $6) 
+      RETURNING *
+      `,
+      [
+        developerProfileId,
+        projectItemId,
+        serviceId,
+        hourlyRate,
+        currency,
+        responseTimeHours || null,
+      ],
+    );
 
-    try {
-      await client.query("BEGIN");
-
-      const serviceResult = await client.query(
-        `
-        INSERT INTO developer_service (
-          developer_profile_id, service_category_id, service_name, 
-          hourly_rate, currency, response_time_hours
-        )
-        VALUES ($1, $2, $3, $4, $5, $6) 
-        RETURNING *
-        `,
-        [
-          profileId,
-          service.serviceCategoryId,
-          service.serviceName || null,
-          service.hourlyRate,
-          service.currency,
-          service.responseTimeHours || null,
-        ],
-      );
-
-      const createdService = this.getOneDeveloperService(serviceResult.rows);
-
-      if (service.projectIds.length > 0) {
-        const projectValues = service.projectIds
-          .map((projectId, index) => `($1, $${index + 2})`)
-          .join(", ");
-
-        await client.query(
-          `
-          INSERT INTO service_project (developer_service_id, developer_project_id)
-          VALUES ${projectValues}
-          `,
-          [createdService.id.uuid, ...service.projectIds],
-        );
-      }
-
-      await client.query("COMMIT");
-      return createdService;
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    return this.getOneDeveloperService(result.rows);
   }
 
   async update(
-    serviceId: string,
-    updates: UpdateServiceDto,
+    id: string,
+    hourlyRate: number,
+    currency: CurrencyType,
+    responseTimeHours?: number | null
   ): Promise<DeveloperService> {
-    const client = await this.pool.connect();
+    const result = await this.pool.query(
+      `
+      UPDATE developer_service
+      SET 
+        hourly_rate = $2,
+        currency = $3,
+        response_time_hours = $4,
+        updated_at = now()
+      WHERE id = $1
+      RETURNING *
+      `,
+      [id, hourlyRate, currency, responseTimeHours || null],
+    );
 
-    try {
-      await client.query("BEGIN");
-
-      const setParts: string[] = [];
-      const values: any[] = [];
-      let paramIndex = 1;
-
-      if (updates.serviceName !== undefined) {
-        setParts.push(`service_name = $${paramIndex}`);
-        values.push(updates.serviceName);
-        paramIndex++;
-      }
-
-      if (updates.hourlyRate !== undefined) {
-        setParts.push(`hourly_rate = $${paramIndex}`);
-        values.push(updates.hourlyRate);
-        paramIndex++;
-      }
-
-      if (updates.currency !== undefined) {
-        setParts.push(`currency = $${paramIndex}`);
-        values.push(updates.currency);
-        paramIndex++;
-      }
-
-      if (updates.responseTimeHours !== undefined) {
-        setParts.push(`response_time_hours = $${paramIndex}`);
-        values.push(updates.responseTimeHours);
-        paramIndex++;
-      }
-
-      setParts.push(`updated_at = $${paramIndex}`);
-      values.push(new Date());
-      paramIndex++;
-
-      values.push(serviceId);
-
-      const serviceResult = await client.query(
-        `
-        UPDATE developer_service
-        SET ${setParts.join(", ")}
-        WHERE id = $${paramIndex}
-        RETURNING *
-        `,
-        values,
-      );
-
-      const updatedService = this.getOneDeveloperService(serviceResult.rows);
-
-      if (updates.projectIds !== undefined) {
-        await client.query(
-          `DELETE FROM service_project WHERE developer_service_id = $1`,
-          [serviceId],
-        );
-
-        if (updates.projectIds.length > 0) {
-          const projectValues = updates.projectIds
-            .map((projectId, index) => `($1, $${index + 2})`)
-            .join(", ");
-
-          await client.query(
-            `
-            INSERT INTO service_project (developer_service_id, developer_project_id)
-            VALUES ${projectValues}
-            `,
-            [serviceId, ...updates.projectIds],
-          );
-        }
-      }
-
-      await client.query("COMMIT");
-      return updatedService;
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    return this.getOneDeveloperService(result.rows);
   }
 
-  async delete(serviceId: string): Promise<void> {
-    const client = await this.pool.connect();
+  async delete(id: string): Promise<void> {
+    await this.pool.query(
+      `DELETE FROM developer_service WHERE id = $1`,
+      [id],
+    );
+  }
 
-    try {
-      await client.query("BEGIN");
-
-      await client.query(
-        `DELETE FROM service_project WHERE developer_service_id = $1`,
-        [serviceId],
-      );
-
-      await client.query(`DELETE FROM developer_service WHERE id = $1`, [
-        serviceId,
-      ]);
-
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+  async deleteByProjectItemId(projectItemId: string): Promise<void> {
+    await this.pool.query(
+      `DELETE FROM developer_service WHERE project_item_id = $1`,
+      [projectItemId],
+    );
   }
 
   async getByProfileId(profileId: string): Promise<DeveloperService[]> {
     logger.debug(`Getting developer services by profile id:`, profileId);
     const result = await this.pool.query(
       `
-      SELECT *
-      FROM developer_service
-      WHERE developer_profile_id = $1
-      ORDER BY created_at DESC
+      SELECT ds.*, s.name as service_name, s.has_response_time
+      FROM developer_service ds
+      JOIN services s ON ds.service_id = s.id
+      WHERE ds.developer_profile_id = $1
+      ORDER BY ds.created_at DESC
       `,
       [profileId],
     );
@@ -243,74 +168,53 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
     return this.getDeveloperServiceList(result.rows);
   }
 
-  async getById(serviceId: string): Promise<DeveloperService | null> {
-    logger.debug(`Getting developer service by id:`, serviceId);
+  async getByProjectItemId(projectItemId: string): Promise<DeveloperService[]> {
+    logger.debug(`Getting developer services by project item id:`, projectItemId);
     const result = await this.pool.query(
       `
-      SELECT *
-      FROM developer_service
-      WHERE id = $1
+      SELECT ds.*, s.name as service_name, s.has_response_time
+      FROM developer_service ds
+      JOIN services s ON ds.service_id = s.id
+      WHERE ds.project_item_id = $1
+      ORDER BY ds.created_at DESC
       `,
-      [serviceId],
+      [projectItemId],
+    );
+
+    return this.getDeveloperServiceList(result.rows);
+  }
+
+  async getById(id: string): Promise<DeveloperService | null> {
+    logger.debug(`Getting developer service by id:`, id);
+    const result = await this.pool.query(
+      `
+      SELECT ds.*, s.name as service_name, s.has_response_time
+      FROM developer_service ds
+      JOIN services s ON ds.service_id = s.id
+      WHERE ds.id = $1
+      `,
+      [id],
     );
 
     return this.getOptionalDeveloperService(result.rows);
   }
 
-  async addServiceProjects(
-    serviceId: string,
-    projectIds: string[],
-  ): Promise<void> {
-    if (projectIds.length === 0) return;
-
-    const client = await this.pool.connect();
-
-    try {
-      const projectValues = projectIds
-        .map((projectId, index) => `($1, $${index + 2})`)
-        .join(", ");
-
-      await client.query(
-        `
-        INSERT INTO service_project (developer_service_id, developer_project_id)
-        VALUES ${projectValues}
-        ON CONFLICT (developer_service_id, developer_project_id) DO NOTHING
-        `,
-        [serviceId, ...projectIds],
-      );
-    } catch (error) {
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  async removeServiceProjects(serviceId: string): Promise<void> {
-    const client = await this.pool.connect();
-
-    try {
-      await client.query(
-        `DELETE FROM service_project WHERE developer_service_id = $1`,
-        [serviceId],
-      );
-    } catch (error) {
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  async getServiceProjects(serviceId: string): Promise<string[]> {
-    logger.debug(`Getting service projects for service id:`, serviceId);
+  async getByProfileAndProjectItem(
+    profileId: string,
+    projectItemId: string
+  ): Promise<DeveloperService[]> {
+    logger.debug(`Getting developer services by profile and project item`);
     const result = await this.pool.query(
       `
-      SELECT developer_project_id
-      FROM service_project
-      WHERE developer_service_id = $1
+      SELECT ds.*, s.name as service_name, s.has_response_time
+      FROM developer_service ds
+      JOIN services s ON ds.service_id = s.id
+      WHERE ds.developer_profile_id = $1 AND ds.project_item_id = $2
+      ORDER BY ds.created_at DESC
       `,
-      [serviceId],
+      [profileId, projectItemId],
     );
 
-    return result.rows.map((row) => row.developer_project_id);
+    return this.getDeveloperServiceList(result.rows);
   }
 }

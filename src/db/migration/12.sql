@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS developer_rights
 CREATE TABLE IF NOT EXISTS services
 (
     id                UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
-    name              VARCHAR(255) NOT NULL,
+    name              VARCHAR(255) NOT NULL UNIQUE,
     parent_id         UUID,
     is_custom         BOOLEAN      NOT NULL,
     -- This flag indicates if a response time is relevant for this service.
@@ -154,7 +154,9 @@ VALUES
     -- Advisory (Response time is not typically relevant)
     ('Architecture Design', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE),
     ('Technology Assessment', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE),
-    ('Security & Performance', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE)
+    ('Security & Performance', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE),
+    -- Custom service for user-defined tasks
+    ('Custom Service', NULL, TRUE, FALSE)
 ON CONFLICT (name) DO NOTHING;
 -- Avoid errors on re-runs
 

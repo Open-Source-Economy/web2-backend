@@ -12,6 +12,13 @@ import {
 } from "../api/model";
 import { StatusCodes } from "http-status-codes";
 import * as dto from "../api/dto";
+
+// Extend session type for this file
+declare module "express-session" {
+  interface SessionData {
+    redirectPath?: string;
+  }
+}
 import { ensureNoEndingTrailingSlash, secureToken } from "../utils";
 import {
   companyRepo,
@@ -282,7 +289,17 @@ export const AuthController: AuthController = {
         );
       }
     }
-    res.redirect(ensureNoEndingTrailingSlash(config.frontEndUrl));
+    
+    // Check if there's a redirect path stored in the session
+    const redirectPath = req.session.redirectPath || '';
+    delete req.session.redirectPath; // Clear it after use
+    
+    // Redirect to the frontend with the appropriate path
+    const redirectUrl = redirectPath 
+      ? `${ensureNoEndingTrailingSlash(config.frontEndUrl)}${redirectPath}`
+      : ensureNoEndingTrailingSlash(config.frontEndUrl);
+    
+    res.redirect(redirectUrl);
   },
 
   async register(
