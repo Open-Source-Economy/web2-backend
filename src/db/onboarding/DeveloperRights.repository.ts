@@ -1,8 +1,8 @@
 import { Pool } from "pg";
-import { 
+import {
   DeveloperRights,
   DeveloperRoleType,
-  MergeRightsType
+  MergeRightsType,
 } from "../../api/model/onboarding/DeveloperRights";
 
 export class DeveloperRightsRepository {
@@ -16,7 +16,7 @@ export class DeveloperRightsRepository {
     developerProfileId: string,
     projectItemId: string,
     mergeRights: MergeRightsType[],
-    roles: DeveloperRoleType[]
+    roles: DeveloperRoleType[],
   ): Promise<DeveloperRights> {
     const query = `
       INSERT INTO developer_rights (
@@ -28,12 +28,7 @@ export class DeveloperRightsRepository {
       RETURNING *
     `;
 
-    const values = [
-      developerProfileId,
-      projectItemId,
-      mergeRights,
-      roles
-    ];
+    const values = [developerProfileId, projectItemId, mergeRights, roles];
 
     const result = await this.dbPool.query(query, values);
     return this.mapToDeveloperRights(result.rows[0]);
@@ -42,7 +37,7 @@ export class DeveloperRightsRepository {
   async update(
     id: string,
     mergeRights: MergeRightsType[],
-    roles: DeveloperRoleType[]
+    roles: DeveloperRoleType[],
   ): Promise<DeveloperRights> {
     const query = `
       UPDATE developer_rights
@@ -63,7 +58,9 @@ export class DeveloperRightsRepository {
     return this.mapToDeveloperRights(result.rows[0]);
   }
 
-  async findByProfileId(developerProfileId: string): Promise<DeveloperRights[]> {
+  async findByProfileId(
+    developerProfileId: string,
+  ): Promise<DeveloperRights[]> {
     const query = `
       SELECT * FROM developer_rights
       WHERE developer_profile_id = $1
@@ -71,7 +68,7 @@ export class DeveloperRightsRepository {
     `;
 
     const result = await this.dbPool.query(query, [developerProfileId]);
-    return result.rows.map(row => this.mapToDeveloperRights(row));
+    return result.rows.map((row) => this.mapToDeveloperRights(row));
   }
 
   async findByProjectItemId(projectItemId: string): Promise<DeveloperRights[]> {
@@ -82,19 +79,22 @@ export class DeveloperRightsRepository {
     `;
 
     const result = await this.dbPool.query(query, [projectItemId]);
-    return result.rows.map(row => this.mapToDeveloperRights(row));
+    return result.rows.map((row) => this.mapToDeveloperRights(row));
   }
 
   async findByProfileAndProjectItem(
     developerProfileId: string,
-    projectItemId: string
+    projectItemId: string,
   ): Promise<DeveloperRights | null> {
     const query = `
       SELECT * FROM developer_rights
       WHERE developer_profile_id = $1 AND project_item_id = $2
     `;
 
-    const result = await this.dbPool.query(query, [developerProfileId, projectItemId]);
+    const result = await this.dbPool.query(query, [
+      developerProfileId,
+      projectItemId,
+    ]);
     if (result.rows.length === 0) {
       return null;
     }
@@ -119,7 +119,7 @@ export class DeveloperRightsRepository {
       mergeRights: row.merge_rights,
       roles: row.roles,
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
     });
   }
 }

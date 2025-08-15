@@ -5,10 +5,10 @@ import { ApiError } from "../api/model/error/ApiError";
 import { User, userUtils } from "../api/model";
 import { Owner, OwnerId, OwnerType } from "../api/model/github/Owner";
 import { Repository, RepositoryId } from "../api/model/github/Repository";
-import { 
-  OpenToOtherOpportunityType, 
+import {
+  OpenToOtherOpportunityType,
   CurrencyType,
-  IncomeStreamType 
+  IncomeStreamType,
 } from "../api/model/onboarding/DeveloperSettings";
 import {
   getDeveloperProfileRepository,
@@ -41,31 +41,31 @@ export interface OnboardingController {
   createProfile(req: Request, res: Response): Promise<void>;
   updateProfile(req: Request, res: Response): Promise<void>;
   getDeveloperProfile(req: Request, res: Response): Promise<void>;
-  
+
   // Settings management
   setDeveloperSettings(req: Request, res: Response): Promise<void>;
   setIncomeStreams(req: Request, res: Response): Promise<void>;
-  
+
   // Repository management
   addRepository(req: Request, res: Response): Promise<void>;
   removeRepository(req: Request, res: Response): Promise<void>;
   getRepositories(req: Request, res: Response): Promise<void>;
-  
+
   // GitHub integration
   getGithubOrganizations(req: Request, res: Response): Promise<void>;
   getGithubRepositories(req: Request, res: Response): Promise<void>;
   getUserGithubRepositories(req: Request, res: Response): Promise<void>;
-  
+
   // Rights management
   updateDeveloperRights(req: Request, res: Response): Promise<void>;
-  
+
   // Service management
   getServices(req: Request, res: Response): Promise<void>;
   createCustomService(req: Request, res: Response): Promise<void>;
   addDeveloperService(req: Request, res: Response): Promise<void>;
   updateDeveloperService(req: Request, res: Response): Promise<void>;
   deleteDeveloperService(req: Request, res: Response): Promise<void>;
-  
+
   // Onboarding completion
   completeOnboarding(req: Request, res: Response): Promise<void>;
 }
@@ -79,7 +79,7 @@ export const OnboardingController: OnboardingController = {
 
       const user = req.user as User;
       const profileData: dto.CreateDeveloperProfileDto = req.body;
-      
+
       logger.debug(`Received request body:`, JSON.stringify(req.body));
 
       const existingProfile = await developerProfileRepo.getByUserId(
@@ -94,20 +94,24 @@ export const OnboardingController: OnboardingController = {
 
       // Update user's name and email if provided
       if (profileData.name !== undefined || profileData.email !== undefined) {
-        logger.debug(`Updating user name/email: name="${profileData.name}", email="${profileData.email}"`);
+        logger.debug(
+          `Updating user name/email: name="${profileData.name}", email="${profileData.email}"`,
+        );
         try {
           const updatedUser = await userRepo.updateNameAndEmail(
             user.id,
             profileData.name || user.name,
             profileData.email || userUtils.email(user),
           );
-          logger.debug(`User updated successfully: name="${updatedUser.name}", email="${userUtils.email(updatedUser)}"`);
+          logger.debug(
+            `User updated successfully: name="${updatedUser.name}", email="${userUtils.email(updatedUser)}"`,
+          );
         } catch (error) {
-          logger.error('Error updating user name/email:', error);
+          logger.error("Error updating user name/email:", error);
           // Continue with profile creation even if user update fails
         }
       } else {
-        logger.debug('No name/email provided in profileData');
+        logger.debug("No name/email provided in profileData");
       }
 
       const profile = await developerProfileRepo.create(
@@ -144,7 +148,7 @@ export const OnboardingController: OnboardingController = {
 
       const user = req.user as User;
       const updates: dto.UpdateDeveloperProfileDto = req.body;
-      
+
       logger.debug(`Received request body:`, JSON.stringify(req.body));
 
       const existingProfile = await developerProfileRepo.getByUserId(
@@ -159,20 +163,24 @@ export const OnboardingController: OnboardingController = {
 
       // Update user's name and email if provided
       if (updates.name !== undefined || updates.email !== undefined) {
-        logger.debug(`Updating user name/email: name="${updates.name}", email="${updates.email}"`);
+        logger.debug(
+          `Updating user name/email: name="${updates.name}", email="${updates.email}"`,
+        );
         try {
           const updatedUser = await userRepo.updateNameAndEmail(
             user.id,
             updates.name || user.name,
             updates.email || userUtils.email(user),
           );
-          logger.debug(`User updated successfully: name="${updatedUser.name}", email="${userUtils.email(updatedUser)}"`);
+          logger.debug(
+            `User updated successfully: name="${updatedUser.name}", email="${userUtils.email(updatedUser)}"`,
+          );
         } catch (error) {
-          logger.error('Error updating user name/email:', error);
+          logger.error("Error updating user name/email:", error);
           // Continue with profile update even if user update fails
         }
       } else {
-        logger.debug('No name/email provided in updates');
+        logger.debug("No name/email provided in updates");
       }
 
       const updatedProfile = await developerProfileRepo.update(
@@ -209,7 +217,7 @@ export const OnboardingController: OnboardingController = {
 
       const user = req.user as User;
       const profile = await developerProfileRepo.getByUserId(user.id.uuid);
-      
+
       // Always return user data, even if no developer profile exists yet
       const responseData: any = {
         user: {
@@ -220,9 +228,15 @@ export const OnboardingController: OnboardingController = {
 
       if (profile) {
         // Profile exists - get additional data
-        const settings = await developerSettingsRepo.findByProfileId(profile.id.uuid);
-        const rights = await developerRightsRepo.findByProfileId(profile.id.uuid);
-        const services = await developerServiceRepo.getByProfileId(profile.id.uuid);
+        const settings = await developerSettingsRepo.findByProfileId(
+          profile.id.uuid,
+        );
+        const rights = await developerRightsRepo.findByProfileId(
+          profile.id.uuid,
+        );
+        const services = await developerServiceRepo.getByProfileId(
+          profile.id.uuid,
+        );
 
         responseData.profile = {
           id: profile.id.uuid,
@@ -307,8 +321,11 @@ export const OnboardingController: OnboardingController = {
 
       const user = req.user as User;
       const { incomeStreams }: dto.SetIncomeStreamsDto = req.body;
-      
-      logger.debug(`Setting income streams for user ${user.id.uuid}:`, incomeStreams);
+
+      logger.debug(
+        `Setting income streams for user ${user.id.uuid}:`,
+        incomeStreams,
+      );
 
       let profile = await developerProfileRepo.getByUserId(user.id.uuid);
       if (!profile) {
@@ -320,8 +337,10 @@ export const OnboardingController: OnboardingController = {
       }
 
       // Get existing settings or create partial settings with just income streams
-      let existingSettings = await developerSettingsRepo.findByProfileId(profile.id.uuid);
-      
+      let existingSettings = await developerSettingsRepo.findByProfileId(
+        profile.id.uuid,
+      );
+
       if (existingSettings) {
         // Update existing settings with new income streams
         const settings = await developerSettingsRepo.upsert(
@@ -332,11 +351,11 @@ export const OnboardingController: OnboardingController = {
           existingSettings.hourlyRate,
           existingSettings.currency,
         );
-        
+
         res.status(StatusCodes.OK).json({
           success: {
             incomeStreams: settings.incomeStreams,
-            message: "Income streams updated successfully"
+            message: "Income streams updated successfully",
           },
         });
       } else {
@@ -350,11 +369,11 @@ export const OnboardingController: OnboardingController = {
           0, // Default rate - will be updated in step 4
           "USD" as CurrencyType, // Default currency - will be updated in step 4
         );
-        
+
         res.status(StatusCodes.OK).json({
           success: {
             incomeStreams: settings.incomeStreams,
-            message: "Income streams saved successfully"
+            message: "Income streams saved successfully",
           },
         });
       }
@@ -381,8 +400,11 @@ export const OnboardingController: OnboardingController = {
 
       const user = req.user as User;
       const repoData: dto.AddRepositoryDto = req.body;
-      
-      logger.debug(`Adding repository for user ${user.id.uuid}:`, JSON.stringify(repoData, null, 2));
+
+      logger.debug(
+        `Adding repository for user ${user.id.uuid}:`,
+        JSON.stringify(repoData, null, 2),
+      );
       logger.debug(`Roles array:`, repoData.roles);
       logger.debug(`First role value:`, repoData.roles?.[0]);
       logger.debug(`First role type:`, typeof repoData.roles?.[0]);
@@ -397,31 +419,38 @@ export const OnboardingController: OnboardingController = {
       }
 
       // 1. Create or update GitHub owner record
-      const ownerId = new OwnerId(repoData.githubOwnerLogin, repoData.githubOwnerId);
+      const ownerId = new OwnerId(
+        repoData.githubOwnerLogin,
+        repoData.githubOwnerId,
+      );
       const githubOwner = new Owner(
         ownerId,
         OwnerType.Organization, // Default to Organization, could be enhanced
         `https://github.com/${repoData.githubOwnerLogin}`,
-        `https://github.com/${repoData.githubOwnerLogin}.png`
+        `https://github.com/${repoData.githubOwnerLogin}.png`,
       );
-      
-      logger.debug('Creating/updating GitHub owner:', {
+
+      logger.debug("Creating/updating GitHub owner:", {
         ownerId: githubOwner.id.login,
-        type: githubOwner.type
+        type: githubOwner.type,
       });
       await ownerRepo.insertOrUpdate(githubOwner);
 
       // 2. Create or update GitHub repository record
-      const repositoryId = new RepositoryId(ownerId, repoData.githubRepositoryName, repoData.githubRepositoryId);
+      const repositoryId = new RepositoryId(
+        ownerId,
+        repoData.githubRepositoryName,
+        repoData.githubRepositoryId,
+      );
       const githubRepository = new Repository(
         repositoryId,
         `https://github.com/${repoData.githubOwnerLogin}/${repoData.githubRepositoryName}`,
-        undefined // description
+        undefined, // description
       );
-      
-      logger.debug('Creating/updating GitHub repository:', {
+
+      logger.debug("Creating/updating GitHub repository:", {
         repositoryName: githubRepository.id.name,
-        owner: githubRepository.id.ownerId.login
+        owner: githubRepository.id.ownerId.login,
       });
       await repositoryRepo.insertOrUpdate(githubRepository);
 
@@ -443,10 +472,11 @@ export const OnboardingController: OnboardingController = {
       }
 
       // Create or update developer rights
-      const existingRights = await developerRightsRepo.findByProfileAndProjectItem(
-        profile.id.uuid,
-        projectItem.id,
-      );
+      const existingRights =
+        await developerRightsRepo.findByProfileAndProjectItem(
+          profile.id.uuid,
+          projectItem.id,
+        );
 
       if (existingRights) {
         await developerRightsRepo.update(
@@ -518,7 +548,7 @@ export const OnboardingController: OnboardingController = {
 
       // Delete developer rights
       await developerRightsRepo.deleteByProjectItemId(projectItemId);
-      
+
       // Delete developer services
       await developerServiceRepo.deleteByProjectItemId(projectItemId);
 
@@ -549,7 +579,7 @@ export const OnboardingController: OnboardingController = {
 
       const user = req.user as User;
       const profile = await developerProfileRepo.getByUserId(user.id.uuid);
-      
+
       if (!profile) {
         throw new ApiError(
           StatusCodes.NOT_FOUND,
@@ -558,25 +588,28 @@ export const OnboardingController: OnboardingController = {
       }
 
       const rights = await developerRightsRepo.findByProfileId(profile.id.uuid);
-      
+
       const repositories = await Promise.all(
         rights.map(async (right) => {
-          const projectItem = await projectItemRepo.getById(right.projectItemId);
-          const services = await developerServiceRepo.getByProfileAndProjectItem(
-            profile.id.uuid,
+          const projectItem = await projectItemRepo.getById(
             right.projectItemId,
           );
-          
+          const services =
+            await developerServiceRepo.getByProfileAndProjectItem(
+              profile.id.uuid,
+              right.projectItemId,
+            );
+
           return {
             projectItemId: right.projectItemId,
-            repository: projectItem ? 
-              `${projectItem.githubOwnerLogin}/${projectItem.githubRepositoryName}` : 
-              null,
+            repository: projectItem
+              ? `${projectItem.githubOwnerLogin}/${projectItem.githubRepositoryName}`
+              : null,
             roles: right.roles,
             mergeRights: right.mergeRights,
             services,
           };
-        })
+        }),
       );
 
       res.status(StatusCodes.OK).json({
@@ -600,17 +633,19 @@ export const OnboardingController: OnboardingController = {
 
   async getGithubOrganizations(req: Request, res: Response): Promise<void> {
     try {
-      logger.debug('getGithubOrganizations called');
+      logger.debug("getGithubOrganizations called");
       if (!req.user) {
         throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
       }
 
       const user = req.user as User;
       logger.debug(`Getting GitHub organizations for user: ${user.id.uuid}`);
-      
+
       // Get the GitHub access token for the user
       const accessToken = await ownerRepo.getTokenByUserId(user.id.uuid);
-      logger.debug(`GitHub access token for user ${user.id.uuid}: ${accessToken ? 'found' : 'not found'}`);
+      logger.debug(
+        `GitHub access token for user ${user.id.uuid}: ${accessToken ? "found" : "not found"}`,
+      );
       if (!accessToken) {
         throw new ApiError(
           StatusCodes.UNAUTHORIZED,
@@ -618,9 +653,13 @@ export const OnboardingController: OnboardingController = {
         );
       }
 
-      logger.debug('Calling GitHub service to get user organizations...');
-      const organizations = await githubService.getUserOrganizations(accessToken);
-      logger.debug(`GitHub organizations result:`, JSON.stringify(organizations));
+      logger.debug("Calling GitHub service to get user organizations...");
+      const organizations =
+        await githubService.getUserOrganizations(accessToken);
+      logger.debug(
+        `GitHub organizations result:`,
+        JSON.stringify(organizations),
+      );
 
       res.status(StatusCodes.OK).json({
         success: {
@@ -651,7 +690,7 @@ export const OnboardingController: OnboardingController = {
 
       const { org } = req.params;
       const user = req.user as User;
-      
+
       // Get the GitHub access token for the user
       const accessToken = await ownerRepo.getTokenByUserId(user.id.uuid);
       if (!accessToken) {
@@ -688,14 +727,16 @@ export const OnboardingController: OnboardingController = {
 
   async getUserGithubRepositories(req: Request, res: Response): Promise<void> {
     try {
-      logger.debug('getUserGithubRepositories called');
+      logger.debug("getUserGithubRepositories called");
       if (!req.user) {
         throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
       }
 
       const user = req.user as User;
-      logger.debug(`Getting user GitHub repositories for user: ${user.id.uuid}`);
-      
+      logger.debug(
+        `Getting user GitHub repositories for user: ${user.id.uuid}`,
+      );
+
       // Get the GitHub access token for the user
       const accessToken = await ownerRepo.getTokenByUserId(user.id.uuid);
       if (!accessToken) {
@@ -705,7 +746,7 @@ export const OnboardingController: OnboardingController = {
         );
       }
 
-      logger.debug('Calling GitHub service to get user repositories...');
+      logger.debug("Calling GitHub service to get user repositories...");
       const repositories = await githubService.getUserRepositories(accessToken);
       logger.debug(`GitHub repositories result:`, JSON.stringify(repositories));
 
@@ -795,17 +836,17 @@ export const OnboardingController: OnboardingController = {
       if (!req.user) {
         throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
       }
-      
+
       const { name, hasResponseTime } = req.body;
-      
+
       // Create custom service with no parent (null) and isCustom = true
       const service = await servicesRepo.create(
         name,
         null, // parentId - custom services have no parent
         true, // isCustom
-        hasResponseTime || false // hasResponseTime
+        hasResponseTime || false, // hasResponseTime
       );
-      
+
       res.status(StatusCodes.CREATED).json({
         success: true,
         data: service,
@@ -826,7 +867,13 @@ export const OnboardingController: OnboardingController = {
       }
 
       const user = req.user as User;
-      const { projectItemId, serviceId, hourlyRate, currency, responseTimeHours } = req.body;
+      const {
+        projectItemId,
+        serviceId,
+        hourlyRate,
+        currency,
+        responseTimeHours,
+      } = req.body;
 
       const profile = await developerProfileRepo.getByUserId(user.id.uuid);
       if (!profile) {
@@ -945,7 +992,9 @@ export const OnboardingController: OnboardingController = {
       }
 
       // Check if all required data is present
-      const settings = await developerSettingsRepo.findByProfileId(profile.id.uuid);
+      const settings = await developerSettingsRepo.findByProfileId(
+        profile.id.uuid,
+      );
       if (!settings) {
         throw new ApiError(
           StatusCodes.BAD_REQUEST,
@@ -955,10 +1004,7 @@ export const OnboardingController: OnboardingController = {
 
       const rights = await developerRightsRepo.findByProfileId(profile.id.uuid);
       if (rights.length === 0) {
-        throw new ApiError(
-          StatusCodes.BAD_REQUEST,
-          "No repositories added",
-        );
+        throw new ApiError(StatusCodes.BAD_REQUEST, "No repositories added");
       }
 
       // Mark onboarding as completed
@@ -984,5 +1030,4 @@ export const OnboardingController: OnboardingController = {
       }
     }
   },
-
 };

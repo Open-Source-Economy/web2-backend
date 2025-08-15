@@ -1,173 +1,122 @@
--- SQL Migration: Developer Onboarding Schema
--- This script sets up the necessary types, tables, and indexes for the developer profile.
--- It is designed to be run as a single atomic transaction.
-
+-- Start a transaction: If any step fails, the entire process will be rolled back.
 BEGIN;
 
--- -----------------------------------------------------------------------------
--- ## 1. Custom Data Types (ENUMs)
--- -----------------------------------------------------------------------------
+-- the new `project` table that serves as a container for polymorphic items,
+-- allowing for different types of project items (e.g., GitHub repositories, owners, URLs) to be stored in a single table.
 
-CREATE TYPE developer_role_type AS ENUM (
-    'creator_founder',
-    'project_lead',
-    'core_developer',
-    'maintainer'
-    );
-
-CREATE TYPE merge_rights_type AS ENUM (
-    'full_rights',
-    'no_rights',
-    'formal_process'
-    );
-
-CREATE TYPE income_stream_type AS ENUM (
-    'royalties',
-    'services',
-    'donations'
-    );
-
-CREATE TYPE open_to_other_opportunity_type AS ENUM (
-    'yes',
-    'maybe',
-    'no'
-    );
-
-CREATE TYPE currency_type AS ENUM (
-    'USD',
-    'EUR',
-    'GBP',
-    'CHF'
-    );
+-- Step 1: Rename the existing project table to avoid conflicts and for backup.
+ALTER TABLE project
+    RENAME TO project_old;
+ALTER INDEX unique_project_owner_repo RENAME TO unique_project_owner_repo_old;
+ALTER INDEX unique_owner_repo_coalesce RENAME TO unique_owner_repo_coalesce_old;
 
 
--- -----------------------------------------------------------------------------
--- ## 2. Developer Onboarding Tables
--- -----------------------------------------------------------------------------
-
--- Adds terms_accepted to app_user (all users need to accept terms).
-ALTER TABLE app_user
-    ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN NOT NULL DEFAULT FALSE;
-
--- Developer profile links a user to their developer-specific data.
-CREATE TABLE IF NOT EXISTS developer_profile
+-- Step 2: Create the new, simplified `project` table (the container).
+CREATE TABLE project
 (
-    id                   UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    user_id              UUID             NOT NULL UNIQUE,
-    onboarding_completed BOOLEAN          NOT NULL DEFAULT FALSE,
-    created_at           TIMESTAMP        NOT NULL DEFAULT now(),
-    updated_at           TIMESTAMP        NOT NULL DEFAULT now(),
-    CONSTRAINT fk_developer_profile_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE
-);
-
--- Consolidated settings table for a developer's preferences.
-CREATE TABLE IF NOT EXISTS developer_settings
-(
-    id                        UUID PRIMARY KEY               NOT NULL DEFAULT gen_random_uuid(),
-    developer_profile_id      UUID                           NOT NULL UNIQUE,
-    income_streams            income_stream_type[]           NOT NULL,
-    hourly_weekly_commitment  INTEGER                        NOT NULL CHECK (hourly_weekly_commitment > 0),
-    open_to_other_opportunity open_to_other_opportunity_type NOT NULL,
-    hourly_rate               DECIMAL(10, 2)                 NOT NULL CHECK (hourly_rate >= 0),
-    currency                  currency_type                  NOT NULL,
-    created_at                TIMESTAMP                      NOT NULL DEFAULT now(),
-    updated_at                TIMESTAMP                      NOT NULL DEFAULT now(),
-    CONSTRAINT fk_developer_settings_profile FOREIGN KEY (developer_profile_id) REFERENCES developer_profile (id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS developer_rights
-(
-    id                   UUID PRIMARY KEY      NOT NULL DEFAULT gen_random_uuid(),
-    developer_profile_id UUID                  NOT NULL,
-    project_item_id      UUID                  NOT NULL,
-    merge_rights         merge_rights_type[]   NOT NULL,
-    roles                developer_role_type[] NOT NULL,
-
-    created_at           TIMESTAMP             NOT NULL DEFAULT now(),
-    updated_at           TIMESTAMP             NOT NULL DEFAULT now(),
-
-    CONSTRAINT fk_developer_service_profile FOREIGN KEY (developer_profile_id) REFERENCES developer_profile (id) ON DELETE CASCADE,
-    CONSTRAINT fk_developer_service_project_item FOREIGN KEY (project_item_id) REFERENCES project_item (id) ON DELETE CASCADE
-);
-
--- This single table holds all service definitions, both predefined and custom.
-CREATE TABLE IF NOT EXISTS services
-(
-    id                UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
-    name              VARCHAR(255) NOT NULL UNIQUE,
-    parent_id         UUID,
-    is_custom         BOOLEAN      NOT NULL,
-    -- This flag indicates if a response time is relevant for this service.
-    has_response_time BOOLEAN      NOT NULL,
-    created_at        TIMESTAMP    NOT NULL DEFAULT now(),
-    updated_at        TIMESTAMP    NOT NULL DEFAULT now(),
-    CONSTRAINT fk_services_parent FOREIGN KEY (parent_id) REFERENCES services (id) ON DELETE CASCADE
-);
-
--- Services offered by developers, linked to a project item.
-CREATE TABLE IF NOT EXISTS developer_service
-(
-    id                   UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    developer_profile_id UUID             NOT NULL,
-    project_item_id      UUID             NOT NULL,
-    service_id           UUID             NOT NULL,
-    hourly_rate          DECIMAL(10, 2)   NOT NULL CHECK (hourly_rate >= 0),
-    currency             currency_type    NOT NULL,
-    response_time_hours  INTEGER CHECK (response_time_hours IS NULL OR response_time_hours > 0),
-    created_at           TIMESTAMP        NOT NULL DEFAULT now(),
-    updated_at           TIMESTAMP        NOT NULL DEFAULT now(),
-    CONSTRAINT fk_developer_service_profile FOREIGN KEY (developer_profile_id) REFERENCES developer_profile (id) ON DELETE CASCADE,
-    CONSTRAINT fk_developer_service_project_item FOREIGN KEY (project_item_id) REFERENCES project_item (id) ON DELETE CASCADE,
-    CONSTRAINT fk_developer_service_definition FOREIGN KEY (service_id) REFERENCES services (id) ON DELETE CASCADE
+    id         UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
+    name       VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP    NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP    NOT NULL DEFAULT now()
 );
 
 
+-- Step 3: Create the ENUM type for the items.
+CREATE TYPE project_item_type AS ENUM (
+    'GITHUB_REPOSITORY',
+    'GITHUB_OWNER',
+    'URL'
+    );
 
--- -----------------------------------------------------------------------------
--- ## 3. Data Population for Predefined Services
--- -----------------------------------------------------------------------------
 
--- Use a CTE to insert main categories and then use their returned IDs to insert sub-categories.
-WITH main_services AS (
-    INSERT INTO services (name, parent_id, is_custom, has_response_time)
-        VALUES ('Support', NULL, FALSE, TRUE),
-               ('Development', NULL, FALSE, FALSE),
-               ('Operation', NULL, FALSE, TRUE),
-               ('Advisory', NULL, FALSE, FALSE)
-        ON CONFLICT (name) DO NOTHING -- Avoid errors on re-runs
-        RETURNING id, name)
+-- Step 4: Create the new `project_item` table for the polymorphic entities.
+CREATE TABLE project_item
+(
+    id                     UUID PRIMARY KEY           DEFAULT gen_random_uuid(),
+    project_id             UUID,
+    project_item_type      project_item_type NOT NULL,
+
+    -- Columns for GITHUB types
+    github_owner_id        BIGINT,
+    github_owner_login     VARCHAR(255),
+    github_repository_id   BIGINT,
+    github_repository_name VARCHAR(255),
+
+    -- Column for URL type
+    url                    TEXT,
+
+    created_at             TIMESTAMP         NOT NULL DEFAULT now(),
+    updated_at             TIMESTAMP         NOT NULL DEFAULT now(),
+
+    -- These will only be checked when the corresponding columns are NOT NULL.
+    CONSTRAINT fk_project FOREIGN KEY (project_id) REFERENCES project (id) ON DELETE CASCADE,
+    CONSTRAINT fk_github_owner FOREIGN KEY (github_owner_id) REFERENCES github_owner (github_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_github_repository FOREIGN KEY (github_repository_id) REFERENCES github_repository (github_id) ON DELETE RESTRICT,
+
+    CONSTRAINT check_item_type_attributes CHECK (
+            (
+                -- For a repository, we need all repository and owner details.
+                        project_item_type = 'GITHUB_REPOSITORY' AND
+                        github_repository_id IS NOT NULL AND github_repository_name IS NOT NULL AND
+                        github_owner_id IS NOT NULL AND github_owner_login IS NOT NULL AND
+                        url IS NULL
+                ) OR
+            (
+                -- For an owner, we only need owner details.
+                        project_item_type = 'GITHUB_OWNER' AND
+                        github_owner_id IS NOT NULL AND github_owner_login IS NOT NULL AND
+                        github_repository_id IS NULL AND github_repository_name IS NULL AND
+                        url IS NULL
+                ) OR
+            (
+                -- For a URL, we only need the URL.
+                        project_item_type = 'URL' AND
+                        url IS NOT NULL AND
+                        github_owner_id IS NULL AND github_owner_login IS NULL AND
+                        github_repository_id IS NULL AND github_repository_name IS NULL
+                )
+        )
+);
+
+CREATE INDEX idx_project_item_project_id ON project_item (project_id);
+
+-- for SAM:  Step 5 is probably NOT needed, I will need to define the row of the project table my self and project_item will be created automatically on the developer onboarding process.
+
+-- Step 5: Migrate the data from the old table to the new structure.
+-- This part creates a new project for each row in the old table and a corresponding project_item.
+WITH new_projects AS (
+    INSERT INTO project (id, name, created_at, updated_at)
+        SELECT id,
+               -- Create a descriptive name for the new project.
+               COALESCE(github_owner_login || '/' || github_repository_name, github_owner_login),
+               created_at,
+               updated_at
+        FROM project_old
+        RETURNING id, created_at)
 INSERT
-INTO services (name, parent_id, is_custom, has_response_time)
-VALUES
-    -- Support (Response time is relevant)
-    ('Bug Fixes', (SELECT id FROM main_services WHERE name = 'Support'), FALSE, TRUE),
-    ('New Features', (SELECT id FROM main_services WHERE name = 'Support'), FALSE, TRUE),
-    ('Code Maintenance', (SELECT id FROM main_services WHERE name = 'Support'), FALSE, TRUE),
-    -- Development (Response time is not typically relevant)
-    ('Technical Assistance', (SELECT id FROM main_services WHERE name = 'Development'), FALSE, FALSE),
-    ('Deployment Guidance', (SELECT id FROM main_services WHERE name = 'Development'), FALSE, FALSE),
-    ('Customer Support', (SELECT id FROM main_services WHERE name = 'Development'), FALSE, FALSE),
-    -- Operation (Response time is relevant)
-    ('Incident Response', (SELECT id FROM main_services WHERE name = 'Operation'), FALSE, TRUE),
-    ('Proactive Monitoring', (SELECT id FROM main_services WHERE name = 'Operation'), FALSE, TRUE),
-    ('24/7 Supervision', (SELECT id FROM main_services WHERE name = 'Operation'), FALSE, TRUE),
-    -- Advisory (Response time is not typically relevant)
-    ('Architecture Design', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE),
-    ('Technology Assessment', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE),
-    ('Security & Performance', (SELECT id FROM main_services WHERE name = 'Advisory'), FALSE, FALSE),
-    -- Custom service for user-defined tasks
-    ('Custom Service', NULL, TRUE, FALSE)
-ON CONFLICT (name) DO NOTHING;
--- Avoid errors on re-runs
-
--- -----------------------------------------------------------------------------
--- ## 4. Indexes
--- -----------------------------------------------------------------------------
-
-CREATE INDEX IF NOT EXISTS idx_services_parent_id ON services (parent_id);
-CREATE INDEX IF NOT EXISTS idx_developer_service_profile_id ON developer_service (developer_profile_id);
-CREATE INDEX IF NOT EXISTS idx_developer_service_project_item_id ON developer_service (project_item_id);
-CREATE INDEX IF NOT EXISTS idx_developer_service_definition_id ON developer_service (service_id);
+INTO project_item (project_id, project_item_type, github_owner_id, github_owner_login, github_repository_id,
+                   github_repository_name, created_at, updated_at)
+SELECT p_old.id,
+       -- Determine the item type based on whether a repository name exists.
+       CASE
+           WHEN p_old.github_repository_name IS NOT NULL THEN 'GITHUB_REPOSITORY'::project_item_type
+           ELSE 'GITHUB_OWNER'::project_item_type
+           END,
+       p_old.github_owner_id,
+       p_old.github_owner_login,
+       p_old.github_repository_id,
+       p_old.github_repository_name,
+       p_old.created_at,
+       p_old.updated_at
+FROM project_old p_old;
 
 
+-- Step 6: Clean up the old table and its indexes.
+-- It's best practice to run this command manually after you have verified the data migration was successful.
+-- DROP TABLE project_old;
+-- DROP INDEX unique_project_owner_repo_old;
+-- DROP INDEX unique_owner_repo_coalesce_old;
+
+
+-- Commit the transaction to make all changes permanent.
 COMMIT;

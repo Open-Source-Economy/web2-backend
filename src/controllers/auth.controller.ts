@@ -289,16 +289,16 @@ export const AuthController: AuthController = {
         );
       }
     }
-    
+
     // Check if there's a redirect path stored in the session
-    const redirectPath = req.session.redirectPath || '';
+    const redirectPath = req.session.redirectPath || "";
     delete req.session.redirectPath; // Clear it after use
-    
+
     // Redirect to the frontend with the appropriate path
-    const redirectUrl = redirectPath 
+    const redirectUrl = redirectPath
       ? `${ensureNoEndingTrailingSlash(config.frontEndUrl)}${redirectPath}`
       : ensureNoEndingTrailingSlash(config.frontEndUrl);
-    
+
     res.redirect(redirectUrl);
   },
 

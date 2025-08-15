@@ -19,26 +19,26 @@ export interface DeveloperServiceRepository {
     serviceId: string,
     hourlyRate: number,
     currency: CurrencyType,
-    responseTimeHours?: number | null
+    responseTimeHours?: number | null,
   ): Promise<DeveloperService>;
-  
+
   update(
     id: string,
     hourlyRate: number,
     currency: CurrencyType,
-    responseTimeHours?: number | null
+    responseTimeHours?: number | null,
   ): Promise<DeveloperService>;
-  
+
   delete(id: string): Promise<void>;
   deleteByProjectItemId(projectItemId: string): Promise<void>;
-  
+
   getByProfileId(profileId: string): Promise<DeveloperService[]>;
   getByProjectItemId(projectItemId: string): Promise<DeveloperService[]>;
   getById(id: string): Promise<DeveloperService | null>;
-  
+
   getByProfileAndProjectItem(
     profileId: string,
-    projectItemId: string
+    projectItemId: string,
   ): Promise<DeveloperService[]>;
 }
 
@@ -87,7 +87,7 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
     serviceId: string,
     hourlyRate: number,
     currency: CurrencyType,
-    responseTimeHours?: number | null
+    responseTimeHours?: number | null,
   ): Promise<DeveloperService> {
     const result = await this.pool.query(
       `
@@ -119,7 +119,7 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
     id: string,
     hourlyRate: number,
     currency: CurrencyType,
-    responseTimeHours?: number | null
+    responseTimeHours?: number | null,
   ): Promise<DeveloperService> {
     const result = await this.pool.query(
       `
@@ -139,10 +139,7 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await this.pool.query(
-      `DELETE FROM developer_service WHERE id = $1`,
-      [id],
-    );
+    await this.pool.query(`DELETE FROM developer_service WHERE id = $1`, [id]);
   }
 
   async deleteByProjectItemId(projectItemId: string): Promise<void> {
@@ -169,7 +166,10 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
   }
 
   async getByProjectItemId(projectItemId: string): Promise<DeveloperService[]> {
-    logger.debug(`Getting developer services by project item id:`, projectItemId);
+    logger.debug(
+      `Getting developer services by project item id:`,
+      projectItemId,
+    );
     const result = await this.pool.query(
       `
       SELECT ds.*, s.name as service_name, s.has_response_time
@@ -201,7 +201,7 @@ class DeveloperServiceRepositoryImpl implements DeveloperServiceRepository {
 
   async getByProfileAndProjectItem(
     profileId: string,
-    projectItemId: string
+    projectItemId: string,
   ): Promise<DeveloperService[]> {
     logger.debug(`Getting developer services by profile and project item`);
     const result = await this.pool.query(

@@ -49,8 +49,8 @@ export const addRepositorySchema = Joi.object({
         "creator_founder",
         "project_lead",
         "core_developer",
-        "maintainer"
-      )
+        "maintainer",
+      ),
     )
     .min(1)
     .required(),
@@ -66,7 +66,7 @@ export const addRepositorySchema = Joi.object({
           .max(8760)
           .optional()
           .allow(null),
-      })
+      }),
     )
     .optional(),
 });
@@ -82,8 +82,8 @@ export const updateDeveloperRightsSchema = Joi.object({
         "creator_founder",
         "project_lead",
         "core_developer",
-        "maintainer"
-      )
+        "maintainer",
+      ),
     )
     .min(1)
     .optional(),
