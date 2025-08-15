@@ -12,6 +12,7 @@ import {
 } from "../../api/model";
 import { pool } from "../../dbPool";
 import { encrypt } from "../../utils";
+import { encryptToken, decryptToken, EncryptedData } from "../../utils/crypto";
 
 export function getUserRepository(): UserRepository {
   return new UserRepositoryImpl(pool);
@@ -22,6 +23,13 @@ export interface CreateUser {
   data: LocalUser | ThirdPartyUser;
   role: UserRole;
   preferredCurrency?: Currency;
+}
+
+export interface GitHubTokenData {
+  accessToken: string;
+  refreshToken?: string;
+  scope?: string;
+  expiresAt?: Date;
 }
 
 export interface UserRepository {
@@ -40,6 +48,9 @@ export interface UserRepository {
     name: string | null,
     email: string | null,
   ): Promise<User>;
+  updateGitHubTokens(userId: UserId, tokens: GitHubTokenData): Promise<void>;
+  getGitHubTokenByUserId(userId: UserId): Promise<string | null>;
+  getGitHubTokenData(userId: UserId): Promise<GitHubTokenData | null>;
 }
 
 class UserRepositoryImpl implements UserRepository {
@@ -325,5 +336,96 @@ class UserRepositoryImpl implements UserRepository {
     }
 
     return this.getOneUser(result.rows);
+  }
+
+  async updateGitHubTokens(userId: UserId, tokens: GitHubTokenData): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      // Encrypt the access token
+      const encryptedAccess = encryptToken(tokens.accessToken);
+
+      // Encrypt refresh token if provided
+      let encryptedRefresh: EncryptedData | null = null;
+      if (tokens.refreshToken) {
+        encryptedRefresh = encryptToken(tokens.refreshToken);
+      }
+
+      await client.query(
+        `
+        UPDATE app_user 
+        SET github_access_token_encrypted = $1, 
+            github_access_token_iv = $2,
+            github_access_token_auth_tag = $3,
+            github_refresh_token_encrypted = $4,
+            github_refresh_token_iv = $5,
+            github_refresh_token_auth_tag = $6,
+            github_token_scope = $7,
+            github_token_expires_at = $8,
+            github_token_updated_at = now()
+        WHERE id = $9
+        `,
+        [
+          encryptedAccess.encrypted,
+          encryptedAccess.iv,
+          encryptedAccess.authTag,
+          encryptedRefresh?.encrypted || null,
+          encryptedRefresh?.iv || null,
+          encryptedRefresh?.authTag || null,
+          tokens.scope || null,
+          tokens.expiresAt || null,
+          userId.uuid,
+        ],
+      );
+    } finally {
+      client.release();
+    }
+  }
+
+  async getGitHubTokenByUserId(userId: UserId): Promise<string | null> {
+    const tokenData = await this.getGitHubTokenData(userId);
+    return tokenData ? tokenData.accessToken : null;
+  }
+
+  async getGitHubTokenData(userId: UserId): Promise<GitHubTokenData | null> {
+    const result = await this.pool.query(
+      `
+      SELECT github_access_token_encrypted, github_access_token_iv, github_access_token_auth_tag,
+             github_refresh_token_encrypted, github_refresh_token_iv, github_refresh_token_auth_tag,
+             github_token_scope, github_token_expires_at
+      FROM app_user
+      WHERE id = $1
+      `,
+      [userId.uuid],
+    );
+
+    if (result.rows.length === 0 || !result.rows[0].github_access_token_encrypted) {
+      return null;
+    }
+
+    const row = result.rows[0];
+
+    // Decrypt access token
+    const accessToken = decryptToken({
+      encrypted: row.github_access_token_encrypted,
+      iv: row.github_access_token_iv,
+      authTag: row.github_access_token_auth_tag,
+    });
+
+    // Decrypt refresh token if present
+    let refreshToken: string | undefined;
+    if (row.github_refresh_token_encrypted) {
+      refreshToken = decryptToken({
+        encrypted: row.github_refresh_token_encrypted,
+        iv: row.github_refresh_token_iv,
+        authTag: row.github_refresh_token_auth_tag,
+      });
+    }
+
+    return {
+      accessToken,
+      refreshToken,
+      scope: row.github_token_scope,
+      expiresAt: row.github_token_expires_at,
+    };
   }
 }

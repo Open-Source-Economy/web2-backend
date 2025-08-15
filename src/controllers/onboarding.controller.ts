@@ -642,7 +642,7 @@ export const OnboardingController: OnboardingController = {
       logger.debug(`Getting GitHub organizations for user: ${user.id.uuid}`);
 
       // Get the GitHub access token for the user
-      const accessToken = await ownerRepo.getTokenByUserId(user.id.uuid);
+      const accessToken = await userRepo.getGitHubTokenByUserId(user.id);
       logger.debug(
         `GitHub access token for user ${user.id.uuid}: ${accessToken ? "found" : "not found"}`,
       );
@@ -692,7 +692,7 @@ export const OnboardingController: OnboardingController = {
       const user = req.user as User;
 
       // Get the GitHub access token for the user
-      const accessToken = await ownerRepo.getTokenByUserId(user.id.uuid);
+      const accessToken = await userRepo.getGitHubTokenByUserId(user.id);
       if (!accessToken) {
         throw new ApiError(
           StatusCodes.UNAUTHORIZED,
@@ -738,7 +738,7 @@ export const OnboardingController: OnboardingController = {
       );
 
       // Get the GitHub access token for the user
-      const accessToken = await ownerRepo.getTokenByUserId(user.id.uuid);
+      const accessToken = await userRepo.getGitHubTokenByUserId(user.id);
       if (!accessToken) {
         throw new ApiError(
           StatusCodes.UNAUTHORIZED,

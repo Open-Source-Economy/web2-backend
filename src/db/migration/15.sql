@@ -3,17 +3,17 @@
 
 BEGIN;
 
--- Add unique constraints to prevent duplicate developer rights per project and role
--- Check if constraint doesn't already exist before adding
+-- Add unique constraints to prevent duplicate developer rights per project
+-- Note: roles column is an array, so we create unique constraint on profile and project only
 DO $$ 
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint 
-        WHERE conname = 'unique_developer_project_role'
+        WHERE conname = 'unique_developer_project'
     ) THEN
         ALTER TABLE developer_rights 
-        ADD CONSTRAINT unique_developer_project_role 
-        UNIQUE (developer_profile_id, project_item_id, role);
+        ADD CONSTRAINT unique_developer_project 
+        UNIQUE (developer_profile_id, project_item_id);
     END IF;
 END $$;
 
@@ -55,21 +55,8 @@ BEGIN
     END IF;
 END $$;
 
--- Add constraint to ensure developer_service has either response_time or not based on service requirements
-DO $$ 
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint 
-        WHERE conname = 'check_response_time_consistency'
-    ) THEN
-        ALTER TABLE developer_service 
-        ADD CONSTRAINT check_response_time_consistency 
-        CHECK (
-          (has_response_time = true AND response_time IS NOT NULL) OR 
-          (has_response_time = false AND response_time IS NULL)
-        );
-    END IF;
-END $$;
+-- Note: Removed response_time_consistency check as the column structure is different
+-- response_time_hours already has its own CHECK constraint in the table definition
 
 -- Add indexes for better performance on frequently queried columns
 CREATE INDEX IF NOT EXISTS idx_developer_profile_user_id ON developer_profile(user_id);

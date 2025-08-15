@@ -5,7 +5,6 @@ import {
   repositoryUserPermissionTokenRepo,
   userRepo,
 } from "../db/";
-import { getOwnerRepository } from "../db/github";
 import {
   Provider,
   ThirdPartyUser,
@@ -29,7 +28,6 @@ passport.use(
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
-        const ownerRepo = getOwnerRepository();
         const thirdPartyUserId = new ThirdPartyUserId(profile.id);
         const findUser = await userRepo.findByThirdPartyId(
           thirdPartyUserId,
@@ -81,31 +79,21 @@ passport.use(
           const newSavedUser = await userRepo.insert(createUser);
 
           // Store GitHub token for new user
-          if (newSavedUser.data instanceof ThirdPartyUser) {
-            const githubId = newSavedUser.data.providerData.owner.id.githubId;
-            if (githubId !== undefined) {
-              await ownerRepo.updateTokens(githubId, {
-                accessToken,
-                refreshToken: refreshToken || undefined,
-                scope: "user:email,read:org,repo",
-              });
-            }
-          }
+          await userRepo.updateGitHubTokens(newSavedUser.id, {
+            accessToken,
+            refreshToken: refreshToken || undefined,
+            scope: "user:email,read:org,repo",
+          });
 
           return done(null, newSavedUser);
         }
 
         // Update token for existing user
-        if (findUser.data instanceof ThirdPartyUser) {
-          const githubId = findUser.data.providerData.owner.id.githubId;
-          if (githubId !== undefined) {
-            await ownerRepo.updateTokens(githubId, {
-              accessToken,
-              refreshToken: refreshToken || undefined,
-              scope: "user:email,read:org,repo",
-            });
-          }
-        }
+        await userRepo.updateGitHubTokens(findUser.id, {
+          accessToken,
+          refreshToken: refreshToken || undefined,
+          scope: "user:email,read:org,repo",
+        });
 
         return done(null, findUser);
       } catch (err) {

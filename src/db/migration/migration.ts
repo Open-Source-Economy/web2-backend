@@ -24,7 +24,7 @@ export class Migration {
       "12.sql", // Project polymorphic structure
       "13.sql", // Developer onboarding tables
       "14.sql", // No-op migration (bug fix)
-      "15.sql" // Security improvements: unique constraints and health checks
+      "15.sql", // Security improvements: unique constraints and health checks
     ];
 
     const migrations = migrationFiles.map((file) => {
