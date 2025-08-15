@@ -21,10 +21,10 @@ export class Migration {
       "9.sql",
       "10.sql",
       "11.sql",
-      "11.2.sql",  // Project polymorphic structure
-      "12.sql",    // Developer onboarding tables
-      "13.sql",    // No-op migration (bug fix)
-      "14.sql",    // GitHub OAuth token storage
+      "11.2.sql", // Project polymorphic structure
+      "12.sql", // Developer onboarding tables
+      "13.sql", // No-op migration (bug fix)
+      "14.sql", // GitHub OAuth token storage
     ];
 
     const migrations = migrationFiles.map((file) => {

@@ -26,24 +26,29 @@ export function getProjectItemRepository(): ProjectItemRepository {
 }
 
 export interface ProjectItemRepository {
-  create(item: Omit<ProjectItem, "id" | "createdAt" | "updatedAt">): Promise<ProjectItem>;
+  create(
+    item: Omit<ProjectItem, "id" | "createdAt" | "updatedAt">,
+  ): Promise<ProjectItem>;
   update(id: string, item: Partial<ProjectItem>): Promise<ProjectItem>;
   delete(id: string): Promise<void>;
   getById(id: string): Promise<ProjectItem | null>;
   getByProjectId(projectId: string): Promise<ProjectItem[]>;
-  getByGithubRepository(ownerId: number, repositoryId: number): Promise<ProjectItem | null>;
+  getByGithubRepository(
+    ownerId: number,
+    repositoryId: number,
+  ): Promise<ProjectItem | null>;
   getByGithubOwner(ownerId: number): Promise<ProjectItem[]>;
   createGithubRepositoryItem(
     projectId: string | null,
     ownerId: number,
     ownerLogin: string,
     repositoryId: number,
-    repositoryName: string
+    repositoryName: string,
   ): Promise<ProjectItem>;
   createGithubOwnerItem(
     projectId: string | null,
     ownerId: number,
-    ownerLogin: string
+    ownerLogin: string,
   ): Promise<ProjectItem>;
   createUrlItem(projectId: string | null, url: string): Promise<ProjectItem>;
 }
@@ -55,7 +60,9 @@ class ProjectItemRepositoryImpl implements ProjectItemRepository {
     this.pool = pool;
   }
 
-  async create(item: Omit<ProjectItem, "id" | "createdAt" | "updatedAt">): Promise<ProjectItem> {
+  async create(
+    item: Omit<ProjectItem, "id" | "createdAt" | "updatedAt">,
+  ): Promise<ProjectItem> {
     const query = `
       INSERT INTO project_item (
         project_id,
@@ -118,7 +125,7 @@ class ProjectItemRepositoryImpl implements ProjectItemRepository {
   async getById(id: string): Promise<ProjectItem | null> {
     const result = await this.pool.query(
       `SELECT * FROM project_item WHERE id = $1`,
-      [id]
+      [id],
     );
     if (result.rows.length === 0) {
       return null;
@@ -129,16 +136,19 @@ class ProjectItemRepositoryImpl implements ProjectItemRepository {
   async getByProjectId(projectId: string): Promise<ProjectItem[]> {
     const result = await this.pool.query(
       `SELECT * FROM project_item WHERE project_id = $1 ORDER BY created_at DESC`,
-      [projectId]
+      [projectId],
     );
-    return result.rows.map(row => this.mapToProjectItem(row));
+    return result.rows.map((row) => this.mapToProjectItem(row));
   }
 
-  async getByGithubRepository(ownerId: number, repositoryId: number): Promise<ProjectItem | null> {
+  async getByGithubRepository(
+    ownerId: number,
+    repositoryId: number,
+  ): Promise<ProjectItem | null> {
     const result = await this.pool.query(
       `SELECT * FROM project_item 
        WHERE github_owner_id = $1 AND github_repository_id = $2`,
-      [ownerId, repositoryId]
+      [ownerId, repositoryId],
     );
     if (result.rows.length === 0) {
       return null;
@@ -151,9 +161,9 @@ class ProjectItemRepositoryImpl implements ProjectItemRepository {
       `SELECT * FROM project_item 
        WHERE github_owner_id = $1 
        ORDER BY created_at DESC`,
-      [ownerId]
+      [ownerId],
     );
-    return result.rows.map(row => this.mapToProjectItem(row));
+    return result.rows.map((row) => this.mapToProjectItem(row));
   }
 
   async createGithubRepositoryItem(
@@ -161,10 +171,12 @@ class ProjectItemRepositoryImpl implements ProjectItemRepository {
     ownerId: number,
     ownerLogin: string,
     repositoryId: number,
-    repositoryName: string
+    repositoryName: string,
   ): Promise<ProjectItem> {
-    logger.debug(`Creating GitHub repository project item: ${ownerLogin}/${repositoryName}`);
-    
+    logger.debug(
+      `Creating GitHub repository project item: ${ownerLogin}/${repositoryName}`,
+    );
+
     return this.create({
       projectId,
       projectItemType: ProjectItemType.GITHUB_REPOSITORY,
@@ -178,10 +190,10 @@ class ProjectItemRepositoryImpl implements ProjectItemRepository {
   async createGithubOwnerItem(
     projectId: string | null,
     ownerId: number,
-    ownerLogin: string
+    ownerLogin: string,
   ): Promise<ProjectItem> {
     logger.debug(`Creating GitHub owner project item: ${ownerLogin}`);
-    
+
     return this.create({
       projectId,
       projectItemType: ProjectItemType.GITHUB_OWNER,
@@ -190,9 +202,12 @@ class ProjectItemRepositoryImpl implements ProjectItemRepository {
     });
   }
 
-  async createUrlItem(projectId: string | null, url: string): Promise<ProjectItem> {
+  async createUrlItem(
+    projectId: string | null,
+    url: string,
+  ): Promise<ProjectItem> {
     logger.debug(`Creating URL project item: ${url}`);
-    
+
     return this.create({
       projectId,
       projectItemType: ProjectItemType.URL,

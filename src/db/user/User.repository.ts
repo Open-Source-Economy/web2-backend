@@ -35,7 +35,11 @@ export interface UserRepository {
     provider: Provider,
   ): Promise<User | null>;
   setPreferredCurrency(userId: UserId, currency: Currency): Promise<void>;
-  updateNameAndEmail(userId: UserId, name: string | null, email: string | null): Promise<User>;
+  updateNameAndEmail(
+    userId: UserId,
+    name: string | null,
+    email: string | null,
+  ): Promise<User>;
 }
 
 class UserRepositoryImpl implements UserRepository {

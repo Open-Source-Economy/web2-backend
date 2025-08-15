@@ -1,9 +1,9 @@
 import { Pool } from "pg";
-import { 
-  DeveloperSettings, 
+import {
+  DeveloperSettings,
   IncomeStreamType,
   OpenToOtherOpportunityType,
-  CurrencyType
+  CurrencyType,
 } from "../../api/model/onboarding/DeveloperSettings";
 import { DeveloperProfileId } from "../../api/model/onboarding";
 
@@ -20,7 +20,7 @@ export class DeveloperSettingsRepository {
     hourlyWeeklyCommitment: number,
     openToOtherOpportunity: OpenToOtherOpportunityType,
     hourlyRate: number,
-    currency: CurrencyType
+    currency: CurrencyType,
   ): Promise<DeveloperSettings> {
     const query = `
       INSERT INTO developer_settings (
@@ -40,7 +40,7 @@ export class DeveloperSettingsRepository {
       hourlyWeeklyCommitment,
       openToOtherOpportunity,
       hourlyRate,
-      currency
+      currency,
     ];
 
     const result = await this.dbPool.query(query, values);
@@ -53,7 +53,7 @@ export class DeveloperSettingsRepository {
     hourlyWeeklyCommitment: number,
     openToOtherOpportunity: OpenToOtherOpportunityType,
     hourlyRate: number,
-    currency: CurrencyType
+    currency: CurrencyType,
   ): Promise<DeveloperSettings> {
     const query = `
       UPDATE developer_settings
@@ -74,17 +74,21 @@ export class DeveloperSettingsRepository {
       hourlyWeeklyCommitment,
       openToOtherOpportunity,
       hourlyRate,
-      currency
+      currency,
     ];
 
     const result = await this.dbPool.query(query, values);
     if (result.rows.length === 0) {
-      throw new Error(`DeveloperSettings not found for profile ${developerProfileId}`);
+      throw new Error(
+        `DeveloperSettings not found for profile ${developerProfileId}`,
+      );
     }
     return this.mapToDeveloperSettings(result.rows[0]);
   }
 
-  async findByProfileId(developerProfileId: string): Promise<DeveloperSettings | null> {
+  async findByProfileId(
+    developerProfileId: string,
+  ): Promise<DeveloperSettings | null> {
     const query = `
       SELECT * FROM developer_settings
       WHERE developer_profile_id = $1
@@ -103,7 +107,7 @@ export class DeveloperSettingsRepository {
     hourlyWeeklyCommitment: number,
     openToOtherOpportunity: OpenToOtherOpportunityType,
     hourlyRate: number,
-    currency: CurrencyType
+    currency: CurrencyType,
   ): Promise<DeveloperSettings> {
     const query = `
       INSERT INTO developer_settings (
@@ -131,7 +135,7 @@ export class DeveloperSettingsRepository {
       hourlyWeeklyCommitment,
       openToOtherOpportunity,
       hourlyRate,
-      currency
+      currency,
     ];
 
     const result = await this.dbPool.query(query, values);
@@ -148,7 +152,7 @@ export class DeveloperSettingsRepository {
       hourlyRate: parseFloat(row.hourly_rate),
       currency: row.currency,
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
     });
   }
 }

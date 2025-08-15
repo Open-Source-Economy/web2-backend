@@ -1,6 +1,6 @@
-import { 
-  DeveloperRoleType, 
-  MergeRightsType 
+import {
+  DeveloperRoleType,
+  MergeRightsType,
 } from "../../model/onboarding/DeveloperRights";
 
 export interface AddDeveloperRightsDto {

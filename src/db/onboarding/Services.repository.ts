@@ -12,7 +12,7 @@ export class ServicesRepository {
     name: string,
     parentId: string | null,
     isCustom: boolean,
-    hasResponseTime: boolean
+    hasResponseTime: boolean,
   ): Promise<Services> {
     const query = `
       INSERT INTO services (
@@ -37,7 +37,7 @@ export class ServicesRepository {
     `;
 
     const result = await this.dbPool.query(query);
-    return result.rows.map(row => this.mapToServices(row));
+    return result.rows.map((row) => this.mapToServices(row));
   }
 
   async findById(id: string): Promise<Services | null> {
@@ -68,7 +68,7 @@ export class ServicesRepository {
     `;
 
     const result = await this.dbPool.query(query);
-    return result.rows.map(row => this.mapToServices(row));
+    return result.rows.map((row) => this.mapToServices(row));
   }
 
   async findSubcategories(parentId: string): Promise<Services[]> {
@@ -79,7 +79,7 @@ export class ServicesRepository {
     `;
 
     const result = await this.dbPool.query(query, [parentId]);
-    return result.rows.map(row => this.mapToServices(row));
+    return result.rows.map((row) => this.mapToServices(row));
   }
 
   async findCustomServices(): Promise<Services[]> {
@@ -90,7 +90,7 @@ export class ServicesRepository {
     `;
 
     const result = await this.dbPool.query(query);
-    return result.rows.map(row => this.mapToServices(row));
+    return result.rows.map((row) => this.mapToServices(row));
   }
 
   async getHierarchy(): Promise<any[]> {
@@ -117,10 +117,10 @@ export class ServicesRepository {
     `;
 
     const result = await this.dbPool.query(query);
-    return result.rows.map(row => ({
+    return result.rows.map((row) => ({
       ...this.mapToServices(row),
       level: row.level,
-      ancestors: row.ancestors
+      ancestors: row.ancestors,
     }));
   }
 
@@ -137,7 +137,7 @@ export class ServicesRepository {
       isCustom: row.is_custom,
       hasResponseTime: row.has_response_time,
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
     });
   }
 }

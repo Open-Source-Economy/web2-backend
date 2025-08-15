@@ -200,14 +200,14 @@ class ProjectRepositoryImpl implements ProjectRepository {
     const client = await this.pool.connect();
 
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
       const params = ProjectUtils.getDBParams(project.id);
 
       // First, create or get the project container
-      const projectName = params.repoName 
+      const projectName = params.repoName
         ? `${params.ownerLogin}/${params.repoName}`
         : params.ownerLogin;
-        
+
       const projectQuery = `
         INSERT INTO project (name, ecosystem)
         VALUES ($1, $2)
@@ -216,16 +216,16 @@ class ProjectRepositoryImpl implements ProjectRepository {
             updated_at = NOW()
         RETURNING id;
       `;
-      
+
       const projectResult = await client.query(projectQuery, [
         projectName,
-        project.projectEcosystem || null
+        project.projectEcosystem || null,
       ]);
       const projectId = projectResult.rows[0].id;
 
       // Then, create or update the project_item
-      const itemType = params.repoName ? 'GITHUB_REPOSITORY' : 'GITHUB_OWNER';
-      
+      const itemType = params.repoName ? "GITHUB_REPOSITORY" : "GITHUB_OWNER";
+
       // Check if project_item already exists
       const existingItemQuery = `
         SELECT id FROM project_item 
@@ -233,16 +233,16 @@ class ProjectRepositoryImpl implements ProjectRepository {
           AND github_owner_login = $2 
           AND (github_repository_name = $3 OR (github_repository_name IS NULL AND $3 IS NULL))
       `;
-      
+
       const existingItem = await client.query(existingItemQuery, [
         projectId,
         params.ownerLogin,
-        params.repoName
+        params.repoName,
       ]);
-      
+
       let itemQuery;
       let itemParams;
-      
+
       if (existingItem.rows.length > 0) {
         // Update existing item
         itemQuery = `
@@ -253,11 +253,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
           WHERE id = $3
           RETURNING *;
         `;
-        itemParams = [
-          params.ownerId,
-          params.repoId,
-          existingItem.rows[0].id
-        ];
+        itemParams = [params.ownerId, params.repoId, existingItem.rows[0].id];
       } else {
         // Insert new item
         itemQuery = `
@@ -278,18 +274,18 @@ class ProjectRepositoryImpl implements ProjectRepository {
           params.ownerId,
           params.ownerLogin,
           params.repoId,
-          params.repoName
+          params.repoName,
         ];
       }
 
       await client.query(itemQuery, itemParams);
-      
-      await client.query('COMMIT');
+
+      await client.query("COMMIT");
 
       // Fetch and return the full project
       return (await this.getById(project.id)) as Project;
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();

@@ -1,7 +1,7 @@
-import { 
-  IncomeStreamType, 
-  OpenToOtherOpportunityType, 
-  CurrencyType 
+import {
+  IncomeStreamType,
+  OpenToOtherOpportunityType,
+  CurrencyType,
 } from "../../model/onboarding/DeveloperSettings";
 
 export interface SetDeveloperSettingsDto {
