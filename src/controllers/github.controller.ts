@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import * as dto from "../api/dto";
-import { OwnerId, RepositoryId } from "../api/model";
+import * as dto from "@open-source-economy/api-types";
+import { OwnerId, RepositoryId } from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 import { githubSyncService } from "../services";
 

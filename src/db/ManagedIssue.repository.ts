@@ -1,7 +1,11 @@
 import { Pool } from "pg";
-import { IssueId, ManagedIssue, ManagedIssueId } from "../api/model";
+import {
+  CreateManagedIssueBody,
+  IssueId,
+  ManagedIssue,
+  ManagedIssueId,
+} from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
-import { CreateManagedIssueBody } from "../api/dto";
 
 export function getManagedIssueRepository(): ManagedIssueRepository {
   return new ManagedIssueRepositoryImpl(pool);

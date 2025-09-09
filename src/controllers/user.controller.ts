@@ -1,9 +1,13 @@
 import { Request, Response } from "express";
 import { planAndCreditsRepo, userRepo } from "../db/";
-import * as dto from "../api/dto";
+import * as dto from "@open-source-economy/api-types";
+import {
+  ApiError,
+  CompanyId,
+  Currency,
+  UserId,
+} from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
-import { CompanyId, Currency, UserId } from "../api/model";
-import { ApiError } from "../api/model/error/ApiError";
 
 export interface UserController {
   getAvailableCredit(

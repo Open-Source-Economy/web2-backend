@@ -1,8 +1,14 @@
 import * as dotenv from "dotenv";
 import Joi from "joi";
 import { NodeEnv } from "./NodeEnv";
+import { Terms } from "@open-source-economy/api-types";
 
 dotenv.config();
+
+// TODO: change this
+export const terms: Terms = {
+  version: "1.0.0",
+};
 
 const envVarsSchema = Joi.object({
   ENV: Joi.string()

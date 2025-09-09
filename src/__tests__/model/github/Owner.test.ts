@@ -1,5 +1,5 @@
 import fs from "fs";
-import { Owner, OwnerId, OwnerType } from "../../../api/model";
+import { Owner, OwnerId, OwnerType } from "@open-source-economy/api-types";
 
 describe("Owner", () => {
   it("fromGithubApi does not throw an error", () => {

@@ -11,12 +11,12 @@ import {
   CampaignPriceType,
   CampaignProductType,
   Currency,
+  Price,
   PriceType,
   ProductType,
   productTypeUtils,
   StripeProductId,
-} from "../../../api/model";
-import { Price } from "../../../api/dto";
+} from "@open-source-economy/api-types";
 import { CampaignHelper } from "../../../controllers/campaign/campaign.helper";
 
 const currencyPriceConfigs: Record<

@@ -4,9 +4,9 @@ import {
   ProjectEcosystem,
   ProjectId,
   ProjectUtils,
-} from "../../api/model";
+  ValidationError,
+} from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
-import { ValidationError } from "../../api/model/error";
 
 export function getProjectRepository(): ProjectRepository {
   return new ProjectRepositoryImpl(pool);
@@ -108,7 +108,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
                    r.github_name        as ${this.repositoryTablePrefix}github_name,
                    r.github_html_url    as ${this.repositoryTablePrefix}github_html_url,
                    r.github_description as ${this.repositoryTablePrefix}github_description
-            FROM project p
+            FROM project_old p
                      JOIN github_owner o ON p.github_owner_login = o.github_login
                      LEFT JOIN github_repository r ON p.github_repository_name = r.github_name
                 AND p.github_owner_login = r.github_owner_login;
@@ -131,7 +131,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
                    r.github_name        as ${this.repositoryTablePrefix}github_name,
                    r.github_html_url    as ${this.repositoryTablePrefix}github_html_url,
                    r.github_description as ${this.repositoryTablePrefix}github_description
-            FROM project p
+            FROM project_old p
                      JOIN github_owner o ON p.github_owner_login = o.github_login
                      LEFT JOIN github_repository r ON p.github_repository_name = r.github_name AND
                                                       p.github_owner_login = r.github_owner_login
@@ -157,7 +157,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
                    r.github_name        as ${this.repositoryTablePrefix}github_name,
                    r.github_html_url    as ${this.repositoryTablePrefix}github_html_url,
                    r.github_description as ${this.repositoryTablePrefix}github_description
-            FROM project p
+            FROM project_old p
                      JOIN github_owner o ON p.github_owner_login = o.github_login
                      LEFT JOIN github_repository r ON p.github_repository_name = r.github_name AND
                                                       p.github_owner_login = r.github_owner_login
@@ -185,7 +185,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       const params = ProjectUtils.getDBParams(project.id);
 
       const query = `
-                INSERT INTO project (github_owner_id,
+                INSERT INTO project_old (github_owner_id,
                                      github_owner_login,
                                      github_repository_id,
                                      github_repository_name,

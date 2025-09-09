@@ -13,7 +13,7 @@ import {
   PriceType,
   productTypeUtils,
   StripeProductId,
-} from "../../../api/model";
+} from "@open-source-economy/api-types";
 
 describe("CombinedStripeRepository", () => {
   setupTestDB();

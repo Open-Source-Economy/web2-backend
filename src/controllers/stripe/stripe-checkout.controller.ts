@@ -1,12 +1,15 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
-import * as dto from "../../api/dto";
-import { ApiError } from "../../api/model/error/ApiError";
+import * as dto from "@open-source-economy/api-types";
+import {
+  ApiError,
+  StripeCustomerUser,
+  userUtils,
+} from "@open-source-economy/api-types";
 import { StripeHelper } from "./stripe.helper";
 import { stripe } from "./index";
 import { logger } from "../../config";
-import { StripeCustomerUser, userUtils } from "../../api/model";
 
 export interface StripeCheckoutController {
   checkout(
@@ -68,7 +71,7 @@ export const StripeCheckoutController: StripeCheckoutController = {
       customer_email: customer
         ? undefined
         : req.user
-          ? userUtils.email(req.user) ?? undefined
+          ? (userUtils.email(req.user) ?? undefined)
           : undefined,
       allow_promotion_codes: true,
       // {CHECKOUT_SESSION_ID} is a string literal; do not change it!

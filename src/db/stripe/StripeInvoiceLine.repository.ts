@@ -3,7 +3,7 @@ import {
   StripeInvoiceId,
   StripeInvoiceLine,
   StripeInvoiceLineId,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 
 export function getStripeInvoiceLineRepository(): StripeInvoiceLineRepository {

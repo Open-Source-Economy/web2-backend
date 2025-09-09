@@ -1,5 +1,9 @@
 import { Pool } from "pg";
-import { CompanyId, CompanyUserRole, UserId } from "../../api/model";
+import {
+  CompanyId,
+  CompanyUserRole,
+  UserId,
+} from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 

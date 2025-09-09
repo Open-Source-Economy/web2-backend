@@ -6,36 +6,42 @@ import {
   userRepo,
 } from "../db/";
 import {
+  ApiError,
   Provider,
-  ThirdPartyUser,
   ThirdPartyUserId,
   UserRole,
-} from "../api/model";
-import { config } from "../config";
-import { ValidationError } from "../api/model/error";
-import { ApiError } from "../api/model/error/ApiError";
+  ValidationError,
+} from "@open-source-economy/api-types";
+import { config, logger } from "../config";
 import { StatusCodes } from "http-status-codes";
 import { ensureNoEndingTrailingSlash } from "../utils";
+import { ThirdPartyUserCompanion } from "../db/helpers/companions/user";
 
+const scope = ["user:email" /*, "read:org", "repo"*/]; // "user:email,read:org,repo",
 passport.use(
   <passport.Strategy>new Strategy(
     {
       clientID: config.github.clientId,
       clientSecret: config.github.clientSecret,
       callbackURL: `${ensureNoEndingTrailingSlash(config.host)}/api/v1/auth/redirect/github`,
-      scope: ["user:email"], // Request additional GitHub user data like email
+      scope: scope,
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
+      logger.debug("GitHub profile received:", profile);
       try {
         const thirdPartyUserId = new ThirdPartyUserId(profile.id);
         const findUser = await userRepo.findByThirdPartyId(
           thirdPartyUserId,
           Provider.Github,
         );
+        logger.debug("Result of findByThirdPartyId:", findUser);
 
         if (!findUser) {
-          const thirdPartyUser = ThirdPartyUser.fromJson(profile);
+          logger.debug("No existing user found. Creating new user.");
+          const thirdPartyUser = ThirdPartyUserCompanion.fromJson(profile);
+          logger.debug("ThirdPartyUser from JSON:", thirdPartyUser);
+
           let createUser: CreateUser;
 
           if (thirdPartyUser instanceof ValidationError) {
@@ -47,6 +53,10 @@ passport.use(
             await repositoryUserPermissionTokenRepo.getByUserGithubOwnerLogin(
               thirdPartyUser.providerData.owner.id.login,
             );
+          logger.debug(
+            "Repository user permission token:",
+            repositoryUserPermissionToken,
+          );
 
           if (repositoryUserPermissionToken) {
             // if the user has received a repository user permission token (to get some rights about a repository)
@@ -66,6 +76,7 @@ passport.use(
                 name: repositoryUserPermissionToken.userName,
                 data: thirdPartyUser,
                 role: UserRole.USER,
+                termsAcceptedVersion: null,
               };
             }
           } else {
@@ -73,15 +84,19 @@ passport.use(
               name: null,
               data: thirdPartyUser,
               role: UserRole.USER,
+              termsAcceptedVersion: null,
             };
           }
 
           const newSavedUser = await userRepo.insert(createUser);
+          logger.debug("New user created and saved:", newSavedUser);
+
           return done(null, newSavedUser);
         }
 
         return done(null, findUser);
       } catch (err) {
+        console.error("Error during GitHub authentication:", err);
         return done(err); // Handling any unexpected errors during authentication
       }
     },

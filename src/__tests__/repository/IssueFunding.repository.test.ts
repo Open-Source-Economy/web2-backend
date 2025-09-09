@@ -1,7 +1,5 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
-import { UserId } from "../../api/model";
-
-import { CreateIssueFundingBody } from "../../api/dto";
+import { CreateIssueFundingBody, UserId } from "@open-source-economy/api-types";
 import { Fixture } from "../__helpers__/Fixture";
 import {
   issueFundingRepo,

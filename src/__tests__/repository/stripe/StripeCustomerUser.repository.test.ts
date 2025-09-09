@@ -5,7 +5,7 @@ import {
   StripeCustomerId,
   StripeCustomerUser,
   UserId,
-} from "../../../api/model"; // Add CompanyId if needed
+} from "@open-source-economy/api-types"; // Add CompanyId if needed
 import { Fixture } from "../../__helpers__/Fixture";
 import {
   companyRepo,

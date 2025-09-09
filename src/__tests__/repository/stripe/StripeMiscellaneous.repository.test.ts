@@ -9,7 +9,7 @@ import {
 } from "../../../db";
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
-import { Currency } from "../../../api/model";
+import { Currency } from "@open-source-economy/api-types";
 
 describe("StripeMiscellaneousRepository", () => {
   setupTestDB();

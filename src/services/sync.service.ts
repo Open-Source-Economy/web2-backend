@@ -7,9 +7,9 @@ import {
   ProjectId,
   Repository,
   RepositoryId,
-} from "../api/model";
+} from "@open-source-economy/api-types";
 import { logger } from "../config";
-import { ProjectRepository } from "../db/project/Project.repository";
+import { ProjectRepository } from "../db";
 
 export function getGithubSyncService(
   githubService: GitHubApi,

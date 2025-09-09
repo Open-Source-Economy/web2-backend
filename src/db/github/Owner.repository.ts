@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { Owner, OwnerId } from "../../api/model";
+import { Owner, OwnerId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 
 export function getOwnerRepository(): OwnerRepository {

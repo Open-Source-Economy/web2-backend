@@ -1,4 +1,4 @@
-import { UserRole } from "../api/model";
+import { UserRole } from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 
 export function isWebsiteAdmin(req: any, res: any, next: any): void {

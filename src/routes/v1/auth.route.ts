@@ -31,7 +31,13 @@ router.post(
   AuthController.login,
 );
 
-router.get("/github", passport.authenticate("github"));
+router.get("/github", (req, res, next) => {
+  if (req.query.redirect) {
+    // TODO: does not work
+    // req.session.redirectPath = req.query.redirect as string;
+  }
+  passport.authenticate("github")(req, res, next);
+});
 
 router.get(
   "/redirect/github",

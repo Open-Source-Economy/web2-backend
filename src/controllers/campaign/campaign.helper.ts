@@ -1,23 +1,23 @@
 import {
+  ApiError,
   CampaignPriceType,
   CampaignProductType,
   Currency,
+  Price,
   productTypeUtils,
   Project,
   ProjectId,
   StripePrice,
   StripeProduct,
   StripeProductId,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 import { combinedStripeRepo, stripeProductRepo } from "../../db";
-import { ApiError } from "../../api/model/error/ApiError";
 import { stripe, StripeHelper } from "../stripe";
 import { currencyAPI } from "../../services";
 import { logger } from "../../config";
 import Stripe from "stripe";
 import { CampaignProductPriceConfig } from "./campaign.controller";
-import { Price } from "../../api/dto";
 
 // 1 credit - one-time payment  = 2.3$
 // 1 credit - recurring payment = 1.84$

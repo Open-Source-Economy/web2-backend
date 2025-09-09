@@ -6,7 +6,11 @@ import {
   userRepositoryRepo,
 } from "../../../db";
 import { Fixture } from "../../__helpers__/Fixture";
-import { Currency, RepositoryUserRole, UserId } from "../../../api/model";
+import {
+  Currency,
+  RepositoryUserRole,
+  UserId,
+} from "@open-source-economy/api-types";
 
 describe("UserRepositoryRepository", () => {
   setupTestDB();

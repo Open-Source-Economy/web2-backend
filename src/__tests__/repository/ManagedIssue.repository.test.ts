@@ -1,12 +1,11 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
 import {
+  CreateManagedIssueBody,
   IssueId,
   ManagedIssueId,
   ManagedIssueState,
   UserId,
-} from "../../api/model";
-
-import { CreateManagedIssueBody } from "../../api/dto";
+} from "@open-source-economy/api-types";
 import { Fixture } from "../__helpers__/Fixture";
 import { v4 as uuidv } from "uuid";
 import {

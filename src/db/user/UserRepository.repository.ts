@@ -1,5 +1,9 @@
 import { Pool } from "pg";
-import { RepositoryId, UserId, UserRepository } from "../../api/model";
+import {
+  RepositoryId,
+  UserId,
+  UserRepository,
+} from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 
 export function getUserRepositoryRepository(): UserRepositoryRepository {

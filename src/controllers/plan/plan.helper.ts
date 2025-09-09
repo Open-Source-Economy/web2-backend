@@ -1,13 +1,13 @@
 import {
+  ApiError,
   Currency,
   PlanProductType,
   productTypeUtils,
   StripeProduct,
   StripeProductId,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 import { stripeProductRepo } from "../../db";
-import { ApiError } from "../../api/model/error/ApiError";
 import { stripe, StripeHelper } from "../stripe";
 import Stripe from "stripe";
 

@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { newsletterSubscriptionRepo } from "../db/";
-import * as dto from "../api/dto";
+import * as dto from "@open-source-economy/api-types";
+import { NewsletterSubscription } from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
-import { NewsletterSubscription } from "../api/model/NewsletterSubscription";
 import { mailService } from "../services";
 
 export interface MiscellaneousController {

@@ -6,6 +6,7 @@ import {
 } from "../../db/";
 import Stripe from "stripe";
 import {
+  ApiError,
   CompanyId,
   CompanyUserRole,
   Currency,
@@ -14,12 +15,11 @@ import {
   StripeCustomerUser,
   StripePrice,
   userUtils,
-} from "../../api/model";
-import { ApiError } from "../../api/model/error/ApiError";
+  ValidationError,
+} from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 import { stripe } from "./index";
 import { logger } from "../../config";
-import { ValidationError } from "../../api/model/error";
 
 export interface StripeHelper {
   getOrCreateStripeCustomerUser(

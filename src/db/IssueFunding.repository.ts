@@ -1,7 +1,11 @@
 import { Pool, QueryResult } from "pg";
-import { IssueFunding, IssueFundingId, IssueId } from "../api/model";
+import {
+  CreateIssueFundingBody,
+  IssueFunding,
+  IssueFundingId,
+  IssueId,
+} from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
-import { CreateIssueFundingBody } from "../api/dto";
 import { logger } from "../config";
 
 export function getIssueFundingRepository(): IssueFundingRepository {

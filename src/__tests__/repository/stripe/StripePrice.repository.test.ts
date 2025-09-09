@@ -1,7 +1,7 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { stripePriceRepo, stripeProductRepo } from "../../../db";
 import { Fixture } from "../../__helpers__/Fixture";
-import { Currency, PriceType } from "../../../api/model";
+import { Currency, PriceType } from "@open-source-economy/api-types";
 
 describe("StripePriceRepository", () => {
   setupTestDB();

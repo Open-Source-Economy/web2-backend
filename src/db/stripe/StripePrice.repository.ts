@@ -6,7 +6,7 @@ import {
   StripePrice,
   StripePriceId,
   StripeProductId,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
 
 export function getStripePriceRepository(): StripePriceRepository {
   return new StripePriceRepositoryImpl(pool);

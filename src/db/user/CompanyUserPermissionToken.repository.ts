@@ -3,9 +3,9 @@ import {
   CompanyId,
   CompanyUserPermissionToken,
   CompanyUserPermissionTokenId,
-} from "../../api/model";
+  CreateCompanyUserPermissionTokenBody,
+} from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
-import { CreateCompanyUserPermissionTokenBody } from "../../api/dto";
 import { logger } from "../../config";
 
 export function getCompanyUserPermissionTokenRepository(): CompanyUserPermissionTokenRepository {

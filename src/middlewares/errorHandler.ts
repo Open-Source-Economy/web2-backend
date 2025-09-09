@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { config, logger, NodeEnv } from "../config";
 import { StatusCodes } from "http-status-codes";
-import { ApiError } from "../api/model/error/ApiError";
-import { ErrorResponse } from "../api/dto";
+import * as dto from "@open-source-economy/api-types";
+import { ApiError } from "@open-source-economy/api-types";
 
 export function errorConverter(
   err: Error,
@@ -35,7 +35,7 @@ export function errorHandler(
 
   res.locals.errorMessage = err.message;
 
-  const response: ErrorResponse = {
+  const response: dto.ErrorResponse = {
     code: statusCode,
     message,
     ...(config.env !== NodeEnv.Production && { stack: err.stack }),

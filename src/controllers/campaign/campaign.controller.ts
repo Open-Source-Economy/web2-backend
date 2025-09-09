@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as dto from "../../api/dto";
+import * as dto from "@open-source-economy/api-types";
 import {
   CampaignPriceType,
   CampaignProductType,
@@ -7,7 +7,7 @@ import {
   OwnerId,
   ProjectUtils,
   RepositoryId,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 import { stripeMiscellaneousRepository } from "../../db";
 import { currencyAPI } from "../../services";

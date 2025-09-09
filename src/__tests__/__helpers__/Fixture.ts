@@ -7,6 +7,12 @@ import {
   CompanyUserPermissionTokenId,
   CompanyUserRole,
   ContributorVisibility,
+  CreateAddressBody,
+  CreateCompanyBody,
+  CreateCompanyUserPermissionTokenBody,
+  CreateIssueFundingBody,
+  CreateManagedIssueBody,
+  CreateManualInvoiceBody,
   Currency,
   GithubData,
   Issue,
@@ -48,15 +54,7 @@ import {
   UserId,
   UserRepository,
   UserRole,
-} from "../../api/model";
-import {
-  CreateAddressBody,
-  CreateCompanyBody,
-  CreateCompanyUserPermissionTokenBody,
-  CreateIssueFundingBody,
-  CreateManagedIssueBody,
-  CreateManualInvoiceBody,
-} from "../../api/dto";
+} from "@open-source-economy/api-types";
 import { v4 as uuid } from "uuid";
 import Decimal from "decimal.js";
 import { CreateUser } from "../../db";
@@ -95,6 +93,7 @@ export const Fixture = {
       name: null,
       data: data,
       role: UserRole.USER,
+      termsAcceptedVersion: "1.0.0",
     };
   },
 

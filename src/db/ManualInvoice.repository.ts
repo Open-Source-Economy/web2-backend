@@ -1,12 +1,12 @@
 import { Pool } from "pg";
 import {
   CompanyId,
+  CreateManualInvoiceBody,
   ManualInvoice,
   ManualInvoiceId,
   UserId,
-} from "../api/model";
+} from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
-import { CreateManualInvoiceBody } from "../api/dto";
 import { logger } from "../config";
 
 export function getManualInvoiceRepository(): ManualInvoiceRepository {

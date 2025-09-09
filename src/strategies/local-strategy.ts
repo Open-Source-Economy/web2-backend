@@ -3,7 +3,8 @@ import { Strategy } from "passport-local";
 
 import { encrypt } from "../utils";
 import { CreateUser, getUserRepository, UserRepository } from "../db/";
-import { LocalUser, User, UserRole } from "../api/model";
+import { LocalUser, User, UserRole } from "@open-source-economy/api-types";
+import { terms } from "../config";
 
 const repo: UserRepository = getUserRepository();
 
@@ -74,6 +75,7 @@ passport.use(
           role: superAdminEmails.includes(email.trim())
             ? UserRole.SUPER_ADMIN
             : UserRole.USER,
+          termsAcceptedVersion: terms.version, // TODO: lolo - verify that it is correct
         };
         const savedUser = await repo.insert(createUser);
         return done(null, savedUser);

@@ -1,6 +1,6 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
-import { OwnerId } from "../../../api/model";
+import { OwnerId } from "@open-source-economy/api-types";
 import { ownerRepo } from "../../../db";
 
 describe("OwnerRepository", () => {

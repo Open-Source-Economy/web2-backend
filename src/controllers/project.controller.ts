@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import * as dto from "../api/dto";
+import * as dto from "@open-source-economy/api-types";
 import {
+  ApiError,
   CompanyId,
   ContributorVisibility,
   IssueId,
@@ -9,7 +10,7 @@ import {
   Project,
   ProjectUtils,
   RepositoryId,
-} from "../api/model";
+} from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 import {
   getFinancialIssueRepository,
@@ -19,7 +20,6 @@ import {
   planAndCreditsRepo,
   projectRepo,
 } from "../db";
-import { ApiError } from "../api/model/error/ApiError";
 import { githubSyncService } from "../services";
 
 const financialIssueRepo = getFinancialIssueRepository();

@@ -1,7 +1,10 @@
 import { Pool } from "pg";
-import { Company, CompanyId } from "../api/model";
+import {
+  Company,
+  CompanyId,
+  CreateCompanyBody,
+} from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
-import { CreateCompanyBody } from "../api/dto";
 import { logger } from "../config";
 
 export function getCompanyRepository(): CompanyRepository {

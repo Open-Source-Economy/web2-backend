@@ -1,5 +1,5 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
-import { AddressId, Company } from "../../api/model";
+import { AddressId, Company } from "@open-source-economy/api-types";
 import { Fixture } from "../__helpers__/Fixture";
 import { getAddressRepository, getCompanyRepository } from "../../db/";
 

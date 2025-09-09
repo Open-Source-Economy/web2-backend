@@ -1,7 +1,11 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import { CompanyId, CompanyUserRole, UserId } from "../../../api/model";
+import {
+  CompanyId,
+  CompanyUserRole,
+  CreateCompanyBody,
+  UserId,
+} from "@open-source-economy/api-types";
 import { Fixture } from "../../__helpers__/Fixture";
-import { CreateCompanyBody } from "../../../api/dto";
 import { companyRepo, userCompanyRepo, userRepo } from "../../../db";
 
 describe("UserCompanyRepository", () => {

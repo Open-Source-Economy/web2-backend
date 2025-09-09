@@ -1,5 +1,9 @@
 import fs from "fs";
-import { OwnerId, Repository, RepositoryId } from "../../../api/model";
+import {
+  OwnerId,
+  Repository,
+  RepositoryId,
+} from "@open-source-economy/api-types";
 import { logger } from "../../../config";
 
 describe("Repository", () => {

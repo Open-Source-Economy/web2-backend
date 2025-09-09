@@ -1,5 +1,10 @@
 import fs from "fs";
-import { Issue, IssueId, OwnerId, RepositoryId } from "../../../api/model";
+import {
+  Issue,
+  IssueId,
+  OwnerId,
+  RepositoryId,
+} from "@open-source-economy/api-types";
 import { logger } from "../../../config";
 
 describe("Issue", () => {

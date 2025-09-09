@@ -10,7 +10,7 @@ import { StatusCodes } from "http-status-codes";
 import * as morgan from "./config";
 import { config, NodeEnv } from "./config";
 import { authLimiter } from "./middlewares/rateLimiter";
-import { ApiError } from "./api/model/error/ApiError";
+import { ApiError } from "@open-source-economy/api-types";
 import path from "path";
 
 var cors = require("cors");
@@ -91,15 +91,14 @@ export function createApp() {
   app.use(
     session({
       secret: "your-secret-key", // TODO: lolo
-      saveUninitialized: true,
+      saveUninitialized: false,
       resave: false,
       proxy: true,
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000,
-        // Only use secure cookies in production
-        secure: config.env === NodeEnv.Production,
+        secure: config.env !== NodeEnv.Local,
         httpOnly: true,
-        sameSite: config.env === NodeEnv.Production ? "none" : "lax",
+        sameSite: config.env === NodeEnv.Production ? "none" : "lax", // TODO: lolo
       },
       store: new pgSession({
         pool: pool,

@@ -6,7 +6,7 @@ import {
   ProductType,
   productTypeUtils,
   UserId,
-} from "../api/model";
+} from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { getManualInvoiceRepository } from "./ManualInvoice.repository";
 import { logger } from "../config";

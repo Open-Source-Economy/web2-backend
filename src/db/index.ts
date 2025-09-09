@@ -9,6 +9,7 @@ export * from "./github/";
 export * from "./stripe";
 export * from "./user";
 export * from "./project";
+export * from "./onboarding";
 export * from "./user/User.repository";
 export * from "./Company.repository";
 export * from "./Address.repository";

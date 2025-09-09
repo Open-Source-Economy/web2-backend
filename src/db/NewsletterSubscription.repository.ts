@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { NewsletterSubscription } from "../api/model/NewsletterSubscription";
+import { NewsletterSubscription } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 
 export function getNewsletterSubscriptionRepository(): NewsletterSubscriptionRepository {

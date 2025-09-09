@@ -1,6 +1,6 @@
 import { ServerClient } from "postmark";
 import { config, logger } from "../config";
-import { Company, Owner, Repository } from "../api/model";
+import { Company, Owner, Repository } from "@open-source-economy/api-types";
 import { promises as fs } from "fs";
 import path from "path";
 import { ensureNoEndingTrailingSlash } from "../utils";

@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express";
+import * as dto from "@open-source-economy/api-types";
 import {
+  ApiError,
   Company,
   CompanyUserPermissionToken,
   CompanyUserRole,
@@ -9,9 +11,8 @@ import {
   User,
   UserId,
   UserRepository,
-} from "../api/model";
+} from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
-import * as dto from "../api/dto";
 import { ensureNoEndingTrailingSlash, secureToken } from "../utils";
 import {
   companyRepo,
@@ -21,7 +22,6 @@ import {
   userRepo,
   userRepositoryRepo,
 } from "../db";
-import { ApiError } from "../api/model/error/ApiError";
 import { config } from "../config";
 
 export interface AuthController {
@@ -282,7 +282,9 @@ export const AuthController: AuthController = {
         );
       }
     }
-    res.redirect(ensureNoEndingTrailingSlash(config.frontEndUrl));
+    res.redirect(
+      ensureNoEndingTrailingSlash(config.frontEndUrl) + "/developer-onboarding",
+    );
   },
 
   async register(

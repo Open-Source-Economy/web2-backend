@@ -2,6 +2,8 @@ import { setupTestDB } from "../__helpers__/jest.setup";
 import {
   CompanyId,
   CompanyUserRole,
+  CreateIssueFundingBody,
+  CreateManualInvoiceBody,
   Currency,
   OwnerId,
   PlanPriceType,
@@ -13,7 +15,7 @@ import {
   StripeCustomerId,
   StripeCustomerUser,
   UserId,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
 import {
   companyRepo,
   issueFundingRepo,
@@ -28,7 +30,6 @@ import {
   userRepo,
 } from "../../db/";
 import { Fixture } from "../__helpers__/Fixture";
-import { CreateIssueFundingBody, CreateManualInvoiceBody } from "../../api/dto";
 import { issueRepo, ownerRepo, repositoryRepo } from "../../db";
 
 describe("PlanAndCreditsRepository", () => {

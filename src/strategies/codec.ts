@@ -1,6 +1,6 @@
 import passport from "passport";
 import { getUserRepository, UserRepository } from "../db/";
-import { User, UserId } from "../api/model";
+import { User, UserId } from "@open-source-economy/api-types";
 
 const userRepository: UserRepository = getUserRepository();
 

@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
-import * as dto from "../../api/dto";
-import { ApiError } from "../../api/model/error/ApiError";
+import * as dto from "@open-source-economy/api-types";
+import { ApiError } from "@open-source-economy/api-types";
 import { StripeHelper } from "./stripe.helper";
 import { stripe } from "./index";
 
@@ -113,6 +113,10 @@ export const StripeEmbeddedController: StripeEmbeddedController = {
         // metadata: { tax_calculation: taxCalculation.id },
       });
     }
+
+    // TODO: should not happen, but just for compilation issue
+    if (invoice.id === undefined)
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invoice ID is undefined");
 
     const finalizedInvoice: Stripe.Response<Stripe.Invoice> =
       await stripe.invoices.finalizeInvoice(invoice.id);

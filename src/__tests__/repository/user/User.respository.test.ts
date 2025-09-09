@@ -5,7 +5,7 @@ import {
   ThirdPartyUser,
   ThirdPartyUserId,
   UserRole,
-} from "../../../api/model";
+} from "@open-source-economy/api-types";
 import { Fixture } from "../../__helpers__/Fixture";
 import { getUserRepository } from "../../../db";
 

@@ -1,6 +1,10 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
-import { OwnerId, ProjectEcosystem, ProjectUtils } from "../../../api/model";
+import {
+  OwnerId,
+  ProjectEcosystem,
+  ProjectUtils,
+} from "@open-source-economy/api-types";
 import { ownerRepo, projectRepo, repositoryRepo } from "../../../db";
 
 describe("ProjectRepository", () => {

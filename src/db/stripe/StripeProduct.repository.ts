@@ -7,7 +7,7 @@ import {
   RepositoryId,
   StripeProduct,
   StripeProductId,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
 
 export function getStripeProductRepository(): StripeProductRepository {
   return new StripeProductRepositoryImpl(pool);

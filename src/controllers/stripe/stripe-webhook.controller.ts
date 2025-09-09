@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
+import * as dto from "@open-source-economy/api-types";
 import {
   Address,
   StripeCustomer,
   StripeCustomerId,
   StripeInvoice,
   StripePrice,
-} from "../../api/model";
+  ValidationError,
+} from "@open-source-economy/api-types";
 import { config, logger } from "../../config";
 import { stripe } from "./index";
 import {
@@ -16,8 +18,6 @@ import {
   stripeInvoiceRepo,
   stripePriceRepo,
 } from "../../db";
-import { ValidationError } from "../../api/model/error";
-import * as dto from "../../api/dto";
 
 export interface StripeWebhookController {
   webhook(req: Request, res: Response): Promise<void>;

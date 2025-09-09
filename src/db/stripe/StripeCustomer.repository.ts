@@ -1,5 +1,8 @@
 import { Pool } from "pg";
-import { StripeCustomer, StripeCustomerId } from "../../api/model";
+import {
+  StripeCustomer,
+  StripeCustomerId,
+} from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 
 export function getStripeCustomerRepository(): StripeCustomerRepository {

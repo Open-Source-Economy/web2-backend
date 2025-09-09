@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
-import * as dto from "../api/dto";
+import * as dto from "@open-source-economy/api-types";
+import {
+  ApiError,
+  OwnerId,
+  ProjectUtils,
+} from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 import {
   addressRepo,
@@ -12,8 +17,6 @@ import {
 import { secureToken } from "../utils";
 import { githubSyncService, mailService } from "../services";
 import Decimal from "decimal.js";
-import { OwnerId, ProjectUtils } from "../api/model";
-import { ApiError } from "../api/model/error/ApiError";
 import { logger } from "../config";
 import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUserPermissionToken.repository";
 import { CampaignHelper } from "./campaign/campaign.helper";

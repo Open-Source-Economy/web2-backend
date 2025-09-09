@@ -7,7 +7,7 @@ import {
   OwnerId,
   Repository,
   RepositoryId,
-} from "../../../api/model";
+} from "@open-source-economy/api-types";
 import fs from "fs";
 import { logger } from "../../../config";
 import { issueRepo, ownerRepo, repositoryRepo } from "../../../db";

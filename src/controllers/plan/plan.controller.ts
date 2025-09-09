@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import * as dto from "../../api/dto";
-import { StatusCodes } from "http-status-codes";
+import * as dto from "@open-source-economy/api-types";
 import {
   Currency,
   PlanPriceType,
   PlanProductType,
   StripePrice,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
+import { StatusCodes } from "http-status-codes";
 import { combinedStripeRepo } from "../../db";
 
 export interface PlanController {

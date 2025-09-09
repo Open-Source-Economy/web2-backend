@@ -5,7 +5,7 @@ import {
   StripeInvoiceId,
   StripeInvoiceLine,
   UserId,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import {
   getStripeInvoiceLineRepository,

@@ -5,7 +5,7 @@ import {
   RepositoryUserPermissionToken,
   RepositoryUserPermissionTokenId,
   RepositoryUserRole,
-} from "../../api/model";
+} from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 import Decimal from "decimal.js";
