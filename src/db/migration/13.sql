@@ -38,10 +38,10 @@ CREATE TYPE merge_rights_type AS ENUM (
     'none',
     'reviewer',
     'limited',
-    'maintainer',
-    'full_committer', -- note: not used in API type
-    'subsystem_maintainer',
-    'delegated_committer',
+    'maintainer',-- note: not used in API type
+    'full_committer',
+    'subsystem_maintainer',-- note: not used in API type
+    'delegated_committer',-- note: not used in API type
     'vote_based_committer',
     'release_manager',
     'emeritus'
@@ -171,8 +171,8 @@ CREATE TABLE IF NOT EXISTS developer_service
 
 CREATE TABLE IF NOT EXISTS developer_service_developer_project_item_link
 (
-    developer_service_id UUID NOT NULL,
-    developer_project_item_id     UUID NOT NULL,
+    developer_service_id      UUID NOT NULL,
+    developer_project_item_id UUID NOT NULL,
     PRIMARY KEY (developer_service_id, developer_project_item_id), -- Composite primary key for uniqueness
     CONSTRAINT fk_developer_service_id FOREIGN KEY (developer_service_id) REFERENCES developer_service (id) ON DELETE CASCADE,
     CONSTRAINT fk_developer_project_item_id FOREIGN KEY (developer_project_item_id) REFERENCES developer_project_items (id) ON DELETE CASCADE
