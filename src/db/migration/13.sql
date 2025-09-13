@@ -39,7 +39,7 @@ CREATE TYPE merge_rights_type AS ENUM (
     'reviewer',
     'limited',
     'maintainer',
-    'full_committer',
+    'full_committer', -- note: not used in API type
     'subsystem_maintainer',
     'delegated_committer',
     'vote_based_committer',
