@@ -18,43 +18,50 @@ export function getDeveloperServiceRepository(): DeveloperServiceRepository {
   return new DeveloperServiceRepositoryImpl(pool);
 }
 
+/**
+ * @param serviceId - The ID of the service.
+ * @param body - An object containing the fields for the new developer service offering.
+ */
+export interface CreateDeveloperServiceParams {
+  serviceId: ServiceId;
+  body: DeveloperServiceBody;
+}
+
+/**
+ * @param developerProjectItemIds - The new array of DeveloperProjectItemId to associate with this service. Existing links not in this array will be deleted, and new ones will be added.
+ * @param hourlyRate - The updated hourly rate for the service (optional).
+ * @param responseTimeHours - The updated response time type for the service (optional, can be null).
+ * @param comment - An optional updated long text comment.
+ */
+export interface DeveloperServiceBody {
+  developerProjectItemIds: DeveloperProjectItemId[];
+  hourlyRate?: number;
+  responseTimeHours?: ResponseTimeType | null;
+  comment?: string;
+}
+
 export interface DeveloperServiceRepository {
   /**
    * Creates a new developer service offering and links it to multiple project items.
-   *
    * @param developerProfileId - The ID of the developer profile.
-   * @param serviceId - The ID of the service.
-   * @param developerProjectItemIds - An array of DeveloperProjectItemId to associate with the new service offering.
-   * @param hourlyRate - The hourly rate for the service (optional).
-   * @param responseTimeHours - The response time type for the service (optional).
-   * @param comment - An optional long text comment for this service.
-   * @returns A promise that resolves to the newly created DeveloperService object (representing the offering with its links).
+   * @param params - An object containing the service ID, and body with additional fields.
+   * * @returns A promise that resolves to the newly created DeveloperService object (representing the offering with its links).
    */
   create(
     developerProfileId: DeveloperProfileId,
-    serviceId: ServiceId,
-    developerProjectItemIds: DeveloperProjectItemId[],
-    hourlyRate?: number,
-    responseTimeHours?: ResponseTimeType,
-    comment?: string,
+    params: CreateDeveloperServiceParams,
   ): Promise<DeveloperService>;
 
   /**
    * Updates an existing developer service offering, including its associated project items.
    *
    * @param id - The ID of the developer service offering to update.
-   * @param developerProjectItemIds - The new array of DeveloperProjectItemId to associate with this service. Existing links not in this array will be deleted, and new ones will be added.
-   * @param hourlyRate - The updated hourly rate for the service (optional).
-   * @param responseTimeHours - The updated response time type for the service (optional, can be null).
-   * @param comment - An optional updated long text comment.
+   * @param body - An object containing the fields to update
    * @returns A promise that resolves to the updated DeveloperService object.
    */
   update(
     id: DeveloperServiceId,
-    developerProjectItemIds: DeveloperProjectItemId[],
-    hourlyRate?: number,
-    responseTimeHours?: ResponseTimeType | null,
-    comment?: string,
+    body: DeveloperServiceBody,
   ): Promise<DeveloperService>;
 
   /**
@@ -107,7 +114,9 @@ class DeveloperServiceRepositoryImpl
     offeringId: DeveloperServiceId,
   ): Promise<DeveloperProjectItemId[]> {
     const result = await this.pool.query(
-      `SELECT developer_project_item_id FROM developer_service_developer_project_item_link WHERE developer_service_id = $1`,
+      `SELECT developer_project_item_id
+         FROM developer_service_developer_project_item_link
+         WHERE developer_service_id = $1`,
       [offeringId.uuid],
     );
     return result.rows.map(
@@ -130,13 +139,39 @@ class DeveloperServiceRepositoryImpl
     return { ...baseOffering, developerProjectItemIds };
   }
 
+  /**
+   * Private helper to safely insert project item links using parameterized queries,
+   * which prevents SQL injection.
+   * @param client The database client in the active transaction.
+   * @param developerServiceId The ID of the service to link.
+   * @param projectItemIds The IDs of the project items to link.
+   */
+  private async insertProjectItemLinks(
+    client: any,
+    developerServiceId: DeveloperServiceId,
+    projectItemIds: DeveloperProjectItemId[],
+  ): Promise<void> {
+    if (projectItemIds.length === 0) {
+      return;
+    }
+    // Construct a single VALUES clause using a parameterized query.
+    // This is the secure way to perform a bulk insert.
+    const valuesClause = projectItemIds
+      .map((_, index) => `($${index * 2 + 1}, $${index * 2 + 2})`)
+      .join(",");
+    const values = projectItemIds.flatMap((piid) => [
+      developerServiceId.uuid,
+      piid.uuid,
+    ]);
+    await client.query(
+      `INSERT INTO developer_service_developer_project_item_link (developer_service_id, developer_project_item_id) VALUES ${valuesClause}`,
+      values,
+    );
+  }
+
   async create(
     developerProfileId: DeveloperProfileId,
-    serviceId: ServiceId,
-    developerProjectItemIds: DeveloperProjectItemId[],
-    hourlyRate?: number,
-    responseTimeHours?: ResponseTimeType,
-    comment?: string,
+    params: CreateDeveloperServiceParams,
   ): Promise<DeveloperService> {
     const client = await this.pool.connect();
     try {
@@ -156,24 +191,21 @@ class DeveloperServiceRepositoryImpl
         `,
         [
           developerProfileId.uuid,
-          serviceId.uuid,
-          hourlyRate !== undefined ? hourlyRate : null,
-          responseTimeHours !== undefined ? responseTimeHours : null,
-          comment !== undefined ? comment : null,
+          params.serviceId.uuid,
+          params.body.hourlyRate ?? null,
+          params.body.responseTimeHours ?? null,
+          params.body.comment ?? null,
         ],
       );
+
       const newOfferingId = new DeveloperServiceId(offeringResult.rows[0].id);
 
-      // Insert links into the junction table if project items were provided.
-      if (developerProjectItemIds.length > 0) {
-        // Construct a single VALUES clause for a bulk insert.
-        const linkValues = developerProjectItemIds
-          .map((piid) => `('${newOfferingId.uuid}', '${piid.uuid}')`)
-          .join(",");
-        await client.query(
-          `INSERT INTO developer_service_developer_project_item_link (developer_service_id, developer_project_item_id) VALUES ${linkValues}`,
-        );
-      }
+      // Securely insert links using a parameterized query.
+      await this.insertProjectItemLinks(
+        client,
+        newOfferingId,
+        params.body.developerProjectItemIds,
+      );
 
       await client.query("COMMIT");
 
@@ -197,10 +229,7 @@ class DeveloperServiceRepositoryImpl
 
   async update(
     id: DeveloperServiceId,
-    developerProjectItemIds: DeveloperProjectItemId[],
-    hourlyRate?: number,
-    responseTimeHours?: ResponseTimeType | null,
-    comment?: string,
+    body: DeveloperServiceBody,
   ): Promise<DeveloperService> {
     const client = await this.pool.connect();
     try {
@@ -211,19 +240,19 @@ class DeveloperServiceRepositoryImpl
       let paramIndex = 1;
 
       // Conditionally add fields to the update query.
-      if (hourlyRate !== undefined) {
+      if (body.hourlyRate !== undefined) {
         setParts.push(`hourly_rate = $${paramIndex}`);
-        values.push(hourlyRate);
+        values.push(body.hourlyRate);
         paramIndex++;
       }
-      if (responseTimeHours !== undefined) {
+      if (body.responseTimeHours !== undefined) {
         setParts.push(`response_time_type = $${paramIndex}`);
-        values.push(responseTimeHours);
+        values.push(body.responseTimeHours);
         paramIndex++;
       }
-      if (comment !== undefined) {
+      if (body.comment !== undefined) {
         setParts.push(`comment = $${paramIndex}`);
-        values.push(comment);
+        values.push(body.comment);
         paramIndex++;
       }
 
@@ -231,12 +260,11 @@ class DeveloperServiceRepositoryImpl
 
       // Add the ID to the end of the values array for the WHERE clause.
       values.push(id.uuid);
-      const whereClauseIndex = paramIndex;
 
       // Only perform the UPDATE query if there are fields to update.
       if (setParts.length > 1) {
         await client.query(
-          `UPDATE developer_service SET ${setParts.join(", ")} WHERE id = $${whereClauseIndex}`,
+          `UPDATE developer_service SET ${setParts.join(", ")} WHERE id = $${paramIndex}`,
           values,
         );
       }
@@ -247,26 +275,23 @@ class DeveloperServiceRepositoryImpl
         [id.uuid],
       );
 
-      // Re-insert the new set of links.
-      if (developerProjectItemIds.length > 0) {
-        const linkValues = developerProjectItemIds
-          .map((piid) => `('${id.uuid}', '${piid.uuid}')`)
-          .join(",");
-        await client.query(
-          `INSERT INTO developer_service_developer_project_item_link (developer_service_id, developer_project_item_id) VALUES ${linkValues}`,
-        );
-      }
+      // Re-insert the new set of links using the secure helper function.
+      await this.insertProjectItemLinks(
+        client,
+        id,
+        body.developerProjectItemIds,
+      );
 
       await client.query("COMMIT");
 
-      const updatedService = await this.getById(id);
-      if (!updatedService) {
+      const updated = await this.getById(id);
+      if (!updated) {
         throw new ApiError(
           StatusCodes.NOT_FOUND,
           "Service not found after update.",
         );
       }
-      return updatedService;
+      return updated;
     } catch (error) {
       await client.query("ROLLBACK");
       logger.error("Error updating developer service:", error);
@@ -297,7 +322,6 @@ class DeveloperServiceRepositoryImpl
       `Getting developer service offerings by profile id:`,
       profileId.uuid,
     );
-    // The SELECT query is updated to only fetch the columns needed by fromBackend
     const result = await this.pool.query(
       `
           SELECT *
@@ -308,15 +332,13 @@ class DeveloperServiceRepositoryImpl
       [profileId.uuid],
     );
 
-    const services = await Promise.all(
+    return Promise.all(
       result.rows.map((row) => this.mapRowToDeveloperService(row)),
     );
-    return services;
   }
 
   async getById(id: DeveloperServiceId): Promise<DeveloperService | null> {
     logger.debug(`Getting developer service offering by id:`, id.uuid);
-    // The SELECT query is updated to only fetch the columns needed by fromBackend
     const result = await this.pool.query(
       `
           SELECT *

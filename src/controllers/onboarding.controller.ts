@@ -4,6 +4,7 @@ import * as dto from "@open-source-economy/api-types";
 import { ServiceType } from "@open-source-economy/api-types";
 import {
   CreateProjectItemParams,
+  DeveloperServiceBody,
   getDeveloperProfileRepository,
   getDeveloperProjectItemRepository,
   getDeveloperServiceRepository,
@@ -18,6 +19,8 @@ import {
   checkAuthenticatedUser,
 } from "../middlewares";
 import { githubSyncService } from "../services";
+import { body } from "express-validator";
+import { DeveloperProfile } from "@open-source-economy/api-types/dist/model/onboarding/DeveloperProfile";
 
 const developerProfileRepo = getDeveloperProfileRepository();
 const developerSettingsRepo = getDeveloperSettingsRepository();
@@ -146,6 +149,21 @@ export interface OnboardingController {
       dto.UpsertDeveloperServiceQuery
     >,
     res: Response<dto.ResponseBody<dto.UpsertDeveloperServiceResponse>>,
+  ): Promise<void>;
+
+  /**
+   * Upserts one or more developer services. If a service already exists for a project item, it will be updated; otherwise, it will be created.
+   * @param req The request object containing an array of developer service details.
+   * @param res The response object.
+   */
+  upsertDeveloperServices(
+    req: Request<
+      dto.UpsertDeveloperServicesParams,
+      dto.ResponseBody<dto.UpsertDeveloperServicesResponse>,
+      dto.UpsertDeveloperServicesBody,
+      dto.UpsertDeveloperServicesQuery
+    >,
+    res: Response<dto.ResponseBody<dto.UpsertDeveloperServicesResponse>>,
   ): Promise<void>;
 
   deleteDeveloperService(
@@ -467,38 +485,42 @@ export const OnboardingController: OnboardingController = {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
     const body: dto.UpsertDeveloperServiceBody = req.body;
 
-    // Retrieve existing service offering by profile and service ID
-    const existingOffering =
-      await developerServiceRepo.getByProfileAndServiceId(
-        developerProfile.id,
-        body.serviceId,
-      );
-
-    let upsertedService: dto.DeveloperService;
-
-    if (existingOffering) {
-      // Update existing service offering and its project item links
-      upsertedService = await developerServiceRepo.update(
-        existingOffering.id,
-        body.developerProjectItemIds,
-        body.hourlyRate,
-        body.responseTimeHours,
-        body.comment || undefined,
-      );
-    } else {
-      // Create new service offering and its project item links
-      upsertedService = await developerServiceRepo.create(
-        developerProfile.id,
-        body.serviceId,
-        body.developerProjectItemIds,
-        body.hourlyRate,
-        body.responseTimeHours || undefined,
-        body.comment || undefined,
-      );
-    }
+    const upsertedService = await Helper.upsertDeveloperService(
+      developerProfile,
+      body,
+    );
 
     const response: dto.UpsertDeveloperServiceResponse = {
       developerService: upsertedService,
+    };
+
+    res.status(StatusCodes.OK).send({ success: response });
+  },
+
+  // TODO: not the best way to do it but it works for now
+  async upsertDeveloperServices(
+    req: Request<
+      dto.UpsertDeveloperServicesParams,
+      dto.ResponseBody<dto.UpsertDeveloperServicesResponse>,
+      dto.UpsertDeveloperServicesBody,
+      dto.UpsertDeveloperServicesQuery
+    >,
+    res: Response<dto.ResponseBody<dto.UpsertDeveloperServicesResponse>>,
+  ): Promise<void> {
+    const developerProfile = checkAuthenticatedDeveloperProfile(req);
+    const body: dto.UpsertDeveloperServicesBody = req.body;
+
+    const upsertedServices: dto.DeveloperService[] = [];
+    for (const service of body.upsertDeveloperServices) {
+      const upsertedService = await Helper.upsertDeveloperService(
+        developerProfile,
+        service,
+      );
+      upsertedServices.push(upsertedService);
+    }
+
+    const response: dto.UpsertDeveloperServicesResponse = {
+      developerServices: upsertedServices,
     };
 
     res.status(StatusCodes.OK).send({ success: response });
@@ -543,5 +565,44 @@ export const OnboardingController: OnboardingController = {
 
     const response: dto.CompleteOnboardingResponse = {};
     res.status(StatusCodes.OK).send({ success: response });
+  },
+};
+
+const Helper = {
+  async upsertDeveloperService(
+    developerProfile: dto.DeveloperProfile,
+    body: dto.UpsertDeveloperServiceBody,
+  ): Promise<dto.DeveloperService> {
+    // Retrieve existing service offering by profile and service ID
+    const existingOffering =
+      await developerServiceRepo.getByProfileAndServiceId(
+        developerProfile.id,
+        body.serviceId,
+      );
+
+    const developerServiceBody: DeveloperServiceBody = {
+      developerProjectItemIds: body.developerProjectItemIds,
+      hourlyRate: body.hourlyRate,
+      responseTimeHours: body.responseTimeHours,
+      comment: body.comment || undefined,
+    };
+
+    let upsertedService: dto.DeveloperService;
+
+    if (existingOffering) {
+      // Update existing service offering and its project item links
+      upsertedService = await developerServiceRepo.update(
+        existingOffering.id,
+        developerServiceBody,
+      );
+    } else {
+      // Create new service offering and its project item links
+      upsertedService = await developerServiceRepo.create(developerProfile.id, {
+        serviceId: body.serviceId,
+        body: developerServiceBody,
+      });
+    }
+
+    return upsertedService;
   },
 };

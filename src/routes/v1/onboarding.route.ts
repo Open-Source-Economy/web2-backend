@@ -114,7 +114,6 @@ router.post(
 
 // Route to add or update a developer's service offering
 router.put(
-  // Using PUT for upsert (idempotent update/create)
   "/services",
   validateParams(dto.UpsertDeveloperServiceCompanion.paramsSchema),
   validateBody(dto.UpsertDeveloperServiceCompanion.bodySchema),
@@ -122,11 +121,18 @@ router.put(
   OnboardingController.upsertDeveloperService,
 );
 
-// Route to delete a developer's service offering
+router.post(
+  "/services/batch",
+  validateParams(dto.UpsertDeveloperServicesCompanion.paramsSchema),
+  validateBody(dto.UpsertDeveloperServicesCompanion.bodySchema),
+  validateQuery(dto.UpsertDeveloperServicesCompanion.querySchema),
+  OnboardingController.upsertDeveloperServices, // TODO: improve type safety, if changed to "OnboardingController.upsertDeveloperService" no compile error
+);
+
 router.delete(
   "/services",
   validateParams(dto.DeleteDeveloperServiceCompanion.paramsSchema),
-  validateBody(dto.DeleteDeveloperServiceCompanion.bodySchema), // DELETE with body for serviceId
+  validateBody(dto.DeleteDeveloperServiceCompanion.bodySchema),
   validateQuery(dto.DeleteDeveloperServiceCompanion.querySchema),
   OnboardingController.deleteDeveloperService,
 );
