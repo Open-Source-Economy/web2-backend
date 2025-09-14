@@ -533,9 +533,7 @@ export const OnboardingController: OnboardingController = {
 
     // The delete method in the repository expects DeveloperServiceId
     // Ensure params.serviceId is of type DeveloperServiceId
-    await developerServiceRepo.delete(
-      params.serviceId as dto.DeveloperServiceId,
-    );
+    await developerServiceRepo.delete(params.developerServiceId);
 
     const response: dto.DeleteDeveloperServiceResponse = {};
     res.status(StatusCodes.OK).send({ success: response });
