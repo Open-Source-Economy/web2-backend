@@ -75,16 +75,33 @@ class RepositoryRepositoryImpl implements RepositoryRepository {
     try {
       const result = await client.query(
         `
-            INSERT INTO github_repository (github_id, github_owner_id, github_owner_login, github_name, github_html_url, github_description)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO github_repository (
+              github_id, github_owner_id, github_owner_login, github_name, github_html_url, github_description,
+              github_homepage, github_language, github_forks_count, github_stargazers_count, github_watchers_count,
+              github_full_name, github_fork, github_topics, github_open_issues_count,
+              github_visibility, github_subscribers_count, github_network_count
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
             ON CONFLICT (github_id) DO UPDATE
               SET github_owner_id = EXCLUDED.github_owner_id,
                   github_owner_login = EXCLUDED.github_owner_login,
                   github_name = EXCLUDED.github_name,
                   github_html_url = EXCLUDED.github_html_url,
                   github_description = EXCLUDED.github_description,
+                  github_homepage = EXCLUDED.github_homepage,
+                  github_language = EXCLUDED.github_language,
+                  github_forks_count = EXCLUDED.github_forks_count,
+                  github_stargazers_count = EXCLUDED.github_stargazers_count,
+                  github_watchers_count = EXCLUDED.github_watchers_count,
+                  github_full_name = EXCLUDED.github_full_name,
+                  github_fork = EXCLUDED.github_fork,
+                  github_topics = EXCLUDED.github_topics,
+                  github_open_issues_count = EXCLUDED.github_open_issues_count,
+                  github_visibility = EXCLUDED.github_visibility,
+                  github_subscribers_count = EXCLUDED.github_subscribers_count,
+                  github_network_count = EXCLUDED.github_network_count,
                   updated_at = NOW()
-            RETURNING github_id, github_owner_id, github_owner_login, github_name, github_html_url, github_description
+            RETURNING *
           `,
         [
           repository.id.githubId,
@@ -93,6 +110,18 @@ class RepositoryRepositoryImpl implements RepositoryRepository {
           repository.id.name,
           repository.htmlUrl,
           repository.description,
+          repository.homepage,
+          repository.language,
+          repository.forksCount,
+          repository.stargazersCount,
+          repository.watchersCount,
+          repository.fullName,
+          repository.fork,
+          repository.topics,
+          repository.openIssuesCount,
+          repository.visibility,
+          repository.subscribersCount,
+          repository.networkCount,
         ],
       );
 
