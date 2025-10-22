@@ -7,7 +7,9 @@ router.get("/owners/:owner", GitHubController.getOwner);
 router.get("/repos/:owner/:repo", GitHubController.getRepository);
 
 // --- SYNC OPERATIONS ---
-// router.post("/owners/:owner/sync", XXX);
-// router.post("/repos/:owner/:repo/sync", XXX);
+router.post("/owners/:owner/sync", GitHubController.syncOwner);
+router.post("/repos/:owner/:repo/sync", GitHubController.syncRepository);
+router.post("/projects/:owner/sync", GitHubController.syncProject);
+router.post("/projects/:owner/:repo/sync", GitHubController.syncProject);
 
 export default router;
