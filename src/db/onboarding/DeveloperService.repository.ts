@@ -4,7 +4,6 @@ import {
   DeveloperProfileId,
   DeveloperProjectItemId,
   DeveloperService,
-  DeveloperServiceCompanion,
   DeveloperServiceId,
   ResponseTimeType,
   ServiceId,
@@ -13,6 +12,7 @@ import { pool } from "../../dbPool";
 import { logger } from "../../config";
 import { BaseRepository } from "../helpers";
 import { StatusCodes } from "http-status-codes";
+import { DeveloperServiceCompanion } from "../helpers/companions";
 
 export function getDeveloperServiceRepository(): DeveloperServiceRepository {
   return new DeveloperServiceRepositoryImpl(pool);

@@ -5,6 +5,7 @@ import {
   ValidationError,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import { RepositoryCompanion } from "../helpers/companions";
 
 export function getRepositoryRepository(): RepositoryRepository {
   return new RepositoryRepositoryImpl(pool);
@@ -38,7 +39,7 @@ class RepositoryRepositoryImpl implements RepositoryRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple repositories found");
     } else {
-      const repository = Repository.fromBackend(rows[0]);
+      const repository = RepositoryCompanion.fromBackend(rows[0]);
       if (repository instanceof ValidationError) {
         throw repository;
       }
@@ -48,7 +49,7 @@ class RepositoryRepositoryImpl implements RepositoryRepository {
 
   private getRepositoryList(rows: any[]): Repository[] {
     return rows.map((r) => {
-      const repository = Repository.fromBackend(r);
+      const repository = RepositoryCompanion.fromBackend(r);
       if (repository instanceof ValidationError) {
         throw repository;
       }

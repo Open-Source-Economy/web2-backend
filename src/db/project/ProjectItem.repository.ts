@@ -11,12 +11,16 @@ import {
   SourceIdentifier,
   DeveloperProfile,
   DeveloperProjectItem,
-  DeveloperProfileCompanion,
-  DeveloperProjectItemCompanion,
   ProjectItemWithDetails,
 } from "@open-source-economy/api-types";
 import { BaseRepository } from "../helpers";
-import { ProjectItemCompanion } from "../helpers/companions";
+import {
+  ProjectItemCompanion,
+  OwnerCompanion,
+  RepositoryCompanion,
+  DeveloperProfileCompanion,
+  DeveloperProjectItemCompanion,
+} from "../helpers/companions";
 
 export interface CreateProjectItemParams {
   projectItemType: ProjectItemType;
@@ -294,8 +298,8 @@ class ProjectItemRepositoryImpl
    * and a list of developers with their profiles, project items associations, and owner info.
    */
   async getAllWithDetails(): Promise<ProjectItemWithDetails[]> {
-    console.log('Starting getAllWithDetails query...');
-    
+    console.log("Starting getAllWithDetails query...");
+
     // Define table prefixes for clarity and maintainability
     const PREFIX = {
       projectItem: "pi_",
@@ -419,7 +423,7 @@ class ProjectItemRepositoryImpl
     `;
 
     const result = await this.pool.query(query);
-    
+
     console.log(`Query returned ${result.rows.length} rows`);
 
     // Group the results by project item
@@ -444,7 +448,7 @@ class ProjectItemRepositoryImpl
         // Parse owner (if exists)
         let owner: Owner | null = null;
         if (row[`${PREFIX.owner}github_id`]) {
-          const ownerResult = Owner.fromBackend(row, PREFIX.owner);
+          const ownerResult = OwnerCompanion.fromBackend(row, PREFIX.owner);
           if (ownerResult instanceof Error) {
             throw ownerResult;
           }
@@ -454,7 +458,10 @@ class ProjectItemRepositoryImpl
         // Parse repository (if exists)
         let repository: Repository | null = null;
         if (row[`${PREFIX.repository}github_id`]) {
-          const repoResult = Repository.fromBackend(row, PREFIX.repository);
+          const repoResult = RepositoryCompanion.fromBackend(
+            row,
+            PREFIX.repository,
+          );
           if (repoResult instanceof Error) {
             throw repoResult;
           }
@@ -476,24 +483,22 @@ class ProjectItemRepositoryImpl
         // Skip developers without a GitHub owner (not yet linked)
         if (!row[`${PREFIX.developerOwner}github_id`]) {
           skippedDevelopersCount++;
-          console.warn(
-            `Skipping developer without GitHub owner:`,
-            {
-              developerProfileId: row[`${PREFIX.developerProfile}id`],
-              userId: row[`${PREFIX.developerProfile}user_id`],
-              contactEmail: row[`${PREFIX.developerProfile}contact_email`],
-              projectItemId: row[`${PREFIX.projectItem}id`],
-              projectItemType: row[`${PREFIX.projectItem}project_item_type`],
-              reason: 'No GitHub owner linked to user account',
-              devOwnerGithubId: row[`${PREFIX.developerOwner}github_id`],
-              allDeveloperOwnerFields: Object.keys(row).filter(key => key.startsWith(PREFIX.developerOwner)),
-            }
-          );
+          console.warn(`Skipping developer without GitHub owner:`, {
+            developerProfileId: row[`${PREFIX.developerProfile}id`],
+            userId: row[`${PREFIX.developerProfile}user_id`],
+            contactEmail: row[`${PREFIX.developerProfile}contact_email`],
+            projectItemId: row[`${PREFIX.projectItem}id`],
+            projectItemType: row[`${PREFIX.projectItem}project_item_type`],
+            reason: "No GitHub owner linked to user account",
+            devOwnerGithubId: row[`${PREFIX.developerOwner}github_id`],
+            allDeveloperOwnerFields: Object.keys(row).filter((key) =>
+              key.startsWith(PREFIX.developerOwner),
+            ),
+          });
           continue;
         }
-        
-        processedDevelopersCount++;
 
+        processedDevelopersCount++;
 
         // Parse developer profile
         const developerProfile = DeveloperProfileCompanion.fromBackend(
@@ -514,7 +519,10 @@ class ProjectItemRepositoryImpl
         }
 
         // Parse developer owner
-        const developerOwner = Owner.fromBackend(row, PREFIX.developerOwner);
+        const developerOwner = OwnerCompanion.fromBackend(
+          row,
+          PREFIX.developerOwner,
+        );
         if (developerOwner instanceof Error) {
           throw developerOwner;
         }
@@ -528,13 +536,16 @@ class ProjectItemRepositoryImpl
     }
 
     const projectItems = Array.from(projectItemsMap.values());
-    
-    console.log('getAllWithDetails query completed:', {
+
+    console.log("getAllWithDetails query completed:", {
       totalRows: result.rows.length,
       projectItemsCount: projectItems.length,
       processedDevelopers: processedDevelopersCount,
       skippedDevelopers: skippedDevelopersCount,
-      totalDevelopersInResult: projectItems.reduce((sum, item) => sum + item.developers.length, 0),
+      totalDevelopersInResult: projectItems.reduce(
+        (sum, item) => sum + item.developers.length,
+        0,
+      ),
     });
 
     return projectItems;

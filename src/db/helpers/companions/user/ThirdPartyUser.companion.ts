@@ -7,6 +7,7 @@ import {
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";
+import { OwnerCompanion } from "../github";
 
 export namespace ThirdPartyUserCompanion {
   export function fromJson(json: any): ThirdPartyUser | ValidationError {
@@ -56,7 +57,7 @@ export namespace ThirdPartyUserCompanion {
     }
 
     if (owner === null) {
-      const o = Owner.fromBackend(row);
+      const o = OwnerCompanion.fromBackend(row);
       if (o instanceof ValidationError) {
         return o;
       }

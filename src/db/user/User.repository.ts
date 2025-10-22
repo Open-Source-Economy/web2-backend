@@ -13,7 +13,7 @@ import {
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { encrypt } from "../../utils";
-import { UserCompanion } from "../helpers/companions/user";
+import { UserCompanion, OwnerCompanion } from "../helpers/companions";
 
 export function getUserRepository(): UserRepository {
   return new UserRepositoryImpl(pool);
@@ -189,7 +189,7 @@ class UserRepositoryImpl implements UserRepository {
           ],
         );
 
-        const githubOwner = Owner.fromBackend(ownerResult.rows[0]);
+        const githubOwner = OwnerCompanion.fromBackend(ownerResult.rows[0]);
         if (githubOwner instanceof Error) {
           throw githubOwner;
         }

@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { Owner, OwnerId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import { OwnerCompanion } from "../helpers/companions";
 
 export function getOwnerRepository(): OwnerRepository {
   return new OwnerRepositoryImpl(pool);
@@ -34,7 +35,7 @@ class OwnerRepositoryImpl implements OwnerRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple owners found");
     } else {
-      const owner = Owner.fromBackend(rows[0]);
+      const owner = OwnerCompanion.fromBackend(rows[0]);
       if (owner instanceof Error) {
         throw owner;
       }
@@ -44,7 +45,7 @@ class OwnerRepositoryImpl implements OwnerRepository {
 
   private getOwnerList(rows: any[]): Owner[] {
     return rows.map((r) => {
-      const owner = Owner.fromBackend(r);
+      const owner = OwnerCompanion.fromBackend(r);
       if (owner instanceof Error) {
         throw owner;
       }
