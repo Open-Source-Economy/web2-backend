@@ -6,6 +6,7 @@ import { CampaignController } from "../../controllers/campaign/campaign.controll
 const router = Router();
 
 router.get("/", ProjectController.getProjects);
+router.get("/items/details", ProjectController.getProjectItemsWithDetails);
 router.get("/owners/:owner", ProjectController.getProject);
 router.get("/repos/:owner/:repo", ProjectController.getProject);
 

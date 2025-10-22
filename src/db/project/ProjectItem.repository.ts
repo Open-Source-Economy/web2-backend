@@ -1,12 +1,19 @@
 import { Pool } from "pg";
 import { pool } from "../../dbPool";
 import {
+  Owner,
   OwnerId,
   ProjectItem,
   ProjectItemId,
   ProjectItemType,
+  Repository,
   RepositoryId,
   SourceIdentifier,
+  DeveloperProfile,
+  DeveloperProjectItem,
+  DeveloperProfileCompanion,
+  DeveloperProjectItemCompanion,
+  ProjectItemWithDetails,
 } from "@open-source-economy/api-types";
 import { BaseRepository } from "../helpers";
 import { ProjectItemCompanion } from "../helpers/companions";
@@ -85,6 +92,14 @@ export interface ProjectItemRepository {
     projectItemType: ProjectItemType,
     sourceIdentifier: SourceIdentifier,
   ): Promise<ProjectItem | null>;
+
+  /**
+   * Retrieves all project items with their associated Owner, Repository (if exists),
+   * and a list of developers with their profiles, project items associations, and owner info.
+   *
+   * @returns A promise that resolves to an array of ProjectItemWithDetails.
+   */
+  getAllWithDetails(): Promise<ProjectItemWithDetails[]>;
 }
 
 class ProjectItemRepositoryImpl
@@ -272,5 +287,256 @@ class ProjectItemRepositoryImpl
           `getBySourceIdentifier: Unsupported project item type for retrieval: ${projectItemType}.`,
         );
     }
+  }
+
+  /**
+   * Retrieves all project items with their associated Owner, Repository (if exists),
+   * and a list of developers with their profiles, project items associations, and owner info.
+   */
+  async getAllWithDetails(): Promise<ProjectItemWithDetails[]> {
+    console.log('Starting getAllWithDetails query...');
+    
+    // Define table prefixes for clarity and maintainability
+    const PREFIX = {
+      projectItem: "pi_",
+      owner: "", // No prefix for project item's owner
+      repository: "repo_",
+      developerProfile: "dp_",
+      developerProjectItem: "dpi_",
+      developerOwner: "devo_", // Changed from 'dev_' to avoid 'do' alias conflict with PostgreSQL reserved keyword
+    };
+
+    const query = `
+      SELECT 
+        -- Project item columns (prefix: ${PREFIX.projectItem})
+        pi.id AS ${PREFIX.projectItem}id,
+        pi.project_item_type AS ${PREFIX.projectItem}project_item_type,
+        pi.github_owner_id AS ${PREFIX.projectItem}github_owner_id,
+        pi.github_owner_login AS ${PREFIX.projectItem}github_owner_login,
+        pi.github_repository_id AS ${PREFIX.projectItem}github_repository_id,
+        pi.github_repository_name AS ${PREFIX.projectItem}github_repository_name,
+        pi.url AS ${PREFIX.projectItem}url,
+        pi.created_at AS ${PREFIX.projectItem}created_at,
+        pi.updated_at AS ${PREFIX.projectItem}updated_at,
+        
+        -- Owner columns (for project item) - no prefix
+        o.github_id AS ${PREFIX.owner}github_id,
+        o.github_type AS ${PREFIX.owner}github_type,
+        o.github_login AS ${PREFIX.owner}github_login,
+        o.github_html_url AS ${PREFIX.owner}github_html_url,
+        o.github_avatar_url AS ${PREFIX.owner}github_avatar_url,
+        o.github_followers AS ${PREFIX.owner}github_followers,
+        o.github_following AS ${PREFIX.owner}github_following,
+        o.github_public_repos AS ${PREFIX.owner}github_public_repos,
+        o.github_public_gists AS ${PREFIX.owner}github_public_gists,
+        o.github_name AS ${PREFIX.owner}github_name,
+        o.github_twitter_username AS ${PREFIX.owner}github_twitter_username,
+        o.github_company AS ${PREFIX.owner}github_company,
+        o.github_blog AS ${PREFIX.owner}github_blog,
+        o.github_location AS ${PREFIX.owner}github_location,
+        o.github_email AS ${PREFIX.owner}github_email,
+        
+        -- Repository columns (prefix: ${PREFIX.repository})
+        r.github_id AS ${PREFIX.repository}github_id,
+        r.github_owner_id AS ${PREFIX.repository}github_owner_id,
+        r.github_owner_login AS ${PREFIX.repository}github_owner_login,
+        r.github_name AS ${PREFIX.repository}github_name,
+        r.github_html_url AS ${PREFIX.repository}github_html_url,
+        r.github_description AS ${PREFIX.repository}github_description,
+        r.github_homepage AS ${PREFIX.repository}github_homepage,
+        r.github_language AS ${PREFIX.repository}github_language,
+        r.github_forks_count AS ${PREFIX.repository}github_forks_count,
+        r.github_stargazers_count AS ${PREFIX.repository}github_stargazers_count,
+        r.github_watchers_count AS ${PREFIX.repository}github_watchers_count,
+        r.github_full_name AS ${PREFIX.repository}github_full_name,
+        r.github_fork AS ${PREFIX.repository}github_fork,
+        r.github_topics AS ${PREFIX.repository}github_topics,
+        r.github_open_issues_count AS ${PREFIX.repository}github_open_issues_count,
+        r.github_visibility AS ${PREFIX.repository}github_visibility,
+        r.github_subscribers_count AS ${PREFIX.repository}github_subscribers_count,
+        r.github_network_count AS ${PREFIX.repository}github_network_count,
+        
+        -- Developer profile columns (prefix: ${PREFIX.developerProfile})
+        dp.id AS ${PREFIX.developerProfile}id,
+        dp.user_id AS ${PREFIX.developerProfile}user_id,
+        dp.contact_email AS ${PREFIX.developerProfile}contact_email,
+        dp.onboarding_completed AS ${PREFIX.developerProfile}onboarding_completed,
+        dp.created_at AS ${PREFIX.developerProfile}created_at,
+        dp.updated_at AS ${PREFIX.developerProfile}updated_at,
+        
+        -- Developer project item columns (prefix: ${PREFIX.developerProjectItem})
+        dpi.id AS ${PREFIX.developerProjectItem}id,
+        dpi.developer_profile_id AS ${PREFIX.developerProjectItem}developer_profile_id,
+        dpi.project_item_id AS ${PREFIX.developerProjectItem}project_item_id,
+        dpi.merge_rights::text[] AS ${PREFIX.developerProjectItem}merge_rights,
+        dpi.roles::text[] AS ${PREFIX.developerProjectItem}roles,
+        dpi.comment AS ${PREFIX.developerProjectItem}comment,
+        dpi.created_at AS ${PREFIX.developerProjectItem}created_at,
+        dpi.updated_at AS ${PREFIX.developerProjectItem}updated_at,
+        
+        -- Developer owner columns (prefix: ${PREFIX.developerOwner})
+        devo.github_id AS ${PREFIX.developerOwner}github_id,
+        devo.github_type AS ${PREFIX.developerOwner}github_type,
+        devo.github_login AS ${PREFIX.developerOwner}github_login,
+        devo.github_html_url AS ${PREFIX.developerOwner}github_html_url,
+        devo.github_avatar_url AS ${PREFIX.developerOwner}github_avatar_url,
+        devo.github_followers AS ${PREFIX.developerOwner}github_followers,
+        devo.github_following AS ${PREFIX.developerOwner}github_following,
+        devo.github_public_repos AS ${PREFIX.developerOwner}github_public_repos,
+        devo.github_public_gists AS ${PREFIX.developerOwner}github_public_gists,
+        devo.github_name AS ${PREFIX.developerOwner}github_name,
+        devo.github_twitter_username AS ${PREFIX.developerOwner}github_twitter_username,
+        devo.github_company AS ${PREFIX.developerOwner}github_company,
+        devo.github_blog AS ${PREFIX.developerOwner}github_blog,
+        devo.github_location AS ${PREFIX.developerOwner}github_location,
+        devo.github_email AS ${PREFIX.developerOwner}github_email
+        
+      FROM project_item pi
+      
+      -- LEFT JOIN to get the project item's owner (if it's a GitHub type)
+      LEFT JOIN github_owner o 
+        ON pi.github_owner_id = o.github_id
+      
+      -- LEFT JOIN to get the project item's repository (if it's a GITHUB_REPOSITORY)
+      LEFT JOIN github_repository r 
+        ON pi.github_repository_id = r.github_id
+      
+      -- LEFT JOIN to get all developers associated with this project item
+      LEFT JOIN developer_project_items dpi 
+        ON pi.id = dpi.project_item_id
+      
+      -- LEFT JOIN to get developer profile information
+      LEFT JOIN developer_profile dp 
+        ON dpi.developer_profile_id = dp.id
+      
+      -- LEFT JOIN to get the developer's GitHub owner information
+      LEFT JOIN app_user au 
+        ON dp.user_id = au.id
+      LEFT JOIN github_owner devo 
+        ON au.github_owner_id = devo.github_id
+      
+      ORDER BY pi.created_at DESC, dp.created_at ASC
+    `;
+
+    const result = await this.pool.query(query);
+    
+    console.log(`Query returned ${result.rows.length} rows`);
+
+    // Group the results by project item
+    const projectItemsMap = new Map<string, ProjectItemWithDetails>();
+    let skippedDevelopersCount = 0;
+    let processedDevelopersCount = 0;
+
+    for (const row of result.rows) {
+      const projectItemId = row[`${PREFIX.projectItem}id`];
+
+      // Get or create the project item entry
+      if (!projectItemsMap.has(projectItemId)) {
+        // Parse project item
+        const projectItem = ProjectItemCompanion.fromBackend(
+          row,
+          PREFIX.projectItem,
+        );
+        if (projectItem instanceof Error) {
+          throw projectItem;
+        }
+
+        // Parse owner (if exists)
+        let owner: Owner | null = null;
+        if (row[`${PREFIX.owner}github_id`]) {
+          const ownerResult = Owner.fromBackend(row, PREFIX.owner);
+          if (ownerResult instanceof Error) {
+            throw ownerResult;
+          }
+          owner = ownerResult;
+        }
+
+        // Parse repository (if exists)
+        let repository: Repository | null = null;
+        if (row[`${PREFIX.repository}github_id`]) {
+          const repoResult = Repository.fromBackend(row, PREFIX.repository);
+          if (repoResult instanceof Error) {
+            throw repoResult;
+          }
+          repository = repoResult;
+        }
+
+        projectItemsMap.set(projectItemId, {
+          projectItem,
+          owner,
+          repository,
+          developers: [],
+        });
+      }
+
+      // Add developer info if present
+      if (row[`${PREFIX.developerProfile}id`]) {
+        const projectItemDetails = projectItemsMap.get(projectItemId)!;
+
+        // Skip developers without a GitHub owner (not yet linked)
+        if (!row[`${PREFIX.developerOwner}github_id`]) {
+          skippedDevelopersCount++;
+          console.warn(
+            `Skipping developer without GitHub owner:`,
+            {
+              developerProfileId: row[`${PREFIX.developerProfile}id`],
+              userId: row[`${PREFIX.developerProfile}user_id`],
+              contactEmail: row[`${PREFIX.developerProfile}contact_email`],
+              projectItemId: row[`${PREFIX.projectItem}id`],
+              projectItemType: row[`${PREFIX.projectItem}project_item_type`],
+              reason: 'No GitHub owner linked to user account',
+              devOwnerGithubId: row[`${PREFIX.developerOwner}github_id`],
+              allDeveloperOwnerFields: Object.keys(row).filter(key => key.startsWith(PREFIX.developerOwner)),
+            }
+          );
+          continue;
+        }
+        
+        processedDevelopersCount++;
+
+
+        // Parse developer profile
+        const developerProfile = DeveloperProfileCompanion.fromBackend(
+          row,
+          PREFIX.developerProfile,
+        );
+        if (developerProfile instanceof Error) {
+          throw developerProfile;
+        }
+
+        // Parse developer project item
+        const developerProjectItem = DeveloperProjectItemCompanion.fromBackend(
+          row,
+          PREFIX.developerProjectItem,
+        );
+        if (developerProjectItem instanceof Error) {
+          throw developerProjectItem;
+        }
+
+        // Parse developer owner
+        const developerOwner = Owner.fromBackend(row, PREFIX.developerOwner);
+        if (developerOwner instanceof Error) {
+          throw developerOwner;
+        }
+
+        projectItemDetails.developers.push({
+          developerProfile,
+          developerProjectItem,
+          developerOwner,
+        });
+      }
+    }
+
+    const projectItems = Array.from(projectItemsMap.values());
+    
+    console.log('getAllWithDetails query completed:', {
+      totalRows: result.rows.length,
+      projectItemsCount: projectItems.length,
+      processedDevelopers: processedDevelopersCount,
+      skippedDevelopers: skippedDevelopersCount,
+      totalDevelopersInResult: projectItems.reduce((sum, item) => sum + item.developers.length, 0),
+    });
+
+    return projectItems;
   }
 }

@@ -10,16 +10,19 @@ import {
 } from "@open-source-economy/api-types";
 
 export namespace ProjectItemCompanion {
-  export function fromBackend(row: any): ProjectItem | ValidationError {
+  export function fromBackend(
+    row: any,
+    table_prefix: string = "",
+  ): ProjectItem | ValidationError {
     const validator = new Validator(row);
 
-    const idString = validator.requiredString("id");
+    const idString = validator.requiredString(`${table_prefix}id`);
     const projectItemType = validator.requiredEnum(
-      "project_item_type",
+      `${table_prefix}project_item_type`,
       Object.values(ProjectItemType) as ProjectItemType[],
     );
-    const createdAt = validator.requiredDate("created_at");
-    const updatedAt = validator.requiredDate("updated_at");
+    const createdAt = validator.requiredDate(`${table_prefix}created_at`);
+    const updatedAt = validator.requiredDate(`${table_prefix}updated_at`);
 
     let error = validator.getFirstError();
     if (error) {
@@ -30,7 +33,7 @@ export namespace ProjectItemCompanion {
 
     switch (projectItemType) {
       case ProjectItemType.GITHUB_OWNER:
-        const ownerIdResult = OwnerId.fromBackendForeignKey(row);
+        const ownerIdResult = OwnerId.fromBackendForeignKey(row, table_prefix);
         if (ownerIdResult instanceof ValidationError) {
           return ownerIdResult;
         }
@@ -38,7 +41,10 @@ export namespace ProjectItemCompanion {
         break;
 
       case ProjectItemType.GITHUB_REPOSITORY:
-        const repositoryIdResult = RepositoryId.fromBackendForeignKey(row);
+        const repositoryIdResult = RepositoryId.fromBackendForeignKey(
+          row,
+          table_prefix,
+        );
         if (repositoryIdResult instanceof ValidationError) {
           return repositoryIdResult;
         }
@@ -47,7 +53,7 @@ export namespace ProjectItemCompanion {
 
       case ProjectItemType.URL:
         // For URL type, directly validate and use the string
-        const urlString = validator.requiredString("url");
+        const urlString = validator.requiredString(`${table_prefix}url`);
         error = validator.getFirstError();
         if (error) {
           return error;

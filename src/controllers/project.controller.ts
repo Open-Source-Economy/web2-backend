@@ -19,6 +19,7 @@ import {
   managedIssueRepo,
   planAndCreditsRepo,
   projectRepo,
+  projectItemRepo,
 } from "../db";
 import { githubSyncService } from "../services";
 
@@ -93,6 +94,16 @@ export interface ProjectController {
       dto.RequestIssueFundingQuery
     >,
     res: Response<dto.ResponseBody<dto.RequestIssueFundingResponse>>,
+  ): Promise<void>;
+
+  getProjectItemsWithDetails(
+    req: Request<
+      dto.GetProjectItemsWithDetailsParams,
+      dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>,
+      dto.GetProjectItemsWithDetailsBody,
+      dto.GetProjectItemsWithDetailsQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>>,
   ): Promise<void>;
 }
 
@@ -294,5 +305,19 @@ export const ProjectController: ProjectController = {
       await managedIssueRepo.update(managedIssue);
       res.status(StatusCodes.OK).send({ success: {} });
     }
+  },
+
+  async getProjectItemsWithDetails(
+    req: Request<
+      dto.GetProjectItemsWithDetailsParams,
+      dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>,
+      dto.GetProjectItemsWithDetailsBody,
+      dto.GetProjectItemsWithDetailsQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>>,
+  ): Promise<void> {
+    const projectItems = await projectItemRepo.getAllWithDetails();
+    const response: dto.GetProjectItemsWithDetailsResponse = { projectItems };
+    res.status(StatusCodes.OK).send({ success: response });
   },
 };
