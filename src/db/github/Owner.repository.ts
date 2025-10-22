@@ -54,7 +54,10 @@ class OwnerRepositoryImpl implements OwnerRepository {
 
   async getAll(): Promise<Owner[]> {
     const result = await this.pool.query(`
-            SELECT github_id, github_type, github_login, github_html_url, github_avatar_url 
+            SELECT github_id, github_type, github_login, github_html_url, github_avatar_url,
+                   github_followers, github_following, github_public_repos, github_public_gists,
+                   github_name, github_twitter_username, github_company, github_blog, 
+                   github_location, github_email
             FROM github_owner
         `);
 
@@ -74,15 +77,31 @@ class OwnerRepositoryImpl implements OwnerRepository {
     try {
       const result = await client.query(
         `
-            INSERT INTO github_owner (github_id, github_login, github_type, github_html_url, github_avatar_url)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO github_owner (github_id, github_login, github_type, github_html_url, github_avatar_url,
+                                      github_followers, github_following, github_public_repos, github_public_gists,
+                                      github_name, github_twitter_username, github_company, github_blog,
+                                      github_location, github_email)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             ON CONFLICT (github_login) DO UPDATE
-                SET github_id         = EXCLUDED.github_id,
-                    github_type       = EXCLUDED.github_type,
-                    github_html_url   = EXCLUDED.github_html_url,
-                    github_avatar_url = EXCLUDED.github_avatar_url,
-                    updated_at        = NOW()
-            RETURNING github_id, github_login, github_type, github_html_url, github_avatar_url
+                SET github_id              = EXCLUDED.github_id,
+                    github_type            = EXCLUDED.github_type,
+                    github_html_url        = EXCLUDED.github_html_url,
+                    github_avatar_url      = EXCLUDED.github_avatar_url,
+                    github_followers       = EXCLUDED.github_followers,
+                    github_following       = EXCLUDED.github_following,
+                    github_public_repos    = EXCLUDED.github_public_repos,
+                    github_public_gists    = EXCLUDED.github_public_gists,
+                    github_name            = EXCLUDED.github_name,
+                    github_twitter_username = EXCLUDED.github_twitter_username,
+                    github_company         = EXCLUDED.github_company,
+                    github_blog            = EXCLUDED.github_blog,
+                    github_location        = EXCLUDED.github_location,
+                    github_email           = EXCLUDED.github_email,
+                    updated_at             = NOW()
+            RETURNING github_id, github_login, github_type, github_html_url, github_avatar_url,
+                      github_followers, github_following, github_public_repos, github_public_gists,
+                      github_name, github_twitter_username, github_company, github_blog,
+                      github_location, github_email
         `,
         [
           owner.id.githubId,
@@ -90,6 +109,16 @@ class OwnerRepositoryImpl implements OwnerRepository {
           owner.type,
           owner.htmlUrl,
           owner.avatarUrl,
+          owner.followers,
+          owner.following,
+          owner.publicRepos,
+          owner.publicGists,
+          owner.name,
+          owner.twitterUsername,
+          owner.company,
+          owner.blog,
+          owner.location,
+          owner.email,
         ],
       );
 

@@ -15,6 +15,16 @@ describe("Owner", () => {
       OwnerType.Organization,
       "https://github.com/Open-Source-Economy",
       "https://avatars.githubusercontent.com/u/141809657?v=4",
+      8, // followers
+      0, // following
+      7, // publicRepos
+      0, // publicGists
+      "Open Source Economy", // name
+      undefined, // twitterUsername (null in JSON becomes undefined)
+      undefined, // company (null in JSON becomes undefined)
+      "https://www.open-source-economy.com/", // blog
+      "Switzerland", // location
+      undefined, // email (null in JSON becomes undefined)
     );
 
     expect(object).toBeInstanceOf(Owner);

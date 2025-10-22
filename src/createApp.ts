@@ -98,7 +98,7 @@ export function createApp() {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         secure: config.env !== NodeEnv.Local,
         httpOnly: true,
-        sameSite: config.env === NodeEnv.Production ? "none" : "lax", // TODO: lolo
+        sameSite: config.env === NodeEnv.Production ? "lax" : "none", // TODO: lolo
       },
       store: new pgSession({
         pool: pool,

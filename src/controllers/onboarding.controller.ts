@@ -19,8 +19,6 @@ import {
   checkAuthenticatedUser,
 } from "../middlewares";
 import { githubSyncService } from "../services";
-import { body } from "express-validator";
-import { DeveloperProfile } from "@open-source-economy/api-types/dist/model/onboarding/DeveloperProfile";
 
 const developerProfileRepo = getDeveloperProfileRepository();
 const developerSettingsRepo = getDeveloperSettingsRepository();

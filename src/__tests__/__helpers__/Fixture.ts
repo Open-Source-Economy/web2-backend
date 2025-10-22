@@ -103,7 +103,22 @@ export const Fixture = {
   },
 
   owner(ownerId: OwnerId, payload: string = "payload"): Owner {
-    return new Owner(ownerId, OwnerType.Organization, "url", payload);
+    return new Owner(
+      ownerId,
+      OwnerType.Organization,
+      "url",
+      payload,
+      undefined, // followers
+      undefined, // following
+      undefined, // publicRepos
+      undefined, // publicGists
+      undefined, // name
+      undefined, // twitterUsername
+      undefined, // company
+      undefined, // blog
+      undefined, // location
+      undefined, // email
+    );
   },
 
   repositoryId(ownerId: OwnerId): RepositoryId {
