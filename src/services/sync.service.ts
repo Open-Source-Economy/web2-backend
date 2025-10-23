@@ -5,23 +5,26 @@ import {
   Owner,
   OwnerId,
   ProjectId,
+  ProjectItemType,
   Repository,
   RepositoryId,
 } from "@open-source-economy/api-types";
 import { logger } from "../config";
-import { ProjectRepository } from "../db";
+import { ProjectRepository, ProjectItemRepository } from "../db";
 
 export function getGithubSyncService(
   githubService: GitHubApi,
   ownerRepo: OwnerRepository,
   repositoryRepo: RepositoryRepository,
   projectRepo: ProjectRepository,
+  projectItemRepo: ProjectItemRepository,
 ): GithubSyncService {
   return new GithubSyncServiceImpl(
     githubService,
     ownerRepo,
     repositoryRepo,
     projectRepo,
+    projectItemRepo,
   );
 }
 
@@ -83,6 +86,20 @@ export interface GithubSyncService {
    * @returns {Promise<[Owner, Repository | null]>} - Owner and optional repository
    */
   syncProject(projectId: ProjectId): Promise<[Owner, Repository | null]>;
+
+  /**
+   * Syncs all owners and repositories from all project items in the database.
+   * This method fetches all project items and syncs their associated owners and repositories.
+   *
+   * @async
+   * @returns {Promise<{ syncedOwners: number; syncedRepositories: number; errors: number }>}
+   *   Statistics about the sync operation including counts of synced owners, repositories, and any errors encountered.
+   */
+  syncAllProjectItems(): Promise<{
+    syncedOwners: number;
+    syncedRepositories: number;
+    errors: number;
+  }>;
 }
 
 class GithubSyncServiceImpl implements GithubSyncService {
@@ -91,6 +108,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
     private ownerRepo: OwnerRepository,
     private repositoryRepo: RepositoryRepository,
     private projectRepo: ProjectRepository,
+    private projectItemRepo: ProjectItemRepository,
   ) {}
 
   async syncOwner(ownerId: OwnerId): Promise<Owner> {
@@ -222,5 +240,87 @@ class GithubSyncServiceImpl implements GithubSyncService {
       const owner = await this.syncOwner(new OwnerId(projectId.login));
       return [owner, null];
     }
+  }
+
+  async syncAllProjectItems(): Promise<{
+    syncedOwners: number;
+    syncedRepositories: number;
+    errors: number;
+  }> {
+    logger.info("Starting sync of all project items...");
+
+    // Get all project items from the database
+    const projectItems = await this.projectItemRepo.getAll();
+
+    let syncedOwners = 0;
+    let syncedRepositories = 0;
+    let errors = 0;
+
+    // Track unique owners and repositories to avoid duplicate syncs
+    const syncedOwnerIds = new Set<string>();
+    const syncedRepositoryIds = new Set<string>();
+
+    // Delay between API calls to avoid rate limiting (in milliseconds)
+    const RATE_LIMIT_DELAY_MS = 10; // 0.01 second between calls
+
+    for (const projectItem of projectItems) {
+      try {
+        if (projectItem.projectItemType === ProjectItemType.GITHUB_REPOSITORY) {
+          const repositoryId = projectItem.sourceIdentifier as RepositoryId;
+          const repoKey = `${repositoryId.ownerId.login}/${repositoryId.name}`;
+
+          // Sync repository (and its owner)
+          if (!syncedRepositoryIds.has(repoKey)) {
+            logger.info(`Syncing repository: ${repoKey}`);
+            await this.syncRepository(repositoryId);
+            syncedRepositories++;
+            syncedRepositoryIds.add(repoKey);
+            syncedOwnerIds.add(repositoryId.ownerId.login);
+            logger.info(`Successfully synced repository: ${repoKey}`);
+            
+            // Wait before next API call to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY_MS));
+          } else {
+            logger.debug(`Skipping already synced repository: ${repoKey}`);
+          }
+        } else if (
+          projectItem.projectItemType === ProjectItemType.GITHUB_OWNER
+        ) {
+          const ownerId = projectItem.sourceIdentifier as OwnerId;
+          const ownerKey = ownerId.login;
+
+          // Sync owner
+          if (!syncedOwnerIds.has(ownerKey)) {
+            logger.info(`Syncing owner: ${ownerKey}`);
+            await this.syncOwner(ownerId);
+            syncedOwners++;
+            syncedOwnerIds.add(ownerKey);
+            logger.info(`Successfully synced owner: ${ownerKey}`);
+            
+            // Wait before next API call to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY_MS));
+          } else {
+            logger.debug(`Skipping already synced owner: ${ownerKey}`);
+          }
+        }
+        // URL type items don't have GitHub data to sync
+      } catch (error) {
+        errors++;
+        logger.error(
+          `Error syncing project item ${projectItem.id.uuid}:`,
+          error,
+        );
+      }
+    }
+
+    logger.info(
+      `Sync completed: ${syncedOwners} owners, ${syncedRepositories} repositories, ${errors} errors`,
+    );
+
+    return {
+      syncedOwners,
+      syncedRepositories,
+      errors,
+    };
   }
 }

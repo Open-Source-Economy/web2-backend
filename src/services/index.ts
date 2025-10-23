@@ -2,7 +2,7 @@ import { CurrencyApi, getCurrencyAPI } from "./currency.service";
 import { MailService } from "./mail.service";
 import { getGithubSyncService, GithubSyncService } from "./sync.service";
 import { getGitHubAPI } from "./github.service";
-import { ownerRepo, projectRepo, repositoryRepo } from "../db";
+import { ownerRepo, projectRepo, repositoryRepo, projectItemRepo } from "../db";
 
 export * from "./github.service";
 export * from "./currency.service";
@@ -16,4 +16,5 @@ export const githubSyncService: GithubSyncService = getGithubSyncService(
   ownerRepo,
   repositoryRepo,
   projectRepo,
+  projectItemRepo,
 );

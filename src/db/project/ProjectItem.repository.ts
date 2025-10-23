@@ -97,6 +97,13 @@ export interface ProjectItemRepository {
   ): Promise<ProjectItem | null>;
 
   /**
+   * Retrieves all project items from the database.
+   *
+   * @returns A promise that resolves to an array of all ProjectItem records.
+   */
+  getAll(): Promise<ProjectItem[]>;
+
+  /**
    * Retrieves all project items with their associated Owner, Repository (if exists),
    * and a list of developers with their profiles, project items associations, and owner info.
    *
@@ -298,6 +305,26 @@ class ProjectItemRepositoryImpl
           `getBySourceIdentifier: Unsupported project item type for retrieval: ${projectItemType}.`,
         );
     }
+  }
+
+  /**
+   * Retrieves all project items from the database.
+   */
+  async getAll(): Promise<ProjectItem[]> {
+    const query = `
+      SELECT *
+      FROM project_item
+      ORDER BY created_at DESC
+    `;
+    const result = await this.pool.query(query);
+
+    return result.rows.map((row) => {
+      const projectItem = ProjectItemCompanion.fromBackend(row);
+      if (projectItem instanceof Error) {
+        throw projectItem;
+      }
+      return projectItem;
+    });
   }
 
   /**

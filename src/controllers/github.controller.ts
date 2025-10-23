@@ -58,6 +58,26 @@ export interface GitHubController {
     >,
     res: Response<dto.ResponseBody<dto.SyncProjectResponse>>,
   ): Promise<void>;
+
+  syncAll(
+    req: Request<
+      {},
+      dto.ResponseBody<{
+        syncedOwners: number;
+        syncedRepositories: number;
+        errors: number;
+      }>,
+      {},
+      {}
+    >,
+    res: Response<
+      dto.ResponseBody<{
+        syncedOwners: number;
+        syncedRepositories: number;
+        errors: number;
+      }>
+    >,
+  ): Promise<void>;
 }
 
 export const GitHubController: GitHubController = {
@@ -148,5 +168,28 @@ export const GitHubController: GitHubController = {
     const [owner, repository] = await githubSyncService.syncProject(projectId);
     const response: dto.SyncProjectResponse = { owner, repository };
     res.status(StatusCodes.OK).send({ success: response });
+  },
+
+  async syncAll(
+    req: Request<
+      {},
+      dto.ResponseBody<{
+        syncedOwners: number;
+        syncedRepositories: number;
+        errors: number;
+      }>,
+      {},
+      {}
+    >,
+    res: Response<
+      dto.ResponseBody<{
+        syncedOwners: number;
+        syncedRepositories: number;
+        errors: number;
+      }>
+    >,
+  ) {
+    const result = await githubSyncService.syncAllProjectItems();
+    res.status(StatusCodes.OK).send({ success: result });
   },
 };
