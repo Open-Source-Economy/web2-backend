@@ -4,12 +4,12 @@ import {
   Currency,
   DeveloperProfileId,
   DeveloperSettings,
-  DeveloperSettingsCompanion,
   IncomeStreamType,
   OpenToOtherOpportunityType,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { BaseRepository } from "../helpers";
+import { DeveloperSettingsCompanion } from "../helpers/companions";
 import { StatusCodes } from "http-status-codes";
 
 export function getDeveloperSettingsRepository(): DeveloperSettingsRepository {

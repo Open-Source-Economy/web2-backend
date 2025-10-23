@@ -1,13 +1,13 @@
 import {
-  OwnerId,
   ProjectItem,
   ProjectItemId,
   ProjectItemType,
-  RepositoryId,
   SourceIdentifier,
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";
+import { OwnerIdCompanion } from "../github/Owner.companion";
+import { RepositoryIdCompanion } from "../github/Repository.companion";
 
 export namespace ProjectItemCompanion {
   export function fromBackend(
@@ -33,7 +33,10 @@ export namespace ProjectItemCompanion {
 
     switch (projectItemType) {
       case ProjectItemType.GITHUB_OWNER:
-        const ownerIdResult = OwnerId.fromBackendForeignKey(row, table_prefix);
+        const ownerIdResult = OwnerIdCompanion.fromBackendForeignKey(
+          row,
+          table_prefix,
+        );
         if (ownerIdResult instanceof ValidationError) {
           return ownerIdResult;
         }
@@ -41,7 +44,7 @@ export namespace ProjectItemCompanion {
         break;
 
       case ProjectItemType.GITHUB_REPOSITORY:
-        const repositoryIdResult = RepositoryId.fromBackendForeignKey(
+        const repositoryIdResult = RepositoryIdCompanion.fromBackendForeignKey(
           row,
           table_prefix,
         );

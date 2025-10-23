@@ -1,7 +1,7 @@
 import {
   Project,
-  Repository,
   ProjectEcosystem,
+  Repository,
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";

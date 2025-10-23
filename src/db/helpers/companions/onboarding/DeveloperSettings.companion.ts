@@ -1,10 +1,10 @@
 import {
+  Currency,
+  DeveloperProfileId,
   DeveloperSettings,
   DeveloperSettingsId,
-  DeveloperProfileId,
-  OpenToOtherOpportunityType,
   IncomeStreamType,
-  Currency,
+  OpenToOtherOpportunityType,
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";

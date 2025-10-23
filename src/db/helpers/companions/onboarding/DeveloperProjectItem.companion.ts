@@ -1,10 +1,10 @@
 import {
+  DeveloperProfileId,
   DeveloperProjectItem,
   DeveloperProjectItemId,
-  DeveloperProfileId,
-  ProjectItemId,
   DeveloperRoleType,
   MergeRightsType,
+  ProjectItemId,
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";

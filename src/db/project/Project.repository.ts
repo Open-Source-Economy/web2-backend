@@ -7,6 +7,7 @@ import {
   ValidationError,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import { ProjectCompanion } from "../helpers/companions";
 
 export function getProjectRepository(): ProjectRepository {
   return new ProjectRepositoryImpl(pool);
@@ -47,7 +48,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple projects found");
     } else {
-      const project = Project.fromBackend(
+      const project = ProjectCompanion.fromBackend(
         rows[0],
         this.ownerTablePrefix,
         this.repositoryTablePrefix,
@@ -61,7 +62,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
 
   private getProjectList(rows: any[]): Project[] {
     return rows.map((r) => {
-      const project = Project.fromBackend(
+      const project = ProjectCompanion.fromBackend(
         r,
         this.ownerTablePrefix,
         this.repositoryTablePrefix,

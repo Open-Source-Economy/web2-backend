@@ -5,6 +5,7 @@ import {
   UserRepository,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import { UserRepositoryCompanion } from "../helpers/companions";
 
 export function getUserRepositoryRepository(): UserRepositoryRepository {
   return new UserRepositoryRepositoryImpl(pool);
@@ -43,7 +44,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple issue fundings found");
     } else {
-      const issueFunding = UserRepository.fromBackend(rows[0]);
+      const issueFunding = UserRepositoryCompanion.fromBackend(rows[0]);
       if (issueFunding instanceof Error) {
         throw issueFunding;
       }
@@ -53,7 +54,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
 
   private getList(rows: any[]): UserRepository[] {
     return rows.map((r) => {
-      const issueFunding = UserRepository.fromBackend(r);
+      const issueFunding = UserRepositoryCompanion.fromBackend(r);
       if (issueFunding instanceof Error) {
         throw issueFunding;
       }

@@ -1,9 +1,9 @@
 import {
+  DeveloperProfileId,
   DeveloperService,
   DeveloperServiceId,
-  DeveloperProfileId,
-  ServiceId,
   ResponseTimeType,
+  ServiceId,
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";

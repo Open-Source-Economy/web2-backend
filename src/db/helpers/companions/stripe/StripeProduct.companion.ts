@@ -1,8 +1,8 @@
 import {
-  StripeProduct,
-  StripeProductId,
   ProductType,
   ProjectId,
+  StripeProduct,
+  StripeProductId,
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";

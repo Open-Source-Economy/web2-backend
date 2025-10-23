@@ -2,7 +2,6 @@ import { Pool } from "pg";
 import {
   DeveloperProfileId,
   DeveloperProjectItem,
-  DeveloperProjectItemCompanion,
   DeveloperProjectItemId,
   DeveloperRoleType,
   MergeRightsType,
@@ -10,6 +9,7 @@ import {
 } from "@open-source-economy/api-types";
 import { BaseRepository } from "../helpers";
 import { pool } from "../../dbPool";
+import { DeveloperProjectItemCompanion } from "../helpers/companions";
 
 export function getDeveloperProjectItemRepository(): DeveloperProjectItemRepository {
   return new DeveloperProjectItemRepositoryImpl(pool);

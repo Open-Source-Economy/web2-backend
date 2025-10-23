@@ -6,6 +6,7 @@ import {
   ManagedIssueId,
 } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
+import { ManagedIssueCompanion } from "./helpers/companions";
 
 export function getManagedIssueRepository(): ManagedIssueRepository {
   return new ManagedIssueRepositoryImpl(pool);
@@ -45,7 +46,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple managed issues found");
     } else {
-      const managedIssue = ManagedIssue.fromBackend(rows[0]);
+      const managedIssue = ManagedIssueCompanion.fromBackend(rows[0]);
       if (managedIssue instanceof Error) {
         throw managedIssue;
       }
@@ -55,7 +56,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
 
   private getManagedIssueList(rows: any[]): ManagedIssue[] {
     return rows.map((r) => {
-      const managedIssue = ManagedIssue.fromBackend(r);
+      const managedIssue = ManagedIssueCompanion.fromBackend(r);
       if (managedIssue instanceof Error) {
         throw managedIssue;
       }

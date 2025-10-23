@@ -13,6 +13,7 @@ import {
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
+import { StripeProductCompanion } from "../helpers/companions";
 
 export function getCombinedStripeRepository(): CombinedStripeRepository {
   return new CombinedStripeRepositoryImpl(pool);
@@ -44,7 +45,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
   }
 
   private getProductFromRow(row: any): StripeProduct {
-    const product = StripeProduct.fromBackend(row);
+    const product = StripeProductCompanion.fromBackend(row);
     if (product instanceof Error) {
       throw product;
     }

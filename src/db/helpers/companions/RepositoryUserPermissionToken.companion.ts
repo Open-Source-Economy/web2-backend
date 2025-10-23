@@ -1,8 +1,8 @@
 import {
+  Currency,
   RepositoryUserPermissionToken,
   RepositoryUserPermissionTokenId,
   RepositoryUserRole,
-  Currency,
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";

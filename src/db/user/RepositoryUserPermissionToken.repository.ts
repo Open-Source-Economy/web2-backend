@@ -9,6 +9,7 @@ import {
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 import Decimal from "decimal.js";
+import { RepositoryUserPermissionTokenCompanion } from "../helpers/companions";
 
 export function getRepositoryUserPermissionTokenRepository(): RepositoryUserPermissionTokenRepository {
   return new RepositoryUserPermissionTokenRepositoryImpl(pool);
@@ -89,7 +90,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
       logger.error("Multiple tokens found");
       throw new Error("Multiple tokens found");
     } else {
-      const token = RepositoryUserPermissionToken.fromBackend(rows[0]);
+      const token = RepositoryUserPermissionTokenCompanion.fromBackend(rows[0]);
       if (token instanceof Error) {
         logger.error(
           "Error creating RepositoryUserPermissionToken from backend data",
@@ -106,7 +107,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
 
   private getTokenList(rows: any[]): RepositoryUserPermissionToken[] {
     return rows.map((r) => {
-      const token = RepositoryUserPermissionToken.fromBackend(r);
+      const token = RepositoryUserPermissionTokenCompanion.fromBackend(r);
       if (token instanceof Error) {
         logger.error(
           "Error creating RepositoryUserPermissionToken from backend data",

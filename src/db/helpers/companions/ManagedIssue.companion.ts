@@ -1,9 +1,9 @@
 import {
+  ContributorVisibility,
   ManagedIssue,
   ManagedIssueId,
-  UserId,
-  ContributorVisibility,
   ManagedIssueState,
+  UserId,
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";

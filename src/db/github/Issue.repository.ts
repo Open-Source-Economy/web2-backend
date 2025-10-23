@@ -5,6 +5,7 @@ import {
   ValidationError,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import { IssueCompanion } from "../helpers/companions";
 
 export function getIssueRepository(): IssueRepository {
   return new IssueRepositoryImpl(pool);
@@ -40,7 +41,7 @@ class IssueRepositoryImpl implements IssueRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple issues found");
     } else {
-      const issue = Issue.fromBackend(rows[0]);
+      const issue = IssueCompanion.fromBackend(rows[0]);
       if (issue instanceof ValidationError) {
         throw issue;
       }
@@ -50,7 +51,7 @@ class IssueRepositoryImpl implements IssueRepository {
 
   private getIssueList(rows: any[]): Issue[] {
     return rows.map((r) => {
-      const issue = Issue.fromBackend(r);
+      const issue = IssueCompanion.fromBackend(r);
       if (issue instanceof ValidationError) {
         throw issue;
       }

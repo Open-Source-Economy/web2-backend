@@ -8,6 +8,7 @@ import {
   StripeProduct,
   StripeProductId,
 } from "@open-source-economy/api-types";
+import { StripeProductCompanion } from "../helpers/companions";
 
 export function getStripeProductRepository(): StripeProductRepository {
   return new StripeProductRepositoryImpl(pool);
@@ -47,7 +48,7 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple products found");
     } else {
-      const product = StripeProduct.fromBackend(rows[0]);
+      const product = StripeProductCompanion.fromBackend(rows[0]);
       if (product instanceof Error) {
         throw product;
       }
@@ -57,7 +58,7 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
 
   private getProductList(rows: any[]): StripeProduct[] {
     return rows.map((r) => {
-      const product = StripeProduct.fromBackend(r);
+      const product = StripeProductCompanion.fromBackend(r);
       if (product instanceof Error) {
         throw product;
       }

@@ -7,6 +7,7 @@ import {
 } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { logger } from "../config";
+import { IssueFundingCompanion } from "./helpers/companions";
 
 export function getIssueFundingRepository(): IssueFundingRepository {
   return new IssueFundingRepositoryImpl(pool);
@@ -42,7 +43,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple issue fundings found");
     } else {
-      const issueFunding = IssueFunding.fromBackend(rows[0]);
+      const issueFunding = IssueFundingCompanion.fromBackend(rows[0]);
       if (issueFunding instanceof Error) {
         throw issueFunding;
       }
@@ -52,7 +53,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
 
   private getIssueFundingList(rows: any[]): IssueFunding[] {
     return rows.map((r) => {
-      const issueFunding = IssueFunding.fromBackend(r);
+      const issueFunding = IssueFundingCompanion.fromBackend(r);
       if (issueFunding instanceof Error) {
         throw issueFunding;
       }

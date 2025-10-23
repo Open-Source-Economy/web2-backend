@@ -18,8 +18,8 @@ import {
   issueRepo,
   managedIssueRepo,
   planAndCreditsRepo,
-  projectRepo,
   projectItemRepo,
+  projectRepo,
 } from "../db";
 import { githubSyncService } from "../services";
 
@@ -316,8 +316,18 @@ export const ProjectController: ProjectController = {
     >,
     res: Response<dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>>,
   ): Promise<void> {
-    const projectItems = await projectItemRepo.getAllWithDetails();
-    const response: dto.GetProjectItemsWithDetailsResponse = { projectItems };
+    const { sortBy, sortOrder, limit } = req.query;
+
+    const result = await projectItemRepo.getAllWithDetails({
+      sortBy,
+      sortOrder,
+      limit: limit ? parseInt(limit.toString()) : undefined,
+    });
+
+    const response: dto.GetProjectItemsWithDetailsResponse = {
+      projectItems: result.projectItems,
+      total: result.total,
+    };
     res.status(StatusCodes.OK).send({ success: response });
   },
 };

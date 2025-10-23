@@ -1,25 +1,24 @@
 import { Pool } from "pg";
 import { pool } from "../../dbPool";
+import * as dto from "@open-source-economy/api-types";
 import {
   Owner,
   OwnerId,
   ProjectItem,
   ProjectItemId,
   ProjectItemType,
+  ProjectItemWithDetails,
   Repository,
   RepositoryId,
   SourceIdentifier,
-  DeveloperProfile,
-  DeveloperProjectItem,
-  ProjectItemWithDetails,
 } from "@open-source-economy/api-types";
 import { BaseRepository } from "../helpers";
 import {
-  ProjectItemCompanion,
-  OwnerCompanion,
-  RepositoryCompanion,
   DeveloperProfileCompanion,
   DeveloperProjectItemCompanion,
+  OwnerCompanion,
+  ProjectItemCompanion,
+  RepositoryCompanion,
 } from "../helpers/companions";
 
 export interface CreateProjectItemParams {
@@ -101,9 +100,17 @@ export interface ProjectItemRepository {
    * Retrieves all project items with their associated Owner, Repository (if exists),
    * and a list of developers with their profiles, project items associations, and owner info.
    *
-   * @returns A promise that resolves to an array of ProjectItemWithDetails.
+   * @param options - Query options for sorting and limiting results
+   * @returns A promise that resolves to an object containing project items and total count
    */
-  getAllWithDetails(): Promise<ProjectItemWithDetails[]>;
+  getAllWithDetails(options?: {
+    sortBy?: dto.ProjectItemSortField;
+    sortOrder?: dto.SortOrder;
+    limit?: number;
+  }): Promise<{
+    projectItems: ProjectItemWithDetails[];
+    total: number;
+  }>;
 }
 
 class ProjectItemRepositoryImpl
@@ -297,8 +304,19 @@ class ProjectItemRepositoryImpl
    * Retrieves all project items with their associated Owner, Repository (if exists),
    * and a list of developers with their profiles, project items associations, and owner info.
    */
-  async getAllWithDetails(): Promise<ProjectItemWithDetails[]> {
-    console.log("Starting getAllWithDetails query...");
+  async getAllWithDetails(options?: {
+    sortBy?: dto.ProjectItemSortField;
+    sortOrder?: dto.SortOrder;
+    limit?: number;
+  }): Promise<{
+    projectItems: ProjectItemWithDetails[];
+    total: number;
+  }> {
+    console.log("Starting getAllWithDetails query with options:", options);
+
+    const sortBy = options?.sortBy;
+    const sortOrder = options?.sortOrder || dto.SortOrder.DESC;
+    const limit = options?.limit;
 
     // Define table prefixes for clarity and maintainability
     const PREFIX = {
@@ -309,6 +327,60 @@ class ProjectItemRepositoryImpl
       developerProjectItem: "dpi_",
       developerOwner: "devo_", // Changed from 'dev_' to avoid 'do' alias conflict with PostgreSQL reserved keyword
     };
+
+    // Build ORDER BY clause
+    let orderByClause = "";
+    if (sortBy) {
+      switch (sortBy) {
+        case dto.ProjectItemSortField.STARS:
+        case dto.ProjectItemSortField.STARGAZERS:
+          orderByClause = `r.github_stargazers_count ${sortOrder.toUpperCase()} NULLS LAST, pi.created_at DESC`;
+          break;
+        case dto.ProjectItemSortField.FORKS:
+          orderByClause = `r.github_forks_count ${sortOrder.toUpperCase()} NULLS LAST, pi.created_at DESC`;
+          break;
+        case dto.ProjectItemSortField.MAINTAINERS:
+          orderByClause = `maintainers_count ${sortOrder.toUpperCase()}, pi.created_at DESC`;
+          break;
+        case dto.ProjectItemSortField.CREATED_AT:
+          orderByClause = `pi.created_at ${sortOrder.toUpperCase()}`;
+          break;
+        case dto.ProjectItemSortField.UPDATED_AT:
+          orderByClause = `pi.updated_at ${sortOrder.toUpperCase()}`;
+          break;
+        default:
+          orderByClause = "pi.created_at DESC, dp.created_at ASC";
+      }
+    } else {
+      orderByClause = "pi.created_at DESC, dp.created_at ASC";
+    }
+
+    // For maintainers sorting, we need to sort in memory
+    const needsMaintainersCount =
+      sortBy === dto.ProjectItemSortField.MAINTAINERS;
+
+    // First, get the total count
+    const countQuery = `
+      SELECT COUNT(DISTINCT pi.id) as total
+      FROM project_item pi
+      LEFT JOIN github_owner o ON pi.github_owner_id = o.github_id
+      LEFT JOIN github_repository r ON pi.github_repository_id = r.github_id
+    `;
+    const countResult = await this.pool.query(countQuery);
+    const total = parseInt(countResult.rows[0]?.total || "0");
+
+    // When sorting by maintainers, we can't use LIMIT in SQL, so we'll limit in memory
+    // For other sorts, we use a subquery to limit project items before joining developers
+    const limitedProjectItemsSubquery =
+      !needsMaintainersCount && limit
+        ? `
+        (SELECT pi2.*
+         FROM project_item pi2
+         LEFT JOIN github_repository r2 ON pi2.github_repository_id = r2.github_id
+         ORDER BY ${orderByClause}
+         LIMIT ${limit}) pi
+      `
+        : "project_item pi";
 
     const query = `
       SELECT 
@@ -395,7 +467,7 @@ class ProjectItemRepositoryImpl
         devo.github_location AS ${PREFIX.developerOwner}github_location,
         devo.github_email AS ${PREFIX.developerOwner}github_email
         
-      FROM project_item pi
+      FROM ${limitedProjectItemsSubquery}
       
       -- LEFT JOIN to get the project item's owner (if it's a GitHub type)
       LEFT JOIN github_owner o 
@@ -419,7 +491,13 @@ class ProjectItemRepositoryImpl
       LEFT JOIN github_owner devo 
         ON au.github_owner_id = devo.github_id
       
-      ORDER BY pi.created_at DESC, dp.created_at ASC
+      ${
+        !needsMaintainersCount && !limit
+          ? `ORDER BY ${orderByClause}`
+          : needsMaintainersCount
+            ? "ORDER BY pi.created_at DESC, dp.created_at ASC"
+            : "ORDER BY dp.created_at ASC"
+      }
     `;
 
     const result = await this.pool.query(query);
@@ -535,19 +613,45 @@ class ProjectItemRepositoryImpl
       }
     }
 
-    const projectItems = Array.from(projectItemsMap.values());
+    let projectItems = Array.from(projectItemsMap.values());
+
+    // If sorting by maintainers, we need to sort in memory since we have the count
+    if (sortBy === dto.ProjectItemSortField.MAINTAINERS) {
+      projectItems.sort((a, b) => {
+        const countA = a.developers.length;
+        const countB = b.developers.length;
+        const comparison = countA - countB;
+        return sortOrder === dto.SortOrder.ASC ? comparison : -comparison;
+      });
+
+      // Apply limit after sorting
+      if (limit) {
+        projectItems = projectItems.slice(0, limit);
+      }
+    }
+    // For other sorts, apply limit via SQL (already handled in query)
+    else if (limit && !needsMaintainersCount) {
+      // Limit was already applied in SQL
+    }
 
     console.log("getAllWithDetails query completed:", {
       totalRows: result.rows.length,
       projectItemsCount: projectItems.length,
+      total,
       processedDevelopers: processedDevelopersCount,
       skippedDevelopers: skippedDevelopersCount,
       totalDevelopersInResult: projectItems.reduce(
         (sum, item) => sum + item.developers.length,
         0,
       ),
+      sortBy,
+      sortOrder,
+      limit,
     });
 
-    return projectItems;
+    return {
+      projectItems,
+      total,
+    };
   }
 }

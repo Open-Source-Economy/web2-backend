@@ -13,7 +13,7 @@ import {
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { encrypt } from "../../utils";
-import { UserCompanion, OwnerCompanion } from "../helpers/companions";
+import { OwnerCompanion, UserCompanion } from "../helpers/companions";
 
 export function getUserRepository(): UserRepository {
   return new UserRepositoryImpl(pool);

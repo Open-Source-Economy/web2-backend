@@ -1,13 +1,13 @@
 import { Pool } from "pg";
 import {
   DeveloperProfile,
-  DeveloperProfileCompanion,
   DeveloperProfileId,
   UserId,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 import { BaseRepository } from "../helpers";
+import { DeveloperProfileCompanion } from "../helpers/companions";
 
 export function getDeveloperProfileRepository(): DeveloperProfileRepository {
   return new DeveloperProfileRepositoryImpl(pool);
