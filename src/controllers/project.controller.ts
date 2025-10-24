@@ -431,13 +431,13 @@ export const ProjectController: ProjectController = {
     }
 
     // Apply per-type limits
-    const limitedRepositories = repoQuery?.limit
+    const limitedRepositories = repoQuery?.limit !== undefined
       ? repositories.slice(0, repoQuery.limit)
       : repositories;
-    const limitedOwners = ownersQuery?.limit
+    const limitedOwners = ownersQuery?.limit !== undefined
       ? owners.slice(0, ownersQuery.limit)
       : owners;
-    const limitedUrls = urlsQuery?.limit
+    const limitedUrls = urlsQuery?.limit !== undefined
       ? urls.slice(0, urlsQuery.limit)
       : urls;
 
