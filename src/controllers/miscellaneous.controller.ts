@@ -4,6 +4,7 @@ import * as dto from "@open-source-economy/api-types";
 import { NewsletterSubscription } from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 import { mailService } from "../services";
+import { logger } from "../config";
 
 export interface MiscellaneousController {
   subscribeToNewsletter(
@@ -14,6 +15,16 @@ export interface MiscellaneousController {
       dto.NewsletterSubscriptionQuery
     >,
     res: Response<dto.ResponseBody<dto.NewsletterSubscriptionResponse>>,
+  ): Promise<void>;
+
+  submitContactForm(
+    req: Request<
+      dto.ContactFormParams,
+      dto.ResponseBody<dto.ContactFormResponse>,
+      dto.ContactFormBody,
+      dto.ContactFormQuery
+    >,
+    res: Response<dto.ResponseBody<dto.ContactFormResponse>>,
   ): Promise<void>;
 }
 
@@ -45,6 +56,33 @@ export const MiscellaneousController: MiscellaneousController = {
 
       const response: dto.NewsletterSubscriptionResponse = {};
       res.status(StatusCodes.CREATED).send({ success: response });
+    }
+  },
+
+  async submitContactForm(
+    req: Request<
+      dto.ContactFormParams,
+      dto.ResponseBody<dto.ContactFormResponse>,
+      dto.ContactFormBody,
+      dto.ContactFormQuery
+    >,
+    res: Response<dto.ResponseBody<dto.ContactFormResponse>>,
+  ) {
+    try {
+      // Send email with all the contact form data
+      await mailService.sendContactFormEmail(req.body);
+
+      const response: dto.ContactFormResponse = {};
+      res.status(StatusCodes.OK).send({ success: response });
+    } catch (error) {
+      logger.error("Error submitting contact form:", error);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
+        error: {
+          code: StatusCodes.INTERNAL_SERVER_ERROR,
+          message:
+            "Failed to send contact form. Please try again or email us directly at contact@open-source-economy.com",
+        },
+      });
     }
   },
 };

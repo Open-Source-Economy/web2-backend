@@ -68,6 +68,9 @@ const envVarsSchema = Joi.object({
   POSTMARK_SENDER_EMAIL: Joi.string()
     .required()
     .description("the from field in the emails sent by the app"),
+  CONTACT_RECIPIENT_EMAIL: Joi.string()
+    .required()
+    .description("the email address to receive contact form submissions"),
 }).unknown();
 
 const { value: envVars, error } = envVarsSchema
@@ -114,6 +117,7 @@ interface Stripe {
 interface Email {
   postmarkApiToken: string;
   from: string;
+  contactRecipient: string;
 }
 
 interface Encrypt {
@@ -178,6 +182,7 @@ export const config: Config = {
   email: {
     postmarkApiToken: envVars.POSTMARK_API_TOKEN,
     from: envVars.POSTMARK_SENDER_EMAIL,
+    contactRecipient: envVars.CONTACT_RECIPIENT_EMAIL,
   } as Email,
 
   encrypt: {

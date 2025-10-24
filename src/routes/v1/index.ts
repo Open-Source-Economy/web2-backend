@@ -20,6 +20,7 @@ router.use("/github", githubRoute);
 router.use("/onboarding", onboardingRoute);
 
 router.post("/newsletter", MiscellaneousController.subscribeToNewsletter);
+router.post("/contact", MiscellaneousController.submitContactForm);
 router.get("/plans", PlanController.getPlans);
 
 export default router;

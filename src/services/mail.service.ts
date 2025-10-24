@@ -1,9 +1,25 @@
 import { ServerClient } from "postmark";
 import { config, logger } from "../config";
-import { Company, Owner, Repository } from "@open-source-economy/api-types";
+import {
+  Company,
+  Owner,
+  Repository,
+  ContactReason,
+} from "@open-source-economy/api-types";
 import { promises as fs } from "fs";
 import path from "path";
 import { ensureNoEndingTrailingSlash } from "../utils";
+
+const CONTACT_REASON_LABELS: Record<ContactReason, string> = {
+  [ContactReason.MAINTAINER]: "I'm an Open Source Maintainer",
+  [ContactReason.REQUEST_PROJECT]: "Request a Project",
+  [ContactReason.ENTERPRISE]: "Enterprise Inquiry",
+  [ContactReason.PARTNERSHIP]: "Partnership Opportunity",
+  [ContactReason.VOLUNTEER]: "Join Our Community",
+  [ContactReason.PRESS]: "Press & Media",
+  [ContactReason.SUPPORT]: "Get Help",
+  [ContactReason.GENERAL]: "General Inquiry",
+};
 
 export class MailService {
   private registerURL: string = `${config.frontEndUrl}/sign-up`;
@@ -160,5 +176,117 @@ export class MailService {
 
   async sendWebsiteAdminNotification(subject: string, message: string) {
     await this.sendMail(config.email.from, subject, message);
+  }
+
+  async sendContactFormEmail(formData: {
+    name: string;
+    email: string;
+    company: string;
+    linkedinProfile: string;
+    githubProfile?: string;
+    contactReason: string;
+    projects?: Array<{ url: string; role?: string }>;
+    requestMeeting: boolean;
+    meetingNotes?: string;
+    subject: string;
+    message: string;
+  }) {
+    const reasonLabel =
+      CONTACT_REASON_LABELS[formData.contactReason as ContactReason] ||
+      formData.contactReason;
+
+    // Build the GitHub profile section
+    const githubProfileSection = formData.githubProfile
+      ? `
+          <div>
+            <strong style="color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">GitHub Profile</strong>
+            <div style="color: #1f2937; font-size: 15px; margin-top: 4px;">
+              <a href="${formData.githubProfile}" style="color: #8b5cf6; text-decoration: none;" target="_blank">${formData.githubProfile}</a>
+            </div>
+          </div>
+        `
+      : "";
+
+    // Build the projects section
+    const projectsSection =
+      formData.projects && formData.projects.length > 0
+        ? `
+        <div style="margin: 20px 0;">
+          <strong style="color: #1f2937; font-size: 14px;">Projects:</strong>
+          ${formData.projects
+            .map(
+              (project, index) => `
+            <div style="margin-left: 20px; margin-top: 10px; padding: 10px; background-color: #f9fafb; border-radius: 6px;">
+              <div><strong>Project ${index + 1}:</strong></div>
+              <div style="margin-top: 5px;">
+                <strong>URL:</strong> <a href="${project.url}" style="color: #8b5cf6;">${project.url}</a>
+              </div>
+              ${project.role ? `<div style="margin-top: 3px;"><strong>Role:</strong> ${project.role}</div>` : ""}
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+      `
+        : "";
+
+    // Build the meeting section
+    const meetingSection = formData.requestMeeting
+      ? `
+        <div style="margin: 20px 0; padding: 15px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <strong style="color: #92400e; font-size: 14px;">📹 Meeting Requested</strong>
+          </div>
+          ${formData.meetingNotes ? `<div style="color: #78350f; font-size: 13px; margin-top: 8px;"><strong>Meeting Notes:</strong><br>${formData.meetingNotes.replace(/\n/g, "<br>")}</div>` : ""}
+        </div>
+      `
+      : "";
+
+    // Read the HTML template file
+    const htmlFilePath = path.join(
+      __dirname,
+      "contact-template/contact-form-email.html",
+    );
+    let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
+
+    // Get formatted timestamp
+    const timestamp = new Date().toLocaleString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+
+    // Replace placeholders in the HTML with dynamic values
+    htmlContent = htmlContent
+      .replace("{{reasonLabel}}", reasonLabel)
+      .replace("{{name}}", formData.name)
+      .replace("{{email}}", formData.email)
+      .replace(/{{email}}/g, formData.email)
+      .replace("{{company}}", formData.company)
+      .replace("{{linkedinProfile}}", formData.linkedinProfile)
+      .replace(/{{linkedinProfile}}/g, formData.linkedinProfile)
+      .replace("{{githubProfileSection}}", githubProfileSection)
+      .replace("{{projectsSection}}", projectsSection)
+      .replace("{{meetingSection}}", meetingSection)
+      .replace("{{subject}}", formData.subject)
+      .replace("{{message}}", formData.message)
+      .replace("{{jsonData}}", JSON.stringify(formData, null, 2))
+      .replace("{{timestamp}}", timestamp);
+
+    const emailSubject = `[${reasonLabel}] ${formData.subject} - From ${formData.name}`;
+
+    await this.sendMail(
+      config.email.contactRecipient,
+      emailSubject,
+      htmlContent,
+    );
+
+    logger.info(
+      `Contact form email sent from ${formData.email} regarding ${reasonLabel}`,
+    );
   }
 }
