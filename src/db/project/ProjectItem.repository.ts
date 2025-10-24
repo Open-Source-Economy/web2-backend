@@ -355,31 +355,45 @@ class ProjectItemRepositoryImpl
       developerOwner: "devo_", // Changed from 'dev_' to avoid 'do' alias conflict with PostgreSQL reserved keyword
     };
 
-    // Build ORDER BY clause
+    // Build ORDER BY clause for main query
     let orderByClause = "";
+    // Build ORDER BY clause for subquery (uses different aliases)
+    let subqueryOrderByClause = "";
+
     if (sortBy) {
       switch (sortBy) {
         case dto.ProjectItemSortField.STARS:
         case dto.ProjectItemSortField.STARGAZERS:
           orderByClause = `r.github_stargazers_count ${sortOrder.toUpperCase()} NULLS LAST, pi.created_at DESC`;
+          subqueryOrderByClause = `r2.github_stargazers_count ${sortOrder.toUpperCase()} NULLS LAST, pi2.created_at DESC`;
           break;
         case dto.ProjectItemSortField.FORKS:
           orderByClause = `r.github_forks_count ${sortOrder.toUpperCase()} NULLS LAST, pi.created_at DESC`;
+          subqueryOrderByClause = `r2.github_forks_count ${sortOrder.toUpperCase()} NULLS LAST, pi2.created_at DESC`;
+          break;
+        case dto.ProjectItemSortField.FOLLOWERS:
+          orderByClause = `o.github_followers ${sortOrder.toUpperCase()} NULLS LAST, pi.created_at DESC`;
+          subqueryOrderByClause = `o2.github_followers ${sortOrder.toUpperCase()} NULLS LAST, pi2.created_at DESC`;
           break;
         case dto.ProjectItemSortField.MAINTAINERS:
           orderByClause = `maintainers_count ${sortOrder.toUpperCase()}, pi.created_at DESC`;
+          subqueryOrderByClause = `pi2.created_at DESC`; // Fallback for subquery
           break;
         case dto.ProjectItemSortField.CREATED_AT:
           orderByClause = `pi.created_at ${sortOrder.toUpperCase()}`;
+          subqueryOrderByClause = `pi2.created_at ${sortOrder.toUpperCase()}`;
           break;
         case dto.ProjectItemSortField.UPDATED_AT:
           orderByClause = `pi.updated_at ${sortOrder.toUpperCase()}`;
+          subqueryOrderByClause = `pi2.updated_at ${sortOrder.toUpperCase()}`;
           break;
         default:
           orderByClause = "pi.created_at DESC, dp.created_at ASC";
+          subqueryOrderByClause = "pi2.created_at DESC";
       }
     } else {
       orderByClause = "pi.created_at DESC, dp.created_at ASC";
+      subqueryOrderByClause = "pi2.created_at DESC";
     }
 
     // For maintainers sorting, we need to sort in memory
@@ -398,13 +412,16 @@ class ProjectItemRepositoryImpl
 
     // When sorting by maintainers, we can't use LIMIT in SQL, so we'll limit in memory
     // For other sorts, we use a subquery to limit project items before joining developers
+    const needsOwnerJoinInSubquery =
+      sortBy === dto.ProjectItemSortField.FOLLOWERS;
     const limitedProjectItemsSubquery =
       !needsMaintainersCount && limit
         ? `
         (SELECT pi2.*
          FROM project_item pi2
          LEFT JOIN github_repository r2 ON pi2.github_repository_id = r2.github_id
-         ORDER BY ${orderByClause}
+         ${needsOwnerJoinInSubquery ? "LEFT JOIN github_owner o2 ON pi2.github_owner_id = o2.github_id" : ""}
+         ORDER BY ${subqueryOrderByClause}
          LIMIT ${limit}) pi
       `
         : "project_item pi";

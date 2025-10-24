@@ -277,9 +277,11 @@ class GithubSyncServiceImpl implements GithubSyncService {
             syncedRepositoryIds.add(repoKey);
             syncedOwnerIds.add(repositoryId.ownerId.login);
             logger.info(`Successfully synced repository: ${repoKey}`);
-            
+
             // Wait before next API call to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY_MS));
+            await new Promise((resolve) =>
+              setTimeout(resolve, RATE_LIMIT_DELAY_MS),
+            );
           } else {
             logger.debug(`Skipping already synced repository: ${repoKey}`);
           }
@@ -296,9 +298,11 @@ class GithubSyncServiceImpl implements GithubSyncService {
             syncedOwners++;
             syncedOwnerIds.add(ownerKey);
             logger.info(`Successfully synced owner: ${ownerKey}`);
-            
+
             // Wait before next API call to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY_MS));
+            await new Promise((resolve) =>
+              setTimeout(resolve, RATE_LIMIT_DELAY_MS),
+            );
           } else {
             logger.debug(`Skipping already synced owner: ${ownerKey}`);
           }

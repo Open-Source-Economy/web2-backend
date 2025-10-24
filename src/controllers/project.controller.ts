@@ -316,17 +316,166 @@ export const ProjectController: ProjectController = {
     >,
     res: Response<dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>>,
   ): Promise<void> {
-    const { sortBy, sortOrder, limit } = req.query;
+    const {
+      repositories: repoQuery,
+      owners: ownersQuery,
+      urls: urlsQuery,
+    } = req.query;
 
-    const result = await projectItemRepo.getAllWithDetails({
-      sortBy,
-      sortOrder,
-      limit: limit ? parseInt(limit.toString()) : undefined,
-    });
+    // Get all project items from database
+    const result = await projectItemRepo.getAllWithDetails({});
+
+    // Group project items by type
+    const repositories: dto.ProjectItemWithDetails[] = [];
+    const owners: dto.ProjectItemWithDetails[] = [];
+    const urls: dto.ProjectItemWithDetails[] = [];
+
+    for (const item of result.projectItems) {
+      switch (item.projectItem.projectItemType) {
+        case dto.ProjectItemType.GITHUB_REPOSITORY:
+          repositories.push(item);
+          break;
+        case dto.ProjectItemType.GITHUB_OWNER:
+          owners.push(item);
+          break;
+        case dto.ProjectItemType.URL:
+          urls.push(item);
+          break;
+      }
+    }
+
+    // Sort repositories if sortBy is specified
+    if (repoQuery?.sortBy) {
+      const order = repoQuery.sortOrder === dto.SortOrder.ASC ? 1 : -1;
+      repositories.sort((a, b) => {
+        switch (repoQuery.sortBy) {
+          case dto.ProjectItemSortField.STARGAZERS:
+          case dto.ProjectItemSortField.STARS:
+            return (
+              ((b.repository?.stargazersCount ?? 0) -
+                (a.repository?.stargazersCount ?? 0)) *
+              order
+            );
+          case dto.ProjectItemSortField.FORKS:
+            return (
+              ((b.repository?.forksCount ?? 0) -
+                (a.repository?.forksCount ?? 0)) *
+              order
+            );
+          case dto.ProjectItemSortField.CREATED_AT:
+            return (
+              (b.projectItem.createdAt.getTime() -
+                a.projectItem.createdAt.getTime()) *
+              order
+            );
+          case dto.ProjectItemSortField.UPDATED_AT:
+            return (
+              (b.projectItem.updatedAt.getTime() -
+                a.projectItem.updatedAt.getTime()) *
+              order
+            );
+          default:
+            return 0;
+        }
+      });
+    }
+
+    // Sort owners if sortBy is specified
+    if (ownersQuery?.sortBy) {
+      const order = ownersQuery.sortOrder === dto.SortOrder.ASC ? 1 : -1;
+      owners.sort((a, b) => {
+        switch (ownersQuery.sortBy) {
+          case dto.ProjectItemSortField.FOLLOWERS:
+            return (
+              ((b.owner?.followers ?? 0) - (a.owner?.followers ?? 0)) * order
+            );
+          case dto.ProjectItemSortField.CREATED_AT:
+            return (
+              (b.projectItem.createdAt.getTime() -
+                a.projectItem.createdAt.getTime()) *
+              order
+            );
+          case dto.ProjectItemSortField.UPDATED_AT:
+            return (
+              (b.projectItem.updatedAt.getTime() -
+                a.projectItem.updatedAt.getTime()) *
+              order
+            );
+          default:
+            return 0;
+        }
+      });
+    }
+
+    // Sort URLs if sortBy is specified
+    if (urlsQuery?.sortBy) {
+      const order = urlsQuery.sortOrder === dto.SortOrder.ASC ? 1 : -1;
+      urls.sort((a, b) => {
+        switch (urlsQuery.sortBy) {
+          case dto.ProjectItemSortField.CREATED_AT:
+            return (
+              (b.projectItem.createdAt.getTime() -
+                a.projectItem.createdAt.getTime()) *
+              order
+            );
+          case dto.ProjectItemSortField.UPDATED_AT:
+            return (
+              (b.projectItem.updatedAt.getTime() -
+                a.projectItem.updatedAt.getTime()) *
+              order
+            );
+          default:
+            return 0;
+        }
+      });
+    }
+
+    // Apply per-type limits
+    const limitedRepositories = repoQuery?.limit
+      ? repositories.slice(0, repoQuery.limit)
+      : repositories;
+    const limitedOwners = ownersQuery?.limit
+      ? owners.slice(0, ownersQuery.limit)
+      : owners;
+    const limitedUrls = urlsQuery?.limit
+      ? urls.slice(0, urlsQuery.limit)
+      : urls;
+
+    // Calculate statistics from ALL project items (before limiting)
+    const uniqueMaintainers = new Set<string>();
+    let totalStars = 0;
+    let totalForks = 0;
+    let totalFollowers = 0;
+
+    // Count maintainers from all project items
+    for (const item of result.projectItems) {
+      for (const dev of item.developers) {
+        uniqueMaintainers.add(dev.developerProfile.id.uuid);
+      }
+    }
+
+    // Sum stars and forks from repositories
+    for (const repo of repositories) {
+      totalStars += repo.repository?.stargazersCount ?? 0;
+      totalForks += repo.repository?.forksCount ?? 0;
+    }
+
+    // Sum followers from owners
+    for (const owner of owners) {
+      totalFollowers += owner.owner?.followers ?? 0;
+    }
 
     const response: dto.GetProjectItemsWithDetailsResponse = {
-      projectItems: result.projectItems,
-      total: result.total,
+      repositories: limitedRepositories,
+      owners: limitedOwners,
+      urls: limitedUrls,
+      stats: {
+        totalProjects: result.total,
+        totalMaintainers: uniqueMaintainers.size,
+        totalStars,
+        totalForks,
+        totalFollowers,
+      },
     };
     res.status(StatusCodes.OK).send({ success: response });
   },
