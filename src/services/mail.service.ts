@@ -4,11 +4,25 @@ import {
   Company,
   Owner,
   Repository,
-  ContactReason,
+  FullDeveloperProfile,
+  User,
+  userUtils,
 } from "@open-source-economy/api-types";
 import { promises as fs } from "fs";
-import path from "path";
+import * as path from "path";
 import { ensureNoEndingTrailingSlash } from "../utils";
+
+// ContactReason labels for contact form emails
+enum ContactReason {
+  MAINTAINER = "maintainer",
+  REQUEST_PROJECT = "request-project",
+  ENTERPRISE = "enterprise",
+  PARTNERSHIP = "partnership",
+  VOLUNTEER = "volunteer",
+  PRESS = "press",
+  SUPPORT = "support",
+  GENERAL = "general",
+}
 
 const CONTACT_REASON_LABELS: Record<ContactReason, string> = {
   [ContactReason.MAINTAINER]: "I'm an Open Source Maintainer",
@@ -176,6 +190,226 @@ export class MailService {
 
   async sendWebsiteAdminNotification(subject: string, message: string) {
     await this.sendMail(config.email.from, subject, message);
+  }
+
+  async sendDeveloperOnboardingCompletionEmail(
+    fullProfile: FullDeveloperProfile,
+    user: User,
+  ) {
+    // Read the HTML template file
+    const htmlFilePath = path.join(
+      __dirname,
+      "onboarding-template/developer-onboarding-completion.html",
+    );
+    let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
+
+    const timestamp = new Date().toLocaleString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+
+    // Build GitHub section
+    const githubData = userUtils.githubData(user);
+    const githubSection = githubData?.owner.id.login
+      ? `<div class="item-detail"><strong>GitHub:</strong> <a href="https://github.com/${githubData.owner.id.login}">@${githubData.owner.id.login}</a></div>`
+      : "";
+
+    // Build projects section
+    const projectsSection =
+      fullProfile.projects.length > 0
+        ? fullProfile.projects
+            .map((entry, index) => {
+              const projectItem = entry.projectItem;
+              const developerProjectItem = entry.developerProjectItem;
+              const sourceIdentifier = projectItem.sourceIdentifier;
+
+              let name = "Unknown";
+              let url = "Unknown";
+
+              if (typeof sourceIdentifier === "string") {
+                name = sourceIdentifier;
+                url = sourceIdentifier;
+              } else if ("login" in sourceIdentifier) {
+                name = sourceIdentifier.login;
+                url = `https://github.com/${sourceIdentifier.login}`;
+              } else if (
+                "name" in sourceIdentifier &&
+                "ownerId" in sourceIdentifier
+              ) {
+                const ownerLogin =
+                  typeof sourceIdentifier.ownerId === "object" &&
+                  "login" in sourceIdentifier.ownerId
+                    ? sourceIdentifier.ownerId.login
+                    : String(sourceIdentifier.ownerId);
+                name = `${ownerLogin}/${sourceIdentifier.name}`;
+                url = `https://github.com/${ownerLogin}/${sourceIdentifier.name}`;
+              }
+
+              const roleText = developerProjectItem.roles?.[0]
+                ? `<div class="item-detail"><strong>Role:</strong> ${developerProjectItem.roles[0]}</div>`
+                : "";
+              const mergeRightsText = developerProjectItem.mergeRights?.[0]
+                ? `<div class="item-detail"><strong>Access:</strong> ${developerProjectItem.mergeRights[0]}</div>`
+                : "";
+
+              return `
+              <div class="item-card">
+                <div class="item-title">${index + 1}. ${name}</div>
+                <div class="item-detail"><strong>URL:</strong> <a href="${url}">${url}</a></div>
+                <div class="item-detail"><strong>Type:</strong> ${projectItem.projectItemType}</div>
+                ${roleText}
+                ${mergeRightsText}
+              </div>
+            `;
+            })
+            .join("")
+        : "<div style='color: #6b7280; font-style: italic; margin-left: 20px;'>No projects added</div>";
+
+    // Build services section
+    const servicesSection =
+      fullProfile.services.length > 0
+        ? fullProfile.services
+            .map((entry, index) => {
+              const service = entry.service;
+              const developerService = entry.developerService;
+
+              if (!developerService) return "";
+
+              // Get project names for this service
+              const serviceProjectNames: string[] = [];
+              for (const projectItemId of developerService.developerProjectItemIds) {
+                const projectEntry = fullProfile.projects.find(
+                  (p) => p.developerProjectItem.id.uuid === projectItemId.uuid,
+                );
+                if (projectEntry) {
+                  const sourceIdentifier =
+                    projectEntry.projectItem.sourceIdentifier;
+                  if (typeof sourceIdentifier === "string") {
+                    serviceProjectNames.push(sourceIdentifier);
+                  } else if ("login" in sourceIdentifier) {
+                    serviceProjectNames.push(sourceIdentifier.login);
+                  } else if (
+                    "name" in sourceIdentifier &&
+                    "ownerId" in sourceIdentifier
+                  ) {
+                    const ownerLogin =
+                      typeof sourceIdentifier.ownerId === "object" &&
+                      "login" in sourceIdentifier.ownerId
+                        ? sourceIdentifier.ownerId.login
+                        : String(sourceIdentifier.ownerId);
+                    serviceProjectNames.push(
+                      `${ownerLogin}/${sourceIdentifier.name}`,
+                    );
+                  }
+                }
+              }
+
+              const customRateText = developerService.hourlyRate
+                ? `<div class="item-detail"><strong>Custom Rate:</strong> ${fullProfile.settings?.currency || "USD"} ${developerService.hourlyRate}/hr</div>`
+                : "";
+              const responseTimeText = developerService.responseTimeHours
+                ? `<div class="item-detail"><strong>Response Time:</strong> ${developerService.responseTimeHours}</div>`
+                : "";
+              const commentText = developerService.comment
+                ? `<div class="comment-box"><strong>Comment:</strong><br>${developerService.comment.replace(/\n/g, "<br>")}</div>`
+                : "";
+
+              return `
+              <div class="item-card service">
+                <div class="item-title">${index + 1}. ${service.name}</div>
+                <div class="item-detail"><strong>Category:</strong> ${service.serviceType}</div>
+                ${customRateText}
+                ${responseTimeText}
+                <div class="item-detail"><strong>Projects:</strong> ${serviceProjectNames.length > 0 ? serviceProjectNames.join(", ") : "All projects"}</div>
+                ${commentText}
+              </div>
+            `;
+            })
+            .join("")
+        : "<div style='color: #6b7280; font-style: italic; margin-left: 20px;'>No services added</div>";
+
+    // Build settings section
+    const settingsSection = fullProfile.settings
+      ? (() => {
+          const incomeStreamsText =
+            fullProfile.settings!.incomeStreams &&
+            fullProfile.settings!.incomeStreams.length > 0
+              ? `<div class="item-detail"><strong>Income Streams:</strong> ${fullProfile.settings!.incomeStreams.join(", ")}</div>`
+              : "";
+          const availabilityText =
+            fullProfile.settings!.hourlyWeeklyCommitment !== undefined &&
+            fullProfile.settings!.hourlyWeeklyCommitment !== null
+              ? `<div class="item-detail"><strong>Weekly Availability:</strong> ${fullProfile.settings!.hourlyWeeklyCommitment} hours</div>`
+              : "";
+          const availabilityCommentText = fullProfile.settings!
+            .hourlyWeeklyCommitmentComment
+            ? `<div class="comment-box">${fullProfile.settings!.hourlyWeeklyCommitmentComment.replace(/\n/g, "<br>")}</div>`
+            : "";
+          const baseRateText =
+            fullProfile.settings!.hourlyRate !== undefined &&
+            fullProfile.settings!.hourlyRate !== null
+              ? `<div class="item-detail"><strong>Base Hourly Rate:</strong> ${fullProfile.settings!.currency || "USD"} ${fullProfile.settings!.hourlyRate}/hr</div>`
+              : "";
+          const baseRateCommentText = fullProfile.settings!.hourlyRateComment
+            ? `<div class="comment-box">${fullProfile.settings!.hourlyRateComment.replace(/\n/g, "<br>")}</div>`
+            : "";
+          const opportunitiesText =
+            fullProfile.settings!.openToOtherOpportunity !== undefined &&
+            fullProfile.settings!.openToOtherOpportunity !== null
+              ? `<div class="item-detail"><strong>Open to Other Opportunities:</strong> ${fullProfile.settings!.openToOtherOpportunity ? "Yes" : "No"}</div>`
+              : "";
+          const opportunitiesCommentText = fullProfile.settings!
+            .openToOtherOpportunityComment
+            ? `<div class="comment-box">${fullProfile.settings!.openToOtherOpportunityComment.replace(/\n/g, "<br>")}</div>`
+            : "";
+
+          return `
+            <div class="info-box">
+              ${incomeStreamsText}
+              ${availabilityText}
+              ${availabilityCommentText}
+              ${baseRateText}
+              ${baseRateCommentText}
+              ${opportunitiesText}
+              ${opportunitiesCommentText}
+            </div>
+          `;
+        })()
+      : "<div style='color: #6b7280; font-style: italic; margin-left: 20px;'>No settings configured</div>";
+
+    // Replace placeholders in the HTML template
+    htmlContent = htmlContent
+      .replace("{{developerName}}", user.name || "Unknown")
+      .replace("{{developerEmail}}", fullProfile.contactEmail || "Unknown")
+      .replace(/{{developerEmail}}/g, fullProfile.contactEmail || "Unknown")
+      .replace("{{githubSection}}", githubSection)
+      .replace("{{projectCount}}", fullProfile.projects.length.toString())
+      .replace("{{projectsSection}}", projectsSection)
+      .replace("{{settingsSection}}", settingsSection)
+      .replace("{{serviceCount}}", fullProfile.services.length.toString())
+      .replace("{{servicesSection}}", servicesSection)
+      .replace("{{timestamp}}", timestamp)
+      .replace(
+        "{{dashboardLink}}",
+        `${config.frontEndUrl}/developer-onboarding`,
+      );
+
+    const emailSubject = `🚀 New Developer Onboarding: ${user.name || "Unknown"}`;
+
+    await this.sendMail(
+      config.email.contactRecipient,
+      emailSubject,
+      htmlContent,
+    );
+
+    logger.info(
+      `Developer onboarding completion email sent for ${user.name} (${fullProfile.contactEmail})`,
+    );
   }
 
   async sendContactFormEmail(formData: {
