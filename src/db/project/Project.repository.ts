@@ -1,7 +1,6 @@
 import { Pool } from "pg";
 import {
   Project,
-  ProjectEcosystem,
   ProjectId,
   ProjectUtils,
   ValidationError,
@@ -19,8 +18,6 @@ export interface ProjectRepository {
   getById(id: ProjectId): Promise<Project | null>;
 
   getAll(): Promise<Project[]>;
-
-  getByEcosystem(ecosystem: ProjectEcosystem): Promise<Project[]>;
 }
 
 class ProjectRepositoryImpl implements ProjectRepository {
@@ -119,30 +116,6 @@ class ProjectRepositoryImpl implements ProjectRepository {
     return this.getProjectList(result.rows);
   }
 
-  async getByEcosystem(ecosystem: ProjectEcosystem): Promise<Project[]> {
-    const query = `
-            SELECT p.*,
-                   o.github_id          as ${this.ownerTablePrefix}github_id,
-                   o.github_login       as ${this.ownerTablePrefix}github_login,
-                   o.github_type        as ${this.ownerTablePrefix}github_type,
-                   o.github_html_url    as ${this.ownerTablePrefix}github_html_url,
-                   o.github_avatar_url  as ${this.ownerTablePrefix}github_avatar_url,
-                   o.email              as ${this.ownerTablePrefix}email,
-                   r.github_id          as ${this.repositoryTablePrefix}github_id,
-                   r.github_name        as ${this.repositoryTablePrefix}github_name,
-                   r.github_html_url    as ${this.repositoryTablePrefix}github_html_url,
-                   r.github_description as ${this.repositoryTablePrefix}github_description
-            FROM project_old p
-                     JOIN github_owner o ON p.github_owner_login = o.github_login
-                     LEFT JOIN github_repository r ON p.github_repository_name = r.github_name AND
-                                                      p.github_owner_login = r.github_owner_login
-            WHERE p.ecosystem = $1;
-        `;
-    const result = await this.pool.query(query, [ecosystem]);
-
-    return this.getProjectList(result.rows);
-  }
-
   async getById(id: ProjectId): Promise<Project | null> {
     const params = ProjectUtils.getDBParams(id);
 
@@ -189,13 +162,11 @@ class ProjectRepositoryImpl implements ProjectRepository {
                 INSERT INTO project_old (github_owner_id,
                                      github_owner_login,
                                      github_repository_id,
-                                     github_repository_name,
-                                     ecosystem)
-                VALUES ($1, $2, $3, $4, $5)
+                                     github_repository_name)
+                VALUES ($1, $2, $3, $4)
                 ON CONFLICT (github_owner_login, COALESCE(github_repository_name, '')) DO UPDATE
                     SET github_owner_id      = EXCLUDED.github_owner_id,
                         github_repository_id = EXCLUDED.github_repository_id,
-                        ecosystem            = EXCLUDED.ecosystem,
                         updated_at           = NOW()
                 RETURNING *;
             `;
@@ -205,7 +176,6 @@ class ProjectRepositoryImpl implements ProjectRepository {
         params.ownerLogin,
         params.repoId,
         params.repoName,
-        project.projectEcosystem,
       ]);
 
       // Fetch and return the full project

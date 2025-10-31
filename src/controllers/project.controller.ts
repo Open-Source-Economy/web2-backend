@@ -188,11 +188,7 @@ export const ProjectController: ProjectController = {
     const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
     const [owner, repositoryOp] =
       await githubSyncService.syncProject(projectId);
-    const project = new Project(
-      owner,
-      repositoryOp ?? undefined,
-      req.body.projectEcosystem,
-    );
+    const project = new Project(owner, repositoryOp ?? undefined);
     const createdProject = await projectRepo.createOrUpdate(project);
 
     const response: dto.CreateProjectResponse = { project: createdProject };

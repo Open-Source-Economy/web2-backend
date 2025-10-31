@@ -3,6 +3,7 @@ import * as dto from "@open-source-economy/api-types";
 import {
   ApiError,
   OwnerId,
+  ProjectItemId,
   ProjectUtils,
 } from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
@@ -11,6 +12,7 @@ import {
   companyRepo,
   companyUserPermissionTokenRepo,
   manualInvoiceRepo,
+  projectItemRepo,
   projectRepo,
   repositoryUserPermissionTokenRepo,
 } from "../db";
@@ -92,6 +94,16 @@ export interface AdminController {
       dto.CreatePlanProductAndPriceQuery
     >,
     res: Response<dto.ResponseBody<dto.CreatePlanProductAndPriceResponse>>,
+  ): Promise<void>;
+
+  updateProjectItemCategories(
+    req: Request<
+      dto.UpdateProjectItemCategoriesParams,
+      dto.ResponseBody<dto.UpdateProjectItemCategoriesResponse>,
+      dto.UpdateProjectItemCategoriesBody,
+      dto.UpdateProjectItemCategoriesQuery
+    >,
+    res: Response<dto.ResponseBody<dto.UpdateProjectItemCategoriesResponse>>,
   ): Promise<void>;
 }
 
@@ -319,5 +331,38 @@ export const AdminController: AdminController = {
 
     const response: dto.CreatePlanProductAndPriceResponse = {};
     res.status(StatusCodes.CREATED).send({ success: response });
+  },
+
+  async updateProjectItemCategories(
+    req: Request<
+      dto.UpdateProjectItemCategoriesParams,
+      dto.ResponseBody<dto.UpdateProjectItemCategoriesResponse>,
+      dto.UpdateProjectItemCategoriesBody,
+      dto.UpdateProjectItemCategoriesQuery
+    >,
+    res: Response<dto.ResponseBody<dto.UpdateProjectItemCategoriesResponse>>,
+  ) {
+    const projectItemId = new ProjectItemId(req.params.projectItemId);
+
+    // Check if project item exists
+    const projectItem = await projectItemRepo.getById(projectItemId);
+    if (!projectItem) {
+      throw new ApiError(
+        StatusCodes.NOT_FOUND,
+        `ProjectItem with id ${projectItemId.uuid} not found`,
+      );
+    }
+
+    // Update categories
+    const updated = await projectItemRepo.updateCategories(
+      projectItemId,
+      req.body.categories,
+    );
+
+    const response: dto.UpdateProjectItemCategoriesResponse = {
+      projectItemId: updated.id,
+      categories: updated.categories || [],
+    };
+    res.status(StatusCodes.OK).send({ success: response });
   },
 };

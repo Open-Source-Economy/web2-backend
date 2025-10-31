@@ -4,6 +4,7 @@ import * as dto from "@open-source-economy/api-types";
 import {
   Owner,
   OwnerId,
+  ProjectCategory,
   ProjectItem,
   ProjectItemId,
   ProjectItemType,
@@ -38,6 +39,17 @@ export interface ProjectItemRepository {
    * @returns A promise that resolves to the created ProjectItem.
    */
   create(params: CreateProjectItemParams): Promise<ProjectItem>;
+  /**
+   * Updates the categories for a project item (admin only).
+   *
+   * @param id - The ProjectItemId of the project item to update.
+   * @param categories - Array of ProjectCategory to assign to the project item.
+   * @returns A Promise that resolves to the updated ProjectItem.
+   */
+  updateCategories(
+    id: ProjectItemId,
+    categories: ProjectCategory[],
+  ): Promise<ProjectItem>;
   /**
    * Deletes a project item by its unique ProjectItemId.
    *
@@ -208,6 +220,25 @@ class ProjectItemRepositoryImpl
     ];
 
     const result = await this.pool.query(query, values);
+    return this.getOne(result.rows);
+  }
+
+  async updateCategories(
+    id: ProjectItemId,
+    categories: ProjectCategory[],
+  ): Promise<ProjectItem> {
+    const query = `
+      UPDATE project_item
+      SET categories = $2, updated_at = now()
+      WHERE id = $1
+      RETURNING *
+    `;
+    const result = await this.pool.query(query, [id.uuid, categories]);
+
+    if (result.rows.length === 0) {
+      throw new Error(`ProjectItem not found with id ${id.uuid}`);
+    }
+
     return this.getOne(result.rows);
   }
 

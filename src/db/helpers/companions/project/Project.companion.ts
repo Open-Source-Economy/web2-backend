@@ -1,6 +1,5 @@
 import {
   Project,
-  ProjectEcosystem,
   Repository,
   ValidationError,
   Validator,
@@ -15,12 +14,6 @@ export namespace ProjectCompanion {
   ): Project | ValidationError {
     const validator = new Validator(row);
 
-    // Get the ecosystem
-    const ecosystem = validator.optionalEnum(
-      "ecosystem",
-      Object.values(ProjectEcosystem) as ProjectEcosystem[],
-    );
-
     const owner = OwnerCompanion.fromBackend(row, owner_table_prefix);
     const repository = RepositoryCompanion.fromBackend(row, repository_prefix);
 
@@ -31,7 +24,6 @@ export namespace ProjectCompanion {
     return new Project(
       owner,
       repository instanceof Repository ? repository : undefined,
-      ecosystem,
     );
   }
 }

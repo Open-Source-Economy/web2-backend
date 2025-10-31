@@ -31,7 +31,6 @@ import {
   PriceType,
   ProductType,
   Project,
-  ProjectEcosystem,
   ProjectId,
   Provider,
   Repository,
@@ -482,7 +481,7 @@ export const Fixture = {
     );
   },
 
-  project(projectId: ProjectId, ecosystem?: ProjectEcosystem): Project {
+  project(projectId: ProjectId): Project {
     let owner: Owner;
     let repository: Repository | undefined = undefined;
     if (projectId instanceof OwnerId) {
@@ -492,6 +491,6 @@ export const Fixture = {
       repository = this.repository(projectId);
     }
 
-    return new Project(owner, repository, ecosystem);
+    return new Project(owner, repository);
   },
 };

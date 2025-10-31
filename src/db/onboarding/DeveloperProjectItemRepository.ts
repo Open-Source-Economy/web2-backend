@@ -5,6 +5,7 @@ import {
   DeveloperProjectItemId,
   DeveloperRoleType,
   MergeRightsType,
+  ProjectCategory,
   ProjectItemId,
 } from "@open-source-economy/api-types";
 import { BaseRepository } from "../helpers";
@@ -25,6 +26,8 @@ export interface DeveloperProjectItemRepository {
     mergeRights: MergeRightsType[],
     roles: DeveloperRoleType[],
     comment?: string,
+    customCategories?: string[],
+    predefinedCategories?: ProjectCategory[],
   ): Promise<DeveloperProjectItem>;
 
   /**
@@ -35,6 +38,8 @@ export interface DeveloperProjectItemRepository {
     mergeRights: MergeRightsType[],
     roles: DeveloperRoleType[],
     comment?: string,
+    customCategories?: string[],
+    predefinedCategories?: ProjectCategory[],
   ): Promise<DeveloperProjectItem>;
 
   /**
@@ -96,6 +101,8 @@ class DeveloperProjectItemRepositoryImpl
     merge_rights::text[] AS merge_rights,
     roles::text[]        AS roles,
     comment,
+    custom_categories,
+    predefined_categories::text[] AS predefined_categories,
     created_at,
     updated_at
   `;
@@ -106,6 +113,8 @@ class DeveloperProjectItemRepositoryImpl
     mergeRights: MergeRightsType[],
     roles: DeveloperRoleType[],
     comment?: string,
+    customCategories?: string[],
+    predefinedCategories?: ProjectCategory[],
   ): Promise<DeveloperProjectItem> {
     const query = `
       INSERT INTO developer_project_items (
@@ -113,8 +122,10 @@ class DeveloperProjectItemRepositoryImpl
         project_item_id,
         merge_rights,
         roles,
-        comment
-      ) VALUES ($1, $2, $3, $4, $5)
+        comment,
+        custom_categories,
+        predefined_categories
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING ${DeveloperProjectItemRepositoryImpl.SELECT_COLUMNS}
     `;
 
@@ -124,6 +135,8 @@ class DeveloperProjectItemRepositoryImpl
       mergeRights,
       roles,
       comment ?? null,
+      customCategories ?? null,
+      predefinedCategories ?? null,
     ];
 
     const result = await this.pool.query(query, values);
@@ -135,6 +148,8 @@ class DeveloperProjectItemRepositoryImpl
     mergeRights: MergeRightsType[],
     roles: DeveloperRoleType[],
     comment?: string,
+    customCategories?: string[],
+    predefinedCategories?: ProjectCategory[],
   ): Promise<DeveloperProjectItem> {
     const query = `
       UPDATE developer_project_items
@@ -142,12 +157,21 @@ class DeveloperProjectItemRepositoryImpl
         merge_rights = $2,
         roles        = $3,
         comment      = $4,
+        custom_categories = $5,
+        predefined_categories = $6,
         updated_at   = now()
       WHERE id = $1
       RETURNING ${DeveloperProjectItemRepositoryImpl.SELECT_COLUMNS}
     `;
 
-    const values = [id.uuid, mergeRights, roles, comment ?? null];
+    const values = [
+      id.uuid,
+      mergeRights,
+      roles,
+      comment ?? null,
+      customCategories ?? null,
+      predefinedCategories ?? null,
+    ];
 
     const result = await this.pool.query(query, values);
     if (result.rows.length === 0) {

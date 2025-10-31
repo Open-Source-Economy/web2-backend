@@ -4,6 +4,7 @@ import {
   DeveloperProjectItemId,
   DeveloperRoleType,
   MergeRightsType,
+  ProjectCategory,
   ProjectItemId,
   ValidationError,
   Validator,
@@ -31,6 +32,13 @@ export namespace DeveloperProjectItemCompanion {
       Object.values(MergeRightsType) as MergeRightsType[],
     );
     const comment = validator.optionalString(`${table_prefix}comment`);
+    const customCategories = validator.optionalArray(
+      `${table_prefix}custom_categories`,
+    );
+    const predefinedCategories = validator.optionalArrayOfEnums(
+      `${table_prefix}predefined_categories`,
+      Object.values(ProjectCategory) as ProjectCategory[],
+    );
     const createdAt = validator.requiredDate(`${table_prefix}created_at`);
     const updatedAt = validator.requiredDate(`${table_prefix}updated_at`);
 
@@ -46,6 +54,8 @@ export namespace DeveloperProjectItemCompanion {
       roles,
       mergeRights,
       comment,
+      customCategories: customCategories,
+      predefinedCategories: predefinedCategories,
       createdAt,
       updatedAt,
     };

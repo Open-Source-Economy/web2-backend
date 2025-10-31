@@ -1,4 +1,5 @@
 import {
+  ProjectCategory,
   ProjectItem,
   ProjectItemId,
   ProjectItemType,
@@ -20,6 +21,10 @@ export namespace ProjectItemCompanion {
     const projectItemType = validator.requiredEnum(
       `${table_prefix}project_item_type`,
       Object.values(ProjectItemType) as ProjectItemType[],
+    );
+    const categories = validator.optionalArrayOfEnums(
+      `${table_prefix}categories`,
+      Object.values(ProjectCategory) as ProjectCategory[],
     );
     const createdAt = validator.requiredDate(`${table_prefix}created_at`);
     const updatedAt = validator.requiredDate(`${table_prefix}updated_at`);
@@ -74,6 +79,7 @@ export namespace ProjectItemCompanion {
       id: new ProjectItemId(idString),
       projectItemType: projectItemType,
       sourceIdentifier,
+      categories: categories,
       createdAt: createdAt,
       updatedAt: updatedAt,
     };

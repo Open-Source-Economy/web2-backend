@@ -419,6 +419,8 @@ export const OnboardingController: OnboardingController = {
         body.mergeRights,
         body.roles,
         body.comments,
+        body.customCategories,
+        body.predefinedCategories,
       );
       const response: dto.UpsertDeveloperProjectItemResponse = {
         projectItem: projectItem,
@@ -432,6 +434,8 @@ export const OnboardingController: OnboardingController = {
         body.mergeRights,
         body.roles,
         body.comments,
+        body.customCategories,
+        body.predefinedCategories,
       );
 
       const response: dto.UpsertDeveloperProjectItemResponse = {

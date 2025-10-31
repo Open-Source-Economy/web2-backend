@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { AdminController, ProjectController } from "../../controllers";
 import { isWebsiteAdmin } from "../../middlewares/isWebsiteAdmin";
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+} from "../../middlewares/validation";
+import * as dto from "@open-source-economy/api-types";
 
 const router = Router();
 
@@ -45,6 +51,16 @@ router.post(
   "/projects/repos/:owner/:repo",
   isWebsiteAdmin,
   ProjectController.createProject,
+);
+
+// Update project item categories (admin only)
+router.put(
+  "/project-items/:projectItemId/categories",
+  isWebsiteAdmin,
+  validateParams(dto.UpdateProjectItemCategoriesCompanion.paramsSchema),
+  validateBody(dto.UpdateProjectItemCategoriesCompanion.bodySchema),
+  validateQuery(dto.UpdateProjectItemCategoriesCompanion.querySchema),
+  AdminController.updateProjectItemCategories as any,
 );
 
 export default router;
