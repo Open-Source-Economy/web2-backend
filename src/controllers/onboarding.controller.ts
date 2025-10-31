@@ -530,6 +530,17 @@ export const OnboardingController: OnboardingController = {
       console.error("Failed to send onboarding completion email:", emailError);
     }
 
+    // Send welcome email to the developer
+    try {
+      await mailService.sendDeveloperWelcomeEmail(
+        user.name || "there",
+        developerProfile.contactEmail,
+      );
+    } catch (emailError) {
+      // Log the error but don't fail the onboarding completion
+      console.error("Failed to send welcome email to developer:", emailError);
+    }
+
     const response: dto.CompleteOnboardingResponse = {};
     res.status(StatusCodes.OK).send({ success: response });
   },

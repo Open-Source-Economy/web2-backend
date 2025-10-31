@@ -412,6 +412,27 @@ export class MailService {
     );
   }
 
+  async sendDeveloperWelcomeEmail(
+    developerName: string,
+    developerEmail: string,
+  ) {
+    // Read the HTML template file
+    const htmlFilePath = path.join(
+      __dirname,
+      "onboarding-template/developer-confirmation-email.html",
+    );
+    let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
+
+    // Replace placeholders in the HTML
+    htmlContent = htmlContent.replace("{{developerName}}", developerName);
+
+    const emailSubject = "Welcome to Open Source Economy! 🎉";
+
+    await this.sendMail(developerEmail, emailSubject, htmlContent);
+
+    logger.info(`Welcome email sent to ${developerName} (${developerEmail})`);
+  }
+
   async sendContactFormEmail(formData: {
     name: string;
     email: string;
