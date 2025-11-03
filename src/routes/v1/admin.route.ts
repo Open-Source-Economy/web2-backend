@@ -1,66 +1,45 @@
 import { Router } from "express";
-import { AdminController, ProjectController } from "../../controllers";
-import { isWebsiteAdmin } from "../../middlewares/isWebsiteAdmin";
+import { AdminController } from "../../controllers";
+import { authenticatedSuperAdmin, authenticatedUser } from "../../middlewares";
+import * as dto from "@open-source-economy/api-types";
+import Joi from "joi";
 import {
   validateBody,
   validateParams,
   validateQuery,
 } from "../../middlewares/validation";
-import * as dto from "@open-source-economy/api-types";
 
 const router = Router();
 
-router.post("/address", isWebsiteAdmin, AdminController.createAddress);
-router.post("/company", isWebsiteAdmin, AdminController.createCompany);
-router.post(
-  "/company/admin-invite",
-  isWebsiteAdmin,
-  AdminController.sendCompanyAdminInvite,
-);
-router.post(
-  "/company/create-manual-invoice",
-  isWebsiteAdmin,
-  AdminController.createManualInvoice,
+// All admin routes require authentication
+router.use(authenticatedUser);
+
+// All admin routes require SUPER_ADMIN role
+router.use(authenticatedSuperAdmin);
+
+// Get all developer profiles (with optional filters)
+router.get(
+  "/profiles",
+  validateParams(dto.GetAllDeveloperProfilesCompanion.paramsSchema),
+  validateQuery(dto.GetAllDeveloperProfilesCompanion.querySchema),
+  AdminController.getAllDeveloperProfiles,
 );
 
-router.post(
-  "/repository/admin-invite",
-  isWebsiteAdmin,
-  AdminController.sendRepositoryAdminInvite,
+// Get a single developer profile by GitHub username (admin only)
+router.get(
+  "/developer-profile/:githubUsername",
+  validateParams(Joi.object({ githubUsername: Joi.string().required() })),
+  validateQuery(dto.GetDeveloperProfileCompanion.querySchema),
+  AdminController.getDeveloperProfile,
 );
 
-// Create prices (for both owners and repositories)
+// Create verification record (for both profiles and project items)
 router.post(
-  "/owners/:owner/stripe/product-and-price",
-  isWebsiteAdmin,
-  AdminController.createCampaignProductAndPrice,
-);
-router.post(
-  "/plan/product-and-price",
-  isWebsiteAdmin,
-  AdminController.createPlanProductAndPrice,
-);
-
-router.post(
-  "/projects/owners/:owner",
-  isWebsiteAdmin,
-  ProjectController.createProject,
-);
-
-router.post(
-  "/projects/repos/:owner/:repo",
-  isWebsiteAdmin,
-  ProjectController.createProject,
-);
-
-// Update project item categories (admin only)
-router.put(
-  "/project-items/:projectItemId/categories",
-  isWebsiteAdmin,
-  validateParams(dto.UpdateProjectItemCategoriesCompanion.paramsSchema),
-  validateBody(dto.UpdateProjectItemCategoriesCompanion.bodySchema),
-  validateQuery(dto.UpdateProjectItemCategoriesCompanion.querySchema),
-  AdminController.updateProjectItemCategories as any,
+  "/verification-record",
+  validateParams(dto.CreateVerificationRecordCompanion.paramsSchema),
+  validateBody(dto.CreateVerificationRecordCompanion.bodySchema),
+  validateQuery(dto.CreateVerificationRecordCompanion.querySchema),
+  AdminController.createVerificationRecord,
 );
 
 export default router;

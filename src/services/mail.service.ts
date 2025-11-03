@@ -2,9 +2,9 @@ import { ServerClient } from "postmark";
 import { config, logger } from "../config";
 import {
   Company,
+  FullDeveloperProfile,
   Owner,
   Repository,
-  FullDeveloperProfile,
   User,
   userUtils,
 } from "@open-source-economy/api-types";

@@ -13,12 +13,17 @@ import {
   getServiceRepository,
   getUserRepository,
 } from "../db";
+import { pool } from "../dbPool";
 import { terms } from "../config";
 import {
   checkAuthenticatedDeveloperProfile,
   checkAuthenticatedUser,
 } from "../middlewares";
-import { githubSyncService, mailService } from "../services";
+import {
+  DeveloperProfileService,
+  githubSyncService,
+  mailService,
+} from "../services";
 
 const developerProfileRepo = getDeveloperProfileRepository();
 const developerSettingsRepo = getDeveloperSettingsRepository();
@@ -27,6 +32,7 @@ const servicesRepo = getServiceRepository();
 const developerServiceRepo = getDeveloperServiceRepository();
 const projectItemRepo = getProjectItemRepository();
 const userRepository = getUserRepository();
+const developerProfileService = new DeveloperProfileService(pool);
 
 export interface OnboardingController {
   // Profile management
@@ -54,7 +60,6 @@ export interface OnboardingController {
     req: Request<
       dto.GetDeveloperProfileParams,
       dto.ResponseBody<dto.GetDeveloperProfileResponse>,
-      dto.GetDeveloperProfileBody,
       dto.GetDeveloperProfileQuery
     >,
     res: Response<dto.ResponseBody<dto.GetDeveloperProfileResponse>>,
@@ -227,8 +232,8 @@ export const OnboardingController: OnboardingController = {
   },
 
   async getDeveloperProfile(req, res) {
+    // User access: fetch their own profile only
     const user = checkAuthenticatedUser(req);
-
     const existingProfile = await developerProfileRepo.getByUserId(user.id);
 
     if (existingProfile === null) {
@@ -237,7 +242,7 @@ export const OnboardingController: OnboardingController = {
       };
       res.status(StatusCodes.OK).send({ success: response });
     } else {
-      const profile = await Helper.buildFullDeveloperProfile(
+      const profile = await developerProfileService.buildFullDeveloperProfile(
         existingProfile,
         user,
       );
@@ -510,8 +515,8 @@ export const OnboardingController: OnboardingController = {
       );
     }
 
-    // Build FullDeveloperProfile using shared helper
-    const fullProfile = await Helper.buildFullDeveloperProfile(
+    // Build FullDeveloperProfile using shared service
+    const fullProfile = await developerProfileService.buildFullDeveloperProfile(
       developerProfile,
       user,
     );
@@ -547,65 +552,6 @@ export const OnboardingController: OnboardingController = {
 };
 
 const Helper = {
-  /**
-   * Builds a FullDeveloperProfile object with all associated data
-   * Reusable helper to avoid code duplication
-   */
-  async buildFullDeveloperProfile(
-    developerProfile: dto.DeveloperProfile,
-    user: dto.User,
-  ): Promise<dto.FullDeveloperProfile> {
-    const settings = await developerSettingsRepo.findByProfileId(
-      developerProfile.id,
-    );
-
-    // Build projects array
-    const projects: dto.DeveloperProjectItemEntry[] = [];
-    const developerProjectItems =
-      await developerProjectItemRepo.findByProfileId(developerProfile.id);
-    for (const developerProjectItem of developerProjectItems) {
-      const projectItem = await projectItemRepo.getById(
-        developerProjectItem.projectItemId,
-      );
-      if (!projectItem) {
-        throw new dto.ApiError(
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          "Project item not found for developer project item",
-        );
-      }
-      projects.push({
-        projectItem: projectItem,
-        developerProjectItem: developerProjectItem,
-      });
-    }
-
-    // Build services array
-    const services: dto.DeveloperServiceEntry[] = [];
-    const devServices = await developerServiceRepo.getByProfileId(
-      developerProfile.id,
-    );
-    for (const devService of devServices) {
-      const service = await servicesRepo.findById(devService.serviceId);
-      if (!service) {
-        throw new dto.ApiError(
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          "Service not found for developer service",
-        );
-      }
-      services.push({ service: service, developerService: devService });
-    }
-
-    return {
-      name: user.name,
-      contactEmail: developerProfile.contactEmail,
-      agreedToTerms: user.termsAcceptedVersion === terms.version,
-      profile: developerProfile,
-      settings: settings,
-      projects: projects,
-      services: services,
-    };
-  },
-
   async upsertDeveloperService(
     developerProfile: dto.DeveloperProfile,
     body: dto.UpsertDeveloperServiceBody,

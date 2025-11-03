@@ -1,368 +1,193 @@
 import { Request, Response } from "express";
-import * as dto from "@open-source-economy/api-types";
-import {
-  ApiError,
-  OwnerId,
-  ProjectItemId,
-  ProjectUtils,
-} from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
-import {
-  addressRepo,
-  companyRepo,
-  companyUserPermissionTokenRepo,
-  manualInvoiceRepo,
-  projectItemRepo,
-  projectRepo,
-  repositoryUserPermissionTokenRepo,
-} from "../db";
-import { secureToken } from "../utils";
-import { githubSyncService, mailService } from "../services";
-import Decimal from "decimal.js";
-import { logger } from "../config";
-import { CreateRepositoryUserPermissionTokenDto } from "../db/user/RepositoryUserPermissionToken.repository";
-import { CampaignHelper } from "./campaign/campaign.helper";
-import { PlanHelper } from "./plan/plan.helper";
+import * as dto from "@open-source-economy/api-types";
+import { getDeveloperProfileRepository, getUserRepository } from "../db";
+import { createVerificationRecordRepository } from "../db/onboarding/VerificationRecord.repository";
+import { pool } from "../dbPool";
+import { checkAuthenticatedUser } from "../middlewares";
+import { DeveloperProfileService } from "../services";
 
-// TODO: at the beginning I thought should we have a admin controller interface but now I am think better to do the admin check only at the rooting level - not be reflected in the controllers classes
+const developerProfileRepo = getDeveloperProfileRepository();
+const userRepository = getUserRepository();
+const verificationRecordRepo = createVerificationRecordRepository(pool);
+const developerProfileService = new DeveloperProfileService(pool);
+
 export interface AdminController {
-  createAddress(
+  getAllDeveloperProfiles(
     req: Request<
-      dto.CreateAddressParams,
-      dto.ResponseBody<dto.CreateAddressResponse>,
-      dto.CreateAddressBody,
-      dto.CreateAddressQuery
+      dto.GetAllDeveloperProfilesParams,
+      dto.ResponseBody<dto.GetAllDeveloperProfilesResponse>,
+      {}, // GET request - no body
+      dto.GetAllDeveloperProfilesQuery
     >,
-    res: Response<dto.ResponseBody<dto.CreateAddressResponse>>,
+    res: Response<dto.ResponseBody<dto.GetAllDeveloperProfilesResponse>>,
   ): Promise<void>;
 
-  createCompany(
+  getDeveloperProfile(
     req: Request<
-      dto.CreateCompanyParams,
-      dto.ResponseBody<dto.CreateCompanyResponse>,
-      dto.CreateCompanyBody,
-      dto.CreateCompanyQuery
+      { githubUsername: string },
+      dto.ResponseBody<dto.GetDeveloperProfileResponse>,
+      {}, // GET request - no body
+      dto.GetDeveloperProfileQuery
     >,
-    res: Response<dto.ResponseBody<dto.CreateCompanyResponse>>,
+    res: Response<dto.ResponseBody<dto.GetDeveloperProfileResponse>>,
   ): Promise<void>;
 
-  sendCompanyAdminInvite(
+  createVerificationRecord(
     req: Request<
-      dto.SendCompanyRoleInviteParams,
-      dto.ResponseBody<dto.SendCompanyRoleInviteResponse>,
-      dto.SendCompanyRoleInviteBody,
-      dto.SendCompanyRoleInviteQuery
+      dto.CreateVerificationRecordParams,
+      dto.ResponseBody<dto.CreateVerificationRecordResponse>,
+      dto.CreateVerificationRecordBody,
+      dto.CreateVerificationRecordQuery
     >,
-    res: Response<dto.ResponseBody<dto.SendCompanyRoleInviteResponse>>,
-  ): Promise<void>;
-
-  sendRepositoryAdminInvite(
-    req: Request<
-      dto.SendRepositoryRoleInviteParams,
-      dto.ResponseBody<dto.SendCompanyRoleInviteResponse>,
-      dto.SendRepositoryRoleInviteBody,
-      dto.SendRepositoryRoleInviteQuery
-    >,
-    res: Response<dto.ResponseBody<dto.SendCompanyRoleInviteResponse>>,
-  ): Promise<void>;
-
-  createManualInvoice(
-    req: Request<
-      dto.CreateManualInvoiceParams,
-      dto.ResponseBody<dto.CreateManualInvoiceResponse>,
-      dto.CreateManualInvoiceBody,
-      dto.CreateManualInvoiceQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreateManualInvoiceResponse>>,
-  ): Promise<void>;
-
-  createCampaignProductAndPrice(
-    req: Request<
-      dto.CreateCampaignProductAndPriceParams,
-      dto.ResponseBody<dto.CreateCampaignProductAndPriceResponse>,
-      dto.CreateCampaignProductAndPriceBody,
-      dto.CreateCampaignProductAndPriceQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreateCampaignProductAndPriceResponse>>,
-  ): Promise<void>;
-
-  createPlanProductAndPrice(
-    req: Request<
-      dto.CreatePlanProductAndPriceParams,
-      dto.ResponseBody<dto.CreatePlanProductAndPriceResponse>,
-      dto.CreatePlanProductAndPriceBody,
-      dto.CreatePlanProductAndPriceQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreatePlanProductAndPriceResponse>>,
-  ): Promise<void>;
-
-  updateProjectItemCategories(
-    req: Request<
-      dto.UpdateProjectItemCategoriesParams,
-      dto.ResponseBody<dto.UpdateProjectItemCategoriesResponse>,
-      dto.UpdateProjectItemCategoriesBody,
-      dto.UpdateProjectItemCategoriesQuery
-    >,
-    res: Response<dto.ResponseBody<dto.UpdateProjectItemCategoriesResponse>>,
+    res: Response<dto.ResponseBody<dto.CreateVerificationRecordResponse>>,
   ): Promise<void>;
 }
 
 export const AdminController: AdminController = {
-  async createAddress(
-    req: Request<
-      dto.CreateAddressParams,
-      dto.ResponseBody<dto.CreateAddressResponse>,
-      dto.CreateAddressBody,
-      dto.CreateAddressQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreateAddressResponse>>,
-  ) {
-    const created = await addressRepo.create(req.body);
+  /**
+   * Get a single developer profile by GitHub username
+   * Note: SUPER_ADMIN role already verified by authenticatedSuperAdmin middleware
+   */
+  async getDeveloperProfile(req, res) {
+    // GitHub username comes from URL params
+    const urlParams = req.params as { githubUsername: string };
 
-    const response: dto.CreateAddressResponse = {
-      createdAddressId: created.id,
-    };
-    res.status(StatusCodes.CREATED).send({ success: response });
-  },
-
-  async createCompany(
-    req: Request<
-      dto.CreateCompanyParams,
-      dto.ResponseBody<dto.CreateCompanyResponse>,
-      dto.CreateCompanyBody,
-      dto.CreateCompanyQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreateCompanyResponse>>,
-  ) {
-    const created = await companyRepo.create(req.body);
-    const response: dto.CreateCompanyResponse = {
-      createdCompanyId: created.id,
-    };
-    res.status(StatusCodes.CREATED).send({ success: response });
-  },
-
-  async sendCompanyAdminInvite(
-    req: Request<
-      dto.SendCompanyRoleInviteParams,
-      dto.ResponseBody<dto.SendCompanyRoleInviteResponse>,
-      dto.SendCompanyRoleInviteBody,
-      dto.SendCompanyRoleInviteQuery
-    >,
-    res: Response<dto.ResponseBody<dto.SendCompanyRoleInviteResponse>>,
-  ) {
-    const [token, expiresAt] = secureToken.generate({
-      email: req.body.userEmail,
-    });
-
-    const createCompanyUserPermissionTokenBody: dto.CreateCompanyUserPermissionTokenBody =
-      {
-        userName: req.body.userName,
-        userEmail: req.body.userEmail,
-        token: token,
-        companyId: req.body.companyId,
-        companyUserRole: req.body.companyUserRole,
-        expiresAt: expiresAt,
+    const user = await userRepository.findByGithubLogin(
+      urlParams.githubUsername,
+    );
+    if (!user) {
+      const response: dto.GetDeveloperProfileResponse = {
+        profile: null,
       };
-
-    const company = await companyRepo.getById(req.body.companyId);
-
-    if (!company) {
-      throw new ApiError(
-        StatusCodes.NOT_FOUND,
-        `Company ${req.body.companyId} not found`,
-      );
+      res.status(StatusCodes.OK).send({ success: response });
+      return;
     }
 
-    const existing = await companyUserPermissionTokenRepo.getByUserEmail(
-      req.body.userEmail,
-      req.body.companyId,
-    );
-
-    for (const permission of existing) {
-      if (permission.hasBeenUsed) {
-        logger.error("Cannot send invite to user with used permission token");
-        throw new ApiError(
-          StatusCodes.BAD_REQUEST,
-          "Cannot send invite to user with used permission token",
-        );
-      }
-      logger.info(
-        `Deleting existing company permission token ${permission.token}`,
-      );
-      await companyUserPermissionTokenRepo.delete(permission.token);
-    }
-
-    await companyUserPermissionTokenRepo.create(
-      createCompanyUserPermissionTokenBody,
-    );
-
-    await mailService.sendCompanyAdminInvite(
-      req.body.userName,
-      req.body.userEmail,
-      company,
-      token,
-    );
-
-    const response: dto.SendCompanyRoleInviteResponse = {};
-    res.status(StatusCodes.OK).send({ success: response });
-  },
-
-  async sendRepositoryAdminInvite(
-    req: Request<
-      dto.SendRepositoryRoleInviteParams,
-      dto.ResponseBody<dto.SendCompanyRoleInviteResponse>,
-      dto.SendRepositoryRoleInviteBody,
-      dto.SendRepositoryRoleInviteQuery
-    >,
-    res: Response<dto.ResponseBody<dto.SendCompanyRoleInviteResponse>>,
-  ) {
-    const [token, expiresAt] = secureToken.generate({
-      email: req.body.userEmail,
-    });
-
-    const user = await githubSyncService.syncOwner(
-      new OwnerId(req.body.userGithubOwnerLogin),
-    );
-    const [owner, repository] = await githubSyncService.syncRepository(
-      req.body.repositoryId,
-    );
-
-    const createRepositoryUserPermissionTokenDto: CreateRepositoryUserPermissionTokenDto =
-      {
-        userName: req.body.userName,
-        userEmail: req.body.userEmail ?? null,
-        userGithubOwnerLogin: req.body.userGithubOwnerLogin,
-        token: token,
-        repositoryId: repository.id,
-        repositoryUserRole: req.body.repositoryUserRole,
-        rate: req.body.rate ? new Decimal(req.body.rate) : null,
-        currency: req.body.currency ? req.body.currency : null,
-        expiresAt: expiresAt,
+    const existingProfile = await developerProfileRepo.getByUserId(user.id);
+    if (!existingProfile) {
+      const response: dto.GetDeveloperProfileResponse = {
+        profile: null,
       };
+      res.status(StatusCodes.OK).send({ success: response });
+      return;
+    }
 
-    const existing =
-      await repositoryUserPermissionTokenRepo.getByUserGithubOwnerLogin(
-        req.body.userGithubOwnerLogin,
-      );
+    const profile = await developerProfileService.buildFullDeveloperProfile(
+      existingProfile,
+      user,
+    );
+    const response: dto.GetDeveloperProfileResponse = { profile };
+    res.status(StatusCodes.OK).send({ success: response });
+  },
 
-    if (existing) {
-      if (existing.hasBeenUsed) {
-        logger.error("Cannot send invite to user with used permission token");
-        throw new ApiError(
-          StatusCodes.BAD_REQUEST,
-          "Cannot send invite to user with used permission token",
+  /**
+   * Create a new verification record for a profile or project item
+   * Note: SUPER_ADMIN role already verified by authenticatedSuperAdmin middleware
+   */
+  async createVerificationRecord(req, res) {
+    const user = checkAuthenticatedUser(req);
+    const body: dto.CreateVerificationRecordBody = req.body;
+
+    // Create the verification record with verifiedBy from authenticated user
+    const record = await verificationRecordRepo.create(
+      body.entityType,
+      body.entityId,
+      body.status,
+      body.notes,
+      user.id,
+    );
+
+    res.status(StatusCodes.OK).send({
+      success: { record },
+    });
+  },
+
+  /**
+   * Get all developer profiles with optional filtering
+   * Note: SUPER_ADMIN role already verified by authenticatedSuperAdmin middleware
+   */
+  async getAllDeveloperProfiles(req, res) {
+    const query: dto.GetAllDeveloperProfilesQuery = req.query;
+
+    // Get all users
+    const allUsers = await userRepository.getAll();
+
+    // Build full profiles for users with developer profiles
+    const profiles: dto.FullDeveloperProfile[] = [];
+
+    for (const user of allUsers) {
+      const developerProfile = await developerProfileRepo.getByUserId(user.id);
+      if (developerProfile) {
+        const profile = await developerProfileService.buildFullDeveloperProfile(
+          developerProfile,
+          user,
         );
+        profiles.push(profile);
       }
-      logger.info(
-        `Deleting existing repository permission token ${existing.token}`,
-      );
-      await repositoryUserPermissionTokenRepo.delete(existing.token);
     }
 
-    await repositoryUserPermissionTokenRepo.create(
-      createRepositoryUserPermissionTokenDto,
-    );
+    // Apply filters
+    let filteredProfiles = profiles;
 
-    if (req.body.userEmail && req.body.sendEmail) {
-      await mailService.sendRepositoryAdminInvite(
-        req.body.userName,
-        req.body.userEmail,
-        user,
-        owner,
-        repository,
-        token,
-      );
+    // Filter by verification status
+    if (query.verificationStatus) {
+      const targetStatus: dto.VerificationStatus = query.verificationStatus;
+
+      filteredProfiles = filteredProfiles.filter((profile) => {
+        // Check profile verification status
+        if (
+          profile.profileEntry?.verificationRecords &&
+          profile.profileEntry?.verificationRecords.length > 0
+        ) {
+          const latestProfileRecord =
+            profile.profileEntry?.verificationRecords[0]; // Already sorted DESC
+          if (latestProfileRecord.status === targetStatus) {
+            return true;
+          }
+        }
+
+        // Check if any project has the target status
+        return profile.projects.some((p: dto.DeveloperProjectItemEntry) => {
+          if (p.verificationRecords && p.verificationRecords.length > 0) {
+            const latestProjectRecord = p.verificationRecords[0]; // Already sorted DESC
+            return latestProjectRecord.status === targetStatus;
+          }
+          return false;
+        });
+      });
     }
 
-    const response: dto.SendRepositoryRoleInviteResponse = {};
-    res.status(StatusCodes.OK).send({ success: response });
-  },
+    // Filter by search term
+    if (query.searchTerm) {
+      const searchLower = query.searchTerm.toLowerCase();
+      filteredProfiles = filteredProfiles.filter((profile) => {
+        // Search in name
+        if (profile.name?.toLowerCase().includes(searchLower)) return true;
 
-  async createManualInvoice(
-    req: Request<
-      dto.CreateManualInvoiceParams,
-      dto.ResponseBody<dto.CreateManualInvoiceResponse>,
-      dto.CreateManualInvoiceBody,
-      dto.CreateManualInvoiceQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreateManualInvoiceResponse>>,
-  ) {
-    const created = await manualInvoiceRepo.create(req.body);
-    const response: dto.CreateManualInvoiceResponse = {
-      createdInvoiceId: created.id,
-    };
-    res.status(StatusCodes.CREATED).send({ success: response });
-  },
+        // Search in email
+        if (profile.contactEmail?.toLowerCase().includes(searchLower))
+          return true;
 
-  // TODO: See if this endpoint will need to be updated, since it requires to create a project before using it
-  async createCampaignProductAndPrice(
-    req: Request<
-      dto.CreateCampaignProductAndPriceParams,
-      dto.ResponseBody<dto.CreateCampaignProductAndPriceResponse>,
-      dto.CreateCampaignProductAndPriceBody,
-      dto.CreateCampaignProductAndPriceQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreateCampaignProductAndPriceResponse>>,
-  ) {
-    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
-    const project = await projectRepo.getById(projectId);
-    if (!project) {
-      throw new ApiError(
-        StatusCodes.NOT_FOUND,
-        `Project with id ${projectId} not found`,
-      );
-    } else {
-      await CampaignHelper.createProductsAndPrices(project);
-      const response: dto.CreateCampaignProductAndPriceResponse = {};
-      res.status(StatusCodes.CREATED).send({ success: response });
-    }
-  },
+        // Search in GitHub username (assuming it's in the user data)
+        // We need to get GitHub username from projects
+        const hasMatchingProject = profile.projects.some(
+          (p: dto.DeveloperProjectItemEntry) => {
+            const projectName =
+              typeof p.projectItem.sourceIdentifier === "string"
+                ? p.projectItem.sourceIdentifier
+                : (p.projectItem.sourceIdentifier as any).login ||
+                  (p.projectItem.sourceIdentifier as any).name;
+            return projectName?.toLowerCase().includes(searchLower);
+          },
+        );
 
-  async createPlanProductAndPrice(
-    req: Request<
-      dto.CreatePlanProductAndPriceParams,
-      dto.ResponseBody<dto.CreatePlanProductAndPriceResponse>,
-      dto.CreatePlanProductAndPriceBody,
-      dto.CreatePlanProductAndPriceQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreatePlanProductAndPriceResponse>>,
-  ) {
-    await PlanHelper.createProductsAndPrices();
-
-    const response: dto.CreatePlanProductAndPriceResponse = {};
-    res.status(StatusCodes.CREATED).send({ success: response });
-  },
-
-  async updateProjectItemCategories(
-    req: Request<
-      dto.UpdateProjectItemCategoriesParams,
-      dto.ResponseBody<dto.UpdateProjectItemCategoriesResponse>,
-      dto.UpdateProjectItemCategoriesBody,
-      dto.UpdateProjectItemCategoriesQuery
-    >,
-    res: Response<dto.ResponseBody<dto.UpdateProjectItemCategoriesResponse>>,
-  ) {
-    const projectItemId = new ProjectItemId(req.params.projectItemId);
-
-    // Check if project item exists
-    const projectItem = await projectItemRepo.getById(projectItemId);
-    if (!projectItem) {
-      throw new ApiError(
-        StatusCodes.NOT_FOUND,
-        `ProjectItem with id ${projectItemId.uuid} not found`,
-      );
+        return hasMatchingProject;
+      });
     }
 
-    // Update categories
-    const updated = await projectItemRepo.updateCategories(
-      projectItemId,
-      req.body.categories,
-    );
-
-    const response: dto.UpdateProjectItemCategoriesResponse = {
-      projectItemId: updated.id,
-      categories: updated.categories || [],
-    };
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send({
+      success: { profiles: filteredProfiles },
+    });
   },
 };

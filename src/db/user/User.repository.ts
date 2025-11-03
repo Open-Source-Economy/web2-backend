@@ -37,6 +37,7 @@ export interface UserRepository {
     thirdPartyId: ThirdPartyUserId,
     provider: Provider,
   ): Promise<User | null>;
+  findByGithubLogin(githubLogin: string): Promise<User | null>;
   setPreferredCurrency(userId: UserId, currency: Currency): Promise<void>;
 
   updateName(userId: UserId, name: string): Promise<void>;
@@ -289,6 +290,32 @@ class UserRepositoryImpl implements UserRepository {
                   AND au.provider = $2
             `,
       [id.uuid, provider],
+    );
+    return this.getOptionalUser(result.rows);
+  }
+
+  async findByGithubLogin(githubLogin: string): Promise<User | null> {
+    const result = await this.pool.query(
+      `
+                SELECT au.id,
+                       au.name,
+                       au.email,
+                       au.is_email_verified,
+                       au.hashed_password,
+                       au.role,
+                       au.provider,
+                       au.third_party_id,
+                       au.terms_accepted_version,
+                       go.github_id,
+                       go.github_type,
+                       go.github_login,
+                       go.github_html_url,
+                       go.github_avatar_url
+                FROM app_user au
+                         LEFT JOIN github_owner go ON au.github_owner_id = go.github_id
+                WHERE au.github_owner_login = $1
+            `,
+      [githubLogin],
     );
     return this.getOptionalUser(result.rows);
   }

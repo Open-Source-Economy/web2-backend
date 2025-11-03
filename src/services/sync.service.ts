@@ -10,7 +10,7 @@ import {
   RepositoryId,
 } from "@open-source-economy/api-types";
 import { logger } from "../config";
-import { ProjectRepository, ProjectItemRepository } from "../db";
+import { ProjectItemRepository, ProjectRepository } from "../db";
 
 export function getGithubSyncService(
   githubService: GitHubApi,
