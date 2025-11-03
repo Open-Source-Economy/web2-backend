@@ -280,8 +280,10 @@ class ProjectItemRepositoryImpl
     const result = await this.pool.query(
       `SELECT * FROM project_item
        WHERE github_owner_id = $1
+       AND project_item_type = $2
+       AND github_repository_id IS NULL
        ORDER BY created_at DESC`,
-      [ownerId.githubId],
+      [ownerId.githubId, ProjectItemType.GITHUB_OWNER],
     );
     return this.getList(result.rows);
   }
