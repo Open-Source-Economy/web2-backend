@@ -4,13 +4,15 @@ import { GitHubApi } from "./github.service";
 import {
   Owner,
   OwnerId,
+  OwnerType,
   ProjectId,
   ProjectItemType,
   Repository,
   RepositoryId,
 } from "@open-source-economy/api-types";
-import { logger } from "../config";
+import { config, logger } from "../config";
 import { ProjectItemRepository, ProjectRepository } from "../db";
+import { Batcher, RateLimiter } from "../utils";
 
 export function getGithubSyncService(
   githubService: GitHubApi,
@@ -100,6 +102,41 @@ export interface GithubSyncService {
     syncedRepositories: number;
     errors: number;
   }>;
+
+  /**
+   * Syncs all repositories from a GitHub owner (organization or user).
+   * Fetches all repos from the owner via GitHub API and syncs each one to the database.
+   * Uses the configured GitHub token for authentication.
+   *
+   * @async
+   * @param {OwnerId} ownerId - The GitHub owner ID (organization or user)
+   * @param {OwnerType} ownerType - The type of owner (Organization or User)
+   * @param {number} [offset] - Optional offset for pagination (default: 0)
+   * @param {number} [batchSize] - Optional batch size override (capped at configured max)
+   * @param {boolean} [fetchDetails] - Whether to fetch individual repo details via API (slower but complete) or use bulk data (faster). Default: false.
+   * @returns {Promise<OrganizationSyncResult>}
+   *   Statistics about the sync operation including total fetched, synced repositories, and any errors encountered.
+   */
+  syncOrganizationRepositories(
+    ownerId: OwnerId,
+    ownerType: OwnerType,
+    offset?: number,
+    batchSize?: number,
+    fetchDetails?: boolean,
+  ): Promise<OrganizationSyncResult>;
+}
+
+export interface OrganizationSyncResult {
+  totalFetched: number;
+  syncedRepositories: Repository[];
+  errors: Array<{ repoName: string; error: string }>;
+  batchInfo: {
+    offset: number;
+    batchSize: number;
+    totalRepositories: number;
+    hasMore: boolean;
+    nextOffset?: number;
+  };
 }
 
 class GithubSyncServiceImpl implements GithubSyncService {
@@ -260,8 +297,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
     const syncedOwnerIds = new Set<string>();
     const syncedRepositoryIds = new Set<string>();
 
-    // Delay between API calls to avoid rate limiting (in milliseconds)
-    const RATE_LIMIT_DELAY_MS = 10; // 0.01 second between calls
+    const rateLimiter = new RateLimiter(config.github.sync.rateLimitDelayMs);
 
     for (const projectItem of projectItems) {
       try {
@@ -279,9 +315,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
             logger.info(`Successfully synced repository: ${repoKey}`);
 
             // Wait before next API call to avoid rate limiting
-            await new Promise((resolve) =>
-              setTimeout(resolve, RATE_LIMIT_DELAY_MS),
-            );
+            await rateLimiter.wait();
           } else {
             logger.debug(`Skipping already synced repository: ${repoKey}`);
           }
@@ -300,9 +334,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
             logger.info(`Successfully synced owner: ${ownerKey}`);
 
             // Wait before next API call to avoid rate limiting
-            await new Promise((resolve) =>
-              setTimeout(resolve, RATE_LIMIT_DELAY_MS),
-            );
+            await rateLimiter.wait();
           } else {
             logger.debug(`Skipping already synced owner: ${ownerKey}`);
           }
@@ -326,5 +358,125 @@ class GithubSyncServiceImpl implements GithubSyncService {
       syncedRepositories,
       errors,
     };
+  }
+
+  async syncOrganizationRepositories(
+    ownerId: OwnerId,
+    ownerType: OwnerType,
+    offset: number = 0,
+    batchSize?: number,
+    fetchDetails: boolean = false,
+  ): Promise<OrganizationSyncResult> {
+    const ownerTypeLabel =
+      ownerType === OwnerType.Organization ? "organization" : "user";
+    logger.info(
+      `Starting sync of repositories for ${ownerTypeLabel}: ${ownerId.login} (offset: ${offset}, batchSize: ${batchSize || "default"}, fetchDetails: ${fetchDetails})`,
+    );
+
+    try {
+      // Fetch all repositories from the owner via GitHub API
+      // Use appropriate endpoint based on owner type
+      const repositories: Repository[] =
+        ownerType === OwnerType.Organization
+          ? await this.githubService.listAllOrganizationRepositories(ownerId)
+          : await this.githubService.listAllUserRepositories(ownerId);
+
+      logger.info(
+        `Total repositories available for ${ownerTypeLabel} ${ownerId.login}: ${repositories.length}`,
+      );
+
+      // Process batch based on sync mode
+      let batchResult;
+
+      if (fetchDetails) {
+        // Detailed sync: fetch individual repo details via API (slower but complete)
+        logger.info(
+          `Using detailed sync mode (fetching individual repo details from GitHub API)`,
+        );
+
+        const rateLimiter = new RateLimiter(
+          config.github.sync.rateLimitDelayMs,
+        );
+
+        batchResult = await Batcher.processBatch(
+          repositories,
+          async (repo, index) => {
+            logger.debug(
+              `Syncing repository ${index + 1}: ${repo.id.ownerId.login}/${repo.id.name}`,
+            );
+            const [, syncedRepo] = await this.syncRepository(repo.id);
+            logger.debug(
+              `Successfully synced repository: ${repo.id.ownerId.login}/${repo.id.name}`,
+            );
+            return syncedRepo;
+          },
+          {
+            offset,
+            batchSize: batchSize || config.github.sync.maxRepos,
+            maxBatchSize: config.github.sync.maxRepos,
+            rateLimiter, // Rate limiting for detailed API calls
+          },
+          `for organization ${ownerId.login}`,
+        );
+      } else {
+        // Fast sync: directly upsert repositories using bulk data (no additional API calls)
+        logger.info(
+          `Using fast sync mode (upserting repositories from bulk data)`,
+        );
+
+        batchResult = await Batcher.processBatch(
+          repositories,
+          async (repo) => {
+            // Sync owner first (we need to get or create the owner)
+            const owner = await this.ownerRepo.getById(repo.id.ownerId);
+            if (!owner) {
+              // Owner doesn't exist, try to sync it
+              await this.syncOwner(repo.id.ownerId);
+              logger.debug(
+                `Successfully synced owner for repository: ${repo.id.ownerId.login}`,
+              );
+            }
+
+            // Upsert repository directly from the data we already have
+            await this.repositoryRepo.insertOrUpdate(repo);
+            logger.debug(
+              `Successfully upserted repository: ${repo.id.ownerId.login}/${repo.id.name}`,
+            );
+            return repo;
+          },
+          {
+            offset,
+            batchSize: batchSize || config.github.sync.maxRepos,
+            maxBatchSize: config.github.sync.maxRepos,
+            // No rate limiter for fast mode (no API calls needed)
+          },
+          `for organization ${ownerId.login}`,
+        );
+      }
+
+      return {
+        totalFetched: repositories.length,
+        syncedRepositories: batchResult.results,
+        errors: batchResult.errors.map((e) => ({
+          repoName: `${e.item.id.ownerId.login}/${e.item.id.name}`,
+          error: e.error,
+        })),
+        batchInfo: {
+          offset: batchResult.batchInfo.offset,
+          batchSize: batchResult.batchInfo.batchSize,
+          totalRepositories: batchResult.batchInfo.totalItems,
+          hasMore: batchResult.batchInfo.hasMore,
+          nextOffset: batchResult.batchInfo.nextOffset,
+        },
+      };
+    } catch (error) {
+      logger.error(
+        `Error fetching repositories for organization ${ownerId.login}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to fetch repositories for organization ${ownerId.login}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 }

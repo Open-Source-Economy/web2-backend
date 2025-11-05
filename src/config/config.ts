@@ -58,6 +58,14 @@ const envVarsSchema = Joi.object({
     .required()
     .description("github client secret"),
   GITHUB_TOKEN: Joi.string().required().description("github token"),
+  GITHUB_SYNC_RATE_LIMIT_DELAY_MS: Joi.number()
+    .default(150)
+    .description(
+      "delay in milliseconds between GitHub API calls during org sync",
+    ),
+  GITHUB_SYNC_MAX_REPOS: Joi.number()
+    .default(500)
+    .description("maximum number of repositories to sync per organization"),
 
   STRIPE_SECRET_KEY: Joi.string().required().description("stripe secret key"),
   STRIPE_WEBHOOK_SECRET: Joi.string()
@@ -107,6 +115,10 @@ interface Github {
   clientId: string;
   clientSecret: string;
   requestToken: string;
+  sync: {
+    rateLimitDelayMs: number;
+    maxRepos: number;
+  };
 }
 
 interface Stripe {
@@ -172,6 +184,10 @@ export const config: Config = {
     clientId: envVars.GITHUB_CLIENT_ID,
     clientSecret: envVars.GITHUB_CLIENT_SECRET,
     requestToken: envVars.GITHUB_TOKEN,
+    sync: {
+      rateLimitDelayMs: envVars.GITHUB_SYNC_RATE_LIMIT_DELAY_MS,
+      maxRepos: envVars.GITHUB_SYNC_MAX_REPOS,
+    },
   } as Github,
 
   stripe: {

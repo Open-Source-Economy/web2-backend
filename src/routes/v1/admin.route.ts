@@ -42,4 +42,13 @@ router.post(
   AdminController.createVerificationRecord,
 );
 
+// Sync all repositories from a GitHub organization
+router.post(
+  "/organizations/:projectItemId/sync-repositories",
+  validateParams(dto.SyncOrganizationRepositoriesCompanion.paramsSchema),
+  validateBody(dto.SyncOrganizationRepositoriesCompanion.bodySchema),
+  validateQuery(dto.SyncOrganizationRepositoriesCompanion.querySchema),
+  AdminController.syncOrganizationRepositories as any,
+);
+
 export default router;

@@ -130,6 +130,16 @@ export interface ProjectItemRepository {
     projectItems: ProjectItemWithDetails[];
     total: number;
   }>;
+
+  /**
+   * Retrieves all repository project items that belong to a specific GitHub organization.
+   *
+   * @param organizationOwnerId - The OwnerId of the GitHub organization
+   * @returns A promise that resolves to an array of ProjectItem objects representing repositories
+   */
+  getRepositoriesByOrganization(
+    organizationOwnerId: OwnerId,
+  ): Promise<ProjectItem[]>;
 }
 
 class ProjectItemRepositoryImpl
@@ -555,8 +565,21 @@ class ProjectItemRepositoryImpl
         ON pi.github_repository_id = r.github_id
       
       -- LEFT JOIN to get all developers associated with this project item
+      -- This includes both direct matches and organization-level matches
       LEFT JOIN developer_project_items dpi 
-        ON pi.id = dpi.project_item_id
+        ON (
+          -- Direct match: developer linked directly to this project item
+          pi.id = dpi.project_item_id
+          OR
+          -- Organization match: for repositories, also include developers linked to the parent organization
+          (pi.project_item_type = 'GITHUB_REPOSITORY' 
+           AND EXISTS (
+             SELECT 1 FROM project_item org_pi
+             WHERE org_pi.id = dpi.project_item_id
+             AND org_pi.project_item_type = 'GITHUB_OWNER'
+             AND org_pi.github_owner_id = pi.github_owner_id
+           ))
+        )
       
       -- LEFT JOIN to get developer profile information
       LEFT JOIN developer_profile dp 
@@ -730,5 +753,29 @@ class ProjectItemRepositoryImpl
       projectItems,
       total,
     };
+  }
+
+  async getRepositoriesByOrganization(
+    organizationOwnerId: OwnerId,
+  ): Promise<ProjectItem[]> {
+    const query = `
+      SELECT * FROM project_item
+      WHERE project_item_type = $1
+        AND github_owner_id = $2
+        AND github_repository_id IS NOT NULL
+      ORDER BY created_at DESC
+    `;
+    const result = await this.pool.query(query, [
+      ProjectItemType.GITHUB_REPOSITORY,
+      organizationOwnerId.githubId,
+    ]);
+
+    return result.rows.map((row) => {
+      const projectItem = ProjectItemCompanion.fromBackend(row);
+      if (projectItem instanceof Error) {
+        throw projectItem;
+      }
+      return projectItem;
+    });
   }
 }

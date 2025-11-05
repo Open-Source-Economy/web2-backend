@@ -462,10 +462,19 @@ export const ProjectController: ProjectController = {
       totalFollowers += owner.owner?.followers ?? 0;
     }
 
+    // Only include arrays that were explicitly requested
+    // If no specific query provided, return all types for backward compatibility
+    const hasSpecificQuery =
+      repoQuery !== undefined ||
+      ownersQuery !== undefined ||
+      urlsQuery !== undefined;
+
     const response: dto.GetProjectItemsWithDetailsResponse = {
-      repositories: limitedRepositories,
-      owners: limitedOwners,
-      urls: limitedUrls,
+      repositories:
+        !hasSpecificQuery || repoQuery !== undefined ? limitedRepositories : [],
+      owners:
+        !hasSpecificQuery || ownersQuery !== undefined ? limitedOwners : [],
+      urls: !hasSpecificQuery || urlsQuery !== undefined ? limitedUrls : [],
       stats: {
         totalProjects: result.total,
         totalMaintainers: uniqueMaintainers.size,

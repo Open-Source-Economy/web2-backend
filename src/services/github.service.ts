@@ -8,6 +8,7 @@ import {
   ValidationError,
 } from "@open-source-economy/api-types";
 import { config, logger } from "../config";
+import { Paginator, RateLimiter } from "../utils";
 
 export function getGitHubAPI(): GitHubApi {
   return new GitHubApiImpl();
@@ -28,21 +29,62 @@ export interface GitHubApi {
 
   /**
    * Retrieves a list of organizations the authenticated user belongs to.
-   * @param accessToken - The GitHub access token for authentication.
+   * Uses the configured GitHub token for authentication.
    * @returns A promise that resolves to an array of Owner objects representing organizations.
    */
-  listAuthenticatedUserOrganizations(accessToken: string): Promise<Owner[]>;
+  listAuthenticatedUserOrganizations(): Promise<Owner[]>;
 
   /**
-   * Retrieves a list of repositories for a given organization.
+   * Retrieves a single page of repositories for a given organization.
+   * Uses the configured GitHub token for authentication.
    * @param ownerId - The OwnerId object of the organization.
-   * @param accessToken - The GitHub access token for authentication.
+   * @param page - The page number to fetch (default: 1).
+   * @param perPage - Number of repositories per page (max: 100, default: 100).
    * @returns A promise that resolves to an array of Repository objects.
    */
   listOrganizationRepositories(
     ownerId: OwnerId,
-    accessToken: string,
+    page?: number,
+    perPage?: number,
   ): Promise<Repository[]>;
+
+  /**
+   * Retrieves ALL repositories for a given organization with pagination and rate limiting.
+   * Uses the configured GitHub token for authentication.
+   * Automatically handles pagination and includes delays to avoid rate limiting.
+   *
+   * ⚠️ WARNING: This operation can take a long time for large organizations.
+   * For example, an organization with 6,000 repos will take ~9 seconds just for pagination delays
+   * (60 pages × 150ms delay) plus additional time for API requests.
+   *
+   * @param ownerId - The OwnerId object of the organization.
+   * @returns A promise that resolves to an array of all Repository objects.
+   */
+  listAllOrganizationRepositories(ownerId: OwnerId): Promise<Repository[]>;
+
+  /**
+   * Retrieves a single page of repositories for a given user.
+   * Uses the configured GitHub token for authentication.
+   * @param ownerId - The OwnerId object of the user.
+   * @param page - The page number to fetch (default: 1).
+   * @param perPage - Number of repositories per page (max: 100, default: 100).
+   * @returns A promise that resolves to an array of Repository objects.
+   */
+  listUserRepositories(
+    ownerId: OwnerId,
+    page?: number,
+    perPage?: number,
+  ): Promise<Repository[]>;
+
+  /**
+   * Retrieves ALL repositories for a given user with pagination and rate limiting.
+   * Uses the configured GitHub token for authentication.
+   * Automatically handles pagination and includes delays to avoid rate limiting.
+   *
+   * @param ownerId - The OwnerId object of the user.
+   * @returns A promise that resolves to an array of all Repository objects owned by the user.
+   */
+  listAllUserRepositories(ownerId: OwnerId): Promise<Repository[]>;
 
   /**
    * Retrieves a list of repositories owned by or accessible to the authenticated user.
@@ -169,15 +211,12 @@ class GitHubApiImpl implements GitHubApi {
     return [issue, openedBy];
   }
 
-  async listAuthenticatedUserOrganizations(
-    accessToken: string,
-  ): Promise<Owner[]> {
+  async listAuthenticatedUserOrganizations(): Promise<Owner[]> {
     const url = "https://api.github.com/user/orgs";
     const orgsJson = await this.request<any[]>(
       url,
       "GET",
       "Error fetching user organizations",
-      accessToken,
     );
 
     return orgsJson
@@ -196,14 +235,14 @@ class GitHubApiImpl implements GitHubApi {
 
   async listOrganizationRepositories(
     ownerId: OwnerId,
-    accessToken: string,
+    page: number = 1,
+    perPage: number = 100,
   ): Promise<Repository[]> {
-    const url = `https://api.github.com/orgs/${ownerId.login.trim()}/repos?per_page=100`;
+    const url = `https://api.github.com/orgs/${ownerId.login.trim()}/repos?per_page=${perPage}&page=${page}`;
     const reposJson = await this.request<any[]>(
       url,
       "GET",
-      "Error fetching organization repositories",
-      accessToken,
+      `Error fetching organization repositories (page ${page})`,
     );
 
     return reposJson
@@ -216,6 +255,63 @@ class GitHubApiImpl implements GitHubApi {
         return repository;
       })
       .filter(Boolean) as Repository[];
+  }
+
+  async listAllOrganizationRepositories(
+    ownerId: OwnerId,
+  ): Promise<Repository[]> {
+    const rateLimiter = new RateLimiter(config.github.sync.rateLimitDelayMs);
+
+    const result = await Paginator.fetchAllPages(
+      (page, perPage) =>
+        this.listOrganizationRepositories(ownerId, page, perPage),
+      {
+        perPage: 100,
+        rateLimiter,
+      },
+      `organization ${ownerId.login} repositories`,
+    );
+
+    return result.allItems;
+  }
+
+  async listUserRepositories(
+    ownerId: OwnerId,
+    page: number = 1,
+    perPage: number = 100,
+  ): Promise<Repository[]> {
+    const url = `https://api.github.com/users/${ownerId.login.trim()}/repos?per_page=${perPage}&page=${page}&type=owner`;
+    const reposJson = await this.request<any[]>(
+      url,
+      "GET",
+      `Error fetching user repositories (page ${page})`,
+    );
+
+    return reposJson
+      .map((repo: any) => {
+        const repository = Repository.fromGithubApi(repo);
+        if (repository instanceof ValidationError) {
+          logger.warn(`Failed to parse repository: ${repository.message}`);
+          return null;
+        }
+        return repository;
+      })
+      .filter(Boolean) as Repository[];
+  }
+
+  async listAllUserRepositories(ownerId: OwnerId): Promise<Repository[]> {
+    const rateLimiter = new RateLimiter(config.github.sync.rateLimitDelayMs);
+
+    const result = await Paginator.fetchAllPages(
+      (page, perPage) => this.listUserRepositories(ownerId, page, perPage),
+      {
+        perPage: 100,
+        rateLimiter,
+      },
+      `user ${ownerId.login} repositories`,
+    );
+
+    return result.allItems;
   }
 
   async listAuthenticatedUserRepositories(
