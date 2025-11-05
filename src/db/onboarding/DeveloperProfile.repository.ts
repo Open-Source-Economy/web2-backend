@@ -54,6 +54,12 @@ export interface DeveloperProfileRepository {
     profileId: DeveloperProfileId,
     email: string,
   ): Promise<DeveloperProfile>;
+
+  /**
+   * Retrieves all developer profiles.
+   * @returns A promise that resolves to an array of all DeveloperProfiles.
+   */
+  getAll(): Promise<DeveloperProfile[]>;
 }
 
 class DeveloperProfileRepositoryImpl
@@ -165,5 +171,18 @@ class DeveloperProfileRepositoryImpl
     } finally {
       client.release();
     }
+  }
+
+  async getAll(): Promise<DeveloperProfile[]> {
+    logger.debug(`Getting all developer profiles`);
+    const result = await this.pool.query(
+      `
+        SELECT *
+        FROM developer_profile
+        ORDER BY created_at DESC
+      `,
+    );
+
+    return this.getList(result.rows);
   }
 }

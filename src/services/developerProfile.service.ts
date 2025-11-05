@@ -33,8 +33,10 @@ export class DeveloperProfileService {
    */
   async buildFullDeveloperProfile(
     developerProfile: dto.DeveloperProfile,
-    user: dto.User,
   ): Promise<dto.FullDeveloperProfile> {
+    const user = await this.developerProfileRepo.getById(
+      developerProfile.userId,
+    );
     const settings = await this.developerSettingsRepo.findByProfileId(
       developerProfile.id,
     );

@@ -141,20 +141,18 @@ export const AdminController: AdminController = {
     const query: dto.GetAllDeveloperProfilesQuery = req.query;
 
     // Get all users
-    const allUsers = await userRepository.getAll();
+    const allProfiles = await developerProfileRepo.getAll();
 
     // Build full profiles for users with developer profiles
     const profiles: dto.FullDeveloperProfile[] = [];
 
-    for (const user of allUsers) {
-      const developerProfile = await developerProfileRepo.getByUserId(user.id);
-      if (developerProfile) {
-        const profile = await developerProfileService.buildFullDeveloperProfile(
+    for (const developerProfile of allProfiles) {
+      const fullProfile =
+        await developerProfileService.buildFullDeveloperProfile(
           developerProfile,
-          user,
         );
-        profiles.push(profile);
-      }
+
+      profiles.push(fullProfile);
     }
 
     // Apply filters
