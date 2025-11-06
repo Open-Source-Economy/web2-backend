@@ -59,7 +59,7 @@ const envVarsSchema = Joi.object({
     .description("github client secret"),
   GITHUB_TOKEN: Joi.string().required().description("github token"),
   GITHUB_SYNC_RATE_LIMIT_DELAY_MS: Joi.number()
-    .default(150)
+    .default(1000)
     .description(
       "delay in milliseconds between GitHub API calls during org sync",
     ),

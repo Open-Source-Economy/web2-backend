@@ -10,6 +10,14 @@ import {
   Validator,
 } from "@open-source-economy/api-types";
 
+export interface MergeRolesAndRightsResult {
+  hasChanges: boolean;
+  mergedRoles: DeveloperRoleType[];
+  mergedMergeRights: MergeRightsType[];
+  addedRoles: DeveloperRoleType[];
+  addedMergeRights: MergeRightsType[];
+}
+
 export namespace DeveloperProjectItemCompanion {
   export function fromBackend(
     row: any,
@@ -58,6 +66,46 @@ export namespace DeveloperProjectItemCompanion {
       predefinedCategories: predefinedCategories,
       createdAt,
       updatedAt,
+    };
+  }
+
+  /**
+   * Merges developer roles and merge rights, avoiding duplicates.
+   *
+   * @param existingRoles - The existing roles of the developer
+   * @param existingMergeRights - The existing merge rights of the developer
+   * @param newRoles - The new roles to merge
+   * @param newMergeRights - The new merge rights to merge
+   * @returns MergeRolesAndRightsResult containing the merged data and information about changes
+   */
+  export function mergeRolesAndRights(
+    existingRoles: DeveloperRoleType[],
+    existingMergeRights: MergeRightsType[],
+    newRoles: DeveloperRoleType[],
+    newMergeRights: MergeRightsType[],
+  ): MergeRolesAndRightsResult {
+    const existingRolesSet = new Set(existingRoles);
+    const existingMergeRightsSet = new Set(existingMergeRights);
+
+    // Find new roles and merge rights that aren't already present
+    const addedRoles = newRoles.filter((role) => !existingRolesSet.has(role));
+    const addedMergeRights = newMergeRights.filter(
+      (right) => !existingMergeRightsSet.has(right),
+    );
+
+    // Check if there are any changes
+    const hasChanges = addedRoles.length > 0 || addedMergeRights.length > 0;
+
+    // Merge the new items into existing sets
+    addedRoles.forEach((role) => existingRolesSet.add(role));
+    addedMergeRights.forEach((right) => existingMergeRightsSet.add(right));
+
+    return {
+      hasChanges,
+      mergedRoles: Array.from(existingRolesSet),
+      mergedMergeRights: Array.from(existingMergeRightsSet),
+      addedRoles,
+      addedMergeRights,
     };
   }
 }

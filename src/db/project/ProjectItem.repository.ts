@@ -21,6 +21,7 @@ import {
   ProjectItemCompanion,
   RepositoryCompanion,
 } from "../helpers/companions";
+import { logger } from "../../config";
 
 export interface CreateProjectItemParams {
   projectItemType: ProjectItemType;
@@ -705,11 +706,80 @@ class ProjectItemRepositoryImpl
           throw developerOwner;
         }
 
-        projectItemDetails.developers.push({
-          developerProfile,
-          developerProjectItem,
-          developerOwner,
-        });
+        // Check if this developer is already added (avoid duplicates from org + repo registration)
+        // Check both UUID and GitHub login for robust deduplication
+        const existingDeveloper = projectItemDetails.developers.find(
+          (dev: { developerProfile: any; developerOwner: any }) =>
+            dev.developerProfile.id.uuid === developerProfile.id.uuid ||
+            dev.developerOwner.id.login === developerOwner.id.login,
+        );
+
+        if (existingDeveloper) {
+          // TODO: not sure about this behaviour. Also, arrays for `roles` and `mergeRights` this is not handled by the frontend yet. (it always takes the first values returned)
+
+          // Developer already exists - merge roles and merge rights
+          const beforeRoles = existingDeveloper.developerProjectItem.roles;
+          const beforeMergeRights =
+            existingDeveloper.developerProjectItem.mergeRights;
+
+          const mergeResult = DeveloperProjectItemCompanion.mergeRolesAndRights(
+            existingDeveloper.developerProjectItem.roles,
+            existingDeveloper.developerProjectItem.mergeRights,
+            developerProjectItem.roles,
+            developerProjectItem.mergeRights,
+          );
+
+          // Only update and log if there are differences
+          if (mergeResult.hasChanges) {
+            existingDeveloper.developerProjectItem.roles =
+              mergeResult.mergedRoles;
+            existingDeveloper.developerProjectItem.mergeRights =
+              mergeResult.mergedMergeRights;
+
+            logger.info(
+              `Deduplicating developer with conflicts: @${developerOwner.id.login} (${developerProfile.id.uuid}) ` +
+                `on project ${projectItemDetails.projectItem.projectItemType}`,
+              {
+                developer: {
+                  profileId: developerProfile.id.uuid,
+                  githubLogin: developerOwner.id.login,
+                  githubName: developerOwner.name || "N/A",
+                },
+                projectItem: {
+                  id: projectItemId,
+                  type: projectItemDetails.projectItem.projectItemType,
+                  identifier:
+                    projectItemDetails.owner?.id.login ||
+                    projectItemDetails.repository?.id.ownerId.login ||
+                    "N/A",
+                },
+                merge: {
+                  roles: {
+                    before: beforeRoles,
+                    new: developerProjectItem.roles,
+                    after: mergeResult.mergedRoles,
+                    added: mergeResult.addedRoles,
+                  },
+                  mergeRights: {
+                    before: beforeMergeRights,
+                    new: developerProjectItem.mergeRights,
+                    after: mergeResult.mergedMergeRights,
+                    added: mergeResult.addedMergeRights,
+                  },
+                },
+                reason:
+                  "Developer registered at both organization and repository level",
+              },
+            );
+          }
+        } else {
+          // New developer - add to list
+          projectItemDetails.developers.push({
+            developerProfile,
+            developerProjectItem,
+            developerOwner,
+          });
+        }
       }
     }
 

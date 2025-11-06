@@ -123,9 +123,8 @@ export const GitHubController: GitHubController = {
     >,
     res: Response<dto.ResponseBody<dto.SyncOwnerResponse>>,
   ) {
-    const owner = await githubSyncService.syncOwner(
-      new OwnerId(req.params.owner),
-    );
+    const ownerId = new OwnerId(req.params.owner);
+    const owner = await githubSyncService.syncOwner(ownerId);
     const response: dto.SyncOwnerResponse = { owner };
     res.status(StatusCodes.OK).send({ success: response });
   },
