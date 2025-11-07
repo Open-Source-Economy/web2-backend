@@ -7,6 +7,7 @@ import {
   getDeveloperSettingsRepository,
   getProjectItemRepository,
   getServiceRepository,
+  getUserRepository,
 } from "../db";
 import { createVerificationRecordRepository } from "../db/onboarding/VerificationRecord.repository";
 
@@ -15,12 +16,12 @@ import { createVerificationRecordRepository } from "../db/onboarding/Verificatio
  * Used by both onboarding and admin controllers
  */
 export class DeveloperProfileService {
-  private developerProfileRepo = getDeveloperProfileRepository();
   private developerProjectItemRepo = getDeveloperProjectItemRepository();
   private developerServiceRepo = getDeveloperServiceRepository();
   private developerSettingsRepo = getDeveloperSettingsRepository();
   private projectItemRepo = getProjectItemRepository();
   private serviceRepo = getServiceRepository();
+  private userRepo = getUserRepository();
   private verificationRecordRepo;
 
   constructor(pool: Pool) {
@@ -33,10 +34,19 @@ export class DeveloperProfileService {
    */
   async buildFullDeveloperProfile(
     developerProfile: dto.DeveloperProfile,
+    user?: dto.User,
   ): Promise<dto.FullDeveloperProfile> {
-    const user = await this.developerProfileRepo.getById(
-      developerProfile.userId,
-    );
+    if (!user) {
+      user =
+        (await this.userRepo.getById(developerProfile.userId)) || undefined;
+    }
+
+    if (!user) {
+      throw new Error(
+        `User not found for developer profile. UserId: ${developerProfile.userId.uuid}, ProfileId: ${developerProfile.id.uuid}`,
+      );
+    }
+
     const settings = await this.developerSettingsRepo.findByProfileId(
       developerProfile.id,
     );

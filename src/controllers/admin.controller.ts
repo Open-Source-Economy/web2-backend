@@ -103,10 +103,8 @@ export const AdminController: AdminController = {
       return;
     }
 
-    const profile = await developerProfileService.buildFullDeveloperProfile(
-      existingProfile,
-      user,
-    );
+    const profile =
+      await developerProfileService.buildFullDeveloperProfile(existingProfile);
     const response: dto.GetDeveloperProfileResponse = { profile };
     res.status(StatusCodes.OK).send({ success: response });
   },

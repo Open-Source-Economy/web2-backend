@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { GitHubController } from "../../controllers";
-import { validateParams, validateBody, validateQuery } from "../../middlewares";
+import { validateBody, validateParams, validateQuery } from "../../middlewares";
 import * as dto from "@open-source-economy/api-types";
 
 const router = Router();
@@ -16,7 +16,7 @@ router.post(
   validateParams(dto.SyncOwnerCompanion.paramsSchema),
   validateBody(dto.SyncOwnerCompanion.bodySchema),
   validateQuery(dto.SyncOwnerCompanion.querySchema),
-  GitHubController.syncOwner,
+  GitHubController.syncOwner as any,
 );
 
 router.post(
@@ -24,7 +24,7 @@ router.post(
   validateParams(dto.SyncRepositoryCompanion.paramsSchema),
   validateBody(dto.SyncRepositoryCompanion.bodySchema),
   validateQuery(dto.SyncRepositoryCompanion.querySchema),
-  GitHubController.syncRepository,
+  GitHubController.syncRepository as any,
 );
 
 router.post(
@@ -32,7 +32,7 @@ router.post(
   validateParams(dto.SyncProjectCompanion.paramsSchema),
   validateBody(dto.SyncProjectCompanion.bodySchema),
   validateQuery(dto.SyncProjectCompanion.querySchema),
-  GitHubController.syncProject,
+  GitHubController.syncProject as any,
 );
 
 router.post(
@@ -40,7 +40,7 @@ router.post(
   validateParams(dto.SyncProjectCompanion.paramsSchema),
   validateBody(dto.SyncProjectCompanion.bodySchema),
   validateQuery(dto.SyncProjectCompanion.querySchema),
-  GitHubController.syncProject,
+  GitHubController.syncProject as any,
 );
 
 export default router;

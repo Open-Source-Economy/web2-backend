@@ -2,10 +2,7 @@ import {
   DeveloperRoleType,
   MergeRightsType,
 } from "@open-source-economy/api-types";
-import {
-  DeveloperProjectItemCompanion,
-  MergeRolesAndRightsResult,
-} from "../DeveloperProjectItem.companion";
+import { DeveloperProjectItemCompanion } from "../DeveloperProjectItem.companion";
 
 describe("DeveloperProjectItemCompanion.mergeRolesAndRights", () => {
   describe("when there are no changes", () => {
