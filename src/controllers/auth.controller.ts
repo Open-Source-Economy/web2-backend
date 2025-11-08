@@ -26,51 +26,104 @@ import { config } from "../config";
 
 export interface AuthController {
   status(
-    req: Request<{}, {}, dto.StatusBody, dto.StatusQuery>,
+    req: Request<
+      dto.StatusParams,
+      dto.ResponseBody<dto.StatusResponse>,
+      dto.StatusBody,
+      dto.StatusQuery
+    >,
     res: Response<dto.ResponseBody<dto.StatusResponse>>,
   ): Promise<void>;
 
   verifyCompanyToken(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
     next: NextFunction,
   ): Promise<void>;
 
   registerAsCompany(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
   ): Promise<void>;
 
   verifyRepositoryToken(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
     next: NextFunction,
   ): Promise<void>;
 
   registerForRepository(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
   ): Promise<void>;
 
   register(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
   ): Promise<void>;
 
   login(
-    req: Request<{}, {}, dto.LoginBody, dto.LoginQuery>,
+    req: Request<
+      dto.LoginParams,
+      dto.ResponseBody<dto.LoginResponse>,
+      dto.LoginBody,
+      dto.LoginQuery
+    >,
     res: Response<dto.ResponseBody<dto.LoginResponse>>,
   ): Promise<void>;
 
-  logout(req: Request, res: Response): Promise<void>;
+  logout(
+    req: Request<
+      dto.LogoutParams,
+      dto.ResponseBody<dto.LogoutResponse>,
+      dto.LogoutBody,
+      dto.LogoutQuery
+    >,
+    res: Response<dto.ResponseBody<dto.LogoutResponse>>,
+  ): Promise<void>;
 
   getCompanyUserInviteInfo(
-    req: Request<{}, {}, {}, dto.GetCompanyUserInviteInfoQuery>,
+    req: Request<
+      dto.GetCompanyUserInviteInfoParams,
+      dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>,
+      dto.GetCompanyUserInviteInfoBody,
+      dto.GetCompanyUserInviteInfoQuery
+    >,
     res: Response<dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>>,
   ): Promise<void>;
 
   getRepositoryUserInviteInfo(
-    req: Request<{}, {}, {}, dto.GetRepositoryUserInviteInfoQuery>,
+    req: Request<
+      dto.GetRepositoryUserInviteInfoParams,
+      dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>,
+      dto.GetRepositoryUserInviteInfoBody,
+      dto.GetRepositoryUserInviteInfoQuery
+    >,
     res: Response<dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>>,
   ): Promise<void>;
 }
@@ -119,17 +172,24 @@ const AuthHelpers = {
     const repositories = await AuthHelpers.getRepositoryInfos(user.id);
 
     return {
-      user: user as User,
-      company: company,
-      companyRole: companyRole,
-      repositories: repositories,
+      authenticatedUser: {
+        user: user as User,
+        company: company,
+        companyRole: companyRole,
+        repositories: repositories,
+      },
     };
   },
 };
 
 export const AuthController: AuthController = {
   async status(
-    req: Request<{}, {}, dto.StatusBody, dto.StatusQuery>,
+    req: Request<
+      dto.StatusParams,
+      dto.ResponseBody<dto.StatusResponse>,
+      dto.StatusBody,
+      dto.StatusQuery
+    >,
     res: Response<dto.ResponseBody<dto.StatusResponse>>,
   ) {
     if (req.isAuthenticated() && req.user) {
@@ -139,17 +199,19 @@ export const AuthController: AuthController = {
       res.status(StatusCodes.OK).send({ success: response }); // TODO: json instead of send ?
     } else {
       const response: dto.StatusResponse = {
-        user: null,
-        company: null,
-        companyRole: null,
-        repositories: [],
+        authenticatedUser: null,
       };
       res.status(StatusCodes.OK).send({ success: response });
     }
   },
 
   async verifyCompanyToken(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
     next: NextFunction,
   ) {
@@ -187,7 +249,12 @@ export const AuthController: AuthController = {
   },
 
   async registerAsCompany(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
   ) {
     if (req.isAuthenticated() && req.user) {
@@ -216,7 +283,12 @@ export const AuthController: AuthController = {
   },
 
   async verifyRepositoryToken(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
     next: NextFunction,
   ) {
@@ -246,7 +318,12 @@ export const AuthController: AuthController = {
   },
 
   async registerForRepository(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
   ) {
     const userData = req.user?.data!;
@@ -288,7 +365,12 @@ export const AuthController: AuthController = {
   },
 
   async register(
-    req: Request<{}, {}, dto.RegisterBody, dto.RegisterQuery>,
+    req: Request<
+      dto.RegisterParams,
+      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterBody,
+      dto.RegisterQuery
+    >,
     res: Response<dto.ResponseBody<dto.RegisterResponse>>,
   ) {
     if (req.isAuthenticated() && req.user) {
@@ -302,7 +384,12 @@ export const AuthController: AuthController = {
   },
 
   async login(
-    req: Request<{}, {}, dto.LoginBody, dto.LoginQuery>,
+    req: Request<
+      dto.LoginParams,
+      dto.ResponseBody<dto.LoginResponse>,
+      dto.LoginBody,
+      dto.LoginQuery
+    >,
     res: Response<dto.ResponseBody<dto.LoginResponse>>,
   ) {
     if (req.isAuthenticated() && req.user) {
@@ -315,22 +402,40 @@ export const AuthController: AuthController = {
     }
   },
 
-  async logout(req: Request, res: Response) {
+  async logout(
+    req: Request<
+      dto.LogoutParams,
+      dto.ResponseBody<dto.LogoutResponse>,
+      dto.LogoutBody,
+      dto.LogoutQuery
+    >,
+    res: Response<dto.ResponseBody<dto.LogoutResponse>>,
+  ) {
     if (!req.user) {
-      res.sendStatus(StatusCodes.OK);
+      res.status(StatusCodes.OK).send({ success: {} });
       return;
     }
     req.logout((err) => {
       if (err) {
-        res.sendStatus(StatusCodes.BAD_REQUEST);
+        res.status(StatusCodes.BAD_REQUEST).send({
+          error: {
+            code: StatusCodes.BAD_REQUEST,
+            message: "Failed to logout user",
+          },
+        });
         return;
       }
-      res.sendStatus(StatusCodes.OK);
+      res.status(StatusCodes.OK).send({ success: {} });
     });
   },
 
   async getCompanyUserInviteInfo(
-    req: Request<{}, {}, {}, dto.GetCompanyUserInviteInfoQuery>,
+    req: Request<
+      dto.GetCompanyUserInviteInfoParams,
+      dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>,
+      dto.GetCompanyUserInviteInfoBody,
+      dto.GetCompanyUserInviteInfoQuery
+    >,
     res: Response<dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>>,
   ) {
     const query: dto.GetCompanyUserInviteInfoQuery = req.query;
@@ -346,7 +451,12 @@ export const AuthController: AuthController = {
   },
 
   async getRepositoryUserInviteInfo(
-    req: Request<{}, {}, {}, dto.GetRepositoryUserInviteInfoQuery>,
+    req: Request<
+      dto.GetRepositoryUserInviteInfoParams,
+      dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>,
+      dto.GetRepositoryUserInviteInfoBody,
+      dto.GetRepositoryUserInviteInfoQuery
+    >,
     res: Response<dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>>,
   ) {
     const query: dto.GetRepositoryUserInviteInfoQuery = req.query;
