@@ -385,8 +385,14 @@ export class MailService {
     // Replace placeholders in the HTML template
     htmlContent = htmlContent
       .replace("{{developerName}}", user.name || "Unknown")
-      .replace("{{developerEmail}}", fullProfile.contactEmail || "Unknown")
-      .replace(/{{developerEmail}}/g, fullProfile.contactEmail || "Unknown")
+      .replace(
+        "{{developerEmail}}",
+        fullProfile.profileEntry?.profile.contactEmail || "Unknown",
+      )
+      .replace(
+        /{{developerEmail}}/g,
+        fullProfile.profileEntry?.profile.contactEmail || "Unknown",
+      )
       .replace("{{githubSection}}", githubSection)
       .replace("{{projectCount}}", fullProfile.projects.length.toString())
       .replace("{{projectsSection}}", projectsSection)
@@ -408,7 +414,9 @@ export class MailService {
     );
 
     logger.info(
-      `Developer onboarding completion email sent for ${user.name} (${fullProfile.contactEmail})`,
+      `Developer onboarding completion email sent for ${user.name} (${
+        fullProfile.profileEntry?.profile.contactEmail || "Unknown"
+      })`,
     );
   }
 

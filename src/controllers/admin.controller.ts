@@ -188,11 +188,16 @@ export const AdminController: AdminController = {
     if (query.searchTerm) {
       const searchLower = query.searchTerm.toLowerCase();
       filteredProfiles = filteredProfiles.filter((profile) => {
+        const profileEntry = profile.profileEntry;
+
         // Search in name
-        if (profile.name?.toLowerCase().includes(searchLower)) return true;
+        const userName = profileEntry?.user?.name;
+        if (userName && userName.toLowerCase().includes(searchLower))
+          return true;
 
         // Search in email
-        if (profile.contactEmail?.toLowerCase().includes(searchLower))
+        const contactEmail = profileEntry?.profile.contactEmail;
+        if (contactEmail && contactEmail.toLowerCase().includes(searchLower))
           return true;
 
         // Search in GitHub username (assuming it's in the user data)

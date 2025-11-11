@@ -103,15 +103,13 @@ export class DeveloperProfileService {
 
     const profileEntry: dto.DeveloperProfileEntry = {
       profile: developerProfile,
+      user,
       owner: owner,
       verificationRecords: profileVerificationRecords,
     };
 
     return {
-      name: user.name,
-      contactEmail: developerProfile.contactEmail,
-      agreedToTerms: user.termsAcceptedVersion !== null,
-      profileEntry: profileEntry,
+      profileEntry,
       settings: settings || null,
       projects: projects,
       services: services,
