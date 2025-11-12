@@ -130,6 +130,28 @@ export interface ProjectItemRepository {
     queryParams?: dto.ProjectItemQueryParams,
   ): Promise<ProjectItemWithDetails[]>;
 
+  /**
+   * Retrieves a single project item with its associated details.
+   *
+   * @param projectItemId - The unique identifier of the project item.
+   * @returns A promise that resolves to the hydrated project item with details if found, otherwise null.
+   */
+  getByIdWithDetails(
+    projectItemId: ProjectItemId,
+  ): Promise<ProjectItemWithDetails | null>;
+
+  /**
+   * Retrieves a project item by GitHub slug (owner/repo or owner) with associated details.
+   *
+   * @param ownerLogin - GitHub owner login.
+   * @param repositoryName - Optional repository name when targeting a repository.
+   * @returns A promise that resolves to the hydrated project item with details if found, otherwise null.
+   */
+  getBySlugWithDetails(
+    ownerLogin: string,
+    repositoryName?: string,
+  ): Promise<ProjectItemWithDetails | null>;
+
   getProjectItemsStats(): Promise<ProjectItemsStats>;
 
   /**
@@ -147,6 +169,15 @@ class ProjectItemRepositoryImpl
   extends BaseRepository<ProjectItem>
   implements ProjectItemRepository
 {
+  private static readonly PREFIX = {
+    projectItem: "pi_",
+    owner: "",
+    repository: "repo_",
+    developerProfile: "dp_",
+    developerProjectItem: "dpi_",
+    developerOwner: "devo_",
+  };
+
   private static readonly SELECT_COLUMNS = `
     id,
     project_item_type,
@@ -392,93 +423,13 @@ class ProjectItemRepositoryImpl
    * Retrieves all project items with their associated Owner, Repository (if exists),
    * and a list of developers with their profiles, project items associations, and owner info.
    */
-  async getAllWithDetails(
-    projectItemType: ProjectItemType,
-    queryParams?: dto.ProjectItemQueryParams,
-  ): Promise<ProjectItemWithDetails[]> {
-    const sortBy = queryParams?.sortBy;
-    const sortOrder = queryParams?.sortOrder || dto.SortOrder.DESC;
-    const limit = queryParams?.limit;
+  private static buildProjectItemsWithDetailsQuery(
+    limitedProjectItemsSubquery: string,
+    orderBy: string,
+  ): string {
+    const PREFIX = ProjectItemRepositoryImpl.PREFIX;
 
-    // Define table prefixes for clarity and maintainability
-    const PREFIX = {
-      projectItem: "pi_",
-      owner: "", // No prefix for project item's owner
-      repository: "repo_",
-      developerProfile: "dp_",
-      developerProjectItem: "dpi_",
-      developerOwner: "devo_", // Changed from 'dev_' to avoid 'do' alias conflict with PostgreSQL reserved keyword
-    };
-
-    // Build ORDER BY clause for main query
-    let limitedProjectItemsSubquery: string;
-
-    const sqlSortableFields: Partial<
-      Record<
-        dto.ProjectItemSortField,
-        { table: string; joinCondition: string; column: string }
-      >
-    > = {
-      [dto.ProjectItemSortField.STARS]: {
-        table: "github_repository r",
-        joinCondition: "pi2.github_repository_id = r.github_id",
-        column: "r.github_stargazers_count",
-      },
-      [dto.ProjectItemSortField.STARGAZERS]: {
-        table: "github_repository r",
-        joinCondition: "pi2.github_repository_id = r.github_id",
-        column: "r.github_stargazers_count",
-      },
-      [dto.ProjectItemSortField.FORKS]: {
-        table: "github_repository r",
-        joinCondition: "pi2.github_repository_id = r.github_id",
-        column: "r.github_forks_count",
-      },
-      [dto.ProjectItemSortField.FOLLOWERS]: {
-        table: "github_owner o",
-        joinCondition: "pi2.github_owner_id = o.github_id",
-        column: "o.github_followers",
-      },
-      [dto.ProjectItemSortField.CREATED_AT]: {
-        table: "",
-        joinCondition: "",
-        column: `pi.created_at ${sortOrder.toUpperCase()}`,
-      },
-      [dto.ProjectItemSortField.UPDATED_AT]: {
-        table: "",
-        joinCondition: "",
-        column: `pi.updated_at ${sortOrder.toUpperCase()}`,
-      },
-    };
-
-    const sortConfig = sortBy ? sqlSortableFields[sortBy] : undefined;
-    const mainOrderBy =
-      sortBy === dto.ProjectItemSortField.CREATED_AT
-        ? `pi.created_at ${sortOrder.toUpperCase()}`
-        : sortBy === dto.ProjectItemSortField.UPDATED_AT
-          ? `pi.updated_at ${sortOrder.toUpperCase()}`
-          : "pi.created_at DESC";
-
-    if (sortConfig && sortConfig.table) {
-      limitedProjectItemsSubquery = `(
-        SELECT pi2.*
-        FROM project_item pi2
-        LEFT JOIN ${sortConfig.table} ON ${sortConfig.joinCondition}
-        WHERE pi2.project_item_type = '${projectItemType}'
-        ORDER BY ${sortConfig.column} ${sortOrder.toUpperCase()} NULLS LAST, pi2.created_at DESC
-        ${limit ? `LIMIT ${limit}` : ""}
-      ) pi`;
-    } else {
-      limitedProjectItemsSubquery = `(
-        SELECT *
-        FROM project_item pi
-        WHERE pi.project_item_type = '${projectItemType}'
-        ORDER BY ${mainOrderBy}
-        ${limit ? `LIMIT ${limit}` : ""}
-      ) pi`;
-    }
-
-    const query = `
+    return `
       SELECT 
         -- Project item columns (prefix: ${PREFIX.projectItem})
         pi.id AS ${PREFIX.projectItem}id,
@@ -601,22 +552,20 @@ class ProjectItemRepositoryImpl
       LEFT JOIN github_owner devo 
         ON au.github_owner_id = devo.github_id
       
-      ORDER BY ${mainOrderBy}
+      ORDER BY ${orderBy}
     `;
+  }
 
-    const result = await this.pool.query(query);
-
-    // Group the results by project item
+  private hydrateProjectItemsFromRows(rows: any[]): ProjectItemWithDetails[] {
+    const PREFIX = ProjectItemRepositoryImpl.PREFIX;
     const projectItemsMap = new Map<string, ProjectItemWithDetails>();
     let skippedDevelopersCount = 0;
     let processedDevelopersCount = 0;
 
-    for (const row of result.rows) {
+    for (const row of rows) {
       const projectItemId = row[`${PREFIX.projectItem}id`];
 
-      // Get or create the project item entry
       if (!projectItemsMap.has(projectItemId)) {
-        // Parse project item
         const projectItem = ProjectItemCompanion.fromBackend(
           row,
           PREFIX.projectItem,
@@ -625,7 +574,6 @@ class ProjectItemRepositoryImpl
           throw projectItem;
         }
 
-        // Parse owner (if exists)
         let owner: Owner | null = null;
         if (row[`${PREFIX.owner}github_id`]) {
           const ownerResult = OwnerCompanion.fromBackend(row, PREFIX.owner);
@@ -635,7 +583,6 @@ class ProjectItemRepositoryImpl
           owner = ownerResult;
         }
 
-        // Parse repository (if exists)
         let repository: Repository | null = null;
         if (row[`${PREFIX.repository}github_id`]) {
           const repoResult = RepositoryCompanion.fromBackend(
@@ -656,11 +603,9 @@ class ProjectItemRepositoryImpl
         });
       }
 
-      // Add developer info if present
       if (row[`${PREFIX.developerProfile}id`]) {
         const projectItemDetails = projectItemsMap.get(projectItemId)!;
 
-        // Skip developers without a GitHub owner (not yet linked)
         if (!row[`${PREFIX.developerOwner}github_id`]) {
           skippedDevelopersCount++;
           console.warn(`Skipping developer without GitHub owner:`, {
@@ -680,7 +625,6 @@ class ProjectItemRepositoryImpl
 
         processedDevelopersCount++;
 
-        // Parse developer profile
         const developerProfile = DeveloperProfileCompanion.fromBackend(
           row,
           PREFIX.developerProfile,
@@ -689,7 +633,6 @@ class ProjectItemRepositoryImpl
           throw developerProfile;
         }
 
-        // Parse developer project item
         const developerProjectItem = DeveloperProjectItemCompanion.fromBackend(
           row,
           PREFIX.developerProjectItem,
@@ -698,7 +641,6 @@ class ProjectItemRepositoryImpl
           throw developerProjectItem;
         }
 
-        // Parse developer owner
         const developerOwner = OwnerCompanion.fromBackend(
           row,
           PREFIX.developerOwner,
@@ -707,8 +649,6 @@ class ProjectItemRepositoryImpl
           throw developerOwner;
         }
 
-        // Check if this developer is already added (avoid duplicates from org + repo registration)
-        // Check both UUID and GitHub login for robust deduplication
         const existingDeveloper = projectItemDetails.developers.find(
           (dev: { developerProfile: any; developerOwner: any }) =>
             dev.developerProfile.id.uuid === developerProfile.id.uuid ||
@@ -716,9 +656,6 @@ class ProjectItemRepositoryImpl
         );
 
         if (existingDeveloper) {
-          // TODO: not sure about this behaviour. Also, arrays for `roles` and `mergeRights` this is not handled by the frontend yet. (it always takes the first values returned)
-
-          // Developer already exists - merge roles and merge rights
           const beforeRoles = existingDeveloper.developerProjectItem.roles;
           const beforeMergeRights =
             existingDeveloper.developerProjectItem.mergeRights;
@@ -730,7 +667,6 @@ class ProjectItemRepositoryImpl
             developerProjectItem.mergeRights,
           );
 
-          // Only update and log if there are differences
           if (mergeResult.hasChanges) {
             existingDeveloper.developerProjectItem.roles =
               mergeResult.mergedRoles;
@@ -774,7 +710,6 @@ class ProjectItemRepositoryImpl
             );
           }
         } else {
-          // New developer - add to list
           projectItemDetails.developers.push({
             developerProfile,
             developerProjectItem,
@@ -786,11 +721,163 @@ class ProjectItemRepositoryImpl
 
     let projectItems = Array.from(projectItemsMap.values());
 
-    if (limit !== undefined) {
-      projectItems = projectItems.slice(0, limit);
+    return projectItems;
+  }
+
+  async getAllWithDetails(
+    projectItemType: ProjectItemType,
+    queryParams?: dto.ProjectItemQueryParams,
+  ): Promise<ProjectItemWithDetails[]> {
+    const sortBy = queryParams?.sortBy;
+    const sortOrder = queryParams?.sortOrder || dto.SortOrder.DESC;
+    const limit = queryParams?.limit;
+
+    // Define table prefixes for clarity and maintainability
+    const PREFIX = {
+      projectItem: "pi_",
+      owner: "", // No prefix for project item's owner
+      repository: "repo_",
+      developerProfile: "dp_",
+      developerProjectItem: "dpi_",
+      developerOwner: "devo_", // Changed from 'dev_' to avoid 'do' alias conflict with PostgreSQL reserved keyword
+    };
+
+    // Build ORDER BY clause for main query
+    let limitedProjectItemsSubquery: string;
+
+    const sqlSortableFields: Partial<
+      Record<
+        dto.ProjectItemSortField,
+        { table: string; joinCondition: string; column: string }
+      >
+    > = {
+      [dto.ProjectItemSortField.STARS]: {
+        table: "github_repository r",
+        joinCondition: "pi2.github_repository_id = r.github_id",
+        column: "r.github_stargazers_count",
+      },
+      [dto.ProjectItemSortField.STARGAZERS]: {
+        table: "github_repository r",
+        joinCondition: "pi2.github_repository_id = r.github_id",
+        column: "r.github_stargazers_count",
+      },
+      [dto.ProjectItemSortField.FORKS]: {
+        table: "github_repository r",
+        joinCondition: "pi2.github_repository_id = r.github_id",
+        column: "r.github_forks_count",
+      },
+      [dto.ProjectItemSortField.FOLLOWERS]: {
+        table: "github_owner o",
+        joinCondition: "pi2.github_owner_id = o.github_id",
+        column: "o.github_followers",
+      },
+      [dto.ProjectItemSortField.CREATED_AT]: {
+        table: "",
+        joinCondition: "",
+        column: `pi.created_at ${sortOrder.toUpperCase()}`,
+      },
+      [dto.ProjectItemSortField.UPDATED_AT]: {
+        table: "",
+        joinCondition: "",
+        column: `pi.updated_at ${sortOrder.toUpperCase()}`,
+      },
+    };
+
+    const sortConfig = sortBy ? sqlSortableFields[sortBy] : undefined;
+    const mainOrderBy =
+      sortBy === dto.ProjectItemSortField.CREATED_AT
+        ? `pi.created_at ${sortOrder.toUpperCase()}`
+        : sortBy === dto.ProjectItemSortField.UPDATED_AT
+          ? `pi.updated_at ${sortOrder.toUpperCase()}`
+          : "pi.created_at DESC";
+
+    if (sortConfig && sortConfig.table) {
+      limitedProjectItemsSubquery = `(
+        SELECT pi2.*
+        FROM project_item pi2
+        LEFT JOIN ${sortConfig.table} ON ${sortConfig.joinCondition}
+        WHERE pi2.project_item_type = '${projectItemType}'
+        ORDER BY ${sortConfig.column} ${sortOrder.toUpperCase()} NULLS LAST, pi2.created_at DESC
+        ${limit ? `LIMIT ${limit}` : ""}
+      ) pi`;
+    } else {
+      limitedProjectItemsSubquery = `(
+        SELECT *
+        FROM project_item pi
+        WHERE pi.project_item_type = '${projectItemType}'
+        ORDER BY ${mainOrderBy}
+        ${limit ? `LIMIT ${limit}` : ""}
+      ) pi`;
     }
 
-    return projectItems;
+    const query = ProjectItemRepositoryImpl.buildProjectItemsWithDetailsQuery(
+      limitedProjectItemsSubquery,
+      mainOrderBy,
+    );
+
+    const result = await this.pool.query(query);
+
+    if (limit !== undefined) {
+      return this.hydrateProjectItemsFromRows(result.rows).slice(0, limit);
+    }
+
+    return this.hydrateProjectItemsFromRows(result.rows);
+  }
+
+  async getByIdWithDetails(
+    projectItemId: ProjectItemId,
+  ): Promise<ProjectItemWithDetails | null> {
+    const limitedProjectItemsSubquery = `(
+      SELECT *
+      FROM project_item pi
+      WHERE pi.id = $1
+    ) pi`;
+
+    const query = ProjectItemRepositoryImpl.buildProjectItemsWithDetailsQuery(
+      limitedProjectItemsSubquery,
+      "pi.created_at DESC",
+    );
+
+    const result = await this.pool.query(query, [projectItemId.uuid]);
+    const projectItems = this.hydrateProjectItemsFromRows(result.rows);
+
+    return projectItems[0] ?? null;
+  }
+
+  async getBySlugWithDetails(
+    ownerLogin: string,
+    repositoryName?: string,
+  ): Promise<ProjectItemWithDetails | null> {
+    const isRepository = Boolean(repositoryName);
+    const limitedProjectItemsSubquery = isRepository
+      ? `(
+        SELECT *
+        FROM project_item pi
+        WHERE pi.project_item_type = 'GITHUB_REPOSITORY'
+          AND LOWER(pi.github_owner_login) = LOWER($1)
+          AND LOWER(pi.github_repository_name) = LOWER($2)
+        ORDER BY pi.created_at DESC
+        LIMIT 1
+      ) pi`
+      : `(
+        SELECT *
+        FROM project_item pi
+        WHERE pi.project_item_type = 'GITHUB_OWNER'
+          AND LOWER(pi.github_owner_login) = LOWER($1)
+        ORDER BY pi.created_at DESC
+        LIMIT 1
+      ) pi`;
+
+    const query = ProjectItemRepositoryImpl.buildProjectItemsWithDetailsQuery(
+      limitedProjectItemsSubquery,
+      "pi.created_at DESC",
+    );
+
+    const params = isRepository ? [ownerLogin, repositoryName] : [ownerLogin];
+    const result = await this.pool.query(query, params);
+    const projectItems = this.hydrateProjectItemsFromRows(result.rows);
+
+    return projectItems[0] ?? null;
   }
 
   async getProjectItemsStats(): Promise<ProjectItemsStats> {

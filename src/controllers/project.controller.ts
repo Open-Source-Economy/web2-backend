@@ -21,9 +21,11 @@ import {
   projectItemRepo,
   projectRepo,
 } from "../db";
-import { githubSyncService } from "../services";
+import { DeveloperProfileService, githubSyncService } from "../services";
+import { pool } from "../dbPool";
 
 const financialIssueRepo = getFinancialIssueRepository();
+const developerProfileService = new DeveloperProfileService(pool);
 
 export interface ProjectController {
   getProject(
@@ -104,6 +106,16 @@ export interface ProjectController {
       dto.GetProjectItemsWithDetailsQuery
     >,
     res: Response<dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>>,
+  ): Promise<void>;
+
+  getProjectDetails(
+    req: Request<
+      dto.GetProjectDetailsParams,
+      dto.ResponseBody<dto.GetProjectDetailsResponse>,
+      dto.GetProjectDetailsBody,
+      dto.GetProjectDetailsQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetProjectDetailsResponse>>,
   ): Promise<void>;
 }
 
@@ -337,6 +349,211 @@ export const ProjectController: ProjectController = {
       urls,
       stats,
     };
+    res.status(StatusCodes.OK).send({ success: response });
+  },
+
+  async getProjectDetails(
+    req: Request<
+      dto.GetProjectDetailsParams,
+      dto.ResponseBody<dto.GetProjectDetailsResponse>,
+      dto.GetProjectDetailsBody,
+      dto.GetProjectDetailsQuery
+    >,
+    res: Response<dto.ResponseBody<dto.GetProjectDetailsResponse>>,
+  ): Promise<void> {
+    // 1. Load the project (owner or repo) together with raw developer rows.
+    const { owner, repo } = req.params;
+    const projectItemDetails = await projectItemRepo.getBySlugWithDetails(
+      owner,
+      repo,
+    );
+
+    if (!projectItemDetails) {
+      res.sendStatus(StatusCodes.NOT_FOUND);
+      return;
+    }
+
+    // 2. Prepare a couple of helpers used throughout the rest of the routine.
+    const targetItem = projectItemDetails.projectItem;
+    const targetItemId = targetItem.id.uuid;
+    const ownerLoginLower =
+      projectItemDetails.owner?.id.login.toLowerCase() ??
+      (targetItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY &&
+      targetItem.sourceIdentifier instanceof RepositoryId
+        ? targetItem.sourceIdentifier.ownerId.login.toLowerCase()
+        : targetItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER &&
+            targetItem.sourceIdentifier instanceof OwnerId
+          ? targetItem.sourceIdentifier.login.toLowerCase()
+          : undefined);
+    const repositoryNameLower =
+      targetItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY &&
+      targetItem.sourceIdentifier instanceof RepositoryId
+        ? targetItem.sourceIdentifier.name.toLowerCase()
+        : undefined;
+
+    const isProjectRelevant = (projectItem: dto.ProjectItem): boolean => {
+      if (projectItem.id.uuid === targetItemId) {
+        return true;
+      }
+
+      const identifier = projectItem.sourceIdentifier;
+
+      if (
+        ownerLoginLower &&
+        projectItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER &&
+        identifier instanceof OwnerId
+      ) {
+        return identifier.login.toLowerCase() === ownerLoginLower;
+      }
+
+      if (
+        ownerLoginLower &&
+        projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY &&
+        identifier instanceof RepositoryId &&
+        identifier.ownerId.login.toLowerCase() === ownerLoginLower
+      ) {
+        if (targetItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER) {
+          return true;
+        }
+        if (!repositoryNameLower) {
+          return false;
+        }
+        return identifier.name.toLowerCase() === repositoryNameLower;
+      }
+
+      return false;
+    };
+
+    // 3. Hydrate developers with profile/settings/projects/services info.
+    const dedupedDevelopers = Array.from(
+      new Map(
+        projectItemDetails.developers.map((developer) => [
+          developer.developerProfile.id.uuid,
+          developer,
+        ]),
+      ).values(),
+    );
+
+    const hydratedDevelopers = await Promise.all(
+      dedupedDevelopers.map(async (developer) => ({
+        developer,
+        fullProfile: await developerProfileService.buildFullDeveloperProfile(
+          developer.developerProfile,
+        ),
+      })),
+    );
+
+    const developersResponse: Record<string, dto.ProjectDeveloperProfile> = {};
+    const servicesMap = new Map<string, dto.Service>();
+    const serviceOfferingsMap = new Map<string, dto.ProjectServiceOffering[]>();
+
+    for (const { developer, fullProfile } of hydratedDevelopers) {
+      const profileId =
+        fullProfile.profileEntry?.profile.id.uuid ??
+        developer.developerProfile.id.uuid;
+
+      const sortedProjects = [...fullProfile.projects].sort((a, b) => {
+        const aRelevant = isProjectRelevant(a.projectItem);
+        const bRelevant = isProjectRelevant(b.projectItem);
+
+        if (aRelevant && bRelevant) {
+          const aIsTarget = a.projectItem.id.uuid === targetItemId;
+          const bIsTarget = b.projectItem.id.uuid === targetItemId;
+          if (aIsTarget || bIsTarget) {
+            return aIsTarget === bIsTarget ? 0 : aIsTarget ? -1 : 1;
+          }
+
+          const aIsRepository =
+            a.projectItem.projectItemType ===
+            dto.ProjectItemType.GITHUB_REPOSITORY;
+          const bIsRepository =
+            b.projectItem.projectItemType ===
+            dto.ProjectItemType.GITHUB_REPOSITORY;
+          if (aIsRepository !== bIsRepository) {
+            return aIsRepository ? -1 : 1;
+          }
+
+          return 0;
+        }
+
+        if (aRelevant === bRelevant) {
+          return 0;
+        }
+
+        return aRelevant ? -1 : 1;
+      });
+
+      const primaryProject =
+        sortedProjects.find(
+          (entry) => entry.projectItem.id.uuid === targetItemId,
+        ) ??
+        sortedProjects.find((entry) => isProjectRelevant(entry.projectItem)) ??
+        sortedProjects[0];
+
+      if (!primaryProject) {
+        continue;
+      }
+
+      const relevantProjectItemId = primaryProject.developerProjectItem.id.uuid;
+
+      const developerServices: Record<string, dto.DeveloperService> = {};
+
+      for (const serviceEntry of fullProfile.services) {
+        const developerService = serviceEntry.developerService;
+        if (!developerService) {
+          continue;
+        }
+
+        const isLinkedToProject = developerService.developerProjectItemIds.some(
+          (dpiId) => dpiId.uuid === relevantProjectItemId,
+        );
+        if (!isLinkedToProject) {
+          continue;
+        }
+
+        const serviceId = serviceEntry.service.id.uuid;
+        developerServices[serviceId] = developerService;
+        servicesMap.set(serviceId, serviceEntry.service);
+
+        const developerProfileId =
+          fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
+
+        const offering: dto.ProjectServiceOffering = {};
+        if (developerService.responseTimeHours) {
+          offering.responseTimeHours = [
+            [developerService.responseTimeHours, developerProfileId],
+          ];
+        }
+        const offerings = serviceOfferingsMap.get(serviceId);
+        if (offerings) {
+          offerings.push(offering);
+        } else {
+          serviceOfferingsMap.set(serviceId, [offering]);
+        }
+      }
+
+      developersResponse[profileId] = {
+        profileEntry: fullProfile.profileEntry,
+        settings: fullProfile.settings,
+        project: primaryProject,
+        services: developerServices,
+      };
+    }
+
+    // 4. Final response assembly.
+    const response: dto.GetProjectDetailsResponse = {
+      project: {
+        projectItem: projectItemDetails.projectItem,
+        owner: projectItemDetails.owner,
+        repository: projectItemDetails.repository,
+      },
+      developers: developersResponse,
+      service: Array.from(servicesMap.values()).sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+      serviceOfferings: Object.fromEntries(serviceOfferingsMap.entries()),
+    };
+
     res.status(StatusCodes.OK).send({ success: response });
   },
 };

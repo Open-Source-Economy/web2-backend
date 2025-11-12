@@ -9,6 +9,8 @@ router.get("/", ProjectController.getProjects);
 router.get("/items/details", ProjectController.getProjectItemsWithDetails);
 router.get("/owners/:owner", ProjectController.getProject);
 router.get("/repos/:owner/:repo", ProjectController.getProject);
+router.get("/owners/:owner/details", ProjectController.getProjectDetails);
+router.get("/repos/:owner/:repo/details", ProjectController.getProjectDetails);
 
 // Project campaigns (for both owners and repositories)
 router.get("/owners/:owner/campaigns", CampaignController.getCampaign);

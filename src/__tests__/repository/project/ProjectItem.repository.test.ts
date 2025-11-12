@@ -552,6 +552,36 @@ describe("ProjectItemRepository", () => {
     });
   });
 
+  describe("getByIdWithDetails", () => {
+    it("returns a project item with developers linked through the owner", async () => {
+      const ownerId = await insertOwner();
+      const { profile } = await createDeveloperLinkedToOwner(ownerId);
+
+      const repositoryId = await insertRepository(ownerId);
+      const repoItem = await projectItemRepo.create({
+        projectItemType: dto.ProjectItemType.GITHUB_REPOSITORY,
+        sourceIdentifier: repositoryId,
+      });
+
+      const details = await projectItemRepo.getByIdWithDetails(repoItem.id);
+
+      expect(details).toBeDefined();
+      expect(details?.projectItem.id.uuid).toEqual(repoItem.id.uuid);
+      expect(details?.developers).toHaveLength(1);
+      expect(details?.developers[0].developerProfile.id.uuid).toBe(
+        profile.id.uuid,
+      );
+    });
+
+    it("returns null when project item does not exist", async () => {
+      const missingId = new dto.ProjectItemId(Fixture.uuid());
+
+      const details = await projectItemRepo.getByIdWithDetails(missingId);
+
+      expect(details).toBeNull();
+    });
+  });
+
   describe("getProjectItemsStats", () => {
     it("aggregates totals from project items", async () => {
       const ownerId = await insertOwner();
@@ -600,6 +630,56 @@ describe("ProjectItemRepository", () => {
         totalForks: 17,
         totalFollowers: 42,
       });
+    });
+  });
+
+  describe("getBySlugWithDetails", () => {
+    it("returns repository details by owner and repo slug including owner-linked developers", async () => {
+      const ownerId = await insertOwner();
+      const { profile } = await createDeveloperLinkedToOwner(ownerId);
+
+      const repositoryId = await insertRepository(ownerId);
+      const repoItem = await projectItemRepo.create({
+        projectItemType: dto.ProjectItemType.GITHUB_REPOSITORY,
+        sourceIdentifier: repositoryId,
+      });
+
+      const details = await projectItemRepo.getBySlugWithDetails(
+        ownerId.login,
+        repositoryId.name,
+      );
+
+      expect(details).toBeDefined();
+      expect(details?.projectItem.id.uuid).toEqual(repoItem.id.uuid);
+      expect(details?.developers).toHaveLength(1);
+      expect(details?.developers[0].developerProfile.id.uuid).toEqual(
+        profile.id.uuid,
+      );
+    });
+
+    it("returns owner details when only owner slug is provided", async () => {
+      const ownerId = await insertOwner();
+      const ownerItem = await projectItemRepo.create({
+        projectItemType: dto.ProjectItemType.GITHUB_OWNER,
+        sourceIdentifier: ownerId,
+      });
+
+      const details = await projectItemRepo.getBySlugWithDetails(ownerId.login);
+
+      expect(details).toBeDefined();
+      expect(details?.projectItem.id.uuid).toEqual(ownerItem.id.uuid);
+      expect(details?.projectItem.projectItemType).toBe(
+        dto.ProjectItemType.GITHUB_OWNER,
+      );
+    });
+
+    it("returns null when no project item matches slug", async () => {
+      const details = await projectItemRepo.getBySlugWithDetails(
+        "unknown-owner",
+        "unknown-repo",
+      );
+
+      expect(details).toBeNull();
     });
   });
 });
