@@ -1,7 +1,6 @@
 import * as dto from "@open-source-economy/api-types";
 import { Pool } from "pg";
 import {
-  getDeveloperProfileRepository,
   getDeveloperProjectItemRepository,
   getDeveloperServiceRepository,
   getDeveloperSettingsRepository,

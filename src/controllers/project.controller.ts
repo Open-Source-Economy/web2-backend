@@ -318,170 +318,24 @@ export const ProjectController: ProjectController = {
       urls: urlsQuery,
     } = req.query;
 
-    // Get all project items from database
-    const result = await projectItemRepo.getAllWithDetails({});
-
-    // Group project items by type
-    const repositories: dto.ProjectItemWithDetails[] = [];
-    const owners: dto.ProjectItemWithDetails[] = [];
-    const urls: dto.ProjectItemWithDetails[] = [];
-
-    for (const item of result.projectItems) {
-      switch (item.projectItem.projectItemType) {
-        case dto.ProjectItemType.GITHUB_REPOSITORY:
-          repositories.push(item);
-          break;
-        case dto.ProjectItemType.GITHUB_OWNER:
-          owners.push(item);
-          break;
-        case dto.ProjectItemType.URL:
-          urls.push(item);
-          break;
-      }
-    }
-
-    // Sort repositories if sortBy is specified
-    if (repoQuery?.sortBy) {
-      const order = repoQuery.sortOrder === dto.SortOrder.ASC ? 1 : -1;
-      repositories.sort((a, b) => {
-        switch (repoQuery.sortBy) {
-          case dto.ProjectItemSortField.STARGAZERS:
-          case dto.ProjectItemSortField.STARS:
-            return (
-              ((b.repository?.stargazersCount ?? 0) -
-                (a.repository?.stargazersCount ?? 0)) *
-              order
-            );
-          case dto.ProjectItemSortField.FORKS:
-            return (
-              ((b.repository?.forksCount ?? 0) -
-                (a.repository?.forksCount ?? 0)) *
-              order
-            );
-          case dto.ProjectItemSortField.CREATED_AT:
-            return (
-              (b.projectItem.createdAt.getTime() -
-                a.projectItem.createdAt.getTime()) *
-              order
-            );
-          case dto.ProjectItemSortField.UPDATED_AT:
-            return (
-              (b.projectItem.updatedAt.getTime() -
-                a.projectItem.updatedAt.getTime()) *
-              order
-            );
-          default:
-            return 0;
-        }
-      });
-    }
-
-    // Sort owners if sortBy is specified
-    if (ownersQuery?.sortBy) {
-      const order = ownersQuery.sortOrder === dto.SortOrder.ASC ? 1 : -1;
-      owners.sort((a, b) => {
-        switch (ownersQuery.sortBy) {
-          case dto.ProjectItemSortField.FOLLOWERS:
-            return (
-              ((b.owner?.followers ?? 0) - (a.owner?.followers ?? 0)) * order
-            );
-          case dto.ProjectItemSortField.CREATED_AT:
-            return (
-              (b.projectItem.createdAt.getTime() -
-                a.projectItem.createdAt.getTime()) *
-              order
-            );
-          case dto.ProjectItemSortField.UPDATED_AT:
-            return (
-              (b.projectItem.updatedAt.getTime() -
-                a.projectItem.updatedAt.getTime()) *
-              order
-            );
-          default:
-            return 0;
-        }
-      });
-    }
-
-    // Sort URLs if sortBy is specified
-    if (urlsQuery?.sortBy) {
-      const order = urlsQuery.sortOrder === dto.SortOrder.ASC ? 1 : -1;
-      urls.sort((a, b) => {
-        switch (urlsQuery.sortBy) {
-          case dto.ProjectItemSortField.CREATED_AT:
-            return (
-              (b.projectItem.createdAt.getTime() -
-                a.projectItem.createdAt.getTime()) *
-              order
-            );
-          case dto.ProjectItemSortField.UPDATED_AT:
-            return (
-              (b.projectItem.updatedAt.getTime() -
-                a.projectItem.updatedAt.getTime()) *
-              order
-            );
-          default:
-            return 0;
-        }
-      });
-    }
-
-    // Apply per-type limits
-    const limitedRepositories =
-      repoQuery?.limit !== undefined
-        ? repositories.slice(0, repoQuery.limit)
-        : repositories;
-    const limitedOwners =
-      ownersQuery?.limit !== undefined
-        ? owners.slice(0, ownersQuery.limit)
-        : owners;
-    const limitedUrls =
-      urlsQuery?.limit !== undefined ? urls.slice(0, urlsQuery.limit) : urls;
-
-    // Calculate statistics from ALL project items (before limiting)
-    const uniqueMaintainers = new Set<string>();
-    let totalStars = 0;
-    let totalForks = 0;
-    let totalFollowers = 0;
-
-    // Count maintainers from all project items
-    for (const item of result.projectItems) {
-      for (const dev of item.developers) {
-        uniqueMaintainers.add(dev.developerProfile.id.uuid);
-      }
-    }
-
-    // Sum stars and forks from repositories
-    for (const repo of repositories) {
-      totalStars += repo.repository?.stargazersCount ?? 0;
-      totalForks += repo.repository?.forksCount ?? 0;
-    }
-
-    // Sum followers from owners
-    for (const owner of owners) {
-      totalFollowers += owner.owner?.followers ?? 0;
-    }
-
-    // Only include arrays that were explicitly requested
-    // If no specific query provided, return all types for backward compatibility
-    const hasSpecificQuery =
-      repoQuery !== undefined ||
-      ownersQuery !== undefined ||
-      urlsQuery !== undefined;
+    const [repositories, owners, urls, stats] = await Promise.all([
+      projectItemRepo.getAllWithDetails(
+        dto.ProjectItemType.GITHUB_REPOSITORY,
+        repoQuery,
+      ),
+      projectItemRepo.getAllWithDetails(
+        dto.ProjectItemType.GITHUB_OWNER,
+        ownersQuery,
+      ),
+      projectItemRepo.getAllWithDetails(dto.ProjectItemType.URL, urlsQuery),
+      projectItemRepo.getProjectItemsStats(),
+    ]);
 
     const response: dto.GetProjectItemsWithDetailsResponse = {
-      repositories:
-        !hasSpecificQuery || repoQuery !== undefined ? limitedRepositories : [],
-      owners:
-        !hasSpecificQuery || ownersQuery !== undefined ? limitedOwners : [],
-      urls: !hasSpecificQuery || urlsQuery !== undefined ? limitedUrls : [],
-      stats: {
-        totalProjects: result.total,
-        totalMaintainers: uniqueMaintainers.size,
-        totalStars,
-        totalForks,
-        totalFollowers,
-      },
+      repositories,
+      owners,
+      urls,
+      stats,
     };
     res.status(StatusCodes.OK).send({ success: response });
   },

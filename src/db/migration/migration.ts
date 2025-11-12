@@ -25,6 +25,8 @@ export class Migration {
       "13.sql", // Developer onboarding tables
       "14.sql", // No-op migration (bug fix)
       "15.sql",
+      "16.sql",
+      "17.sql",
     ];
 
     const migrations = migrationFiles.map((file) => {

@@ -7,6 +7,7 @@ import {
   ProjectCategory,
   ProjectItem,
   ProjectItemId,
+  ProjectItemsStats,
   ProjectItemType,
   ProjectItemWithDetails,
   Repository,
@@ -120,17 +121,16 @@ export interface ProjectItemRepository {
    * Retrieves all project items with their associated Owner, Repository (if exists),
    * and a list of developers with their profiles, project items associations, and owner info.
    *
-   * @param options - Query options for sorting and limiting results
-   * @returns A promise that resolves to an object containing project items and total count
+   * @param queryParams - Query options grouped by project item type
+   * @returns A promise that resolves to the hydrated project items of the requested type,
+   * optionally sorted and limited according to `queryParams`.
    */
-  getAllWithDetails(options?: {
-    sortBy?: dto.ProjectItemSortField;
-    sortOrder?: dto.SortOrder;
-    limit?: number;
-  }): Promise<{
-    projectItems: ProjectItemWithDetails[];
-    total: number;
-  }>;
+  getAllWithDetails(
+    projectItemType: ProjectItemType,
+    queryParams?: dto.ProjectItemQueryParams,
+  ): Promise<ProjectItemWithDetails[]>;
+
+  getProjectItemsStats(): Promise<ProjectItemsStats>;
 
   /**
    * Retrieves all repository project items that belong to a specific GitHub organization.
@@ -147,6 +147,19 @@ class ProjectItemRepositoryImpl
   extends BaseRepository<ProjectItem>
   implements ProjectItemRepository
 {
+  private static readonly SELECT_COLUMNS = `
+    id,
+    project_item_type,
+    github_owner_id,
+    github_owner_login,
+    github_repository_id,
+    github_repository_name,
+    url,
+    categories::text[] AS categories,
+    created_at,
+    updated_at
+  `;
+
   constructor(pool: Pool) {
     super(pool, ProjectItemCompanion);
   }
@@ -218,7 +231,7 @@ class ProjectItemRepositoryImpl
         github_repository_name,
         url
       ) VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
+      RETURNING ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
     `;
 
     const values = [
@@ -242,7 +255,7 @@ class ProjectItemRepositoryImpl
       UPDATE project_item
       SET categories = $2, updated_at = now()
       WHERE id = $1
-      RETURNING *
+      RETURNING ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
     `;
     const result = await this.pool.query(query, [id.uuid, categories]);
 
@@ -259,7 +272,7 @@ class ProjectItemRepositoryImpl
 
   async getById(id: ProjectItemId): Promise<ProjectItem | null> {
     const result = await this.pool.query(
-      `SELECT * FROM project_item WHERE id = $1`,
+      `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS} FROM project_item WHERE id = $1`,
       [id.uuid],
     );
     return this.getOptional(result.rows);
@@ -270,7 +283,8 @@ class ProjectItemRepositoryImpl
   ): Promise<ProjectItem | null> {
     // Changed type to ProjectItemId
     const result = await this.pool.query(
-      `SELECT * FROM project_item WHERE id = $1 ORDER BY created_at DESC`,
+      `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
+       FROM project_item WHERE id = $1 ORDER BY created_at DESC`,
       [projectItemId.uuid], // Access uuid property
     );
     return this.getOptional(result.rows);
@@ -280,7 +294,8 @@ class ProjectItemRepositoryImpl
     repositoryId: RepositoryId,
   ): Promise<ProjectItem | null> {
     const result = await this.pool.query(
-      `SELECT * FROM project_item
+      `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
+       FROM project_item
        WHERE github_owner_id = $1 AND github_repository_id = $2`,
       [repositoryId.ownerId.githubId, repositoryId.githubId],
     );
@@ -289,7 +304,8 @@ class ProjectItemRepositoryImpl
 
   async getByGithubOwner(ownerId: OwnerId): Promise<ProjectItem[]> {
     const result = await this.pool.query(
-      `SELECT * FROM project_item
+      `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
+       FROM project_item
        WHERE github_owner_id = $1
        AND project_item_type = $2
        AND github_repository_id IS NULL
@@ -301,7 +317,8 @@ class ProjectItemRepositoryImpl
 
   async getByUrl(url: string): Promise<ProjectItem | null> {
     const result = await this.pool.query(
-      `SELECT * FROM project_item WHERE project_item_type = $1 AND url = $2`,
+      `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
+       FROM project_item WHERE project_item_type = $1 AND url = $2`,
       [ProjectItemType.URL, url],
     );
     return this.getOptional(result.rows);
@@ -356,7 +373,7 @@ class ProjectItemRepositoryImpl
    */
   async getAll(): Promise<ProjectItem[]> {
     const query = `
-      SELECT *
+      SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
       FROM project_item
       ORDER BY created_at DESC
     `;
@@ -375,19 +392,13 @@ class ProjectItemRepositoryImpl
    * Retrieves all project items with their associated Owner, Repository (if exists),
    * and a list of developers with their profiles, project items associations, and owner info.
    */
-  async getAllWithDetails(options?: {
-    sortBy?: dto.ProjectItemSortField;
-    sortOrder?: dto.SortOrder;
-    limit?: number;
-  }): Promise<{
-    projectItems: ProjectItemWithDetails[];
-    total: number;
-  }> {
-    console.log("Starting getAllWithDetails query with options:", options);
-
-    const sortBy = options?.sortBy;
-    const sortOrder = options?.sortOrder || dto.SortOrder.DESC;
-    const limit = options?.limit;
+  async getAllWithDetails(
+    projectItemType: ProjectItemType,
+    queryParams?: dto.ProjectItemQueryParams,
+  ): Promise<ProjectItemWithDetails[]> {
+    const sortBy = queryParams?.sortBy;
+    const sortOrder = queryParams?.sortOrder || dto.SortOrder.DESC;
+    const limit = queryParams?.limit;
 
     // Define table prefixes for clarity and maintainability
     const PREFIX = {
@@ -400,75 +411,72 @@ class ProjectItemRepositoryImpl
     };
 
     // Build ORDER BY clause for main query
-    let orderByClause = "";
-    // Build ORDER BY clause for subquery (uses different aliases)
-    let subqueryOrderByClause = "";
+    let limitedProjectItemsSubquery: string;
 
-    if (sortBy) {
-      switch (sortBy) {
-        case dto.ProjectItemSortField.STARS:
-        case dto.ProjectItemSortField.STARGAZERS:
-          orderByClause = `r.github_stargazers_count ${sortOrder.toUpperCase()} NULLS LAST, pi.created_at DESC`;
-          subqueryOrderByClause = `r2.github_stargazers_count ${sortOrder.toUpperCase()} NULLS LAST, pi2.created_at DESC`;
-          break;
-        case dto.ProjectItemSortField.FORKS:
-          orderByClause = `r.github_forks_count ${sortOrder.toUpperCase()} NULLS LAST, pi.created_at DESC`;
-          subqueryOrderByClause = `r2.github_forks_count ${sortOrder.toUpperCase()} NULLS LAST, pi2.created_at DESC`;
-          break;
-        case dto.ProjectItemSortField.FOLLOWERS:
-          orderByClause = `o.github_followers ${sortOrder.toUpperCase()} NULLS LAST, pi.created_at DESC`;
-          subqueryOrderByClause = `o2.github_followers ${sortOrder.toUpperCase()} NULLS LAST, pi2.created_at DESC`;
-          break;
-        case dto.ProjectItemSortField.MAINTAINERS:
-          orderByClause = `maintainers_count ${sortOrder.toUpperCase()}, pi.created_at DESC`;
-          subqueryOrderByClause = `pi2.created_at DESC`; // Fallback for subquery
-          break;
-        case dto.ProjectItemSortField.CREATED_AT:
-          orderByClause = `pi.created_at ${sortOrder.toUpperCase()}`;
-          subqueryOrderByClause = `pi2.created_at ${sortOrder.toUpperCase()}`;
-          break;
-        case dto.ProjectItemSortField.UPDATED_AT:
-          orderByClause = `pi.updated_at ${sortOrder.toUpperCase()}`;
-          subqueryOrderByClause = `pi2.updated_at ${sortOrder.toUpperCase()}`;
-          break;
-        default:
-          orderByClause = "pi.created_at DESC, dp.created_at ASC";
-          subqueryOrderByClause = "pi2.created_at DESC";
-      }
+    const sqlSortableFields: Partial<
+      Record<
+        dto.ProjectItemSortField,
+        { table: string; joinCondition: string; column: string }
+      >
+    > = {
+      [dto.ProjectItemSortField.STARS]: {
+        table: "github_repository r",
+        joinCondition: "pi2.github_repository_id = r.github_id",
+        column: "r.github_stargazers_count",
+      },
+      [dto.ProjectItemSortField.STARGAZERS]: {
+        table: "github_repository r",
+        joinCondition: "pi2.github_repository_id = r.github_id",
+        column: "r.github_stargazers_count",
+      },
+      [dto.ProjectItemSortField.FORKS]: {
+        table: "github_repository r",
+        joinCondition: "pi2.github_repository_id = r.github_id",
+        column: "r.github_forks_count",
+      },
+      [dto.ProjectItemSortField.FOLLOWERS]: {
+        table: "github_owner o",
+        joinCondition: "pi2.github_owner_id = o.github_id",
+        column: "o.github_followers",
+      },
+      [dto.ProjectItemSortField.CREATED_AT]: {
+        table: "",
+        joinCondition: "",
+        column: `pi.created_at ${sortOrder.toUpperCase()}`,
+      },
+      [dto.ProjectItemSortField.UPDATED_AT]: {
+        table: "",
+        joinCondition: "",
+        column: `pi.updated_at ${sortOrder.toUpperCase()}`,
+      },
+    };
+
+    const sortConfig = sortBy ? sqlSortableFields[sortBy] : undefined;
+    const mainOrderBy =
+      sortBy === dto.ProjectItemSortField.CREATED_AT
+        ? `pi.created_at ${sortOrder.toUpperCase()}`
+        : sortBy === dto.ProjectItemSortField.UPDATED_AT
+          ? `pi.updated_at ${sortOrder.toUpperCase()}`
+          : "pi.created_at DESC";
+
+    if (sortConfig && sortConfig.table) {
+      limitedProjectItemsSubquery = `(
+        SELECT pi2.*
+        FROM project_item pi2
+        LEFT JOIN ${sortConfig.table} ON ${sortConfig.joinCondition}
+        WHERE pi2.project_item_type = '${projectItemType}'
+        ORDER BY ${sortConfig.column} ${sortOrder.toUpperCase()} NULLS LAST, pi2.created_at DESC
+        ${limit ? `LIMIT ${limit}` : ""}
+      ) pi`;
     } else {
-      orderByClause = "pi.created_at DESC, dp.created_at ASC";
-      subqueryOrderByClause = "pi2.created_at DESC";
+      limitedProjectItemsSubquery = `(
+        SELECT *
+        FROM project_item pi
+        WHERE pi.project_item_type = '${projectItemType}'
+        ORDER BY ${mainOrderBy}
+        ${limit ? `LIMIT ${limit}` : ""}
+      ) pi`;
     }
-
-    // For maintainers sorting, we need to sort in memory
-    const needsMaintainersCount =
-      sortBy === dto.ProjectItemSortField.MAINTAINERS;
-
-    // First, get the total count
-    const countQuery = `
-      SELECT COUNT(DISTINCT pi.id) as total
-      FROM project_item pi
-      LEFT JOIN github_owner o ON pi.github_owner_id = o.github_id
-      LEFT JOIN github_repository r ON pi.github_repository_id = r.github_id
-    `;
-    const countResult = await this.pool.query(countQuery);
-    const total = parseInt(countResult.rows[0]?.total || "0");
-
-    // When sorting by maintainers, we can't use LIMIT in SQL, so we'll limit in memory
-    // For other sorts, we use a subquery to limit project items before joining developers
-    const needsOwnerJoinInSubquery =
-      sortBy === dto.ProjectItemSortField.FOLLOWERS;
-    const limitedProjectItemsSubquery =
-      !needsMaintainersCount && limit
-        ? `
-        (SELECT pi2.*
-         FROM project_item pi2
-         LEFT JOIN github_repository r2 ON pi2.github_repository_id = r2.github_id
-         ${needsOwnerJoinInSubquery ? "LEFT JOIN github_owner o2 ON pi2.github_owner_id = o2.github_id" : ""}
-         ORDER BY ${subqueryOrderByClause}
-         LIMIT ${limit}) pi
-      `
-        : "project_item pi";
 
     const query = `
       SELECT 
@@ -480,6 +488,7 @@ class ProjectItemRepositoryImpl
         pi.github_repository_id AS ${PREFIX.projectItem}github_repository_id,
         pi.github_repository_name AS ${PREFIX.projectItem}github_repository_name,
         pi.url AS ${PREFIX.projectItem}url,
+        pi.categories::text[] AS ${PREFIX.projectItem}categories,
         pi.created_at AS ${PREFIX.projectItem}created_at,
         pi.updated_at AS ${PREFIX.projectItem}updated_at,
         
@@ -569,17 +578,17 @@ class ProjectItemRepositoryImpl
       -- This includes both direct matches and organization-level matches
       LEFT JOIN developer_project_items dpi 
         ON (
-          -- Direct match: developer linked directly to this project item
           pi.id = dpi.project_item_id
-          OR
-          -- Organization match: for repositories, also include developers linked to the parent organization
-          (pi.project_item_type = 'GITHUB_REPOSITORY' 
-           AND EXISTS (
-             SELECT 1 FROM project_item org_pi
-             WHERE org_pi.id = dpi.project_item_id
-             AND org_pi.project_item_type = 'GITHUB_OWNER'
-             AND org_pi.github_owner_id = pi.github_owner_id
-           ))
+          OR (
+            pi.project_item_type = 'GITHUB_REPOSITORY'
+            AND EXISTS (
+              SELECT 1 
+              FROM project_item org_pi
+              WHERE org_pi.project_item_type = 'GITHUB_OWNER'
+                AND org_pi.github_owner_id = pi.github_owner_id
+                AND org_pi.id = dpi.project_item_id
+            )
+          )
         )
       
       -- LEFT JOIN to get developer profile information
@@ -592,18 +601,10 @@ class ProjectItemRepositoryImpl
       LEFT JOIN github_owner devo 
         ON au.github_owner_id = devo.github_id
       
-      ${
-        !needsMaintainersCount && !limit
-          ? `ORDER BY ${orderByClause}`
-          : needsMaintainersCount
-            ? "ORDER BY pi.created_at DESC, dp.created_at ASC"
-            : "ORDER BY dp.created_at ASC"
-      }
+      ORDER BY ${mainOrderBy}
     `;
 
     const result = await this.pool.query(query);
-
-    console.log(`Query returned ${result.rows.length} rows`);
 
     // Group the results by project item
     const projectItemsMap = new Map<string, ProjectItemWithDetails>();
@@ -785,43 +786,72 @@ class ProjectItemRepositoryImpl
 
     let projectItems = Array.from(projectItemsMap.values());
 
-    // If sorting by maintainers, we need to sort in memory since we have the count
-    if (sortBy === dto.ProjectItemSortField.MAINTAINERS) {
-      projectItems.sort((a, b) => {
-        const countA = a.developers.length;
-        const countB = b.developers.length;
-        const comparison = countA - countB;
-        return sortOrder === dto.SortOrder.ASC ? comparison : -comparison;
-      });
-
-      // Apply limit after sorting
-      if (limit) {
-        projectItems = projectItems.slice(0, limit);
-      }
-    }
-    // For other sorts, apply limit via SQL (already handled in query)
-    else if (limit && !needsMaintainersCount) {
-      // Limit was already applied in SQL
+    if (limit !== undefined) {
+      projectItems = projectItems.slice(0, limit);
     }
 
-    console.log("getAllWithDetails query completed:", {
-      totalRows: result.rows.length,
-      projectItemsCount: projectItems.length,
-      total,
-      processedDevelopers: processedDevelopersCount,
-      skippedDevelopers: skippedDevelopersCount,
-      totalDevelopersInResult: projectItems.reduce(
-        (sum, item) => sum + item.developers.length,
-        0,
+    return projectItems;
+  }
+
+  async getProjectItemsStats(): Promise<ProjectItemsStats> {
+    const query = `
+      WITH project_base AS (
+        SELECT 
+          pi.id,
+          pi.project_item_type,
+          r.github_stargazers_count,
+          r.github_forks_count,
+          o.github_followers
+        FROM project_item pi
+        LEFT JOIN github_repository r ON pi.github_repository_id = r.github_id
+        LEFT JOIN github_owner o ON pi.github_owner_id = o.github_id
       ),
-      sortBy,
-      sortOrder,
-      limit,
-    });
+      maintainers AS (
+        SELECT DISTINCT dp.id
+        FROM project_item pi
+        LEFT JOIN developer_project_items dpi
+          ON (
+            pi.id = dpi.project_item_id
+            OR (
+              pi.project_item_type = 'GITHUB_REPOSITORY'
+              AND EXISTS (
+                SELECT 1
+                FROM project_item org_pi
+                WHERE org_pi.id = dpi.project_item_id
+                  AND org_pi.project_item_type = 'GITHUB_OWNER'
+                  AND org_pi.github_owner_id = pi.github_owner_id
+              )
+            )
+          )
+        LEFT JOIN developer_profile dp ON dpi.developer_profile_id = dp.id
+        LEFT JOIN app_user au ON dp.user_id = au.id
+        WHERE dpi.id IS NOT NULL
+          AND au.github_owner_id IS NOT NULL
+      )
+      SELECT
+        COUNT(*) AS total_projects,
+        COALESCE(SUM(CASE WHEN project_item_type = 'GITHUB_REPOSITORY' THEN project_base.github_stargazers_count ELSE 0 END), 0) AS total_stars,
+        COALESCE(SUM(CASE WHEN project_item_type = 'GITHUB_REPOSITORY' THEN project_base.github_forks_count ELSE 0 END), 0) AS total_forks,
+        COALESCE(SUM(CASE WHEN project_item_type = 'GITHUB_OWNER' THEN project_base.github_followers ELSE 0 END), 0) AS total_followers,
+        (SELECT COUNT(*) FROM maintainers) AS total_maintainers
+      FROM project_base;
+    `;
+
+    const result = await this.pool.query(query);
+    const row = result.rows[0] ?? {
+      total_projects: 0,
+      total_stars: 0,
+      total_forks: 0,
+      total_followers: 0,
+      total_maintainers: 0,
+    };
 
     return {
-      projectItems,
-      total,
+      totalProjects: Number(row.total_projects) || 0,
+      totalMaintainers: Number(row.total_maintainers) || 0,
+      totalStars: Number(row.total_stars) || 0,
+      totalForks: Number(row.total_forks) || 0,
+      totalFollowers: Number(row.total_followers) || 0,
     };
   }
 
@@ -829,7 +859,7 @@ class ProjectItemRepositoryImpl
     organizationOwnerId: OwnerId,
   ): Promise<ProjectItem[]> {
     const query = `
-      SELECT * FROM project_item
+      SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS} FROM project_item
       WHERE project_item_type = $1
         AND github_owner_id = $2
         AND github_repository_id IS NOT NULL
