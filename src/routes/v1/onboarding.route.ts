@@ -48,13 +48,13 @@ router.put(
 
 // --- Settings management ---
 
-// Route to set a developer's income streams
+// Route to set a developer's preferences (income streams and community supporter)
 router.put(
-  "/settings/income-streams",
-  validateParams(dto.SetDeveloperIncomeStreamsCompanion.paramsSchema),
-  validateBody(dto.SetDeveloperIncomeStreamsCompanion.bodySchema),
-  validateQuery(dto.SetDeveloperIncomeStreamsCompanion.querySchema),
-  OnboardingController.setDeveloperIncomeStreams,
+  "/settings/preferences",
+  validateParams(dto.SetDeveloperPreferencesCompanion.paramsSchema),
+  validateBody(dto.SetDeveloperPreferencesCompanion.bodySchema),
+  validateQuery(dto.SetDeveloperPreferencesCompanion.querySchema),
+  OnboardingController.setDeveloperPreferences,
 );
 
 // Route to set developer service settings (e.g., hourly commitment, availability)

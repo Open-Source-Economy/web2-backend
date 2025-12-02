@@ -66,14 +66,14 @@ export interface OnboardingController {
   ): Promise<void>;
 
   // Settings management
-  setDeveloperIncomeStreams(
+  setDeveloperPreferences(
     req: Request<
-      dto.SetDeveloperIncomeStreamsParams,
-      dto.ResponseBody<dto.SetDeveloperIncomeStreamsResponse>,
-      dto.SetDeveloperIncomeStreamsBody,
-      dto.SetDeveloperIncomeStreamsQuery
+      dto.SetDeveloperPreferencesParams,
+      dto.ResponseBody<dto.SetDeveloperPreferencesResponse>,
+      dto.SetDeveloperPreferencesBody,
+      dto.SetDeveloperPreferencesQuery
     >,
-    res: Response<dto.ResponseBody<dto.SetDeveloperIncomeStreamsResponse>>,
+    res: Response<dto.ResponseBody<dto.SetDeveloperPreferencesResponse>>,
   ): Promise<void>;
 
   setDeveloperServiceSettings(
@@ -255,9 +255,9 @@ export const OnboardingController: OnboardingController = {
     }
   },
 
-  async setDeveloperIncomeStreams(req, res) {
+  async setDeveloperPreferences(req, res) {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
-    const body: dto.SetDeveloperIncomeStreamsBody = req.body;
+    const body: dto.SetDeveloperPreferencesBody = req.body;
 
     const existingSettings = await developerSettingsRepo.findByProfileId(
       developerProfile.id,
@@ -265,16 +265,21 @@ export const OnboardingController: OnboardingController = {
 
     if (existingSettings) {
       await developerSettingsRepo.updatePartial(developerProfile.id, {
-        incomeStreams: body.incomeStreams,
+        royaltiesPreference: body.royaltiesPreference ?? undefined,
+        servicesPreference: body.servicesPreference ?? undefined,
+        communitySupporterPreference:
+          body.communitySupporterPreference ?? undefined,
       });
     } else {
       await developerSettingsRepo.create(
         developerProfile.id,
-        body.incomeStreams,
+        body.royaltiesPreference ?? null,
+        body.servicesPreference ?? null,
+        body.communitySupporterPreference ?? null,
       );
     }
 
-    const response: dto.SetDeveloperIncomeStreamsResponse = {};
+    const response: dto.SetDeveloperPreferencesResponse = {};
     res.status(StatusCodes.OK).send({ success: response });
   },
 

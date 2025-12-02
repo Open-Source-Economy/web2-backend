@@ -4,7 +4,7 @@ import {
   Currency,
   DeveloperProfileId,
   DeveloperSettings,
-  IncomeStreamType,
+  PreferenceType,
   OpenToOtherOpportunityType,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
@@ -20,18 +20,24 @@ export interface DeveloperSettingsRepository {
   /**
    * Creates new developer settings for a given developer profile.
    * @param developerProfileId The ID of the developer's profile.
-   * @param incomeStreams An array of income stream types.
+   * @param royaltiesPreference Optional preference for royalties income stream.
+   * @param servicesPreference Optional preference for services income stream.
+   * @param communitySupporterPreference Optional preference for being a community supporter.
    * @returns A Promise that resolves to the newly created DeveloperSettings.
    */
   create(
     developerProfileId: DeveloperProfileId,
-    incomeStreams: IncomeStreamType[],
+    royaltiesPreference?: PreferenceType | null,
+    servicesPreference?: PreferenceType | null,
+    communitySupporterPreference?: PreferenceType | null,
   ): Promise<DeveloperSettings>;
 
   /**
    * Updates existing developer settings for a given developer profile.
    * @param developerProfileId The ID of the developer's profile.
-   * @param incomeStreams An array of income stream types.
+   * @param royaltiesPreference Optional preference for royalties income stream.
+   * @param servicesPreference Optional preference for services income stream.
+   * @param communitySupporterPreference Optional preference for being a community supporter.
    * @param hourlyWeeklyCommitment The developer's hourly/weekly commitment.
    * @param hourlyWeeklyCommitmentComment An optional comment for hourly/weekly commitment.
    * @param openToOtherOpportunity The developer's openness to other opportunities.
@@ -44,7 +50,9 @@ export interface DeveloperSettingsRepository {
    */
   update(
     developerProfileId: DeveloperProfileId,
-    incomeStreams: IncomeStreamType[],
+    royaltiesPreference: PreferenceType | null,
+    servicesPreference: PreferenceType | null,
+    communitySupporterPreference: PreferenceType | null,
     hourlyWeeklyCommitment: number,
     hourlyWeeklyCommitmentComment: string | null,
     openToOtherOpportunity: OpenToOtherOpportunityType,
@@ -65,7 +73,9 @@ export interface DeveloperSettingsRepository {
   updatePartial(
     developerProfileId: DeveloperProfileId,
     updates: {
-      incomeStreams?: IncomeStreamType[];
+      royaltiesPreference?: PreferenceType | null;
+      servicesPreference?: PreferenceType | null;
+      communitySupporterPreference?: PreferenceType | null;
       hourlyWeeklyCommitment?: number;
       hourlyWeeklyCommitmentComment?: string | null;
       openToOtherOpportunity?: OpenToOtherOpportunityType;
@@ -88,7 +98,9 @@ export interface DeveloperSettingsRepository {
   /**
    * Inserts new developer settings or updates existing ones if a conflict on developer_profile_id occurs.
    * @param developerProfileId The ID of the developer's profile.
-   * @param incomeStreams An array of income stream types.
+   * @param royaltiesPreference Optional preference for royalties income stream.
+   * @param servicesPreference Optional preference for services income stream.
+   * @param communitySupporterPreference Optional preference for being a community supporter.
    * @param hourlyWeeklyCommitment The developer's hourly/weekly commitment.
    * @param hourlyWeeklyCommitmentComment An optional comment for hourly/weekly commitment.
    * @param openToOtherOpportunity The developer's openness to other opportunities.
@@ -100,7 +112,9 @@ export interface DeveloperSettingsRepository {
    */
   upsert(
     developerProfileId: DeveloperProfileId,
-    incomeStreams: IncomeStreamType[],
+    royaltiesPreference: PreferenceType | null,
+    servicesPreference: PreferenceType | null,
+    communitySupporterPreference: PreferenceType | null,
     hourlyWeeklyCommitment: number,
     hourlyWeeklyCommitmentComment: string | null,
     openToOtherOpportunity: OpenToOtherOpportunityType,
@@ -120,12 +134,14 @@ class DeveloperSettingsRepositoryImpl
   }
 
   /**
-   * Keep a single source of truth for selects, and cast enum[] -> text[] so pg returns JS arrays.
+   * Keep a single source of truth for selects.
    */
   private static readonly SELECT_COLUMNS = `
     id,
     developer_profile_id,
-    income_streams::text[] AS income_streams,
+    royalties_preference,
+    services_preference,
+    community_supporter_preference,
     hourly_weekly_commitment,
     hourly_weekly_commitment_comment,
     open_to_other_opportunity,
@@ -139,18 +155,26 @@ class DeveloperSettingsRepositoryImpl
 
   async create(
     developerProfileId: DeveloperProfileId,
-    incomeStreams: IncomeStreamType[],
+    royaltiesPreference?: PreferenceType | null,
+    servicesPreference?: PreferenceType | null,
+    communitySupporterPreference?: PreferenceType | null,
   ): Promise<DeveloperSettings> {
     const query = `
       INSERT INTO developer_settings (
         developer_profile_id,
-        income_streams
-      ) VALUES ($1, $2)
+        royalties_preference,
+        services_preference,
+        community_supporter_preference
+      ) VALUES ($1, $2, $3, $4)
       RETURNING ${DeveloperSettingsRepositoryImpl.SELECT_COLUMNS}
     `;
 
-    // Setting default values for the parameters that are no longer in the function signature
-    const values = [developerProfileId.uuid, incomeStreams];
+    const values = [
+      developerProfileId.uuid,
+      royaltiesPreference ?? null,
+      servicesPreference ?? null,
+      communitySupporterPreference ?? null,
+    ];
 
     const result = await this.pool.query(query, values);
     return this.getOne(result.rows);
@@ -158,7 +182,9 @@ class DeveloperSettingsRepositoryImpl
 
   async update(
     developerProfileId: DeveloperProfileId,
-    incomeStreams: IncomeStreamType[],
+    royaltiesPreference: PreferenceType | null,
+    servicesPreference: PreferenceType | null,
+    communitySupporterPreference: PreferenceType | null,
     hourlyWeeklyCommitment: number,
     hourlyWeeklyCommitmentComment: string | null,
     openToOtherOpportunity: OpenToOtherOpportunityType,
@@ -170,14 +196,16 @@ class DeveloperSettingsRepositoryImpl
     const query = `
       UPDATE developer_settings
       SET
-        income_streams = $2,
-        hourly_weekly_commitment = $3,
-        hourly_weekly_commitment_comment = $4,
-        open_to_other_opportunity = $5,
-        open_to_other_opportunity_comment = $6,
-        hourly_rate = $7,
-        hourly_rate_comment = $8,
-        currency = $9,
+        royalties_preference = $2,
+        services_preference = $3,
+        community_supporter_preference = $4,
+        hourly_weekly_commitment = $5,
+        hourly_weekly_commitment_comment = $6,
+        open_to_other_opportunity = $7,
+        open_to_other_opportunity_comment = $8,
+        hourly_rate = $9,
+        hourly_rate_comment = $10,
+        currency = $11,
         updated_at = now()
       WHERE developer_profile_id = $1
       RETURNING ${DeveloperSettingsRepositoryImpl.SELECT_COLUMNS}
@@ -185,7 +213,9 @@ class DeveloperSettingsRepositoryImpl
 
     const values = [
       developerProfileId.uuid,
-      incomeStreams,
+      royaltiesPreference,
+      servicesPreference,
+      communitySupporterPreference,
       hourlyWeeklyCommitment,
       hourlyWeeklyCommitmentComment,
       openToOtherOpportunity,
@@ -207,7 +237,10 @@ class DeveloperSettingsRepositoryImpl
   async updatePartial(
     developerProfileId: DeveloperProfileId,
     updates: {
-      incomeStreams?: IncomeStreamType[];
+      royaltiesPreference?: PreferenceType | null;
+      servicesPreference?: PreferenceType | null;
+      donationsPreference?: PreferenceType | null;
+      communitySupporterPreference?: PreferenceType | null;
       hourlyWeeklyCommitment?: number;
       hourlyWeeklyCommitmentComment?: string | null;
       openToOtherOpportunity?: OpenToOtherOpportunityType;
@@ -221,9 +254,19 @@ class DeveloperSettingsRepositoryImpl
     const values: any[] = [developerProfileId.uuid]; // $1 for WHERE clause
     let paramIndex = 2; // Start for dynamic parameters
 
-    if (updates.incomeStreams !== undefined) {
-      setParts.push(`income_streams = $${paramIndex}`);
-      values.push(updates.incomeStreams);
+    if (updates.royaltiesPreference !== undefined) {
+      setParts.push(`royalties_preference = $${paramIndex}`);
+      values.push(updates.royaltiesPreference);
+      paramIndex++;
+    }
+    if (updates.servicesPreference !== undefined) {
+      setParts.push(`services_preference = $${paramIndex}`);
+      values.push(updates.servicesPreference);
+      paramIndex++;
+    }
+    if (updates.communitySupporterPreference !== undefined) {
+      setParts.push(`community_supporter_preference = $${paramIndex}`);
+      values.push(updates.communitySupporterPreference);
       paramIndex++;
     }
     if (updates.hourlyWeeklyCommitment !== undefined) {
@@ -303,7 +346,9 @@ class DeveloperSettingsRepositoryImpl
 
   async upsert(
     developerProfileId: DeveloperProfileId,
-    incomeStreams: IncomeStreamType[],
+    royaltiesPreference: PreferenceType | null,
+    servicesPreference: PreferenceType | null,
+    communitySupporterPreference: PreferenceType | null,
     hourlyWeeklyCommitment: number,
     hourlyWeeklyCommitmentComment: string | null,
     openToOtherOpportunity: OpenToOtherOpportunityType,
@@ -315,7 +360,9 @@ class DeveloperSettingsRepositoryImpl
     const query = `
       INSERT INTO developer_settings (
         developer_profile_id,
-        income_streams,
+        royalties_preference,
+        services_preference,
+        community_supporter_preference,
         hourly_weekly_commitment,
         hourly_weekly_commitment_comment,
         open_to_other_opportunity,
@@ -323,10 +370,12 @@ class DeveloperSettingsRepositoryImpl
         hourly_rate,
         hourly_rate_comment,
         currency
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       ON CONFLICT (developer_profile_id)
         DO UPDATE SET
-                    income_streams = EXCLUDED.income_streams,
+                    royalties_preference = EXCLUDED.royalties_preference,
+                    services_preference = EXCLUDED.services_preference,
+                    community_supporter_preference = EXCLUDED.community_supporter_preference,
                     hourly_weekly_commitment = EXCLUDED.hourly_weekly_commitment,
                     hourly_weekly_commitment_comment = EXCLUDED.hourly_weekly_commitment_comment,
                     open_to_other_opportunity = EXCLUDED.open_to_other_opportunity,
@@ -340,7 +389,9 @@ class DeveloperSettingsRepositoryImpl
 
     const values = [
       developerProfileId.uuid,
-      incomeStreams,
+      royaltiesPreference,
+      servicesPreference,
+      communitySupporterPreference,
       hourlyWeeklyCommitment,
       hourlyWeeklyCommitmentComment,
       openToOtherOpportunity,

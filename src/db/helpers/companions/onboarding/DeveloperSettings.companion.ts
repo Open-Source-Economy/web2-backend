@@ -3,7 +3,7 @@ import {
   DeveloperProfileId,
   DeveloperSettings,
   DeveloperSettingsId,
-  IncomeStreamType,
+  PreferenceType,
   OpenToOtherOpportunityType,
   ValidationError,
   Validator,
@@ -19,9 +19,17 @@ export namespace DeveloperSettingsCompanion {
     const developerProfileId = validator.requiredString(
       `${table_prefix}developer_profile_id`,
     );
-    const incomeStreams = validator.optionalArrayOfEnums(
-      `${table_prefix}income_streams`,
-      Object.values(IncomeStreamType) as IncomeStreamType[],
+    const royaltiesPreference = validator.optionalEnum(
+      `${table_prefix}royalties_preference`,
+      Object.values(PreferenceType) as PreferenceType[],
+    );
+    const servicesPreference = validator.optionalEnum(
+      `${table_prefix}services_preference`,
+      Object.values(PreferenceType) as PreferenceType[],
+    );
+    const communitySupporterPreference = validator.optionalEnum(
+      `${table_prefix}community_supporter_preference`,
+      Object.values(PreferenceType) as PreferenceType[],
     );
     const hourlyWeeklyCommitment = validator.optionalNumber(
       `${table_prefix}hourly_weekly_commitment`,
@@ -55,7 +63,9 @@ export namespace DeveloperSettingsCompanion {
     const success: DeveloperSettings = {
       id: new DeveloperSettingsId(id),
       developerProfileId: new DeveloperProfileId(developerProfileId),
-      incomeStreams: incomeStreams,
+      royaltiesPreference,
+      servicesPreference,
+      communitySupporterPreference,
       hourlyWeeklyCommitment,
       hourlyWeeklyCommitmentComment,
       openToOtherOpportunity,

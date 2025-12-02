@@ -336,10 +336,26 @@ export class MailService {
     // Build settings section
     const settingsSection = fullProfile.settings
       ? (() => {
+          // Build preferences display
+          const preferences = [];
+          if (fullProfile.settings!.servicesPreference) {
+            preferences.push(
+              `Services: ${fullProfile.settings!.servicesPreference}`,
+            );
+          }
+          if (fullProfile.settings!.royaltiesPreference) {
+            preferences.push(
+              `Common Pot: ${fullProfile.settings!.royaltiesPreference}`,
+            );
+          }
+          if (fullProfile.settings!.communitySupporterPreference) {
+            preferences.push(
+              `Community Supporter: ${fullProfile.settings!.communitySupporterPreference}`,
+            );
+          }
           const incomeStreamsText =
-            fullProfile.settings!.incomeStreams &&
-            fullProfile.settings!.incomeStreams.length > 0
-              ? `<div class="item-detail"><strong>Income Streams:</strong> ${fullProfile.settings!.incomeStreams.join(", ")}</div>`
+            preferences.length > 0
+              ? `<div class="item-detail"><strong>Participation Preferences:</strong> ${preferences.join(", ")}</div>`
               : "";
           const availabilityText =
             fullProfile.settings!.hourlyWeeklyCommitment !== undefined &&
