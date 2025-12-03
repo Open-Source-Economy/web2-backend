@@ -7,6 +7,7 @@ import {
   PreferenceType,
   OpenToOtherOpportunityType,
 } from "@open-source-economy/api-types";
+import * as dto from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { BaseRepository } from "../helpers";
 import { DeveloperSettingsCompanion } from "../helpers/companions";
@@ -72,18 +73,9 @@ export interface DeveloperSettingsRepository {
    */
   updatePartial(
     developerProfileId: DeveloperProfileId,
-    updates: {
-      royaltiesPreference?: PreferenceType | null;
-      servicesPreference?: PreferenceType | null;
-      communitySupporterPreference?: PreferenceType | null;
-      hourlyWeeklyCommitment?: number;
-      hourlyWeeklyCommitmentComment?: string | null;
-      openToOtherOpportunity?: OpenToOtherOpportunityType;
-      openToOtherOpportunityComment?: string | null;
-      hourlyRate?: number;
-      hourlyRateComment?: string | null;
-      currency?: Currency;
-    },
+    updates: Partial<
+      dto.SetDeveloperPreferencesBody & dto.SetDeveloperServiceSettingsBody
+    >,
   ): Promise<DeveloperSettings>;
 
   /**
@@ -239,7 +231,6 @@ class DeveloperSettingsRepositoryImpl
     updates: {
       royaltiesPreference?: PreferenceType | null;
       servicesPreference?: PreferenceType | null;
-      donationsPreference?: PreferenceType | null;
       communitySupporterPreference?: PreferenceType | null;
       hourlyWeeklyCommitment?: number;
       hourlyWeeklyCommitmentComment?: string | null;

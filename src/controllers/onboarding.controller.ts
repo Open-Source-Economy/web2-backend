@@ -264,12 +264,7 @@ export const OnboardingController: OnboardingController = {
     );
 
     if (existingSettings) {
-      await developerSettingsRepo.updatePartial(developerProfile.id, {
-        royaltiesPreference: body.royaltiesPreference ?? undefined,
-        servicesPreference: body.servicesPreference ?? undefined,
-        communitySupporterPreference:
-          body.communitySupporterPreference ?? undefined,
-      });
+      await developerSettingsRepo.updatePartial(developerProfile.id, body);
     } else {
       await developerSettingsRepo.create(
         developerProfile.id,
@@ -294,21 +289,11 @@ export const OnboardingController: OnboardingController = {
     if (!existingSettings) {
       throw new dto.ApiError(
         StatusCodes.BAD_REQUEST,
-        "Developer settings must be initialized before setting income streams. Please set service settings first.",
+        "Developer settings must be initialized before setting preferences. Please set preferences first.",
       );
-    } else {
-      await developerSettingsRepo.updatePartial(developerProfile.id, {
-        hourlyWeeklyCommitment: body.hourlyWeeklyCommitment,
-        hourlyWeeklyCommitmentComment:
-          body.hourlyWeeklyCommitmentComments || null,
-        openToOtherOpportunity: body.openToOtherOpportunity,
-        openToOtherOpportunityComment:
-          body.openToOtherOpportunityComments || null,
-        hourlyRate: body.hourlyRate,
-        hourlyRateComment: body.hourlyRateComments || null,
-        currency: body.currency,
-      });
     }
+
+    await developerSettingsRepo.updatePartial(developerProfile.id, body);
 
     const response: dto.SetDeveloperServiceSettingsResponse = {};
     res.status(StatusCodes.OK).send({ success: response });
