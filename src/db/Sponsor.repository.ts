@@ -5,7 +5,7 @@ import {
   StripeCustomerId,
   OwnerId,
 } from "@open-source-economy/api-types";
-import { pool } from "./dbPool";
+import { pool } from "../dbPool";
 import { SponsorCompanion } from "./helpers/companions";
 
 export function getSponsorRepository(): SponsorRepository {
