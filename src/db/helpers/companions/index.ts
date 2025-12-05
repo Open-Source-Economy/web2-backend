@@ -4,6 +4,7 @@ export * from "./ManagedIssue.companion";
 export * from "./onboarding";
 export * from "./project";
 export * from "./RepositoryUserPermissionToken.companion";
+export * from "./Sponsor.companion";
 export * from "./stripe";
 export * from "./user";
 export * from "./UserRepository.companion";

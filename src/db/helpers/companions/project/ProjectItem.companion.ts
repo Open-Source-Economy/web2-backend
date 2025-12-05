@@ -38,25 +38,25 @@ export namespace ProjectItemCompanion {
 
     switch (projectItemType) {
       case ProjectItemType.GITHUB_OWNER:
-        const ownerIdResult = OwnerIdCompanion.fromBackendForeignKey(
+        const ownerId = OwnerIdCompanion.fromBackendForeignKey(
           row,
           table_prefix,
         );
-        if (ownerIdResult instanceof ValidationError) {
-          return ownerIdResult;
+        if (ownerId instanceof ValidationError) {
+          return ownerId;
         }
-        sourceIdentifier = ownerIdResult;
+        sourceIdentifier = ownerId;
         break;
 
       case ProjectItemType.GITHUB_REPOSITORY:
-        const repositoryIdResult = RepositoryIdCompanion.fromBackendForeignKey(
+        const repositoryId = RepositoryIdCompanion.fromBackendForeignKey(
           row,
           table_prefix,
         );
-        if (repositoryIdResult instanceof ValidationError) {
-          return repositoryIdResult;
+        if (repositoryId instanceof ValidationError) {
+          return repositoryId;
         }
-        sourceIdentifier = repositoryIdResult;
+        sourceIdentifier = repositoryId;
         break;
 
       case ProjectItemType.URL:

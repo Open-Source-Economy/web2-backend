@@ -45,5 +45,18 @@ export function errorHandler(
     logger.error(err);
   }
 
+  // Ensure CORS headers are set even on error responses
+  const origin = req.headers.origin;
+  if (origin) {
+    // Allow vercel.app domains in non-production
+    if (config.env !== NodeEnv.Production && origin.includes(".vercel.app")) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    } else if (origin === config.frontEndUrl) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
+  }
+
   res.status(statusCode).send(response);
 }
