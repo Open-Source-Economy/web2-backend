@@ -3,8 +3,8 @@ import {
   DeveloperProfileId,
   DeveloperSettings,
   DeveloperSettingsId,
-  PreferenceType,
   OpenToOtherOpportunityType,
+  PreferenceType,
   ValidationError,
   Validator,
 } from "@open-source-economy/api-types";

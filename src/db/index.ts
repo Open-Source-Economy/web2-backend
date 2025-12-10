@@ -4,6 +4,7 @@ import { getIssueFundingRepository } from "./IssueFunding.repository";
 import { getManualInvoiceRepository } from "./ManualInvoice.repository";
 import { getNewsletterSubscriptionRepository } from "./NewsletterSubscription.repository";
 import { getCreditRepository } from "./PlanAndCredits.repository";
+import { getSponsorRepository } from "./Sponsor.repository";
 
 export * from "./github/";
 export * from "./stripe";
@@ -18,6 +19,7 @@ export * from "./FinancialIssue.repository";
 export * from "./IssueFunding.repository";
 export * from "./ManualInvoice.repository";
 export * from "./PlanAndCredits.repository";
+export * from "./Sponsor.repository";
 
 export const addressRepo = getAddressRepository();
 export const planAndCreditsRepo = getCreditRepository();
@@ -28,3 +30,4 @@ export const issueFundingRepo = getIssueFundingRepository();
 export const manualInvoiceRepo = getManualInvoiceRepository();
 
 export const newsletterSubscriptionRepo = getNewsletterSubscriptionRepository();
+export const sponsorRepo = getSponsorRepository();

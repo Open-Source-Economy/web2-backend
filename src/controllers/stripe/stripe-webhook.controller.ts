@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import * as dto from "@open-source-economy/api-types";
 import {
   Address,
+  OwnerId,
   StripeCustomer,
   StripeCustomerId,
   StripeInvoice,
@@ -14,10 +15,12 @@ import { config, logger } from "../../config";
 import { stripe } from "./index";
 import {
   addressRepo,
+  sponsorRepo,
   stripeCustomerRepo,
   stripeInvoiceRepo,
   stripePriceRepo,
 } from "../../db";
+import { githubSyncService } from "../../services";
 
 export interface StripeWebhookController {
   webhook(req: Request, res: Response): Promise<void>;
@@ -91,6 +94,28 @@ const StripeWebhookHelpers = {
             currency,
           );
         }
+      }
+    }
+
+    // Extract sponsor metadata from checkout session if available
+    const githubOwnerLogin = session.metadata?.githubOwnerLogin;
+    if (githubOwnerLogin && stripeCustomerId) {
+      try {
+        logger.debug(
+          `🔔 Sponsor GitHub owner: ${githubOwnerLogin} for customer ${stripeCustomerId.id}`,
+        );
+        const ownerId = new OwnerId(githubOwnerLogin);
+
+        // Ensure the owner exists in the database before creating sponsor record
+        await githubSyncService.syncOwner(ownerId);
+
+        await sponsorRepo.createOrUpdate(stripeCustomerId, ownerId, true);
+      } catch (error) {
+        logger.error(
+          `Failed to create sponsor for customer ${stripeCustomerId.id}:`,
+          error,
+        );
+        // Don't throw - this is just for sponsor recognition, not critical for payment processing
       }
     }
   },

@@ -1,13 +1,13 @@
 import { Pool } from "pg";
+import * as dto from "@open-source-economy/api-types";
 import {
   ApiError,
   Currency,
   DeveloperProfileId,
   DeveloperSettings,
-  PreferenceType,
   OpenToOtherOpportunityType,
+  PreferenceType,
 } from "@open-source-economy/api-types";
-import * as dto from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { BaseRepository } from "../helpers";
 import { DeveloperSettingsCompanion } from "../helpers/companions";
