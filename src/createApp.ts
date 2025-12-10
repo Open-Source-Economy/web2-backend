@@ -8,7 +8,7 @@ import { pool } from "./dbPool";
 import helmet from "helmet";
 import { StatusCodes } from "http-status-codes";
 import * as morgan from "./config";
-import { config, NodeEnv } from "./config";
+import { config, logger, NodeEnv } from "./config";
 import { authLimiter } from "./middlewares/rateLimiter";
 import { ApiError } from "@open-source-economy/api-types";
 import path from "path";
@@ -22,6 +22,35 @@ export function createApp() {
   app.set("trust proxy", 1);
 
   const pgSession = require("connect-pg-simple")(session);
+
+  // Create session store with error handling
+  // connect-pg-simple automatically prunes expired sessions in the background
+  // Errors from pruning are handled by pool error handlers and unhandled rejection handler
+  const sessionStore = new pgSession({
+    pool: pool,
+    tableName: "user_session",
+    // Increase prune interval to reduce frequency of pruning operations
+    // This reduces the chance of encountering connection errors
+    pruneSessionInterval: 60 * 15, // Prune every 15 minutes instead of default 5 minutes
+  });
+
+  // Handle unhandled promise rejections from session pruning
+  // connect-pg-simple uses async/await internally, so pruning errors become unhandled rejections
+  process.on("unhandledRejection", (reason, promise) => {
+    if (reason && typeof reason === "object" && "code" in reason) {
+      const err = reason as { code?: string; message?: string };
+      // Connection reset errors are common in serverless environments and can be safely ignored
+      if (err.code === "ECONNRESET" || err.code === "EPIPE") {
+        logger.warn(
+          "Unhandled promise rejection from session pruning (connection reset):",
+          err.message,
+        );
+        return; // Don't log as error, just warn
+      }
+    }
+    // Log other unhandled rejections normally
+    logger.error("Unhandled promise rejection:", reason);
+  });
 
   const corsOptions = {
     origin: config.frontEndUrl,
@@ -100,10 +129,7 @@ export function createApp() {
         httpOnly: true,
         sameSite: config.env === NodeEnv.Production ? "lax" : "none", // TODO: lolo
       },
-      store: new pgSession({
-        pool: pool,
-        tableName: "user_session",
-      }),
+      store: sessionStore,
     }),
   );
 
