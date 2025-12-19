@@ -53,6 +53,21 @@ export interface GithubSyncService {
   syncOwner(ownerId: OwnerId): Promise<Owner>;
 
   /**
+   * Syncs multiple GitHub owners with rate limiting to avoid hitting GitHub API limits.
+   * Processes owners sequentially with delays between calls.
+   *
+   * @async
+   * @param {OwnerId[]} ownerIds - Array of owner IDs to sync
+   * @returns {Promise<Owner[]>}
+   *   Array of owner records, in the same order as input.
+   *   Failed syncs will throw errors, stopping the batch operation.
+   *
+   * @throws {Error}
+   *   If any owner sync fails (including rate limit errors), the operation stops.
+   */
+  syncOwners(ownerIds: OwnerId[]): Promise<Owner[]>;
+
+  /**
    * Fetches a GitHub repository (and its owner) by ID, ensures both are up-to-date in the local database,
    * and returns them.
    *
@@ -79,6 +94,23 @@ export interface GithubSyncService {
    *   is still unavailable.
    */
   syncRepository(repositoryId: RepositoryId): Promise<[Owner, Repository]>;
+
+  /**
+   * Syncs multiple GitHub repositories with rate limiting to avoid hitting GitHub API limits.
+   * Processes repositories sequentially with delays between calls.
+   *
+   * @async
+   * @param {RepositoryId[]} repositoryIds - Array of repository IDs to sync
+   * @returns {Promise<Array<[Owner, Repository]>>}
+   *   Array of tuples containing owner and repository records, in the same order as input.
+   *   Failed syncs will throw errors, stopping the batch operation.
+   *
+   * @throws {Error}
+   *   If any repository sync fails (including rate limit errors), the operation stops.
+   */
+  syncRepositories(
+    repositoryIds: RepositoryId[],
+  ): Promise<Array<[Owner, Repository]>>;
 
   /**
    * Syncs a project which can be either a repository or an owner-only project.
@@ -191,6 +223,54 @@ class GithubSyncServiceImpl implements GithubSyncService {
     }
   }
 
+  async syncOwners(ownerIds: OwnerId[]): Promise<Owner[]> {
+    if (ownerIds.length === 0) {
+      return [];
+    }
+
+    // GitHub GraphQL has query complexity limits, so we chunk large batches
+    // Typical limit is around 50-100 nodes per query, we use 50 to be safe
+    const CHUNK_SIZE = config.github.sync.chunkSize;
+    const chunks: OwnerId[][] = [];
+    for (let i = 0; i < ownerIds.length; i += CHUNK_SIZE) {
+      chunks.push(ownerIds.slice(i, i + CHUNK_SIZE));
+    }
+
+    logger.info(
+      `Starting bulk sync of ${ownerIds.length} owners via GraphQL (${chunks.length} request${chunks.length > 1 ? "s" : ""})`,
+    );
+
+    const allOwners: Owner[] = [];
+
+    try {
+      // Process each chunk
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex];
+        logger.debug(
+          `Processing chunk ${chunkIndex + 1}/${chunks.length} (${chunk.length} owners)`,
+        );
+
+        // Fetch owners in this chunk via GraphQL
+        const owners = await this.githubService.getOwnersBulk(chunk);
+
+        // Store all owners in the database
+        for (const owner of owners) {
+          await this.ownerRepo.insertOrUpdate(owner);
+          allOwners.push(owner);
+        }
+      }
+
+      logger.info(`Successfully synced all ${allOwners.length} owners`);
+
+      return allOwners;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to sync owners: ${errorMessage}`);
+      throw new Error(`Failed to sync owners: ${errorMessage}`);
+    }
+  }
+
   async syncRepository(
     repositoryId: RepositoryId,
   ): Promise<[Owner, Repository]> {
@@ -265,6 +345,67 @@ class GithubSyncServiceImpl implements GithubSyncService {
       throw new Error(
         `Failed to fetch all required data for repository ${JSON.stringify(repositoryId)}`,
       );
+    }
+  }
+
+  async syncRepositories(
+    repositoryIds: RepositoryId[],
+  ): Promise<Array<[Owner, Repository]>> {
+    if (repositoryIds.length === 0) {
+      return [];
+    }
+
+    // GitHub GraphQL has query complexity limits, so we chunk large batches
+    // Typical limit is around 50-100 nodes per query, we use 50 to be safe
+    const CHUNK_SIZE = config.github.sync.chunkSize;
+    const chunks: RepositoryId[][] = [];
+    for (let i = 0; i < repositoryIds.length; i += CHUNK_SIZE) {
+      chunks.push(repositoryIds.slice(i, i + CHUNK_SIZE));
+    }
+
+    logger.info(
+      `Starting bulk sync of ${repositoryIds.length} repositories via GraphQL (${chunks.length} request${chunks.length > 1 ? "s" : ""})`,
+    );
+
+    const allResults: Array<[Owner, Repository]> = [];
+    const uniqueOwners = new Map<string, Owner>();
+
+    try {
+      // Process each chunk
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex];
+        logger.debug(
+          `Processing chunk ${chunkIndex + 1}/${chunks.length} (${chunk.length} repositories)`,
+        );
+
+        // Fetch repositories in this chunk via GraphQL
+        const ownersAndRepos =
+          await this.githubService.getRepositoriesBulk(chunk);
+
+        // Store all owners and repositories in the database
+        for (const [owner, repo] of ownersAndRepos) {
+          // Track unique owners to avoid duplicate inserts
+          const ownerKey = owner.id.login;
+          if (!uniqueOwners.has(ownerKey)) {
+            uniqueOwners.set(ownerKey, owner);
+            await this.ownerRepo.insertOrUpdate(owner);
+          }
+
+          await this.repositoryRepo.insertOrUpdate(repo);
+          allResults.push([owner, repo]);
+        }
+      }
+
+      logger.info(
+        `Successfully synced all ${allResults.length} repositories via GraphQL`,
+      );
+
+      return allResults;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to sync repositories via GraphQL: ${errorMessage}`);
+      throw new Error(`Failed to sync repositories: ${errorMessage}`);
     }
   }
 

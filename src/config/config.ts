@@ -66,6 +66,11 @@ const envVarsSchema = Joi.object({
   GITHUB_SYNC_MAX_REPOS: Joi.number()
     .default(500)
     .description("maximum number of repositories to sync per organization"),
+  GITHUB_SYNC_CHUNK_SIZE: Joi.number()
+    .default(50)
+    .description(
+      "chunk size for GitHub GraphQL API queries (typical limit is 50-100 nodes per query)",
+    ),
 
   STRIPE_SECRET_KEY: Joi.string().required().description("stripe secret key"),
   STRIPE_WEBHOOK_SECRET: Joi.string()
@@ -118,6 +123,7 @@ interface Github {
   sync: {
     rateLimitDelayMs: number;
     maxRepos: number;
+    chunkSize: number;
   };
 }
 
@@ -187,6 +193,7 @@ export const config: Config = {
     sync: {
       rateLimitDelayMs: envVars.GITHUB_SYNC_RATE_LIMIT_DELAY_MS,
       maxRepos: envVars.GITHUB_SYNC_MAX_REPOS,
+      chunkSize: envVars.GITHUB_SYNC_CHUNK_SIZE,
     },
   } as Github,
 
