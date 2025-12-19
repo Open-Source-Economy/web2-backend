@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, PoolClient } from "pg";
 import {
   DeveloperProfileId,
   DeveloperProjectItem,
@@ -19,6 +19,7 @@ export function getDeveloperProjectItemRepository(): DeveloperProjectItemReposit
 export interface DeveloperProjectItemRepository {
   /**
    * Creates a new association between a developer profile and a project item.
+   * @param client Optional transaction client. If provided, uses the client for the query.
    */
   create(
     developerProfileId: DeveloperProfileId,
@@ -28,10 +29,12 @@ export interface DeveloperProjectItemRepository {
     comment?: string,
     customCategories?: string[],
     predefinedCategories?: ProjectCategory[],
+    client?: PoolClient,
   ): Promise<DeveloperProjectItem>;
 
   /**
    * Updates an existing developer-project item association.
+   * @param client Optional transaction client. If provided, uses the client for the query.
    */
   update(
     id: DeveloperProjectItemId,
@@ -40,6 +43,7 @@ export interface DeveloperProjectItemRepository {
     comment?: string,
     customCategories?: string[],
     predefinedCategories?: ProjectCategory[],
+    client?: PoolClient,
   ): Promise<DeveloperProjectItem>;
 
   /**
@@ -58,10 +62,12 @@ export interface DeveloperProjectItemRepository {
 
   /**
    * Finds a specific DeveloperProjectItem by developer profile ID and project item ID.
+   * @param client Optional transaction client. If provided, uses the client for the query.
    */
   findByProfileAndProjectItem(
     developerProfileId: DeveloperProfileId,
     projectItemId: ProjectItemId,
+    client?: PoolClient,
   ): Promise<DeveloperProjectItem | null>;
 
   /**
@@ -115,6 +121,7 @@ class DeveloperProjectItemRepositoryImpl
     comment?: string,
     customCategories?: string[],
     predefinedCategories?: ProjectCategory[],
+    client?: PoolClient,
   ): Promise<DeveloperProjectItem> {
     const query = `
       INSERT INTO developer_project_items (
@@ -139,7 +146,8 @@ class DeveloperProjectItemRepositoryImpl
       predefinedCategories ?? null,
     ];
 
-    const result = await this.pool.query(query, values);
+    const queryClient = client || this.pool;
+    const result = await queryClient.query(query, values);
     return this.getOne(result.rows);
   }
 
@@ -150,6 +158,7 @@ class DeveloperProjectItemRepositoryImpl
     comment?: string,
     customCategories?: string[],
     predefinedCategories?: ProjectCategory[],
+    client?: PoolClient,
   ): Promise<DeveloperProjectItem> {
     const query = `
       UPDATE developer_project_items
@@ -173,7 +182,8 @@ class DeveloperProjectItemRepositoryImpl
       predefinedCategories ?? null,
     ];
 
-    const result = await this.pool.query(query, values);
+    const queryClient = client || this.pool;
+    const result = await queryClient.query(query, values);
     if (result.rows.length === 0) {
       throw new Error(`DeveloperProjectItem not found with id ${id.uuid}`);
     }
@@ -209,13 +219,15 @@ class DeveloperProjectItemRepositoryImpl
   async findByProfileAndProjectItem(
     developerProfileId: DeveloperProfileId,
     projectItemId: ProjectItemId,
+    client?: PoolClient,
   ): Promise<DeveloperProjectItem | null> {
     const query = `
       SELECT ${DeveloperProjectItemRepositoryImpl.SELECT_COLUMNS}
       FROM developer_project_items
       WHERE developer_profile_id = $1 AND project_item_id = $2
     `;
-    const result = await this.pool.query(query, [
+    const queryClient = client || this.pool;
+    const result = await queryClient.query(query, [
       developerProfileId.uuid,
       projectItemId.uuid,
     ]);

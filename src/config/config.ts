@@ -57,7 +57,19 @@ const envVarsSchema = Joi.object({
   GITHUB_CLIENT_SECRET: Joi.string()
     .required()
     .description("github client secret"),
-  GITHUB_TOKEN: Joi.string().required().description("github token"),
+  GITHUB_TOKEN: Joi.string()
+    .required()
+    .description("github token for REST API"),
+  GITHUB_PUBLIC_ACCESS_TOKEN: Joi.string()
+    .required()
+    .description(
+      "GitHub token with public access (no special scopes) for GraphQL API queries (repositories and users).",
+    ),
+  GITHUB_READ_ORG_TOKEN: Joi.string()
+    .required()
+    .description(
+      "GitHub token with read:org scope for GraphQL API organization queries. Organizations cannot be queried with the public access token due to GitHub's scope requirements.",
+    ),
   GITHUB_SYNC_RATE_LIMIT_DELAY_MS: Joi.number()
     .default(1000)
     .description(
@@ -66,6 +78,11 @@ const envVarsSchema = Joi.object({
   GITHUB_SYNC_MAX_REPOS: Joi.number()
     .default(500)
     .description("maximum number of repositories to sync per organization"),
+  GITHUB_SYNC_CHUNK_SIZE: Joi.number()
+    .default(50)
+    .description(
+      "chunk size for GitHub GraphQL API queries (typical limit is 50-100 nodes per query)",
+    ),
 
   STRIPE_SECRET_KEY: Joi.string().required().description("stripe secret key"),
   STRIPE_WEBHOOK_SECRET: Joi.string()
@@ -114,10 +131,13 @@ interface Postgres {
 interface Github {
   clientId: string;
   clientSecret: string;
-  requestToken: string;
+  requestToken: string; // For REST API
+  publicAccessToken: string; // Public access (no special scopes) for GraphQL API (repositories/users)
+  readOrgToken: string; // read:org scope for GraphQL API (organizations)
   sync: {
     rateLimitDelayMs: number;
     maxRepos: number;
+    chunkSize: number;
   };
 }
 
@@ -184,9 +204,12 @@ export const config: Config = {
     clientId: envVars.GITHUB_CLIENT_ID,
     clientSecret: envVars.GITHUB_CLIENT_SECRET,
     requestToken: envVars.GITHUB_TOKEN,
+    publicAccessToken: envVars.GITHUB_PUBLIC_ACCESS_TOKEN,
+    readOrgToken: envVars.GITHUB_READ_ORG_TOKEN,
     sync: {
       rateLimitDelayMs: envVars.GITHUB_SYNC_RATE_LIMIT_DELAY_MS,
       maxRepos: envVars.GITHUB_SYNC_MAX_REPOS,
+      chunkSize: envVars.GITHUB_SYNC_CHUNK_SIZE,
     },
   } as Github,
 

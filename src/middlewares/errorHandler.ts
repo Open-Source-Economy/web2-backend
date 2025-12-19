@@ -25,7 +25,23 @@ export function errorHandler(
   res: Response,
   next: NextFunction,
 ) {
-  logger.error(err);
+  if (config.env === NodeEnv.Local) {
+    // In local environment, always log for debugging
+    logger.error(err);
+  } else if (
+    req.headers.origin === config.frontEndUrl ||
+    !(err.statusCode === StatusCodes.NOT_FOUND)
+  ) {
+    // Only log errors from frontend requests
+    // For 404s from external bots/scanners, silently return the error without logging
+    logger.error(err);
+  } else {
+    // For non-frontend 404s, we still want to track them but at a lower log level
+    // This helps identify bot traffic without triggering alerts
+    logger.debug(
+      `Non-frontend 404: ${req.method} ${req.originalUrl} from ${req.ip || "unknown"}`,
+    );
+  }
 
   let { statusCode, message } = err;
   if (config.env === NodeEnv.Production && !err.isOperational) {
@@ -40,23 +56,6 @@ export function errorHandler(
     message,
     ...(config.env !== NodeEnv.Production && { stack: err.stack }),
   };
-
-  if (config.env === NodeEnv.Local) {
-    logger.error(err);
-  }
-
-  // Ensure CORS headers are set even on error responses
-  const origin = req.headers.origin;
-  if (origin) {
-    // Allow vercel.app domains in non-production
-    if (config.env !== NodeEnv.Production && origin.includes(".vercel.app")) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-    } else if (origin === config.frontEndUrl) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-    }
-  }
 
   res.status(statusCode).send(response);
 }

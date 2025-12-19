@@ -327,72 +327,179 @@ export const OnboardingController: OnboardingController = {
 
     const body: dto.UpsertDeveloperProjectItemBody = req.body;
 
-    let sourceIdentifier: dto.SourceIdentifier;
-    if (body.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY) {
-      const [_, repository] = await githubSyncService.syncRepository(
-        body.sourceIdentifier as dto.RepositoryId,
-      ); // TODO: improve type safety
-      sourceIdentifier = repository.id;
-    } else if (body.projectItemType === dto.ProjectItemType.GITHUB_OWNER) {
-      const owner = await githubSyncService.syncOwner(
-        body.sourceIdentifier as dto.OwnerId,
-      ); // TODO: improve type safety
-      sourceIdentifier = owner.id;
-    } else {
-      sourceIdentifier = body.sourceIdentifier;
+    // Phase 1: Sync all sourceIdentifiers (outside transaction) with rate limiting
+    // Group items by type for efficient bulk syncing
+    const repositoryItems: Array<{
+      index: number;
+      repositoryId: dto.RepositoryId;
+    }> = [];
+    const ownerItems: Array<{
+      index: number;
+      ownerId: dto.OwnerId;
+    }> = [];
+    const urlItems: Array<{
+      index: number;
+      sourceIdentifier: dto.SourceIdentifier;
+    }> = [];
+
+    body.projectItems.forEach((projectItemData, index) => {
+      if (
+        projectItemData.projectItemType ===
+        dto.ProjectItemType.GITHUB_REPOSITORY
+      ) {
+        repositoryItems.push({
+          index,
+          repositoryId: projectItemData.sourceIdentifier as dto.RepositoryId,
+        });
+      } else if (
+        projectItemData.projectItemType === dto.ProjectItemType.GITHUB_OWNER
+      ) {
+        ownerItems.push({
+          index,
+          ownerId: projectItemData.sourceIdentifier as dto.OwnerId,
+        });
+      } else {
+        urlItems.push({
+          index,
+          sourceIdentifier: projectItemData.sourceIdentifier,
+        });
+      }
+    });
+
+    // Sync all repositories in bulk with rate limiting
+    const repositoryResults: Array<{
+      index: number;
+      sourceIdentifier: dto.SourceIdentifier;
+    }> = [];
+    if (repositoryItems.length > 0) {
+      const repositoryIds = repositoryItems.map((item) => item.repositoryId);
+      const syncedRepositories =
+        await githubSyncService.syncRepositories(repositoryIds);
+      repositoryItems.forEach((item, i) => {
+        const [_, repository] = syncedRepositories[i];
+        repositoryResults.push({
+          index: item.index,
+          sourceIdentifier: repository.id,
+        });
+      });
     }
 
-    let projectItem = await projectItemRepo.getBySourceIdentifier(
-      body.projectItemType,
-      sourceIdentifier,
+    // Sync all owners in bulk with rate limiting
+    const ownerResults: Array<{
+      index: number;
+      sourceIdentifier: dto.SourceIdentifier;
+    }> = [];
+    if (ownerItems.length > 0) {
+      const ownerIds = ownerItems.map((item) => item.ownerId);
+      const syncedOwners = await githubSyncService.syncOwners(ownerIds);
+      ownerItems.forEach((item, i) => {
+        const owner = syncedOwners[i];
+        ownerResults.push({
+          index: item.index,
+          sourceIdentifier: owner.id,
+        });
+      });
+    }
+
+    // Combine all resolved identifiers in the original order
+    const resolvedSourceIdentifiers: dto.SourceIdentifier[] = new Array(
+      body.projectItems.length,
     );
+    repositoryResults.forEach((result) => {
+      resolvedSourceIdentifiers[result.index] = result.sourceIdentifier;
+    });
+    ownerResults.forEach((result) => {
+      resolvedSourceIdentifiers[result.index] = result.sourceIdentifier;
+    });
+    urlItems.forEach((item) => {
+      resolvedSourceIdentifiers[item.index] = item.sourceIdentifier;
+    });
 
-    if (projectItem) {
-      console.log("Project item already exists:", projectItem.id);
-    } else {
-      const params: CreateProjectItemParams = {
-        projectItemType: body.projectItemType,
-        sourceIdentifier: sourceIdentifier,
-      };
-      projectItem = await projectItemRepo.create(params);
+    // Phase 2: Create/get all ProjectItems (outside transaction)
+    const projectItems: dto.ProjectItem[] = [];
+    for (let i = 0; i < body.projectItems.length; i++) {
+      const projectItemData = body.projectItems[i];
+      const resolvedId = resolvedSourceIdentifiers[i];
+
+      let projectItem = await projectItemRepo.getBySourceIdentifier(
+        projectItemData.projectItemType,
+        resolvedId,
+      );
+
+      if (projectItem) {
+        console.log("Project item already exists:", projectItem.id);
+      } else {
+        const params: CreateProjectItemParams = {
+          projectItemType: projectItemData.projectItemType,
+          sourceIdentifier: resolvedId,
+        };
+        projectItem = await projectItemRepo.create(params);
+      }
+
+      projectItems.push(projectItem);
     }
 
-    const existing: dto.DeveloperProjectItem | null =
-      await developerProjectItemRepo.findByProfileAndProjectItem(
-        developerProfile.id,
-        projectItem.id,
-      );
+    // Phase 3: Transaction for DeveloperProjectItems only
+    const client = await pool.connect();
+    const results: dto.ProjectItemUpsertResult[] = [];
 
-    if (existing) {
-      const developerProjectItem = await developerProjectItemRepo.update(
-        existing.id,
-        body.mergeRights,
-        body.roles,
-        body.comments,
-        body.customCategories,
-        body.predefinedCategories,
-      );
-      const response: dto.UpsertDeveloperProjectItemResponse = {
-        projectItem: projectItem,
-        developerProjectItem: developerProjectItem,
-      };
-      res.status(StatusCodes.OK).send({ success: response });
-    } else {
-      const developerProjectItem = await developerProjectItemRepo.create(
-        developerProfile.id,
-        projectItem.id,
-        body.mergeRights,
-        body.roles,
-        body.comments,
-        body.customCategories,
-        body.predefinedCategories,
-      );
+    try {
+      await client.query("BEGIN");
+
+      for (let i = 0; i < projectItems.length; i++) {
+        const projectItem = projectItems[i];
+        const projectItemData = body.projectItems[i];
+
+        const existing: dto.DeveloperProjectItem | null =
+          await developerProjectItemRepo.findByProfileAndProjectItem(
+            developerProfile.id,
+            projectItem.id,
+            client, // Pass client for transaction
+          );
+
+        let developerProjectItem: dto.DeveloperProjectItem;
+        if (existing) {
+          developerProjectItem = await developerProjectItemRepo.update(
+            existing.id,
+            projectItemData.mergeRights,
+            projectItemData.roles,
+            projectItemData.comments,
+            projectItemData.customCategories,
+            projectItemData.predefinedCategories,
+            client, // Pass client for transaction
+          );
+        } else {
+          developerProjectItem = await developerProjectItemRepo.create(
+            developerProfile.id,
+            projectItem.id,
+            projectItemData.mergeRights,
+            projectItemData.roles,
+            projectItemData.comments,
+            projectItemData.customCategories,
+            projectItemData.predefinedCategories,
+            client, // Pass client for transaction
+          );
+        }
+
+        results.push({
+          projectItem: projectItem,
+          developerProjectItem: developerProjectItem,
+        });
+      }
+
+      await client.query("COMMIT");
 
       const response: dto.UpsertDeveloperProjectItemResponse = {
-        projectItem: projectItem,
-        developerProjectItem: developerProjectItem,
+        results: results,
       };
+
+      // Use CREATED status for bulk operations
       res.status(StatusCodes.CREATED).send({ success: response });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error; // Let error handler deal with it
+    } finally {
+      client.release();
     }
   },
 
