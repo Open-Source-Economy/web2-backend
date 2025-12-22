@@ -36,9 +36,9 @@ export function errorHandler(
     // For 404s from external bots/scanners, silently return the error without logging
     logger.error(err);
   } else {
-    // For non-frontend 404s, we still want to track them but at a lower log level
+    // For non-frontend 404s, log as warnings instead of errors
     // This helps identify bot traffic without triggering alerts
-    logger.debug(
+    logger.warn(
       `Non-frontend 404: ${req.method} ${req.originalUrl} from ${req.ip || "unknown"}`,
     );
   }
