@@ -145,8 +145,7 @@ class GitHubApiImpl implements GitHubApi {
     if (accessToken) {
       headers.Authorization = `Bearer ${accessToken}`;
     } else {
-      headers.Authorization = `Token ${config.github.requestToken}`;
-      headers["Content-Type"] = "application/x-www-form-urlencoded";
+      headers.Authorization = `Bearer ${config.github.publicAccessToken}`;
     }
 
     try {

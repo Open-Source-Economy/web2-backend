@@ -57,9 +57,6 @@ const envVarsSchema = Joi.object({
   GITHUB_CLIENT_SECRET: Joi.string()
     .required()
     .description("github client secret"),
-  GITHUB_TOKEN: Joi.string()
-    .required()
-    .description("github token for REST API"),
   GITHUB_PUBLIC_ACCESS_TOKEN: Joi.string()
     .required()
     .description(
@@ -131,7 +128,6 @@ interface Postgres {
 interface Github {
   clientId: string;
   clientSecret: string;
-  requestToken: string; // For REST API
   publicAccessToken: string; // Public access (no special scopes) for GraphQL API (repositories/users)
   readOrgToken: string; // read:org scope for GraphQL API (organizations)
   sync: {
@@ -203,7 +199,6 @@ export const config: Config = {
   github: {
     clientId: envVars.GITHUB_CLIENT_ID,
     clientSecret: envVars.GITHUB_CLIENT_SECRET,
-    requestToken: envVars.GITHUB_TOKEN,
     publicAccessToken: envVars.GITHUB_PUBLIC_ACCESS_TOKEN,
     readOrgToken: envVars.GITHUB_READ_ORG_TOKEN,
     sync: {
