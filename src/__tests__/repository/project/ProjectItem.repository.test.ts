@@ -254,6 +254,8 @@ describe("ProjectItemRepository", () => {
   describe("getAllWithDetails", () => {
     it("returns project items with details honoring limit and order", async () => {
       const ownerId = await insertOwner();
+      await createDeveloperLinkedToOwner(ownerId);
+
       const repositoryId1 = await insertRepository(ownerId);
       const first = await projectItemRepo.create({
         projectItemType: dto.ProjectItemType.GITHUB_REPOSITORY,
@@ -278,7 +280,7 @@ describe("ProjectItemRepository", () => {
       expect(items).toHaveLength(1);
       expect(items[0].projectItem.id).toEqual(second.id);
       expect(items[0].repository).not.toBeNull();
-      expect(items[0].developers).toEqual([]);
+      expect(items[0].developers.length).toBeGreaterThan(0);
 
       // ensure other item not returned due to limit
       expect(items[0].projectItem.id).not.toEqual(first.id);
@@ -286,6 +288,7 @@ describe("ProjectItemRepository", () => {
 
     it("sorts repositories by forks descending", async () => {
       const ownerId = await insertOwner();
+      await createDeveloperLinkedToOwner(ownerId);
 
       const highForksRepoId = Fixture.repositoryId(ownerId);
       const highForksRepo = Fixture.repository(highForksRepoId);
@@ -339,16 +342,12 @@ describe("ProjectItemRepository", () => {
 
     it("applies owners limit when repository query is absent", async () => {
       const ownerId1 = await insertOwner();
-      const ownerItem1 = await projectItemRepo.create({
-        projectItemType: dto.ProjectItemType.GITHUB_OWNER,
-        sourceIdentifier: ownerId1,
-      });
+      const { ownerItem: ownerItem1 } =
+        await createDeveloperLinkedToOwner(ownerId1);
 
       const ownerId2 = await insertOwner();
-      const ownerItem2 = await projectItemRepo.create({
-        projectItemType: dto.ProjectItemType.GITHUB_OWNER,
-        sourceIdentifier: ownerId2,
-      });
+      const { ownerItem: ownerItem2 } =
+        await createDeveloperLinkedToOwner(ownerId2);
 
       const items = await projectItemRepo.getAllWithDetails(
         dto.ProjectItemType.GITHUB_OWNER,
@@ -376,6 +375,47 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: url2,
       });
 
+      // Link developers to both URL items
+      const thirdPartyUser1 = Fixture.thirdPartyUser(
+        Fixture.uuid(),
+        dto.Provider.Github,
+        `developer-${Fixture.uuid()}@example.com`,
+      );
+      const user1 = await userRepo.insert(Fixture.createUser(thirdPartyUser1));
+      const profile1 = await developerProfileRepo.create(
+        user1.id,
+        thirdPartyUser1.email ?? `developer-${Fixture.uuid()}@example.com`,
+      );
+      await developerProjectItemRepo.create(
+        profile1.id,
+        item1.id,
+        [] as dto.MergeRightsType[],
+        [] as dto.DeveloperRoleType[],
+        undefined,
+        [],
+        [] as dto.ProjectCategory[],
+      );
+
+      const thirdPartyUser2 = Fixture.thirdPartyUser(
+        Fixture.uuid(),
+        dto.Provider.Github,
+        `developer-${Fixture.uuid()}@example.com`,
+      );
+      const user2 = await userRepo.insert(Fixture.createUser(thirdPartyUser2));
+      const profile2 = await developerProfileRepo.create(
+        user2.id,
+        thirdPartyUser2.email ?? `developer-${Fixture.uuid()}@example.com`,
+      );
+      await developerProjectItemRepo.create(
+        profile2.id,
+        item2.id,
+        [] as dto.MergeRightsType[],
+        [] as dto.DeveloperRoleType[],
+        undefined,
+        [],
+        [] as dto.ProjectCategory[],
+      );
+
       const items = await projectItemRepo.getAllWithDetails(
         dto.ProjectItemType.URL,
         {
@@ -392,6 +432,7 @@ describe("ProjectItemRepository", () => {
 
     it("returns only repository items when only repositories query is provided", async () => {
       const ownerId = await insertOwner();
+      await createDeveloperLinkedToOwner(ownerId);
 
       const repositoryId = await insertRepository(ownerId);
       const repoItem = await projectItemRepo.create({
@@ -428,16 +469,12 @@ describe("ProjectItemRepository", () => {
 
     it("returns only owner items when owners query is provided", async () => {
       const ownerId = await insertOwner();
+      const { ownerItem } = await createDeveloperLinkedToOwner(ownerId);
 
       const repositoryId = await insertRepository(ownerId);
       await projectItemRepo.create({
         projectItemType: dto.ProjectItemType.GITHUB_REPOSITORY,
         sourceIdentifier: repositoryId,
-      });
-
-      const ownerItem = await projectItemRepo.create({
-        projectItemType: dto.ProjectItemType.GITHUB_OWNER,
-        sourceIdentifier: ownerId,
       });
 
       await projectItemRepo.create({
@@ -474,6 +511,27 @@ describe("ProjectItemRepository", () => {
         projectItemType: dto.ProjectItemType.URL,
         sourceIdentifier: "https://docs.example.com",
       });
+
+      // Link a developer to the URL item
+      const thirdPartyUser = Fixture.thirdPartyUser(
+        Fixture.uuid(),
+        dto.Provider.Github,
+        `developer-${Fixture.uuid()}@example.com`,
+      );
+      const user = await userRepo.insert(Fixture.createUser(thirdPartyUser));
+      const profile = await developerProfileRepo.create(
+        user.id,
+        thirdPartyUser.email ?? `developer-${Fixture.uuid()}@example.com`,
+      );
+      await developerProjectItemRepo.create(
+        profile.id,
+        urlItem.id,
+        [] as dto.MergeRightsType[],
+        [] as dto.DeveloperRoleType[],
+        undefined,
+        [],
+        [] as dto.ProjectCategory[],
+      );
 
       const items = await projectItemRepo.getAllWithDetails(
         dto.ProjectItemType.URL,
@@ -513,6 +571,7 @@ describe("ProjectItemRepository", () => {
 
     it("sorts repositories by creation date ascending when requested", async () => {
       const ownerId = await insertOwner();
+      await createDeveloperLinkedToOwner(ownerId);
 
       const olderRepoId = await insertRepository(ownerId);
       const olderItem = await projectItemRepo.create({
@@ -549,6 +608,137 @@ describe("ProjectItemRepository", () => {
       );
 
       expect(items).toEqual([]);
+    });
+
+    it("returns only repositories that have a developer associated with it", async () => {
+      // Create an owner with a developer
+      const ownerIdWithDev = await insertOwner();
+      const { profile } = await createDeveloperLinkedToOwner(ownerIdWithDev);
+
+      // Create a repository with a developer (through owner association)
+      const repositoryIdWithDev = await insertRepository(ownerIdWithDev);
+      const repoItemWithDev = await projectItemRepo.create({
+        projectItemType: dto.ProjectItemType.GITHUB_REPOSITORY,
+        sourceIdentifier: repositoryIdWithDev,
+      });
+
+      // Create a different owner without any developer
+      const ownerIdWithoutDev = await insertOwner();
+
+      // Create a repository without a developer (different owner, no developer linked)
+      const repositoryIdWithoutDev = await insertRepository(ownerIdWithoutDev);
+      const repoItemWithoutDev = await projectItemRepo.create({
+        projectItemType: dto.ProjectItemType.GITHUB_REPOSITORY,
+        sourceIdentifier: repositoryIdWithoutDev,
+      });
+
+      const items = await projectItemRepo.getAllWithDetails(
+        dto.ProjectItemType.GITHUB_REPOSITORY,
+      );
+
+      // Should only return the repository with a developer
+      expect(items).toHaveLength(1);
+      expect(items[0].projectItem.id.uuid).toEqual(repoItemWithDev.id.uuid);
+      expect(items[0].developers).toHaveLength(1);
+      expect(items[0].developers[0].developerProfile.id.uuid).toBe(
+        profile.id.uuid,
+      );
+
+      // Verify the repository without developer is not returned
+      expect(
+        items.find(
+          (item) => item.projectItem.id.uuid === repoItemWithoutDev.id.uuid,
+        ),
+      ).toBeUndefined();
+    });
+
+    it("returns only url items that have a developer associated with it", async () => {
+      // Create a URL item with a developer
+      const urlWithDev = "https://project-with-dev.example.com";
+      const urlItemWithDev = await projectItemRepo.create({
+        projectItemType: dto.ProjectItemType.URL,
+        sourceIdentifier: urlWithDev,
+      });
+
+      // Link a developer to the URL item
+      const thirdPartyUser = Fixture.thirdPartyUser(
+        Fixture.uuid(),
+        dto.Provider.Github,
+        `developer-${Fixture.uuid()}@example.com`,
+      );
+      const user = await userRepo.insert(Fixture.createUser(thirdPartyUser));
+      const profile = await developerProfileRepo.create(
+        user.id,
+        thirdPartyUser.email ?? `developer-${Fixture.uuid()}@example.com`,
+      );
+      await developerProjectItemRepo.create(
+        profile.id,
+        urlItemWithDev.id,
+        [] as dto.MergeRightsType[],
+        [] as dto.DeveloperRoleType[],
+        undefined,
+        [],
+        [] as dto.ProjectCategory[],
+      );
+
+      // Create a URL item without a developer
+      const urlWithoutDev = "https://project-without-dev.example.com";
+      const urlItemWithoutDev = await projectItemRepo.create({
+        projectItemType: dto.ProjectItemType.URL,
+        sourceIdentifier: urlWithoutDev,
+      });
+
+      const items = await projectItemRepo.getAllWithDetails(
+        dto.ProjectItemType.URL,
+      );
+
+      // Should only return the URL item with a developer
+      expect(items).toHaveLength(1);
+      expect(items[0].projectItem.id.uuid).toEqual(urlItemWithDev.id.uuid);
+      expect(items[0].developers).toHaveLength(1);
+      expect(items[0].developers[0].developerProfile.id.uuid).toBe(
+        profile.id.uuid,
+      );
+
+      // Verify the URL item without developer is not returned
+      expect(
+        items.find(
+          (item) => item.projectItem.id.uuid === urlItemWithoutDev.id.uuid,
+        ),
+      ).toBeUndefined();
+    });
+
+    it("returns only owner items that have a developer associated with it", async () => {
+      // Create an owner with a developer
+      const ownerIdWithDev = await insertOwner();
+      const { profile, ownerItem: ownerItemWithDev } =
+        await createDeveloperLinkedToOwner(ownerIdWithDev);
+
+      // Create an owner without a developer
+      const ownerIdWithoutDev = await insertOwner();
+      const ownerItemWithoutDev = await projectItemRepo.create({
+        projectItemType: dto.ProjectItemType.GITHUB_OWNER,
+        sourceIdentifier: ownerIdWithoutDev,
+      });
+
+      const items = await projectItemRepo.getAllWithDetails(
+        dto.ProjectItemType.GITHUB_OWNER,
+      );
+
+      // Should only return the owner with a developer
+      expect(items).toHaveLength(1);
+      expect(items[0].projectItem.id.uuid).toEqual(ownerItemWithDev.id.uuid);
+      expect(items[0].developers).toHaveLength(1);
+      expect(items[0].developers[0].developerProfile.id.uuid).toBe(
+        profile.id.uuid,
+      );
+
+      // Verify the owner without developer is not returned
+      expect(
+        items.find(
+          (item) => item.projectItem.id.uuid === ownerItemWithoutDev.id.uuid,
+        ),
+      ).toBeUndefined();
     });
   });
 

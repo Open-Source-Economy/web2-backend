@@ -41,6 +41,7 @@ export interface ProjectItemRepository {
    * @returns A promise that resolves to the created ProjectItem.
    */
   create(params: CreateProjectItemParams): Promise<ProjectItem>;
+
   /**
    * Updates the categories for a project item (admin only).
    *
@@ -52,6 +53,7 @@ export interface ProjectItemRepository {
     id: ProjectItemId,
     categories: ProjectCategory[],
   ): Promise<ProjectItem>;
+
   /**
    * Deletes a project item by its unique ProjectItemId.
    *
@@ -59,6 +61,7 @@ export interface ProjectItemRepository {
    * @returns A Promise that resolves when the deletion is complete.
    */
   delete(id: ProjectItemId): Promise<void>;
+
   /**
    * Retrieves a project item by its unique ProjectItemId.
    *
@@ -66,6 +69,7 @@ export interface ProjectItemRepository {
    * @returns A Promise that resolves to the ProjectItem if found, otherwise null.
    */
   getById(id: ProjectItemId): Promise<ProjectItem | null>;
+
   /**
    * Retrieves project items associated with a given project ID.
    *
@@ -73,6 +77,7 @@ export interface ProjectItemRepository {
    * @returns A promise that resolves to an array of ProjectItem.
    */
   getByProjectId(projectId: ProjectItemId): Promise<ProjectItem | null>;
+
   /**
    * Retrieves a project item of type GITHUB_REPOSITORY by its GitHub repository ID.
    *
@@ -82,6 +87,7 @@ export interface ProjectItemRepository {
   getByGithubRepository(
     repositoryId: RepositoryId,
   ): Promise<ProjectItem | null>;
+
   /**
    * Retrieves all project items of type GITHUB_OWNER for a given GitHub owner ID.
    *
@@ -817,11 +823,15 @@ class ProjectItemRepositoryImpl
 
     const result = await this.pool.query(query);
 
+    let projectItems = this.hydrateProjectItemsFromRows(result.rows).filter(
+      (item) => item.developers.length > 0,
+    );
+
     if (limit !== undefined) {
-      return this.hydrateProjectItemsFromRows(result.rows).slice(0, limit);
+      return projectItems.slice(0, limit);
     }
 
-    return this.hydrateProjectItemsFromRows(result.rows);
+    return projectItems;
   }
 
   async getByIdWithDetails(
