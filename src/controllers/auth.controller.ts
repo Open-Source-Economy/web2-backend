@@ -5,6 +5,7 @@ import {
   Company,
   CompanyUserPermissionToken,
   CompanyUserRole,
+  Provider,
   RepositoryId,
   RepositoryUserPermissionToken,
   ThirdPartyUser,
@@ -17,12 +18,13 @@ import { ensureNoEndingTrailingSlash, secureToken } from "../utils";
 import {
   companyRepo,
   companyUserPermissionTokenRepo,
+  getUserRepository,
   repositoryUserPermissionTokenRepo,
   userCompanyRepo,
   userRepo,
   userRepositoryRepo,
 } from "../db";
-import { config } from "../config";
+import { config, logger } from "../config";
 
 export interface AuthController {
   status(
@@ -125,6 +127,16 @@ export interface AuthController {
       dto.GetRepositoryUserInviteInfoQuery
     >,
     res: Response<dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>>,
+  ): Promise<void>;
+
+  checkEmail(
+    req: Request<
+      dto.CheckEmailParams,
+      dto.ResponseBody<dto.CheckEmailResponse>,
+      dto.CheckEmailBody,
+      dto.CheckEmailQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CheckEmailResponse>>,
   ): Promise<void>;
 }
 
@@ -468,6 +480,47 @@ export const AuthController: AuthController = {
       userName: repositoryUserPermissionToken?.userName,
       userGithubOwnerLogin: repositoryUserPermissionToken?.userGithubOwnerLogin,
       repositoryId: repositoryUserPermissionToken?.repositoryId,
+    };
+    res.status(StatusCodes.OK).send({ success: response });
+  },
+
+  async checkEmail(
+    req: Request<
+      dto.CheckEmailParams,
+      dto.ResponseBody<dto.CheckEmailResponse>,
+      dto.CheckEmailBody,
+      dto.CheckEmailQuery
+    >,
+    res: Response<dto.ResponseBody<dto.CheckEmailResponse>>,
+  ) {
+    const query: dto.CheckEmailQuery = req.query;
+    const { email } = query;
+
+    if (!email) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Email is required");
+    }
+
+    logger.debug(`Checking status for email: ${email}`);
+
+    const user = await userRepo.findOne(email);
+
+    if (!user) {
+      logger.debug(`No user found for email: ${email}`);
+      const response: dto.CheckEmailResponse = {
+        exists: false,
+        // provider is undefined for non-existent users (locally registered)
+      };
+      res.status(StatusCodes.OK).send({ success: response });
+      return;
+    }
+
+    logger.debug(`User found for email: ${email}`);
+    // If provider is "github", set it; otherwise leave undefined (locally registered)
+    const provider =
+      user.data instanceof ThirdPartyUser ? user.data.provider : undefined;
+    const response: dto.CheckEmailResponse = {
+      exists: true,
+      provider,
     };
     res.status(StatusCodes.OK).send({ success: response });
   },

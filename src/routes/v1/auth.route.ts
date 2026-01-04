@@ -57,4 +57,6 @@ router.get(
   AuthController.getRepositoryUserInviteInfo,
 );
 
+router.get("/check-email", AuthController.checkEmail);
+
 export default router;
