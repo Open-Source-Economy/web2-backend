@@ -308,7 +308,20 @@ export const StripeWebhookController: StripeWebhookController = {
 
         case "customer.subscription.created": {
           const subscription = data.object as Stripe.Subscription;
-          logger.debug(`🔔 subscription.deleted`, subscription);
+          logger.debug(`🔔 customer.subscription.created`, subscription);
+          break;
+        }
+
+        case "customer.subscription.updated": {
+          const subscription = data.object as Stripe.Subscription;
+          logger.debug(`🔔 customer.subscription.updated`, subscription);
+          break;
+        }
+
+        case "customer.subscription.deleted": {
+          const subscription = data.object as Stripe.Subscription;
+          logger.debug(`🔔 customer.subscription.deleted`, subscription);
+          // TODO: In a more advanced implementation, we would mark the subscription as cancelled in the DB
           break;
         }
       }
