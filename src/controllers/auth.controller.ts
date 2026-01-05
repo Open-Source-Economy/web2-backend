@@ -17,6 +17,7 @@ import { StatusCodes } from "http-status-codes";
 import { ensureNoEndingTrailingSlash, secureToken } from "../utils";
 import {
   companyRepo,
+  planAndCreditsRepo,
   companyUserPermissionTokenRepo,
   getUserRepository,
   repositoryUserPermissionTokenRepo,
@@ -182,6 +183,10 @@ const AuthHelpers = {
   async getAuthInfo(user: User): Promise<dto.AuthInfo> {
     const [company, companyRole] = await AuthHelpers.getCompanyRoles(user.id);
     const repositories = await AuthHelpers.getRepositoryInfos(user.id);
+    const serviceTokens = await planAndCreditsRepo.getAvailableCredit(
+      user.id,
+      company?.id,
+    );
 
     return {
       authenticatedUser: {
@@ -189,6 +194,7 @@ const AuthHelpers = {
         company: company,
         companyRole: companyRole,
         repositories: repositories,
+        serviceTokens: serviceTokens,
       },
     };
   },
