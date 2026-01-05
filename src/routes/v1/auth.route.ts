@@ -59,4 +59,8 @@ router.get(
 
 router.get("/check-email", AuthController.checkEmail);
 
+router.post("/forgot-password", AuthController.forgotPassword);
+
+router.post("/reset-password", AuthController.resetPassword);
+
 export default router;

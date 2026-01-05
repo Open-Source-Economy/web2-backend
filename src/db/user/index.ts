@@ -4,6 +4,7 @@ import { getRepositoryUserPermissionTokenRepository } from "./RepositoryUserPerm
 import { getUserRepositoryRepository } from "./UserRepository.repository";
 import { getUserRepository } from "./User.repository";
 import { getCompanyRepository } from "../Company.repository";
+import { getPasswordResetTokenRepository } from "./user/PasswordResetToken.repository";
 
 export const userRepo = getUserRepository();
 

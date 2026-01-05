@@ -43,6 +43,8 @@ export interface UserRepository {
   updateName(userId: UserId, name: string): Promise<void>;
 
   updateTermsAcceptedVersion(userId: UserId, terms: Terms): Promise<void>;
+
+  updatePassword(userId: UserId, password: string): Promise<void>;
 }
 
 class UserRepositoryImpl implements UserRepository {
@@ -365,6 +367,22 @@ class UserRepositoryImpl implements UserRepository {
                 WHERE id = $2
             `,
       [terms.version, userId.uuid],
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error(`User with id ${userId.uuid} not found`);
+    }
+  }
+
+  async updatePassword(userId: UserId, password: string): Promise<void> {
+    const hashedPassword = await encrypt.hashPassword(password);
+    const result = await this.pool.query(
+      `
+      UPDATE app_user
+      SET hashed_password = $1
+      WHERE id = $2
+    `,
+      [hashedPassword, userId.uuid],
     );
 
     if (result.rowCount === 0) {

@@ -568,4 +568,27 @@ export class MailService {
       `Contact form email sent from ${formData.email} regarding ${reasonLabel}`,
     );
   }
+
+  async sendPasswordResetEmail(
+    toEmail: string,
+    token: string,
+    name: string | null,
+  ) {
+    const subject = "Reset Your Password - Open Source Economy";
+    const resetLink = `${config.frontEndUrl}/auth/reset-password?token=${token}`;
+
+    logger.info(`Sending password reset email to ${toEmail}`);
+
+    const htmlFilePath = path.join(
+      __dirname,
+      "auth-template/password-reset.html",
+    );
+    let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
+
+    htmlContent = htmlContent
+      .replace("{{name}}", name || "")
+      .replace("{{resetLink}}", resetLink);
+
+    await this.sendMail(toEmail, subject, htmlContent);
+  }
 }

@@ -24,8 +24,12 @@ import {
   userCompanyRepo,
   userRepo,
   userRepositoryRepo,
+  passwordResetTokenRepo,
 } from "../db";
 import { config, logger } from "../config";
+import { MailService } from "../services/mail.service";
+
+const mailService = new MailService();
 
 export interface AuthController {
   status(
@@ -138,6 +142,26 @@ export interface AuthController {
       dto.CheckEmailQuery
     >,
     res: Response<dto.ResponseBody<dto.CheckEmailResponse>>,
+  ): Promise<void>;
+
+  forgotPassword(
+    req: Request<
+      {},
+      dto.ResponseBody<dto.ForgotPasswordResponse>,
+      dto.ForgotPasswordBody,
+      {}
+    >,
+    res: Response<dto.ResponseBody<dto.ForgotPasswordResponse>>,
+  ): Promise<void>;
+
+  resetPassword(
+    req: Request<
+      {},
+      dto.ResponseBody<dto.ResetPasswordResponse>,
+      dto.ResetPasswordBody,
+      dto.ResetPasswordQuery
+    >,
+    res: Response<dto.ResponseBody<dto.ResetPasswordResponse>>,
   ): Promise<void>;
 }
 
@@ -529,5 +553,69 @@ export const AuthController: AuthController = {
       provider,
     };
     res.status(StatusCodes.OK).send({ success: response });
+  },
+
+  async forgotPassword(
+    req: Request<
+      {},
+      dto.ResponseBody<dto.ForgotPasswordResponse>,
+      dto.ForgotPasswordBody,
+      {}
+    >,
+    res: Response<dto.ResponseBody<dto.ForgotPasswordResponse>>,
+  ) {
+    const { email } = req.body;
+    const user = await userRepo.findOne(email);
+
+    if (user) {
+      // Generate token
+      const [tokenString, expiresAt] = secureToken.generate({ email }, true);
+
+      await passwordResetTokenRepo.create({
+        userEmail: email,
+        token: tokenString,
+        expiresAt,
+      });
+
+      await mailService.sendPasswordResetEmail(email, tokenString, user.name);
+    }
+
+    // Always return OK
+    res.status(StatusCodes.OK).send({ success: {} });
+  },
+
+  async resetPassword(
+    req: Request<
+      {},
+      dto.ResponseBody<dto.ResetPasswordResponse>,
+      dto.ResetPasswordBody,
+      dto.ResetPasswordQuery
+    >,
+    res: Response<dto.ResponseBody<dto.ResetPasswordResponse>>,
+  ) {
+    const { token } = req.query;
+    const { password } = req.body;
+
+    const resetToken = await passwordResetTokenRepo.getByToken(token);
+
+    // Validate token existence and expiry
+    if (
+      !resetToken ||
+      resetToken.hasBeenUsed ||
+      resetToken.expiresAt < new Date()
+    ) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid or expired token");
+    }
+
+    // Update password
+    const user = await userRepo.findOne(resetToken.userEmail);
+    if (!user) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "User not found");
+    }
+
+    await userRepo.updatePassword(user.id, password);
+    await passwordResetTokenRepo.use(token);
+
+    res.status(StatusCodes.OK).send({ success: {} });
   },
 };

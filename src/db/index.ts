@@ -28,6 +28,11 @@ export const managedIssueRepo = getManagedIssueRepository();
 export const issueFundingRepo = getIssueFundingRepository();
 // export const financialIssueRepo = getFinancialIssueRepository(); // Dependency injection problem
 export const manualInvoiceRepo = getManualInvoiceRepository();
+import { getUserRepositoryRepository } from "./user/UserRepository.repository";
+import { getPasswordResetTokenRepository } from "./user/PasswordResetToken.repository";
+
+export const userRepositoryRepo = getUserRepositoryRepository();
+export const passwordResetTokenRepo = getPasswordResetTokenRepository();
 
 export const newsletterSubscriptionRepo = getNewsletterSubscriptionRepository();
 export const sponsorRepo = getSponsorRepository();
