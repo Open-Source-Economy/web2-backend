@@ -107,9 +107,8 @@ describe("RepositoryUserPermissionTokenRepository", () => {
 
   describe("getById", () => {
     it("should return null if token not found", async () => {
-      const nonExistentTokenId = new RepositoryUserPermissionTokenId(
-        Fixture.uuid(),
-      );
+      const nonExistentTokenId =
+        Fixture.uuid() as RepositoryUserPermissionTokenId;
       const found = await tokenRepo.getById(nonExistentTokenId);
       expect(found).toBeNull();
     });

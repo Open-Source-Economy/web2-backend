@@ -1,7 +1,11 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
-import { NewsletterSubscription } from "@open-source-economy/api-types";
 import { v4 as uuidv } from "uuid";
 import { newsletterSubscriptionRepo } from "../../db";
+
+// NewsletterSubscription model was removed from api-types; define locally
+interface NewsletterSubscription {
+  email: string;
+}
 
 describe("NewsletterSubscriptionRepository", () => {
   // Reset or prepare your test DB environment.
@@ -10,7 +14,7 @@ describe("NewsletterSubscriptionRepository", () => {
   describe("create", () => {
     it("should create a new newsletter subscription", async () => {
       const email = `test_${uuidv()}@example.com`;
-      const subscription = new NewsletterSubscription(email);
+      const subscription: NewsletterSubscription = { email };
 
       const created = await newsletterSubscriptionRepo.create(subscription);
 
@@ -29,7 +33,7 @@ describe("NewsletterSubscriptionRepository", () => {
 
     it("should return the subscription when it exists", async () => {
       const email = `test_${uuidv()}@example.com`;
-      const subscription = new NewsletterSubscription(email);
+      const subscription: NewsletterSubscription = { email };
       await newsletterSubscriptionRepo.create(subscription);
 
       const found = await newsletterSubscriptionRepo.getByEmail(email);
@@ -43,8 +47,8 @@ describe("NewsletterSubscriptionRepository", () => {
       // Create two unique subscriptions
       const email1 = `test_${uuidv()}@example.com`;
       const email2 = `test_${uuidv()}@example.com`;
-      const subscription1 = new NewsletterSubscription(email1);
-      const subscription2 = new NewsletterSubscription(email2);
+      const subscription1: NewsletterSubscription = { email: email1 };
+      const subscription2: NewsletterSubscription = { email: email2 };
 
       await newsletterSubscriptionRepo.create(subscription1);
       await newsletterSubscriptionRepo.create(subscription2);
@@ -64,7 +68,7 @@ describe("NewsletterSubscriptionRepository", () => {
   describe("delete", () => {
     it("should delete an existing subscription", async () => {
       const email = `test_${uuidv()}@example.com`;
-      const subscription = new NewsletterSubscription(email);
+      const subscription: NewsletterSubscription = { email };
       await newsletterSubscriptionRepo.create(subscription);
 
       // Delete the subscription

@@ -1,13 +1,21 @@
 import { Pool } from "pg";
 import {
   CompanyId,
-  CreateManualInvoiceBody,
   ManualInvoice,
   ManualInvoiceId,
   UserId,
 } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { logger } from "../config";
+import { ManualInvoiceCompanion } from "./helpers/companions";
+
+export interface CreateManualInvoiceBody {
+  number: number;
+  companyId?: CompanyId;
+  userId?: UserId;
+  paid: boolean;
+  creditAmount: number;
+}
 
 export function getManualInvoiceRepository(): ManualInvoiceRepository {
   return new ManualInvoiceRepositoryImpl(pool);
@@ -22,7 +30,9 @@ export interface ManualInvoiceRepository {
 
   getAll(): Promise<ManualInvoice[]>;
 
-  getAllInvoicePaidBy(id: CompanyId | UserId): Promise<ManualInvoice[]>;
+  getAllInvoicePaidByCompany(id: CompanyId): Promise<ManualInvoice[]>;
+
+  getAllInvoicePaidByUser(id: UserId): Promise<ManualInvoice[]>;
 }
 
 class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
@@ -47,7 +57,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple manual invoices found");
     } else {
-      const manualInvoice = ManualInvoice.fromBackend(rows[0]);
+      const manualInvoice = ManualInvoiceCompanion.fromBackend(rows[0]);
       if (manualInvoice instanceof Error) {
         throw manualInvoice;
       }
@@ -57,7 +67,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
 
   private getManualInvoiceList(rows: any[]): ManualInvoice[] {
     return rows.map((r) => {
-      const manualInvoice = ManualInvoice.fromBackend(r);
+      const manualInvoice = ManualInvoiceCompanion.fromBackend(r);
       if (manualInvoice instanceof Error) {
         throw manualInvoice;
       }
@@ -79,8 +89,8 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                 `,
         [
           manualInvoice.number,
-          manualInvoice.companyId?.uuid,
-          manualInvoice.userId?.uuid,
+          manualInvoice.companyId ?? null,
+          manualInvoice.userId ?? null,
           manualInvoice.paid,
           manualInvoice.creditAmount,
         ],
@@ -109,11 +119,11 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                 `,
         [
           manualInvoice.number,
-          manualInvoice.companyId?.uuid,
-          manualInvoice.userId?.uuid,
+          manualInvoice.companyId ?? null,
+          manualInvoice.userId ?? null,
           manualInvoice.paid,
           manualInvoice.creditAmount,
-          manualInvoice.id?.uuid,
+          manualInvoice.id,
         ],
       );
 
@@ -130,7 +140,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                 FROM manual_invoice
                 WHERE id = $1
             `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalManualInvoice(result.rows);
@@ -147,29 +157,29 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
     return this.getManualInvoiceList(result.rows);
   }
 
-  async getAllInvoicePaidBy(id: CompanyId | UserId): Promise<ManualInvoice[]> {
-    let result;
-
-    if (id instanceof CompanyId) {
-      logger.debug(`Getting all manual invoices paid by company: ${id.uuid}`);
-      result = await this.pool.query(
-        `
+  async getAllInvoicePaidByCompany(id: CompanyId): Promise<ManualInvoice[]> {
+    logger.debug(`Getting all manual invoices paid by company: ${id}`);
+    const result = await this.pool.query(
+      `
                         SELECT *
                         FROM manual_invoice
                         WHERE company_id = $1 AND paid = TRUE
                     `,
-        [id.uuid],
-      );
-    } else {
-      result = await this.pool.query(
-        `
+      [id],
+    );
+
+    return this.getManualInvoiceList(result.rows);
+  }
+
+  async getAllInvoicePaidByUser(id: UserId): Promise<ManualInvoice[]> {
+    const result = await this.pool.query(
+      `
                         SELECT *
                         FROM manual_invoice
                         WHERE user_id = $1 AND paid = TRUE
                     `,
-        [id.uuid],
-      );
-    }
+      [id],
+    );
 
     return this.getManualInvoiceList(result.rows);
   }

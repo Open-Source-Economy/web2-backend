@@ -1,6 +1,5 @@
 import { Pool } from "pg";
 import {
-  ApiError,
   DeveloperProfileId,
   DeveloperProjectItemId,
   DeveloperService,
@@ -11,7 +10,6 @@ import {
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 import { BaseRepository } from "../helpers";
-import { StatusCodes } from "http-status-codes";
 import { DeveloperServiceCompanion } from "../helpers/companions";
 
 export function getDeveloperServiceRepository(): DeveloperServiceRepository {
@@ -117,10 +115,10 @@ class DeveloperServiceRepositoryImpl
       `SELECT developer_project_item_id
          FROM developer_service_developer_project_item_link
          WHERE developer_service_id = $1`,
-      [offeringId.uuid],
+      [offeringId],
     );
     return result.rows.map(
-      (row) => new DeveloperProjectItemId(row.developer_project_item_id),
+      (row) => row.developer_project_item_id as DeveloperProjectItemId,
     );
   }
 
@@ -159,10 +157,7 @@ class DeveloperServiceRepositoryImpl
     const valuesClause = projectItemIds
       .map((_, index) => `($${index * 2 + 1}, $${index * 2 + 2})`)
       .join(",");
-    const values = projectItemIds.flatMap((piid) => [
-      developerServiceId.uuid,
-      piid.uuid,
-    ]);
+    const values = projectItemIds.flatMap((piid) => [developerServiceId, piid]);
     await client.query(
       `INSERT INTO developer_service_developer_project_item_link (developer_service_id, developer_project_item_id) VALUES ${valuesClause}`,
       values,
@@ -190,15 +185,15 @@ class DeveloperServiceRepositoryImpl
           RETURNING id
         `,
         [
-          developerProfileId.uuid,
-          params.serviceId.uuid,
+          developerProfileId,
+          params.serviceId,
           params.body.hourlyRate ?? null,
           params.body.responseTimeHours ?? null,
           params.body.comment ?? null,
         ],
       );
 
-      const newOfferingId = new DeveloperServiceId(offeringResult.rows[0].id);
+      const newOfferingId = offeringResult.rows[0].id as DeveloperServiceId;
 
       // Securely insert links using a parameterized query.
       await this.insertProjectItemLinks(
@@ -212,10 +207,7 @@ class DeveloperServiceRepositoryImpl
       // Retrieve the newly created service to get the full object.
       const newlyCreatedService = await this.getById(newOfferingId);
       if (!newlyCreatedService) {
-        throw new ApiError(
-          StatusCodes.NOT_FOUND,
-          "Failed to retrieve newly created service.",
-        );
+        throw new Error("Failed to retrieve newly created service.");
       }
       return newlyCreatedService;
     } catch (error) {
@@ -259,7 +251,7 @@ class DeveloperServiceRepositoryImpl
       setParts.push(`updated_at = now()`);
 
       // Add the ID to the end of the values array for the WHERE clause.
-      values.push(id.uuid);
+      values.push(id);
 
       // Only perform the UPDATE query if there are fields to update.
       if (setParts.length > 1) {
@@ -272,7 +264,7 @@ class DeveloperServiceRepositoryImpl
       // Delete all existing links for this service offering.
       await client.query(
         `DELETE FROM developer_service_developer_project_item_link WHERE developer_service_id = $1`,
-        [id.uuid],
+        [id],
       );
 
       // Re-insert the new set of links using the secure helper function.
@@ -286,10 +278,7 @@ class DeveloperServiceRepositoryImpl
 
       const updated = await this.getById(id);
       if (!updated) {
-        throw new ApiError(
-          StatusCodes.NOT_FOUND,
-          "Service not found after update.",
-        );
+        throw new Error("Service not found after update.");
       }
       return updated;
     } catch (error) {
@@ -304,13 +293,10 @@ class DeveloperServiceRepositoryImpl
   async delete(id: DeveloperServiceId): Promise<void> {
     try {
       await this.pool.query(`DELETE FROM developer_service WHERE id = $1`, [
-        id.uuid,
+        id,
       ]);
     } catch (error) {
-      logger.error(
-        `Error deleting developer service with ID ${id.uuid}:`,
-        error,
-      );
+      logger.error(`Error deleting developer service with ID ${id}:`, error);
       throw error;
     }
   }
@@ -320,7 +306,7 @@ class DeveloperServiceRepositoryImpl
   ): Promise<DeveloperService[]> {
     logger.debug(
       `Getting developer service offerings by profile id:`,
-      profileId.uuid,
+      profileId,
     );
     const result = await this.pool.query(
       `
@@ -329,7 +315,7 @@ class DeveloperServiceRepositoryImpl
           WHERE developer_profile_id = $1
           ORDER BY created_at DESC
         `,
-      [profileId.uuid],
+      [profileId],
     );
 
     return Promise.all(
@@ -338,14 +324,14 @@ class DeveloperServiceRepositoryImpl
   }
 
   async getById(id: DeveloperServiceId): Promise<DeveloperService | null> {
-    logger.debug(`Getting developer service offering by id:`, id.uuid);
+    logger.debug(`Getting developer service offering by id:`, id);
     const result = await this.pool.query(
       `
           SELECT *
           FROM developer_service
           WHERE id = $1
         `,
-      [id.uuid],
+      [id],
     );
 
     if (result.rows.length === 0) {
@@ -360,8 +346,8 @@ class DeveloperServiceRepositoryImpl
   ): Promise<DeveloperService | null> {
     logger.debug(
       `Getting developer service offering by profile and service ID:`,
-      developerProfileId.uuid,
-      serviceId.uuid,
+      developerProfileId,
+      serviceId,
     );
 
     const query = `
@@ -371,8 +357,8 @@ class DeveloperServiceRepositoryImpl
         AND service_id = $2
     `;
     const result = await this.pool.query(query, [
-      developerProfileId.uuid,
-      serviceId.uuid,
+      developerProfileId,
+      serviceId,
     ]);
     if (result.rows.length === 0) {
       return null;

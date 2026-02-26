@@ -4,12 +4,30 @@ import {
   PlanPriceType,
   PlanProductType,
   ProductType,
-  productTypeUtils,
   UserId,
 } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { getManualInvoiceRepository } from "./ManualInvoice.repository";
 import { logger } from "../config";
+
+/**
+ * Local replacement for the removed productTypeUtils.credits() function.
+ * Maps plan product types to their credit values.
+ */
+function productTypeCredits(productType: ProductType): number {
+  switch (productType) {
+    case ProductType.INDIVIDUAL_PLAN:
+      return 100;
+    case ProductType.START_UP_PLAN:
+      return 500;
+    case ProductType.SCALE_UP_PLAN:
+      return 2000;
+    case ProductType.ENTERPRISE_PLAN:
+      return 10000;
+    default:
+      return 0;
+  }
+}
 
 export function getCreditRepository(): PlanAndCreditsRepository {
   return new CreditRepositoryImpl(pool);
@@ -49,9 +67,10 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
     let totalCreditsPaid: number = 0;
 
     // Calculate total Credit from manual invoices
-    const manualInvoices = await this.manualInvoiceRepo.getAllInvoicePaidBy(
-      companyId ?? userId,
-    );
+    const id = companyId ?? userId;
+    const manualInvoices = companyId
+      ? await this.manualInvoiceRepo.getAllInvoicePaidByCompany(companyId)
+      : await this.manualInvoiceRepo.getAllInvoicePaidByUser(userId);
 
     totalCreditsPaid += manualInvoices.reduce((acc, invoice) => {
       return acc + invoice.creditAmount; // invoice.creditAmount is an integer
@@ -59,15 +78,15 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
     logger.debug(`Total Credit from manual invoices: ${totalCreditsPaid}`);
 
     // Calculate total Credit from Stripe invoices
-    const amountPaidWithStripe: number = await this.getAllStripeInvoicePaidBy(
-      companyId ?? userId,
-    );
+    const amountPaidWithStripe: number = companyId
+      ? await this.getAllStripeInvoicePaidByCompany(companyId)
+      : await this.getAllStripeInvoicePaidByUser(userId);
     logger.debug(`Total Credit from Stripe invoices: ${amountPaidWithStripe}`);
     totalCreditsPaid += amountPaidWithStripe;
 
-    const totalFunding: number = await this.getIssueFundingFrom(
-      companyId ?? userId,
-    );
+    const totalFunding: number = companyId
+      ? await this.getIssueFundingFromCompany(companyId)
+      : await this.getIssueFundingFromUser(userId);
     logger.debug(`Total issue funding: ${totalFunding}`);
 
     const availableCredits = totalCreditsPaid - totalFunding;
@@ -75,11 +94,11 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
 
     if (totalFunding < 0) {
       logger.error(
-        `The amount dow amount (${totalFunding}) is negative for userId ${userId.uuid}, companyId ${companyId ? companyId.uuid : ""}`,
+        `The amount dow amount (${totalFunding}) is negative for userId ${userId}, companyId ${companyId ? companyId : ""}`,
       );
     } else if (availableCredits < 0) {
       logger.error(
-        `The total Credit paid (${totalCreditsPaid}) is less than the total funding (${totalFunding}) for userId ${userId.uuid}, companyId ${companyId ? companyId.uuid : ""}`,
+        `The total Credit paid (${totalCreditsPaid}) is less than the total funding (${totalFunding}) for userId ${userId}, companyId ${companyId ? companyId : ""}`,
       );
     }
 
@@ -128,9 +147,9 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
       JOIN user_company uc ON scu.user_id = uc.user_id
       WHERE uc.company_id = $1
       ${planFilterClause}
-      
+
     `;
-        params = [companyId.uuid, ...planProductTypes, ...planPriceTypes];
+        params = [companyId, ...planProductTypes, ...planPriceTypes];
       } else {
         // Query for individual user's last invoice plan type
         query = `
@@ -139,7 +158,7 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
       WHERE scu.user_id = $1
        ${planFilterClause}
     `;
-        params = [userId.uuid, ...planProductTypes, ...planPriceTypes];
+        params = [userId, ...planProductTypes, ...planPriceTypes];
       }
 
       const result = await this.pool.query(query, params);
@@ -174,31 +193,29 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
     }
   }
 
-  private async getAllStripeInvoicePaidBy(
-    id: CompanyId | UserId,
-  ): Promise<number> {
-    // Common CASE expression for all product types
-    const creditCalcCase = `
+  // Common CASE expression for all product types
+  private get creditCalcCase(): string {
+    return `
     CASE
       WHEN sp.type = '${ProductType.CREDIT}' THEN sl.quantity
-      WHEN sp.type = '${ProductType.INDIVIDUAL_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.INDIVIDUAL_PLAN)}
-      WHEN sp.type = '${ProductType.START_UP_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.START_UP_PLAN)}
-      WHEN sp.type = '${ProductType.SCALE_UP_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.SCALE_UP_PLAN)}
-      WHEN sp.type = '${ProductType.ENTERPRISE_PLAN}' THEN sl.quantity * ${productTypeUtils.credits(ProductType.ENTERPRISE_PLAN)}
+      WHEN sp.type = '${ProductType.INDIVIDUAL_PLAN}' THEN sl.quantity * ${productTypeCredits(ProductType.INDIVIDUAL_PLAN)}
+      WHEN sp.type = '${ProductType.START_UP_PLAN}' THEN sl.quantity * ${productTypeCredits(ProductType.START_UP_PLAN)}
+      WHEN sp.type = '${ProductType.SCALE_UP_PLAN}' THEN sl.quantity * ${productTypeCredits(ProductType.SCALE_UP_PLAN)}
+      WHEN sp.type = '${ProductType.ENTERPRISE_PLAN}' THEN sl.quantity * ${productTypeCredits(ProductType.ENTERPRISE_PLAN)}
       ELSE 0
     END`;
+  }
 
-    // Common query parts
-    const selectClause = `SELECT SUM(${creditCalcCase}) AS total_credit_paid`;
+  private async getAllStripeInvoicePaidByCompany(
+    companyId: CompanyId,
+  ): Promise<number> {
+    const selectClause = `SELECT SUM(${this.creditCalcCase}) AS total_credit_paid`;
     const fromClause = `FROM stripe_invoice_line sl
                       JOIN stripe_product sp ON sl.product_id = sp.stripe_id
                       JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id`;
     const paidCondition = `AND si.paid = TRUE`;
 
-    let query: string;
-
-    if (id instanceof CompanyId) {
-      query = `
+    const query = `
       ${selectClause}
       ${fromClause}
       WHERE sl.stripe_customer_id IN
@@ -207,18 +224,34 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
                   JOIN stripe_customer_user sc ON uc.company_id = $1 AND uc.user_id = sc.user_id)
       ${paidCondition}
     `;
-    } else {
-      query = `
+
+    try {
+      const result = await this.pool.query(query, [companyId]);
+      const total = result.rows[0]?.total_credit_paid ?? 0;
+      return Number(total);
+    } catch (error) {
+      logger.error("Error executing query", error);
+      throw new Error("Failed to retrieve paid invoice total");
+    }
+  }
+
+  private async getAllStripeInvoicePaidByUser(userId: UserId): Promise<number> {
+    const selectClause = `SELECT SUM(${this.creditCalcCase}) AS total_credit_paid`;
+    const fromClause = `FROM stripe_invoice_line sl
+                      JOIN stripe_product sp ON sl.product_id = sp.stripe_id
+                      JOIN stripe_invoice si ON sl.invoice_id = si.stripe_id`;
+    const paidCondition = `AND si.paid = TRUE`;
+
+    const query = `
       ${selectClause}
       ${fromClause}
       JOIN stripe_customer_user sc ON sl.stripe_customer_id = sc.stripe_customer_id
       WHERE sc.user_id = $1
       ${paidCondition}
     `;
-    }
 
     try {
-      const result = await this.pool.query(query, [id.uuid]);
+      const result = await this.pool.query(query, [userId]);
       const total = result.rows[0]?.total_credit_paid ?? 0;
       return Number(total);
     } catch (error) {
@@ -228,16 +261,14 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
   }
 
   // result is in credit
-  private async getIssueFundingFrom(id: CompanyId | UserId): Promise<number> {
-    // Common query parts
+  private async getIssueFundingFromCompany(
+    companyId: CompanyId,
+  ): Promise<number> {
     const selectClause = `SELECT SUM(if.credit_amount) AS total_funding`;
     const issueJoinClause = `LEFT JOIN managed_issue mi ON if.github_issue_id = mi.github_issue_id`;
     const rejectionCondition = `AND (mi.state != 'rejected' OR mi.state is NULL)`;
 
-    let query: string;
-
-    if (id instanceof CompanyId) {
-      query = `
+    const query = `
       ${selectClause}
       FROM issue_funding if
       JOIN user_company uc ON if.user_id = uc.user_id
@@ -245,18 +276,32 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
       WHERE uc.company_id = $1
       ${rejectionCondition}
     `;
-    } else {
-      query = `
+
+    try {
+      const result = await this.pool.query(query, [companyId]);
+      const total = result.rows[0]?.total_funding ?? 0;
+      return Number(total);
+    } catch (error) {
+      logger.error("Error executing query", error);
+      throw new Error("Failed to retrieve total funding amount");
+    }
+  }
+
+  private async getIssueFundingFromUser(userId: UserId): Promise<number> {
+    const selectClause = `SELECT SUM(if.credit_amount) AS total_funding`;
+    const issueJoinClause = `LEFT JOIN managed_issue mi ON if.github_issue_id = mi.github_issue_id`;
+    const rejectionCondition = `AND (mi.state != 'rejected' OR mi.state is NULL)`;
+
+    const query = `
       ${selectClause}
       FROM issue_funding if
       ${issueJoinClause}
       WHERE if.user_id = $1
       ${rejectionCondition}
     `;
-    }
 
     try {
-      const result = await this.pool.query(query, [id.uuid]);
+      const result = await this.pool.query(query, [userId]);
       const total = result.rows[0]?.total_funding ?? 0;
       return Number(total);
     } catch (error) {

@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { Request } from "express";
-import { AuthenticationError, User } from "@open-source-economy/api-types";
+import { User } from "@open-source-economy/api-types";
+import { ApiError } from "../../errors";
 
 export function authenticatedUser(req: any, res: any, next: any): void {
   if (req.isAuthenticated()) {
@@ -13,7 +14,7 @@ export const checkAuthenticatedUser = (
   req: Request<any, any, any, any>,
 ): User => {
   if (!req.user) {
-    throw new AuthenticationError();
+    throw ApiError.unauthorized("Authentication required");
   }
-  return req.user;
+  return req.user as unknown as User;
 };

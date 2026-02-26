@@ -1,10 +1,10 @@
 import {
   DeveloperProfile,
   DeveloperProfileId,
+  ISODateTimeString,
   UserId,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 
 export namespace DeveloperProfileCompanion {
   export function fromBackend(
@@ -29,12 +29,12 @@ export namespace DeveloperProfileCompanion {
     }
 
     return {
-      id: new DeveloperProfileId(id),
-      userId: new UserId(userId),
+      id: id as DeveloperProfileId,
+      userId: userId as UserId,
       contactEmail,
       onboardingCompleted,
-      createdAt,
-      updatedAt,
-    };
+      createdAt: createdAt as ISODateTimeString,
+      updatedAt: updatedAt as ISODateTimeString,
+    } as DeveloperProfile;
   }
 }

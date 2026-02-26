@@ -1,11 +1,8 @@
-import {
-  LocalUser,
-  ValidationError,
-  Validator,
-} from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
+import { BackendLocalUser } from "./backend-user.types";
 
 export namespace LocalUserCompanion {
-  export function fromRaw(row: any): LocalUser | ValidationError {
+  export function fromRaw(row: any): BackendLocalUser | ValidationError {
     const validator = new Validator(row);
     const email = validator.requiredString("email");
     const isEmailVerified = validator.requiredBoolean("is_email_verified");
@@ -16,6 +13,6 @@ export namespace LocalUserCompanion {
       return error;
     }
 
-    return new LocalUser(email, isEmailVerified, password);
+    return { email, isEmailVerified, password } as BackendLocalUser;
   }
 }

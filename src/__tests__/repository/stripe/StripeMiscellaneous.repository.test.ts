@@ -29,11 +29,23 @@ describe("StripeMiscellaneousRepository", () => {
     await stripeCustomerRepo.insert(stripeCustomer);
   });
 
+  // Helper to convert OwnerId/RepositoryId to string for projectId field
+  function toProjectIdString(projectId: any): string | null {
+    if (projectId === null) return null;
+    if ("name" in projectId && "ownerId" in projectId) {
+      return `${projectId.ownerId.login}/${projectId.name}`;
+    }
+    return projectId.login;
+  }
+
   describe("getRaisedAmountPerCurrency", () => {
     it("for the repository", async () => {
       const projectId = validRepositoryId;
       const productId = Fixture.stripeProductId();
-      const product = Fixture.stripeProduct(productId, projectId);
+      const product = Fixture.stripeProduct(
+        productId,
+        toProjectIdString(projectId),
+      );
       await stripeProductRepo.insert(product);
       const price = Fixture.stripePrice(validPriceId, productId);
       await stripePriceRepo.createOrUpdate(price);
@@ -46,14 +58,16 @@ describe("StripeMiscellaneousRepository", () => {
         productId,
         validPriceId,
       );
+      const lines = [invoiceLine];
       await stripeInvoiceRepo.insert(
         Fixture.stripeInvoice(
           validInvoiceId,
           validCustomerId,
-          [invoiceLine],
+          lines,
           Currency.USD,
           1000,
         ),
+        lines,
       );
 
       const raisedAmount =
@@ -67,7 +81,10 @@ describe("StripeMiscellaneousRepository", () => {
     it("for the owner", async () => {
       const projectId = validOwnerId;
       const productId = Fixture.stripeProductId();
-      const product = Fixture.stripeProduct(productId, projectId);
+      const product = Fixture.stripeProduct(
+        productId,
+        toProjectIdString(projectId),
+      );
       await stripeProductRepo.insert(product);
       const price = Fixture.stripePrice(validPriceId, productId);
       await stripePriceRepo.createOrUpdate(price);
@@ -80,14 +97,16 @@ describe("StripeMiscellaneousRepository", () => {
         productId,
         validPriceId,
       );
+      const lines = [invoiceLine];
       await stripeInvoiceRepo.insert(
         Fixture.stripeInvoice(
           validInvoiceId,
           validCustomerId,
-          [invoiceLine],
+          lines,
           Currency.USD,
           1000,
         ),
+        lines,
       );
 
       const raisedAmount =

@@ -3,11 +3,11 @@ import {
   DeveloperProfileId,
   DeveloperSettings,
   DeveloperSettingsId,
+  ISODateTimeString,
   OpenToOtherOpportunityType,
   PreferenceType,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 
 export namespace DeveloperSettingsCompanion {
   export function fromBackend(
@@ -61,8 +61,8 @@ export namespace DeveloperSettingsCompanion {
     }
 
     const success: DeveloperSettings = {
-      id: new DeveloperSettingsId(id),
-      developerProfileId: new DeveloperProfileId(developerProfileId),
+      id: id as DeveloperSettingsId,
+      developerProfileId: developerProfileId as DeveloperProfileId,
       royaltiesPreference,
       servicesPreference,
       communitySupporterPreference,
@@ -73,8 +73,8 @@ export namespace DeveloperSettingsCompanion {
       hourlyRate,
       hourlyRateComment,
       currency,
-      createdAt,
-      updatedAt,
+      createdAt: createdAt as ISODateTimeString,
+      updatedAt: updatedAt as ISODateTimeString,
     };
 
     return success;

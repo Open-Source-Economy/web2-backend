@@ -1,9 +1,5 @@
-import {
-  Repository,
-  RepositoryId,
-  ValidationError,
-  Validator,
-} from "@open-source-economy/api-types";
+import { Repository, RepositoryId } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 import { OwnerIdCompanion } from "./Owner.companion";
 
 export namespace RepositoryIdCompanion {
@@ -51,7 +47,7 @@ export namespace RepositoryIdCompanion {
       return error;
     }
 
-    return new RepositoryId(ownerId, name, id);
+    return { ownerId, name, githubId: id } as RepositoryId;
   }
 }
 
@@ -126,8 +122,8 @@ export namespace RepositoryCompanion {
       return error;
     }
 
-    return new Repository(
-      repositoryId,
+    return {
+      id: repositoryId,
       htmlUrl,
       description,
       homepage,
@@ -142,6 +138,6 @@ export namespace RepositoryCompanion {
       visibility,
       subscribersCount,
       networkCount,
-    );
+    } as Repository;
   }
 }

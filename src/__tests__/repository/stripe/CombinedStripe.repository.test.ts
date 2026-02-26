@@ -11,7 +11,7 @@ import {
   PlanPriceType,
   PlanProductType,
   PriceType,
-  productTypeUtils,
+  ProductType,
   StripeProductId,
 } from "@open-source-economy/api-types";
 
@@ -24,9 +24,9 @@ describe("CombinedStripeRepository", () => {
   it("should return an error is the DB is missing a product type", async () => {
     const planProductType = PlanProductType.INDIVIDUAL_PLAN;
     const product = Fixture.stripeProduct(
-      new StripeProductId("product-1"),
+      "product-1" as StripeProductId,
       null,
-      productTypeUtils.toProductType(planProductType),
+      planProductType as unknown as ProductType,
     );
 
     await productRepo.insert(product);
@@ -68,7 +68,7 @@ describe("CombinedStripeRepository", () => {
       const product = Fixture.stripeProduct(
         Fixture.stripeProductId(),
         null,
-        productTypeUtils.toProductType(planProductType),
+        planProductType as unknown as ProductType,
       );
 
       await productRepo.insert(product);
@@ -103,7 +103,7 @@ describe("CombinedStripeRepository", () => {
       const product = Fixture.stripeProduct(
         Fixture.stripeProductId(),
         null,
-        productTypeUtils.toProductType(planProductType),
+        planProductType as unknown as ProductType,
       );
 
       await productRepo.insert(product);

@@ -58,12 +58,12 @@ describe("CompanyRepository", () => {
 
       const created = await companyRepo.create(initialCompany);
 
-      const updatedCompany = new Company(
-        created.id,
-        created.taxId,
-        created.name,
-        null,
-      );
+      const updatedCompany: Company = {
+        id: created.id,
+        taxId: created.taxId,
+        name: created.name,
+        addressId: null,
+      } as Company;
 
       const updated = await companyRepo.update(updatedCompany);
 
@@ -81,12 +81,12 @@ describe("CompanyRepository", () => {
         addressId: validAddressId,
       });
 
-      const updatedCompany = new Company(
-        created.id,
-        "00000",
-        "Company B",
-        validAddressId,
-      );
+      const updatedCompany: Company = {
+        id: created.id,
+        taxId: "00000",
+        name: "Company B",
+        addressId: validAddressId,
+      } as Company;
 
       const updated = await companyRepo.update(updatedCompany);
 

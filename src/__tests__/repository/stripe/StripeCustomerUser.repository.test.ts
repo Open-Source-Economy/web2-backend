@@ -3,9 +3,9 @@ import {
   CompanyId,
   CompanyUserRole,
   StripeCustomerId,
-  StripeCustomerUser,
   UserId,
-} from "@open-source-economy/api-types"; // Add CompanyId if needed
+} from "@open-source-economy/api-types";
+import { StripeCustomerUser } from "../../../db/helpers/companions";
 import { Fixture } from "../../__helpers__/Fixture";
 import {
   companyRepo,
@@ -44,10 +44,10 @@ describe("StripeCustomerUserRepository", () => {
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
 
       // No companyId provided
-      const customer = new StripeCustomerUser(
-        validStripeCustomerId,
-        validUserId,
-      );
+      const customer = {
+        stripeCustomerId: validStripeCustomerId,
+        userId: validUserId,
+      } as StripeCustomerUser;
       const created = await stripeCustomerUserRepo.insert(customer);
 
       expect(created).toEqual(customer);
@@ -68,10 +68,10 @@ describe("StripeCustomerUserRepository", () => {
         CompanyUserRole.ADMIN,
       );
 
-      const customer = new StripeCustomerUser(
-        validStripeCustomerId,
-        validUserId,
-      );
+      const customer = {
+        stripeCustomerId: validStripeCustomerId,
+        userId: validUserId,
+      } as StripeCustomerUser;
       const created = await stripeCustomerUserRepo.insert(customer);
 
       expect(created).toEqual(customer);
@@ -83,11 +83,11 @@ describe("StripeCustomerUserRepository", () => {
     });
 
     it("should fail with foreign key constraint error if user is not inserted", async () => {
-      const validStripeCustomerId = new StripeCustomerId("123");
-      const customer = new StripeCustomerUser(
-        validStripeCustomerId,
-        Fixture.userId(),
-      ); // no user in DB
+      const localStripeCustomerId = "123" as StripeCustomerId;
+      const customer = {
+        stripeCustomerId: localStripeCustomerId,
+        userId: Fixture.userId(),
+      } as StripeCustomerUser; // no user in DB
 
       try {
         await stripeCustomerUserRepo.insert(customer);
@@ -103,7 +103,7 @@ describe("StripeCustomerUserRepository", () => {
 
   describe("getById", () => {
     it("should return null if customer not found", async () => {
-      const nonExistentCustomerId = new StripeCustomerId("non-existent-id");
+      const nonExistentCustomerId = "non-existent-id" as StripeCustomerId;
       const found = await stripeCustomerUserRepo.getByStripeId(
         nonExistentCustomerId,
       );
@@ -117,14 +117,14 @@ describe("StripeCustomerUserRepository", () => {
       // Insert user before inserting the customer
       await userRepo.insert(Fixture.createUser(Fixture.localUser()));
 
-      const customer1 = new StripeCustomerUser(
-        validStripeCustomerId,
-        validUserId,
-      );
-      const customer2 = new StripeCustomerUser(
-        validStripeCustomerId2,
-        validUserId,
-      );
+      const customer1 = {
+        stripeCustomerId: validStripeCustomerId,
+        userId: validUserId,
+      } as StripeCustomerUser;
+      const customer2 = {
+        stripeCustomerId: validStripeCustomerId2,
+        userId: validUserId,
+      } as StripeCustomerUser;
 
       await stripeCustomerUserRepo.insert(customer1);
       await stripeCustomerUserRepo.insert(customer2);

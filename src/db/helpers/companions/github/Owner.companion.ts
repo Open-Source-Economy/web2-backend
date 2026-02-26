@@ -1,10 +1,5 @@
-import {
-  Owner,
-  OwnerId,
-  OwnerType,
-  ValidationError,
-  Validator,
-} from "@open-source-economy/api-types";
+import { Owner, OwnerId, OwnerType } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 
 export namespace OwnerIdCompanion {
   export function fromBackendPrimaryKey(
@@ -50,7 +45,7 @@ export namespace OwnerIdCompanion {
       return error;
     }
 
-    return new OwnerId(login, id);
+    return { login, githubId: id } as OwnerId;
   }
 }
 
@@ -116,11 +111,12 @@ export namespace OwnerCompanion {
       return ownerId;
     }
 
-    return new Owner(
-      ownerId,
+    return {
+      id: ownerId,
       type,
       htmlUrl,
       avatarUrl,
+      displayAvatarUrl: avatarUrl,
       followers,
       following,
       publicRepos,
@@ -131,6 +127,6 @@ export namespace OwnerCompanion {
       blog,
       location,
       email,
-    );
+    } as Owner;
   }
 }

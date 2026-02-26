@@ -2,9 +2,8 @@ import {
   Sponsor,
   SponsorId,
   StripeCustomerId,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "./Validator";
 import { OwnerIdCompanion } from "./github";
 
 export namespace SponsorCompanion {
@@ -25,8 +24,6 @@ export namespace SponsorCompanion {
       `${table_prefix}stripe_customer_id`,
     );
     const isPublic = validator.requiredBoolean(`${table_prefix}is_public`);
-    const createdAt = validator.requiredDate(`${table_prefix}created_at`);
-    const updatedAt = validator.requiredDate(`${table_prefix}updated_at`);
 
     const error = validator.getFirstError();
     if (error) {
@@ -38,13 +35,11 @@ export namespace SponsorCompanion {
       return ownerId;
     }
 
-    return new Sponsor(
-      new SponsorId(id),
-      new StripeCustomerId(stripeCustomerId),
+    return {
+      id: id as SponsorId,
+      stripeCustomerId: stripeCustomerId as StripeCustomerId,
       ownerId,
       isPublic,
-      createdAt,
-      updatedAt,
-    );
+    } as Sponsor;
   }
 }

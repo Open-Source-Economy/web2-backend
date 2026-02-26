@@ -1,12 +1,13 @@
 import {
+  ISODateTimeString,
+  OwnerId,
   ProjectCategory,
   ProjectItem,
   ProjectItemId,
   ProjectItemType,
-  SourceIdentifier,
-  ValidationError,
-  Validator,
+  RepositoryId,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 import { OwnerIdCompanion } from "../github/Owner.companion";
 import { RepositoryIdCompanion } from "../github/Repository.companion";
 
@@ -34,7 +35,7 @@ export namespace ProjectItemCompanion {
       return error;
     }
 
-    let sourceIdentifier: SourceIdentifier;
+    let sourceIdentifier: string;
 
     switch (projectItemType) {
       case ProjectItemType.GITHUB_OWNER:
@@ -45,7 +46,8 @@ export namespace ProjectItemCompanion {
         if (ownerId instanceof ValidationError) {
           return ownerId;
         }
-        sourceIdentifier = ownerId;
+        // Serialize OwnerId to string
+        sourceIdentifier = (ownerId as OwnerId).login;
         break;
 
       case ProjectItemType.GITHUB_REPOSITORY:
@@ -56,7 +58,8 @@ export namespace ProjectItemCompanion {
         if (repositoryId instanceof ValidationError) {
           return repositoryId;
         }
-        sourceIdentifier = repositoryId;
+        // Serialize RepositoryId to string
+        sourceIdentifier = `${(repositoryId as RepositoryId).ownerId.login}/${(repositoryId as RepositoryId).name}`;
         break;
 
       case ProjectItemType.URL:
@@ -76,12 +79,12 @@ export namespace ProjectItemCompanion {
     }
 
     return {
-      id: new ProjectItemId(idString),
+      id: idString as ProjectItemId,
       projectItemType: projectItemType,
       sourceIdentifier,
       categories: categories,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-    };
+      createdAt: createdAt as ISODateTimeString,
+      updatedAt: updatedAt as ISODateTimeString,
+    } as ProjectItem;
   }
 }

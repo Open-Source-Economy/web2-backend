@@ -5,7 +5,6 @@ import {
   CampaignProductType,
   Currency,
   OwnerId,
-  ProjectUtils,
   RepositoryId,
 } from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
@@ -20,14 +19,14 @@ export type CampaignProductPriceConfig = Record<
 >;
 
 const CAMPAIGN_DONATION_LABELS = [
-  "This made my day! 😄",
-  "Thanks a bunch! 🌟",
-  "You rock! 🎸",
-  "You're awesome! 🎉",
-  "Wow, incredible! 🙌",
-  "Amazing generosity! 🚀",
-  "Absolutely fantastic! 🌈",
-  "Legendary support! 🔥",
+  "This made my day!",
+  "Thanks a bunch!",
+  "You rock!",
+  "You're awesome!",
+  "Wow, incredible!",
+  "Amazing generosity!",
+  "Absolutely fantastic!",
+  "Legendary support!",
 ];
 
 const CAMPAIGN_CURRENCY_AMOUNTS: Record<Currency, number[]> = Object.values(
@@ -73,11 +72,11 @@ export interface CampaignController {
   getCampaign(
     req: Request<
       dto.GetCampaignParams,
-      dto.ResponseBody<dto.GetCampaignResponse>,
-      dto.GetCampaignBody,
+      dto.GetCampaignResponse,
+      {},
       dto.GetCampaignQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetCampaignResponse>>,
+    res: Response<dto.GetCampaignResponse>,
   ): Promise<void>;
 }
 
@@ -122,20 +121,20 @@ const CampaignHelpers = {
   getTargetAmount(projectId: RepositoryId | OwnerId): number {
     let targetAmount$: number = 2_000 * 100; // default target amount
 
-    if (projectId instanceof RepositoryId) {
-      if (projectId.ownerId.login === "apache" && projectId.name === "pekko")
+    // Check if it's a RepositoryId (has ownerId and name properties)
+    if ("ownerId" in projectId && "name" in projectId) {
+      const repoId = projectId as RepositoryId;
+      if (repoId.ownerId.login === "apache" && repoId.name === "pekko")
         targetAmount$ = 30_000 * 100;
       else if (
-        projectId.ownerId.login === "join-the-flock" &&
-        projectId.name === "flock"
+        repoId.ownerId.login === "join-the-flock" &&
+        repoId.name === "flock"
       )
         targetAmount$ = 10_000 * 100;
-      else if (
-        projectId.ownerId.login === "slick" &&
-        projectId.name === "slick"
-      )
+      else if (repoId.ownerId.login === "slick" && repoId.name === "slick")
         targetAmount$ = 3_000 * 100;
-    } else if (projectId instanceof OwnerId) {
+    } else if ("login" in projectId) {
+      // It's an OwnerId
       if (projectId.login === "open-source-economy") targetAmount$ = 1000 * 100;
     }
 
@@ -163,13 +162,16 @@ export const CampaignController: CampaignController = {
   async getCampaign(
     req: Request<
       dto.GetCampaignParams,
-      dto.ResponseBody<dto.GetCampaignResponse>,
-      dto.GetCampaignBody,
+      dto.GetCampaignResponse,
+      {},
       dto.GetCampaignQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetCampaignResponse>>,
+    res: Response<dto.GetCampaignResponse>,
   ) {
-    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
+    const ownerId: OwnerId = { login: req.params.owner };
+    const projectId: OwnerId | RepositoryId = req.params.repo
+      ? { ownerId, name: req.params.repo }
+      : ownerId;
     const prices = await CampaignHelper.getPrices(
       projectId,
       CAMPAIGN_PRICE_CONFIGS,
@@ -188,6 +190,6 @@ export const CampaignController: CampaignController = {
       targetAmount: targetAmount,
       prices,
     };
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 };

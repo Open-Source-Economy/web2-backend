@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
 import { getDeveloperProfileRepository } from "../../db";
-import {
-  AuthenticationError,
-  DeveloperProfile,
-  DeveloperProfileNotFoundError,
-  User,
-} from "@open-source-economy/api-types";
+import { DeveloperProfile, User } from "@open-source-economy/api-types";
+import { ApiError } from "../../errors";
 
 export const authenticatedDeveloperProfileUser = async (
   req: Request,
@@ -13,12 +9,12 @@ export const authenticatedDeveloperProfileUser = async (
   next: () => void,
 ) => {
   if (!req.user) {
-    throw new AuthenticationError();
+    throw ApiError.unauthorized("Authentication required");
   }
   const user = req.user as User;
   const profile = await getDeveloperProfileRepository().getByUserId(user.id);
   if (!profile) {
-    throw new DeveloperProfileNotFoundError();
+    throw ApiError.notFound("Developer profile not found");
   }
   (req as any).developerProfile = profile;
   next();
@@ -30,7 +26,7 @@ export const checkAuthenticatedDeveloperProfile = (
   // @ts-ignore
   const developerProfile = req.developerProfile;
   if (!developerProfile) {
-    throw new DeveloperProfileNotFoundError();
+    throw ApiError.notFound("Developer profile not found");
   }
   return developerProfile;
 };

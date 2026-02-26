@@ -1,14 +1,81 @@
 import {
   Issue,
   IssueId,
+  ISODateTimeString,
   Owner,
   OwnerId,
+  OwnerType,
   Repository,
   RepositoryId,
-  ValidationError,
 } from "@open-source-economy/api-types";
 import { config, logger } from "../config";
 import { Paginator, RateLimiter } from "../utils";
+
+// ---------------------------------------------------------------------------
+// Local parsing helpers (replace the old static fromGithubApi methods)
+// ---------------------------------------------------------------------------
+
+function parseOwnerFromGithubApi(json: any): Owner {
+  if (!json || !json.login) {
+    throw new Error(`Invalid GitHub owner data: missing login field`);
+  }
+  return {
+    id: { login: json.login, githubId: json.id } as OwnerId,
+    type:
+      json.type === "Organization" ? OwnerType.Organization : OwnerType.User,
+    htmlUrl: json.html_url,
+    avatarUrl: json.avatar_url,
+    followers: json.followers,
+    following: json.following,
+    publicRepos: json.public_repos,
+    publicGists: json.public_gists,
+    name: json.name,
+    twitterUsername: json.twitter_username,
+    company: json.company,
+    blog: json.website_url ?? json.blog,
+    location: json.location,
+    email: json.email,
+  };
+}
+
+function parseRepositoryFromGithubApi(json: any): Repository {
+  if (!json || !json.name || !json.owner) {
+    throw new Error(`Invalid GitHub repository data: missing required fields`);
+  }
+  const ownerId: OwnerId = { login: json.owner.login, githubId: json.owner.id };
+  return {
+    id: { ownerId, name: json.name, githubId: json.id } as RepositoryId,
+    htmlUrl: json.html_url,
+    description: json.description,
+    homepage: json.homepage,
+    language: json.language,
+    forksCount: json.forks_count,
+    stargazersCount: json.stargazers_count,
+    watchersCount: json.watchers_count,
+    fullName: json.full_name,
+    fork: json.fork,
+    topics: json.topics,
+    openIssuesCount: json.open_issues_count,
+    visibility: json.visibility,
+    subscribersCount: json.subscribers_count,
+    networkCount: json.network_count,
+  };
+}
+
+function parseIssueFromGithubApi(repositoryId: RepositoryId, json: any): Issue {
+  if (!json || json.number == null) {
+    throw new Error(`Invalid GitHub issue data: missing required fields`);
+  }
+  return {
+    id: { repositoryId, number: json.number, githubId: json.id } as IssueId,
+    title: json.title,
+    htmlUrl: json.html_url,
+    createdAt: json.created_at as ISODateTimeString,
+    closedAt: json.closed_at ? (json.closed_at as ISODateTimeString) : null,
+    openBy: { login: json.user?.login, githubId: json.user?.id } as OwnerId,
+    body: json.body,
+  };
+}
 
 export function getGitHubAPI(): GitHubApi {
   return new GitHubApiImpl();
@@ -239,13 +306,7 @@ class GitHubApiImpl implements GitHubApi {
   async getOwner(ownerId: OwnerId): Promise<Owner> {
     const url = `https://api.github.com/users/${ownerId.login.trim()}`;
     const json = await this.request<any>(url, "GET", "Error fetching owner");
-
-    const owner = Owner.fromGithubApi(json);
-    if (owner instanceof ValidationError) {
-      logger.error(`Invalid JSON response: Owner parsing failed. URL: ${url}`);
-      throw owner;
-    }
-    return owner;
+    return parseOwnerFromGithubApi(json);
   }
 
   async getOwnerAndRepository(
@@ -264,18 +325,8 @@ class GitHubApiImpl implements GitHubApi {
       );
     }
 
-    const owner = Owner.fromGithubApi(json.owner);
-    const repo = Repository.fromGithubApi(json);
-
-    if (repo instanceof ValidationError) {
-      logger.error(
-        `Invalid JSON response: Repository parsing failed. URL: ${url}`,
-      );
-      throw repo;
-    } else if (owner instanceof ValidationError) {
-      logger.error(`Invalid JSON response: Owner parsing failed. URL: ${url}`);
-      throw owner;
-    }
+    const owner = parseOwnerFromGithubApi(json.owner);
+    const repo = parseRepositoryFromGithubApi(json);
     return [owner, repo];
   }
 
@@ -283,16 +334,8 @@ class GitHubApiImpl implements GitHubApi {
     const url = `https://api.github.com/repos/${issueId.repositoryId.ownerId.login.trim()}/${issueId.repositoryId.name.trim()}/issues/${issueId.number}`;
     const json = await this.request<any>(url, "GET", "Error fetching issue");
 
-    const issue = Issue.fromGithubApi(issueId.repositoryId, json);
-    const openedBy = Owner.fromGithubApi(json.user);
-
-    if (issue instanceof ValidationError) {
-      logger.error(`Invalid JSON response: Issue parsing failed. URL: ${url}`);
-      throw issue;
-    } else if (openedBy instanceof ValidationError) {
-      logger.error(`Invalid JSON response: Owner parsing failed. URL: ${url}`);
-      throw openedBy;
-    }
+    const issue = parseIssueFromGithubApi(issueId.repositoryId, json);
+    const openedBy = parseOwnerFromGithubApi(json.user);
     return [issue, openedBy];
   }
 
@@ -306,14 +349,14 @@ class GitHubApiImpl implements GitHubApi {
 
     return orgsJson
       .map((org: any) => {
-        const owner = Owner.fromGithubApi(org);
-        if (owner instanceof ValidationError) {
+        try {
+          return parseOwnerFromGithubApi(org);
+        } catch (e) {
           logger.warn(
-            `Failed to parse organization as Owner: ${owner.message}`,
+            `Failed to parse organization as Owner: ${e instanceof Error ? e.message : String(e)}`,
           );
           return null;
         }
-        return owner;
       })
       .filter(Boolean) as Owner[];
   }
@@ -332,12 +375,14 @@ class GitHubApiImpl implements GitHubApi {
 
     return reposJson
       .map((repo: any) => {
-        const repository = Repository.fromGithubApi(repo);
-        if (repository instanceof ValidationError) {
-          logger.warn(`Failed to parse repository: ${repository.message}`);
+        try {
+          return parseRepositoryFromGithubApi(repo);
+        } catch (e) {
+          logger.warn(
+            `Failed to parse repository: ${e instanceof Error ? e.message : String(e)}`,
+          );
           return null;
         }
-        return repository;
       })
       .filter(Boolean) as Repository[];
   }
@@ -374,12 +419,14 @@ class GitHubApiImpl implements GitHubApi {
 
     return reposJson
       .map((repo: any) => {
-        const repository = Repository.fromGithubApi(repo);
-        if (repository instanceof ValidationError) {
-          logger.warn(`Failed to parse repository: ${repository.message}`);
+        try {
+          return parseRepositoryFromGithubApi(repo);
+        } catch (e) {
+          logger.warn(
+            `Failed to parse repository: ${e instanceof Error ? e.message : String(e)}`,
+          );
           return null;
         }
-        return repository;
       })
       .filter(Boolean) as Repository[];
   }
@@ -413,12 +460,14 @@ class GitHubApiImpl implements GitHubApi {
 
     return reposJson
       .map((repo: any) => {
-        const repository = Repository.fromGithubApi(repo);
-        if (repository instanceof ValidationError) {
-          logger.warn(`Failed to parse repository: ${repository.message}`);
+        try {
+          return parseRepositoryFromGithubApi(repo);
+        } catch (e) {
+          logger.warn(
+            `Failed to parse repository: ${e instanceof Error ? e.message : String(e)}`,
+          );
           return null;
         }
-        return repository;
       })
       .filter(Boolean) as Repository[];
   }
@@ -628,19 +677,8 @@ class GitHubApiImpl implements GitHubApi {
         owner: restFormatOwner,
       };
 
-      const owner = Owner.fromGithubApi(restFormatOwner);
-      if (owner instanceof ValidationError) {
-        throw new Error(
-          `Failed to parse owner for ${repositoryIds[i].ownerId.login}/${repositoryIds[i].name}: ${owner.message}`,
-        );
-      }
-
-      const repository = Repository.fromGithubApi(restFormatRepo);
-      if (repository instanceof ValidationError) {
-        throw new Error(
-          `Failed to parse repository ${repositoryIds[i].ownerId.login}/${repositoryIds[i].name}: ${repository.message}`,
-        );
-      }
+      const owner = parseOwnerFromGithubApi(restFormatOwner);
+      const repository = parseRepositoryFromGithubApi(restFormatRepo);
 
       results.push([owner, repository]);
     }
@@ -813,13 +851,7 @@ class GitHubApiImpl implements GitHubApi {
         email: undefined,
       };
 
-      const owner = Owner.fromGithubApi(restFormatOwner);
-      if (owner instanceof ValidationError) {
-        throw new Error(
-          `Failed to parse owner ${ownerId.login}: ${owner.message}`,
-        );
-      }
-
+      const owner = parseOwnerFromGithubApi(restFormatOwner);
       results.push(owner);
     }
 

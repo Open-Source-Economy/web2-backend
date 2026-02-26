@@ -4,6 +4,7 @@ import {
   StripeCustomerId,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import { StripeCustomerCompanion } from "../helpers/companions";
 
 export function getStripeCustomerRepository(): StripeCustomerRepository {
   return new StripeCustomerRepositoryImpl(pool);
@@ -40,7 +41,7 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple customers found");
     } else {
-      const customer = StripeCustomer.fromBackend(rows[0]);
+      const customer = StripeCustomerCompanion.fromBackend(rows[0]);
       if (customer instanceof Error) {
         throw customer;
       }
@@ -50,7 +51,7 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
 
   private getCustomerList(rows: any[]): StripeCustomer[] {
     return rows.map((row) => {
-      const customer = StripeCustomer.fromBackend(row);
+      const customer = StripeCustomerCompanion.fromBackend(row);
       if (customer instanceof Error) {
         throw customer;
       }
@@ -74,7 +75,7 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
                 FROM stripe_customer
                 WHERE stripe_id = $1
             `,
-      [id.id],
+      [id],
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -104,21 +105,15 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
         INSERT INTO stripe_customer (stripe_id,
                                    currency,
                                    email,
-                                   name,
-                                   phone,
-                                   preferred_locales,
-                                   address_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+                                   name)
+        VALUES ($1, $2, $3, $4)
         RETURNING *
       `,
         [
-          customer.stripeId.id,
+          customer.stripeId,
           customer.currency || null,
           customer.email || null,
           customer.name || null,
-          customer.phone || null,
-          customer.preferredLocales || null,
-          customer.addressId?.uuid || null,
         ],
       );
 

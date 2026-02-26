@@ -2,8 +2,7 @@ import { Pool } from "pg";
 import { pool } from "../../dbPool";
 import {
   CampaignProductType,
-  ProjectId,
-  ProjectUtils,
+  OwnerId,
   RepositoryId,
   StripeProduct,
   StripeProductId,
@@ -20,7 +19,7 @@ export interface StripeProductRepository {
   getById(id: StripeProductId): Promise<StripeProduct | null>;
 
   getCampaignProduct(
-    projectId: ProjectId,
+    projectId: OwnerId | RepositoryId,
   ): Promise<[CampaignProductType, StripeProduct][]>;
 
   getAll(): Promise<StripeProduct[]>;
@@ -82,14 +81,14 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
                 FROM stripe_product
                 WHERE stripe_id = $1
             `,
-      [id.id],
+      [id],
     );
 
     return this.getOptionalProduct(result.rows);
   }
 
   async getCampaignProduct(
-    projectId: ProjectId,
+    projectId: OwnerId | RepositoryId,
   ): Promise<[CampaignProductType, StripeProduct][]> {
     const campaignProductTypesClause = `
     AND type IN (${Object.values(CampaignProductType)
@@ -97,11 +96,11 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
       .join(", ")})
   `;
 
-    const login =
-      projectId instanceof RepositoryId
-        ? projectId.ownerId.login
-        : projectId.login;
-    const name = projectId instanceof RepositoryId ? projectId.name : null;
+    const isRepositoryId = "name" in projectId;
+    const login = isRepositoryId
+      ? (projectId as RepositoryId).ownerId.login
+      : (projectId as OwnerId).login;
+    const name = isRepositoryId ? (projectId as RepositoryId).name : null;
 
     let result = await this.pool.query(
       `
@@ -127,9 +126,15 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
 
   async insert(product: StripeProduct): Promise<StripeProduct> {
     const client = await this.pool.connect();
-    const { ownerId, ownerLogin, repoId, repoName } = ProjectUtils.getDBParams(
-      product.projectId,
-    );
+
+    // Parse projectId string to get owner/repo info
+    let ownerLogin: string | null = null;
+    let repoName: string | null = null;
+    if (product.projectId) {
+      const parts = product.projectId.split("/");
+      ownerLogin = parts[0] || null;
+      repoName = parts.length > 1 ? parts[1] : null;
+    }
 
     try {
       const result = await client.query(
@@ -146,11 +151,11 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
         RETURNING stripe_id, type, github_owner_id, github_owner_login, github_repository_id, github_repository_name
       `,
         [
-          product.stripeId.id,
+          product.stripeId,
           product.type,
-          ownerId,
+          null, // github_owner_id not available from string projectId
           ownerLogin,
-          repoId,
+          null, // github_repository_id not available from string projectId
           repoName,
         ],
       );

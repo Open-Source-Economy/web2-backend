@@ -1,12 +1,35 @@
 import { Pool } from "pg";
-import {
-  Project,
-  ProjectId,
-  ProjectUtils,
-  ValidationError,
-} from "@open-source-economy/api-types";
+import { OwnerId, Project, RepositoryId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { ProjectCompanion } from "../helpers/companions";
+import { ValidationError } from "../helpers/companions/Validator";
+
+type ProjectId = OwnerId | RepositoryId;
+
+function getDBParams(projectId: ProjectId): {
+  ownerLogin: string;
+  ownerId: number | undefined;
+  repoName: string | null;
+  repoId: number | undefined;
+} {
+  if ("name" in projectId) {
+    // RepositoryId
+    return {
+      ownerLogin: projectId.ownerId.login,
+      ownerId: projectId.ownerId.githubId,
+      repoName: projectId.name,
+      repoId: projectId.githubId,
+    };
+  } else {
+    // OwnerId
+    return {
+      ownerLogin: projectId.login,
+      ownerId: projectId.githubId,
+      repoName: null,
+      repoId: undefined,
+    };
+  }
+}
 
 export function getProjectRepository(): ProjectRepository {
   return new ProjectRepositoryImpl(pool);
@@ -117,7 +140,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   async getById(id: ProjectId): Promise<Project | null> {
-    const params = ProjectUtils.getDBParams(id);
+    const params = getDBParams(id);
 
     let query = `
             SELECT p.*,
@@ -156,7 +179,16 @@ class ProjectRepositoryImpl implements ProjectRepository {
     const client = await this.pool.connect();
 
     try {
-      const params = ProjectUtils.getDBParams(project.id);
+      // Determine the project ID based on whether it's a repository or owner project
+      const projectId: ProjectId = project.repository
+        ? ({
+            ownerId: project.owner.id,
+            name: project.repository.id.name,
+            githubId: project.repository.id.githubId,
+          } as RepositoryId)
+        : project.owner.id;
+
+      const params = getDBParams(projectId);
 
       const query = `
                 INSERT INTO project_old (github_owner_id,
@@ -179,7 +211,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       ]);
 
       // Fetch and return the full project
-      return (await this.getById(project.id)) as Project;
+      return (await this.getById(projectId)) as Project;
     } finally {
       client.release();
     }

@@ -75,13 +75,13 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
           RETURNING *
         `,
         [
-          userRepository.userId.uuid,
+          userRepository.userId,
           userRepository.repositoryId.ownerId.githubId,
           userRepository.repositoryId.ownerId.login,
           userRepository.repositoryId.githubId,
           userRepository.repositoryId.name,
           userRepository.repositoryUserRole,
-          userRepository.rate ? userRepository.rate.toNumber() : null,
+          userRepository.rate ?? null,
           userRepository.currency,
         ],
       );
@@ -99,7 +99,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
       `
         SELECT * FROM user_repository WHERE user_id = $1 AND github_owner_login = $2 AND github_repository_name = $3
       `,
-      [userId.uuid, repositoryId.ownerId.login, repositoryId.name],
+      [userId, repositoryId.ownerId.login, repositoryId.name],
     );
     return this.getOptional(result.rows);
   }
@@ -109,7 +109,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
       `
             SELECT * FROM user_repository WHERE user_id = $1
         `,
-      [userId.uuid],
+      [userId],
     );
     return this.getList(result.rows);
   }
@@ -126,9 +126,9 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
         `,
         [
           userRepository.repositoryUserRole,
-          userRepository.rate ? userRepository.rate.toNumber() : null,
+          userRepository.rate ?? null,
           userRepository.currency,
-          userRepository.userId.uuid,
+          userRepository.userId,
           userRepository.repositoryId.ownerId.login,
           userRepository.repositoryId.name,
         ],
@@ -144,7 +144,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
       `
         DELETE FROM user_repository WHERE user_id = $1 AND github_owner_login = $2 AND github_repository_name = $3
       `,
-      [userId.uuid, repositoryId.ownerId.login, repositoryId.name],
+      [userId, repositoryId.ownerId.login, repositoryId.name],
     );
   }
 }

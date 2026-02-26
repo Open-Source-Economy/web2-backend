@@ -1,10 +1,10 @@
 import {
+  ISODateTimeString,
   Service,
   ServiceId,
   ServiceType,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 
 export namespace ServiceCompanion {
   export function fromBackend(row: any): Service | ValidationError {
@@ -27,14 +27,14 @@ export namespace ServiceCompanion {
     }
 
     return {
-      id: new ServiceId(id),
+      id: id as ServiceId,
       serviceType,
       name,
       description: description || undefined,
       isCustom,
       hasResponseTime,
-      createdAt,
-      updatedAt,
-    };
+      createdAt: createdAt as ISODateTimeString,
+      updatedAt: updatedAt as ISODateTimeString,
+    } as Service;
   }
 }

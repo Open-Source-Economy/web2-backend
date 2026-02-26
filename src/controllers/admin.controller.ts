@@ -14,6 +14,7 @@ import { getGitHubService } from "../services/github.service";
 import { getOwnerRepository } from "../db/github/Owner.repository";
 import { getRepositoryRepository } from "../db/github/Repository.repository";
 import { getProjectRepository } from "../db/project/Project.repository";
+import { ApiError } from "../errors";
 
 const developerProfileRepo = getDeveloperProfileRepository();
 const userRepository = getUserRepository();
@@ -36,41 +37,41 @@ export interface AdminController {
   getAllDeveloperProfiles(
     req: Request<
       dto.GetAllDeveloperProfilesParams,
-      dto.ResponseBody<dto.GetAllDeveloperProfilesResponse>,
+      dto.GetAllDeveloperProfilesResponse,
       {}, // GET request - no body
       dto.GetAllDeveloperProfilesQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetAllDeveloperProfilesResponse>>,
+    res: Response<dto.GetAllDeveloperProfilesResponse>,
   ): Promise<void>;
 
   getDeveloperProfile(
     req: Request<
       { githubUsername: string },
-      dto.ResponseBody<dto.GetDeveloperProfileResponse>,
+      dto.GetDeveloperProfileResponse,
       {}, // GET request - no body
       dto.GetDeveloperProfileQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetDeveloperProfileResponse>>,
+    res: Response<dto.GetDeveloperProfileResponse>,
   ): Promise<void>;
 
   createVerificationRecord(
     req: Request<
       dto.CreateVerificationRecordParams,
-      dto.ResponseBody<dto.CreateVerificationRecordResponse>,
+      dto.CreateVerificationRecordResponse,
       dto.CreateVerificationRecordBody,
       dto.CreateVerificationRecordQuery
     >,
-    res: Response<dto.ResponseBody<dto.CreateVerificationRecordResponse>>,
+    res: Response<dto.CreateVerificationRecordResponse>,
   ): Promise<void>;
 
   syncOrganizationRepositories(
     req: Request<
       dto.SyncOrganizationRepositoriesParams,
-      dto.ResponseBody<dto.SyncOrganizationRepositoriesResponse>,
+      dto.SyncOrganizationRepositoriesResponse,
       dto.SyncOrganizationRepositoriesBody,
       dto.SyncOrganizationRepositoriesQuery
     >,
-    res: Response<dto.ResponseBody<dto.SyncOrganizationRepositoriesResponse>>,
+    res: Response<dto.SyncOrganizationRepositoriesResponse>,
   ): Promise<void>;
 }
 
@@ -90,7 +91,7 @@ export const AdminController: AdminController = {
       const response: dto.GetDeveloperProfileResponse = {
         profile: null,
       };
-      res.status(StatusCodes.OK).send({ success: response });
+      res.status(StatusCodes.OK).send(response);
       return;
     }
 
@@ -99,14 +100,14 @@ export const AdminController: AdminController = {
       const response: dto.GetDeveloperProfileResponse = {
         profile: null,
       };
-      res.status(StatusCodes.OK).send({ success: response });
+      res.status(StatusCodes.OK).send(response);
       return;
     }
 
     const profile =
       await developerProfileService.buildFullDeveloperProfile(existingProfile);
     const response: dto.GetDeveloperProfileResponse = { profile };
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   /**
@@ -126,9 +127,7 @@ export const AdminController: AdminController = {
       user.id,
     );
 
-    res.status(StatusCodes.OK).send({
-      success: { record },
-    });
+    res.status(StatusCodes.OK).send({ record });
   },
 
   /**
@@ -204,11 +203,7 @@ export const AdminController: AdminController = {
         // We need to get GitHub username from projects
         const hasMatchingProject = profile.projects.some(
           (p: dto.DeveloperProjectItemEntry) => {
-            const projectName =
-              typeof p.projectItem.sourceIdentifier === "string"
-                ? p.projectItem.sourceIdentifier
-                : (p.projectItem.sourceIdentifier as any).login ||
-                  (p.projectItem.sourceIdentifier as any).name;
+            const projectName = p.projectItem.sourceIdentifier;
             return projectName?.toLowerCase().includes(searchLower);
           },
         );
@@ -217,9 +212,7 @@ export const AdminController: AdminController = {
       });
     }
 
-    res.status(StatusCodes.OK).send({
-      success: { profiles: filteredProfiles },
-    });
+    res.status(StatusCodes.OK).send({ profiles: filteredProfiles });
   },
 
   /**
@@ -235,24 +228,22 @@ export const AdminController: AdminController = {
 
     // Get the project item and validate it's a GitHub organization
     const projectItem = await projectItemRepo.getById(
-      new dto.ProjectItemId(params.projectItemId),
+      params.projectItemId as dto.ProjectItemId,
     );
 
     if (!projectItem) {
-      throw new dto.ApiError(
-        StatusCodes.NOT_FOUND,
+      throw ApiError.notFound(
         `ProjectItem not found with id ${params.projectItemId}`,
       );
     }
 
     if (projectItem.projectItemType !== dto.ProjectItemType.GITHUB_OWNER) {
-      throw new dto.ApiError(
-        StatusCodes.BAD_REQUEST,
+      throw ApiError.badRequest(
         `ProjectItem must be of type GITHUB_OWNER, but got ${projectItem.projectItemType}`,
       );
     }
 
-    const ownerId = projectItem.sourceIdentifier as dto.OwnerId;
+    const ownerId = { login: projectItem.sourceIdentifier } as dto.OwnerId;
     const offset = query.offset || 0;
     const batchSize = query.batchSize;
     const fetchDetails = query.fetchDetails || false;
@@ -260,10 +251,7 @@ export const AdminController: AdminController = {
     // Get the owner to determine type (Organization or User)
     const owner = await ownerRepo.getById(ownerId);
     if (!owner) {
-      throw new dto.ApiError(
-        StatusCodes.NOT_FOUND,
-        `Owner not found with login ${ownerId.login}`,
-      );
+      throw ApiError.notFound(`Owner not found with login ${ownerId.login}`);
     }
 
     const ownerType = owner.type;
@@ -318,7 +306,7 @@ export const AdminController: AdminController = {
       offset,
     };
 
-    res.status(StatusCodes.ACCEPTED).send({ success: response });
+    res.status(StatusCodes.ACCEPTED).send(response);
   },
 };
 

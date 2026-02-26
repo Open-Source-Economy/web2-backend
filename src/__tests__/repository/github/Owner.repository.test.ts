@@ -50,7 +50,10 @@ describe("OwnerRepository", () => {
       const owner = Fixture.owner(ownerId);
       await ownerRepo.insertOrUpdate(owner);
 
-      const undefinedOwnerId = new OwnerId(ownerId.login, undefined);
+      const undefinedOwnerId: OwnerId = {
+        login: ownerId.login,
+        githubId: undefined,
+      };
 
       const found = await ownerRepo.getById(undefinedOwnerId);
       expect(found).toEqual(owner);

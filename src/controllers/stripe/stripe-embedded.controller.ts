@@ -2,29 +2,32 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
 import * as dto from "@open-source-economy/api-types";
-import { ApiError } from "@open-source-economy/api-types";
 import { StripeHelper } from "./stripe.helper";
 import { stripe } from "./index";
+import { ApiError } from "../../errors";
+
+// NOTE: CreateSubscription and CreatePaymentIntent types have been removed from api-types.
+// These endpoints are WIP and use inline types until proper replacements are defined.
+
+interface CreateSubscriptionBody {
+  countryCode: string | null;
+  priceItems: Array<{ priceId: { id: string }; quantity: number }>;
+}
+
+interface CreatePaymentIntentBody {
+  stripeCustomerId: { id: string };
+  priceItems: Array<{ priceId: { id: string }; quantity: number }>;
+}
 
 export interface StripeEmbeddedController {
   createSubscription(
-    req: Request<
-      dto.CreateSubscriptionParams,
-      dto.ResponseBody<dto.CreateSubscriptionResponse>,
-      dto.CreateSubscriptionBody,
-      dto.CreateSubscriptionQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreateSubscriptionResponse>>,
+    req: Request<{}, any, CreateSubscriptionBody, {}>,
+    res: Response<any>,
   ): Promise<void>;
 
   createPaymentIntentWIP(
-    req: Request<
-      dto.CreatePaymentIntentParams,
-      dto.ResponseBody<dto.CreatePaymentIntentResponse>,
-      dto.CreatePaymentIntentBody,
-      dto.CreatePaymentIntentQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreatePaymentIntentResponse>>,
+    req: Request<{}, any, CreatePaymentIntentBody, {}>,
+    res: Response<any>,
   ): Promise<void>;
 }
 
@@ -33,23 +36,18 @@ export const StripeEmbeddedController: StripeEmbeddedController = {
   // 1. createCustomer
   // 2. createSubscription
   async createSubscription(
-    req: Request<
-      dto.CreateSubscriptionParams,
-      dto.ResponseBody<dto.CreateSubscriptionResponse>,
-      dto.CreateSubscriptionBody,
-      dto.CreateSubscriptionQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreateSubscriptionResponse>>,
+    req: Request<{}, any, CreateSubscriptionBody, {}>,
+    res: Response<any>,
   ) {
     if (!req.user) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
+      throw ApiError.unauthorized("User not authenticated");
     } else {
       const stripeCustomerUser =
         await StripeHelper.getOrCreateStripeCustomerUser(
           req.user,
           req.body.countryCode,
         );
-      if (stripeCustomerUser instanceof ApiError) {
+      if (stripeCustomerUser instanceof Error) {
         throw stripeCustomerUser;
       }
 
@@ -63,31 +61,26 @@ export const StripeEmbeddedController: StripeEmbeddedController = {
       // so we can pass it to the front end to confirm the payment
       const subscription: Stripe.Subscription =
         await stripe.subscriptions.create({
-          customer: stripeCustomerUser.stripeCustomerId.id,
+          customer: stripeCustomerUser.stripeCustomerId,
           items: items,
           payment_behavior: "default_incomplete",
           payment_settings: { save_default_payment_method: "on_subscription" },
           expand: ["latest_invoice.payment_intent"],
         });
 
-      const response: dto.CreateSubscriptionResponse = {
+      const response = {
         subscription: subscription,
       };
 
       // At this point the Subscription is inactive and awaiting payment.
-      res.status(StatusCodes.CREATED).send({ success: response });
+      res.status(StatusCodes.CREATED).send(response);
     }
   },
 
   // this function in is WIP
   async createPaymentIntentWIP(
-    req: Request<
-      dto.CreatePaymentIntentParams,
-      dto.ResponseBody<dto.CreatePaymentIntentResponse>,
-      dto.CreatePaymentIntentBody,
-      dto.CreatePaymentIntentQuery
-    >,
-    res: Response<dto.ResponseBody<dto.CreatePaymentIntentResponse>>,
+    req: Request<{}, any, CreatePaymentIntentBody, {}>,
+    res: Response<any>,
   ) {
     // Step 1: Create an invoice
     // Step 2: Create an invoice item
@@ -107,16 +100,12 @@ export const StripeEmbeddedController: StripeEmbeddedController = {
         invoice: invoice.id,
         price: item.priceId.id,
         quantity: item.quantity,
-        // tax_behavior: "exclusive",
-        // tax_rates: [taxCalculation.tax_rates[0].id],
-        // tax_code: "txcd_30011000",
-        // metadata: { tax_calculation: taxCalculation.id },
       });
     }
 
     // TODO: should not happen, but just for compilation issue
     if (invoice.id === undefined)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Invoice ID is undefined");
+      throw ApiError.badRequest("Invoice ID is undefined");
 
     const finalizedInvoice: Stripe.Response<Stripe.Invoice> =
       await stripe.invoices.finalizeInvoice(invoice.id);
@@ -125,10 +114,10 @@ export const StripeEmbeddedController: StripeEmbeddedController = {
 
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    const response: dto.CreatePaymentIntentResponse = {
+    const response = {
       paymentIntent: paymentIntent,
     };
     // Send publishable key and PaymentIntent client_secret to client.
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 };

@@ -2,7 +2,6 @@ import { setupTestDB } from "../../__helpers__/jest.setup";
 import {
   CompanyId,
   CompanyUserRole,
-  CreateCompanyBody,
   UserId,
 } from "@open-source-economy/api-types";
 import { Fixture } from "../../__helpers__/Fixture";
@@ -20,7 +19,7 @@ describe("UserCompanyRepository", () => {
     );
     validUserId = validUser.id;
 
-    const companyBody: CreateCompanyBody = Fixture.createCompanyBody();
+    const companyBody = Fixture.createCompanyBody();
     const createdCompany = await companyRepo.create(companyBody);
     validCompanyId = createdCompany.id;
   });
@@ -92,7 +91,7 @@ describe("UserCompanyRepository", () => {
       const newCompany = await companyRepo.create({
         taxId: "987654321",
         name: "Another Company",
-        addressId: null, // Add addressId if needed
+        addressId: undefined, // Add addressId if needed
       });
 
       const users = await userCompanyRepo.getByCompanyId(newCompany.id);

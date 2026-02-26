@@ -6,14 +6,18 @@ import {
   OwnerId,
   PlanPriceType,
   PlanProductType,
-  ProjectId,
   RepositoryId,
   StripePrice,
   StripeProduct,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
-import { StripeProductCompanion } from "../helpers/companions";
+import {
+  StripePriceCompanion,
+  StripeProductCompanion,
+} from "../helpers/companions";
+
+type ProjectId = OwnerId | RepositoryId;
 
 export function getCombinedStripeRepository(): CombinedStripeRepository {
   return new CombinedStripeRepositoryImpl(pool);
@@ -53,7 +57,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
   }
 
   private getPriceFromRow(row: any): StripePrice {
-    const price = StripePrice.fromBackend(row);
+    const price = StripePriceCompanion.fromBackend(row);
     if (price instanceof Error) {
       throw price;
     }
@@ -82,14 +86,16 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
 
     // Only apply GitHub repository/owner filters when projectId is provided
     if (projectId) {
-      if (projectId instanceof RepositoryId) {
+      if ("name" in projectId) {
+        // It's a RepositoryId
         logger.debug(
           `Fetching products for repository ${projectId.ownerId.login}/${projectId.name}`,
         );
         whereClause = `WHERE stripe_product.github_owner_login = $1
         AND stripe_product.github_repository_name = $2`;
         params = [projectId.ownerId.login, projectId.name];
-      } else if (projectId instanceof OwnerId) {
+      } else {
+        // It's an OwnerId
         logger.debug(`Fetching products for owner ${projectId.login}`);
         whereClause = `WHERE stripe_product.github_owner_login = $1
         AND (stripe_product.github_repository_name IS NULL)`;

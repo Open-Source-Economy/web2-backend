@@ -1,40 +1,18 @@
 import { Pool } from "pg";
-import { NewsletterSubscription } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
+import {
+  NewsletterSubscription,
+  NewsletterSubscriptionCompanion,
+} from "./helpers/companions";
 
 export function getNewsletterSubscriptionRepository(): NewsletterSubscriptionRepository {
   return new NewsletterSubscriptionRepositoryImpl(pool);
 }
 
 export interface NewsletterSubscriptionRepository {
-  /**
-   * Creates a new newsletter subscription record.
-   *
-   * @param subscription - The subscription instance to create.
-   * @returns The created NewsletterSubscription instance.
-   */
   create(subscription: NewsletterSubscription): Promise<NewsletterSubscription>;
-
-  /**
-   * Retrieves a newsletter subscription by its email.
-   *
-   * @param email - The email associated with the subscription.
-   * @returns The found NewsletterSubscription instance or null if none exists.
-   */
   getByEmail(email: string): Promise<NewsletterSubscription | null>;
-
-  /**
-   * Retrieves all newsletter subscriptions.
-   *
-   * @returns An array of NewsletterSubscription instances.
-   */
   getAll(): Promise<NewsletterSubscription[]>;
-
-  /**
-   * Deletes a newsletter subscription by email.
-   *
-   * @param email - The email associated with the subscription to delete.
-   */
   delete(email: string): Promise<void>;
 }
 
@@ -61,7 +39,7 @@ class NewsletterSubscriptionRepositoryImpl
     } else if (rows.length > 1) {
       throw new Error("Multiple newsletter subscriptions found");
     } else {
-      const subscription = NewsletterSubscription.fromBackend(rows[0]);
+      const subscription = NewsletterSubscriptionCompanion.fromBackend(rows[0]);
       if (subscription instanceof Error) {
         throw subscription;
       }
@@ -71,7 +49,7 @@ class NewsletterSubscriptionRepositoryImpl
 
   private getSubscriptionList(rows: any[]): NewsletterSubscription[] {
     return rows.map((r) => {
-      const subscription = NewsletterSubscription.fromBackend(r);
+      const subscription = NewsletterSubscriptionCompanion.fromBackend(r);
       if (subscription instanceof Error) {
         throw subscription;
       }

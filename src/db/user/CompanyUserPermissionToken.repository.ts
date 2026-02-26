@@ -3,13 +3,23 @@ import {
   CompanyId,
   CompanyUserPermissionToken,
   CompanyUserPermissionTokenId,
-  CreateCompanyUserPermissionTokenBody,
+  CompanyUserRole,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
+import { CompanyUserPermissionTokenCompanion } from "../helpers/companions";
 
 export function getCompanyUserPermissionTokenRepository(): CompanyUserPermissionTokenRepository {
   return new CompanyUserPermissionTokenRepositoryImpl(pool);
+}
+
+export interface CreateCompanyUserPermissionTokenBody {
+  userName: string | null;
+  userEmail: string;
+  token: string;
+  companyId: CompanyId;
+  companyUserRole: CompanyUserRole;
+  expiresAt: Date;
 }
 
 export interface CompanyUserPermissionTokenRepository {
@@ -63,7 +73,7 @@ class CompanyUserPermissionTokenRepositoryImpl
     } else if (rows.length > 1) {
       throw new Error("Multiple tokens found");
     } else {
-      const token = CompanyUserPermissionToken.fromBackend(rows[0]);
+      const token = CompanyUserPermissionTokenCompanion.fromBackend(rows[0]);
       if (token instanceof Error) {
         throw token;
       }
@@ -73,7 +83,7 @@ class CompanyUserPermissionTokenRepositoryImpl
 
   private getTokenList(rows: any[]): CompanyUserPermissionToken[] {
     return rows.map((r) => {
-      const token = CompanyUserPermissionToken.fromBackend(r);
+      const token = CompanyUserPermissionTokenCompanion.fromBackend(r);
       if (token instanceof Error) {
         throw token;
       }
@@ -97,7 +107,7 @@ class CompanyUserPermissionTokenRepositoryImpl
           token.userName,
           token.userEmail,
           token.token,
-          token.companyId.uuid,
+          token.companyId,
           token.companyUserRole,
           token.expiresAt,
           false, // Default value for hasBeenUsed
@@ -133,11 +143,11 @@ class CompanyUserPermissionTokenRepositoryImpl
           token.userName,
           token.userEmail,
           token.token,
-          token.companyId.uuid,
+          token.companyId,
           token.companyUserRole,
           token.expiresAt,
           token.hasBeenUsed,
-          token.id.uuid,
+          token.id,
         ],
       );
 
@@ -156,7 +166,7 @@ class CompanyUserPermissionTokenRepositoryImpl
                 FROM company_user_permission_token
                 WHERE id = $1
             `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalToken(result.rows);
@@ -173,7 +183,7 @@ class CompanyUserPermissionTokenRepositoryImpl
                 WHERE user_email = $1
                   AND company_id = $2
             `,
-      [userEmail, companyId.uuid],
+      [userEmail, companyId],
     );
 
     return this.getTokenList(result.rows);

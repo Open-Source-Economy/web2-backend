@@ -1,48 +1,45 @@
 import { Pool } from "pg";
 import {
   Currency,
-  LocalUser,
   Owner,
   Provider,
-  Terms,
-  ThirdPartyUser,
-  ThirdPartyUserId,
-  User,
   UserId,
   UserRole,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { encrypt } from "../../utils";
 import { OwnerCompanion, UserCompanion } from "../helpers/companions";
+import {
+  BackendUser,
+  CreateUser,
+  isBackendLocalUser,
+} from "../helpers/companions/user/backend-user.types";
 
 export function getUserRepository(): UserRepository {
   return new UserRepositoryImpl(pool);
 }
 
-export interface CreateUser {
-  name: string | null;
-  data: LocalUser | ThirdPartyUser;
-  role: UserRole;
-  preferredCurrency?: Currency;
-  termsAcceptedVersion: string | null;
-}
+export { CreateUser };
 
 export interface UserRepository {
-  insert(user: CreateUser): Promise<User>;
-  validateEmail(email: string): Promise<User | null>;
-  getById(id: UserId): Promise<User | null>;
-  getAll(): Promise<User[]>;
-  findOne(email: string): Promise<User | null>;
+  insert(user: CreateUser): Promise<BackendUser>;
+  validateEmail(email: string): Promise<BackendUser | null>;
+  getById(id: UserId): Promise<BackendUser | null>;
+  getAll(): Promise<BackendUser[]>;
+  findOne(email: string): Promise<BackendUser | null>;
   findByThirdPartyId(
-    thirdPartyId: ThirdPartyUserId,
+    thirdPartyId: string,
     provider: Provider,
-  ): Promise<User | null>;
-  findByGithubLogin(githubLogin: string): Promise<User | null>;
+  ): Promise<BackendUser | null>;
+  findByGithubLogin(githubLogin: string): Promise<BackendUser | null>;
   setPreferredCurrency(userId: UserId, currency: Currency): Promise<void>;
 
   updateName(userId: UserId, name: string): Promise<void>;
 
-  updateTermsAcceptedVersion(userId: UserId, terms: Terms): Promise<void>;
+  updateTermsAcceptedVersion(
+    userId: UserId,
+    termsVersion: string,
+  ): Promise<void>;
 
   updatePassword(userId: UserId, password: string): Promise<void>;
 }
@@ -54,7 +51,7 @@ class UserRepositoryImpl implements UserRepository {
     this.pool = pool;
   }
 
-  private getOneUser(rows: any[], owner: Owner | null = null): User {
+  private getOneUser(rows: any[], owner: Owner | null = null): BackendUser {
     const user = this.getOptionalUser(rows, owner);
     if (user === null) {
       throw new Error("User not found");
@@ -66,7 +63,7 @@ class UserRepositoryImpl implements UserRepository {
   private getOptionalUser(
     rows: any[],
     owner: Owner | null = null,
-  ): User | null {
+  ): BackendUser | null {
     if (rows.length === 0) {
       return null;
     } else if (rows.length > 1) {
@@ -80,7 +77,7 @@ class UserRepositoryImpl implements UserRepository {
     }
   }
 
-  private getUserList(rows: any[]): User[] {
+  private getUserList(rows: any[]): BackendUser[] {
     return rows.map((r) => {
       const user = UserCompanion.fromRaw(r);
       if (user instanceof Error) {
@@ -90,7 +87,7 @@ class UserRepositoryImpl implements UserRepository {
     });
   }
 
-  async validateEmail(email: string): Promise<User | null> {
+  async validateEmail(email: string): Promise<BackendUser | null> {
     const result = await this.pool.query(
       `
                 UPDATE app_user
@@ -104,7 +101,7 @@ class UserRepositoryImpl implements UserRepository {
     return this.getOptionalUser(result.rows);
   }
 
-  async getAll(): Promise<User[]> {
+  async getAll(): Promise<BackendUser[]> {
     const result = await this.pool.query(
       `
                 SELECT au.*,
@@ -121,7 +118,7 @@ class UserRepositoryImpl implements UserRepository {
     return this.getUserList(result.rows);
   }
 
-  async getById(id: UserId): Promise<User | null> {
+  async getById(id: UserId): Promise<BackendUser | null> {
     const result = await this.pool.query(
       `
                 SELECT au.*,
@@ -134,15 +131,15 @@ class UserRepositoryImpl implements UserRepository {
                          LEFT JOIN github_owner go ON au.github_owner_id = go.github_id
                 WHERE au.id = $1
             `,
-      [id.uuid],
+      [id],
     );
     return this.getOptionalUser(result.rows);
   }
 
-  async insert(user: CreateUser): Promise<User> {
+  async insert(user: CreateUser): Promise<BackendUser> {
     const client = await this.pool.connect();
 
-    if (user.data instanceof LocalUser) {
+    if (isBackendLocalUser(user.data)) {
       const hashedPassword = await encrypt.hashPassword(user.data.password);
       try {
         const result = await client.query(
@@ -198,6 +195,7 @@ class UserRepositoryImpl implements UserRepository {
         }
 
         // Insert or update the ThirdPartyUser
+        // third_party_id is now stored as the github owner login string
         const userResult = await client.query(
           `
           INSERT INTO app_user (provider, third_party_id, name, email, is_email_verified, role, github_owner_id, github_owner_login, preferred_currency, terms_accepted_version)
@@ -215,7 +213,7 @@ class UserRepositoryImpl implements UserRepository {
         `,
           [
             user.data.provider,
-            user.data.id.uuid,
+            String(githubOwner.id.githubId),
             user.name,
             user.data.email,
             UserRole.USER,
@@ -240,7 +238,7 @@ class UserRepositoryImpl implements UserRepository {
     }
   }
 
-  async findOne(email: string): Promise<User | null> {
+  async findOne(email: string): Promise<BackendUser | null> {
     const result = await this.pool.query(
       `
                 SELECT au.id,
@@ -267,9 +265,9 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   async findByThirdPartyId(
-    id: ThirdPartyUserId,
+    thirdPartyId: string,
     provider: Provider,
-  ): Promise<User | null> {
+  ): Promise<BackendUser | null> {
     const result = await this.pool.query(
       `
                 SELECT au.id,
@@ -291,12 +289,12 @@ class UserRepositoryImpl implements UserRepository {
                 WHERE au.third_party_id = $1
                   AND au.provider = $2
             `,
-      [id.uuid, provider],
+      [thirdPartyId, provider],
     );
     return this.getOptionalUser(result.rows);
   }
 
-  async findByGithubLogin(githubLogin: string): Promise<User | null> {
+  async findByGithubLogin(githubLogin: string): Promise<BackendUser | null> {
     const result = await this.pool.query(
       `
                 SELECT au.id,
@@ -332,11 +330,11 @@ class UserRepositoryImpl implements UserRepository {
       SET preferred_currency = $1
       WHERE id = $2
     `,
-      [currency, userId.uuid],
+      [currency, userId],
     );
 
     if (result.rowCount === 0) {
-      throw new Error(`User with id ${userId.uuid} not found`);
+      throw new Error(`User with id ${userId} not found`);
     }
   }
 
@@ -348,17 +346,17 @@ class UserRepositoryImpl implements UserRepository {
           WHERE id = $2
           RETURNING *
         `,
-      [name, userId.uuid],
+      [name, userId],
     );
 
     if (result.rowCount === 0) {
-      throw new Error(`User with id ${userId.uuid} not found`);
+      throw new Error(`User with id ${userId} not found`);
     }
   }
 
   async updateTermsAcceptedVersion(
     userId: UserId,
-    terms: Terms,
+    termsVersion: string,
   ): Promise<void> {
     const result = await this.pool.query(
       `
@@ -366,11 +364,11 @@ class UserRepositoryImpl implements UserRepository {
                 SET terms_accepted_version = $1
                 WHERE id = $2
             `,
-      [terms.version, userId.uuid],
+      [termsVersion, userId],
     );
 
     if (result.rowCount === 0) {
-      throw new Error(`User with id ${userId.uuid} not found`);
+      throw new Error(`User with id ${userId} not found`);
     }
   }
 
@@ -382,11 +380,11 @@ class UserRepositoryImpl implements UserRepository {
       SET hashed_password = $1
       WHERE id = $2
     `,
-      [hashedPassword, userId.uuid],
+      [hashedPassword, userId],
     );
 
     if (result.rowCount === 0) {
-      throw new Error(`User with id ${userId.uuid} not found`);
+      throw new Error(`User with id ${userId} not found`);
     }
   }
 }

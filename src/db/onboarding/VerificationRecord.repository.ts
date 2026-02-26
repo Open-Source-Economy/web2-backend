@@ -74,7 +74,7 @@ export function createVerificationRecordRepository(
         entityId,
         status,
         notes || null,
-        verifiedBy?.uuid || null,
+        verifiedBy || null,
       ];
 
       const result = await pool.query(query, values);

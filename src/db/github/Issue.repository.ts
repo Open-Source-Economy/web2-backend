@@ -1,11 +1,7 @@
 import { Pool } from "pg";
-import {
-  Issue,
-  IssueId,
-  ValidationError,
-} from "@open-source-economy/api-types";
+import { Issue, IssueId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
-import { IssueCompanion } from "../helpers/companions";
+import { IssueCompanion, ValidationError } from "../helpers/companions";
 
 export function getIssueRepository(): IssueRepository {
   return new IssueRepositoryImpl(pool);
@@ -126,8 +122,8 @@ class IssueRepositoryImpl implements IssueRepository {
         issue.id.number,
         issue.title,
         issue.htmlUrl,
-        issue.createdAt.toISOString(),
-        issue.closedAt ? issue.closedAt.toISOString() : null,
+        issue.createdAt,
+        issue.closedAt ?? null,
         issue.openBy?.githubId,
         issue.openBy.login,
         issue.body,

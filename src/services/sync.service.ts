@@ -5,11 +5,16 @@ import {
   Owner,
   OwnerId,
   OwnerType,
-  ProjectId,
   ProjectItemType,
   Repository,
   RepositoryId,
 } from "@open-source-economy/api-types";
+
+/**
+ * Local alias: a project can be identified by either a RepositoryId or an OwnerId.
+ * Discriminate using `"name" in projectId` (RepositoryId has `name`, OwnerId does not).
+ */
+type ProjectId = OwnerId | RepositoryId;
 import { config, logger } from "../config";
 import { ProjectItemRepository, ProjectRepository } from "../db";
 import { Batcher, RateLimiter } from "../utils";
@@ -410,12 +415,14 @@ class GithubSyncServiceImpl implements GithubSyncService {
   }
 
   async syncProject(projectId: ProjectId): Promise<[Owner, Repository | null]> {
-    if (projectId instanceof RepositoryId) {
-      const [owner, repo] = await this.syncRepository(projectId);
+    // Discriminate: RepositoryId has a `name` property, OwnerId does not.
+    if ("name" in projectId && "ownerId" in projectId) {
+      const [owner, repo] = await this.syncRepository(
+        projectId as RepositoryId,
+      );
       return [owner, repo];
     } else {
-      // Assuming projectId is an OwnerId or has owner information
-      const owner = await this.syncOwner(new OwnerId(projectId.login));
+      const owner = await this.syncOwner(projectId as OwnerId);
       return [owner, null];
     }
   }
@@ -443,7 +450,18 @@ class GithubSyncServiceImpl implements GithubSyncService {
     for (const projectItem of projectItems) {
       try {
         if (projectItem.projectItemType === ProjectItemType.GITHUB_REPOSITORY) {
-          const repositoryId = projectItem.sourceIdentifier as RepositoryId;
+          // sourceIdentifier is stored as "owner/repo" string; parse into RepositoryId
+          const parts = projectItem.sourceIdentifier.split("/");
+          if (parts.length < 2) {
+            logger.warn(
+              `Invalid repository sourceIdentifier format: ${projectItem.sourceIdentifier}`,
+            );
+            continue;
+          }
+          const repositoryId: RepositoryId = {
+            ownerId: { login: parts[0] } as OwnerId,
+            name: parts[1],
+          };
           const repoKey = `${repositoryId.ownerId.login}/${repositoryId.name}`;
 
           // Sync repository (and its owner)
@@ -463,7 +481,8 @@ class GithubSyncServiceImpl implements GithubSyncService {
         } else if (
           projectItem.projectItemType === ProjectItemType.GITHUB_OWNER
         ) {
-          const ownerId = projectItem.sourceIdentifier as OwnerId;
+          // sourceIdentifier is stored as the owner login string
+          const ownerId: OwnerId = { login: projectItem.sourceIdentifier };
           const ownerKey = ownerId.login;
 
           // Sync owner
@@ -483,10 +502,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
         // URL type items don't have GitHub data to sync
       } catch (error) {
         errors++;
-        logger.error(
-          `Error syncing project item ${projectItem.id.uuid}:`,
-          error,
-        );
+        logger.error(`Error syncing project item ${projectItem.id}:`, error);
       }
     }
 

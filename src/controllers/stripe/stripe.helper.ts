@@ -6,20 +6,23 @@ import {
 } from "../../db/";
 import Stripe from "stripe";
 import {
-  ApiError,
   CompanyId,
   CompanyUserRole,
   Currency,
   StripeCustomer,
   StripeCustomerId,
-  StripeCustomerUser,
   StripePrice,
-  userUtils,
-  ValidationError,
 } from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
 import { stripe } from "./index";
 import { logger } from "../../config";
+import { ApiError } from "../../errors";
+
+// StripeCustomerUser is removed from api-types; define a local interface
+interface StripeCustomerUser {
+  stripeCustomerId: StripeCustomerId;
+  userId: any;
+}
 
 export interface StripeHelper {
   getOrCreateStripeCustomerUser(
@@ -50,10 +53,7 @@ export const StripeHelper: StripeHelper = {
       const companies: [CompanyId, CompanyUserRole][] =
         await userCompanyRepo.getByUserId(user.id);
       if (companies.length > 1) {
-        return new ApiError(
-          StatusCodes.NOT_IMPLEMENTED,
-          "Multiple companies not supported",
-        );
+        return ApiError.internal("Multiple companies not supported");
       }
 
       let stripeAddress: Stripe.Emptyable<Stripe.AddressParam> = {
@@ -61,8 +61,8 @@ export const StripeHelper: StripeHelper = {
       };
 
       const customerCreateParams: Stripe.CustomerCreateParams = {
-        description: user.id.uuid,
-        email: userUtils.email(user) ?? undefined,
+        description: user.id as string,
+        email: (user as any).email ?? undefined,
         address: stripeAddress,
       };
 
@@ -70,12 +70,16 @@ export const StripeHelper: StripeHelper = {
 
       const customer: Stripe.Customer =
         await stripe.customers.create(customerCreateParams);
-      const stripeCustomer = StripeCustomer.fromStripeApi(customer);
-      if (stripeCustomer instanceof ValidationError) throw stripeCustomer;
-      const stripeCustomerUser: StripeCustomerUser = new StripeCustomerUser(
-        new StripeCustomerId(customer.id),
-        user.id,
-      );
+      const stripeCustomer: StripeCustomer = {
+        stripeId: customer.id as StripeCustomerId,
+        currency: undefined,
+        email: customer.email ?? undefined,
+        name: customer.name ?? undefined,
+      };
+      const stripeCustomerUser: StripeCustomerUser = {
+        stripeCustomerId: customer.id as StripeCustomerId,
+        userId: user.id,
+      };
 
       await stripeCustomerRepo.insert(stripeCustomer);
       await stripeCustomerUserRepo.insert(stripeCustomerUser);
@@ -99,14 +103,17 @@ export const StripeHelper: StripeHelper = {
         };
 
         const priceResponse = await stripe.prices.create(priceParams);
-        const stripePrice = StripePrice.fromStripeApi(priceResponse);
+        const stripePrice: StripePrice = {
+          id: priceResponse.id as any,
+          stripeProductId: product.id as any,
+          currency: currency.toUpperCase() as Currency,
+          unitAmount: priceResponse.unit_amount ?? 0,
+          recurring: priceResponse.recurring ? true : false,
+          interval: priceResponse.recurring?.interval ?? null,
+          active: priceResponse.active,
+        } as any;
 
-        if (stripePrice instanceof StripePrice) {
-          await stripePriceRepo.createOrUpdate(stripePrice);
-        } else {
-          logger.error(`${stripePrice} - received from Stripe}`, priceResponse);
-          throw stripePrice;
-        }
+        await stripePriceRepo.createOrUpdate(stripePrice);
       },
     );
 

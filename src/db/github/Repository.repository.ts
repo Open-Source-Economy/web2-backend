@@ -1,11 +1,7 @@
 import { Pool } from "pg";
-import {
-  Repository,
-  RepositoryId,
-  ValidationError,
-} from "@open-source-economy/api-types";
+import { Repository, RepositoryId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
-import { RepositoryCompanion } from "../helpers/companions";
+import { RepositoryCompanion, ValidationError } from "../helpers/companions";
 
 export function getRepositoryRepository(): RepositoryRepository {
   return new RepositoryRepositoryImpl(pool);

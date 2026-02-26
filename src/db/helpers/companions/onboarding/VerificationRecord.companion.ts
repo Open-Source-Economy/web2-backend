@@ -1,12 +1,12 @@
 import {
+  ISODateTimeString,
   UserId,
-  ValidationError,
-  Validator,
   VerificationEntityType,
   VerificationRecord,
   VerificationRecordId,
   VerificationStatus,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 
 export namespace VerificationRecordCompanion {
   export function fromBackend(
@@ -34,15 +34,17 @@ export namespace VerificationRecordCompanion {
     }
 
     return {
-      id: new VerificationRecordId(id),
+      id: id as VerificationRecordId,
       entityType: entityType as VerificationEntityType,
       entityId,
       status: status as VerificationStatus,
       notes,
-      verifiedBy: verifiedBy ? new UserId(verifiedBy) : undefined,
-      createdAt,
+      verifiedBy: verifiedBy ? (verifiedBy as UserId) : undefined,
+      createdAt: createdAt as ISODateTimeString,
       developerResponse,
-      developerRespondedAt,
-    };
+      developerRespondedAt: developerRespondedAt as
+        | ISODateTimeString
+        | undefined,
+    } as VerificationRecord;
   }
 }

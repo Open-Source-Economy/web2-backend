@@ -14,10 +14,20 @@ import {
   Price,
   PriceType,
   ProductType,
-  productTypeUtils,
   StripeProductId,
 } from "@open-source-economy/api-types";
 import { CampaignHelper } from "../../../controllers/campaign/campaign.helper";
+
+// Helper to serialize OwnerId/RepositoryId to string for projectId
+function toProjectIdString(id: any): string {
+  if (id && "name" in id && "ownerId" in id) {
+    return `${id.ownerId.login}/${id.name}`;
+  }
+  if (id && "login" in id) {
+    return id.login;
+  }
+  return String(id);
+}
 
 const currencyPriceConfigs: Record<
   Currency,
@@ -67,9 +77,9 @@ describe("CampaignHelper.getPrices", () => {
   it("should return an error is the DB is missing a product type", async () => {
     const campaignProductType = CampaignProductType.CREDIT;
     const product = Fixture.stripeProduct(
-      new StripeProductId("product-1"),
-      repositoryId,
-      productTypeUtils.toProductType(campaignProductType),
+      "product-1" as StripeProductId,
+      toProjectIdString(repositoryId),
+      campaignProductType as unknown as ProductType,
     );
 
     await productRepo.insert(product);
@@ -113,8 +123,8 @@ describe("CampaignHelper.getPrices", () => {
       const campaignProductType = productType as CampaignProductType;
       const product = Fixture.stripeProduct(
         Fixture.stripeProductId(),
-        repositoryId,
-        productTypeUtils.toProductType(campaignProductType),
+        toProjectIdString(repositoryId),
+        campaignProductType as unknown as ProductType,
       );
 
       await productRepo.insert(product);
@@ -151,8 +161,8 @@ describe("CampaignHelper.getPrices", () => {
       const campaignProductType = productType as CampaignProductType;
       const product = Fixture.stripeProduct(
         Fixture.stripeProductId(),
-        repositoryId,
-        productTypeUtils.toProductType(campaignProductType),
+        toProjectIdString(repositoryId),
+        campaignProductType as unknown as ProductType,
       );
 
       await productRepo.insert(product);

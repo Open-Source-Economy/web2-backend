@@ -24,6 +24,7 @@ import {
   githubSyncService,
   mailService,
 } from "../services";
+import { ApiError } from "../errors";
 
 const developerProfileRepo = getDeveloperProfileRepository();
 const developerSettingsRepo = getDeveloperSettingsRepository();
@@ -38,105 +39,104 @@ export interface OnboardingController {
   // Profile management
   createProfile(
     req: Request<
-      dto.CreateDeveloperProfileParams,
-      dto.ResponseBody<dto.CreateDeveloperProfileResponse>,
-      dto.CreateDeveloperProfileBody,
-      dto.CreateDeveloperProfileQuery
+      dto.CreateProfileParams,
+      dto.CreateProfileResponse,
+      dto.CreateProfileBody,
+      dto.CreateProfileQuery
     >,
-    res: Response<dto.ResponseBody<dto.CreateDeveloperProfileResponse>>,
+    res: Response<dto.CreateProfileResponse>,
   ): Promise<void>;
 
   updateContactInfos(
     req: Request<
-      dto.UpdateDeveloperContactInfosParams,
-      dto.ResponseBody<dto.UpdateDeveloperContactInfosResponse>,
-      dto.UpdateDeveloperContactInfosBody,
-      dto.UpdateDeveloperContactInfosQuery
+      dto.UpdateContactInfosParams,
+      dto.UpdateContactInfosResponse,
+      dto.UpdateContactInfosBody,
+      dto.UpdateContactInfosQuery
     >,
-    res: Response<dto.ResponseBody<dto.UpdateDeveloperContactInfosResponse>>,
+    res: Response<dto.UpdateContactInfosResponse>,
   ): Promise<void>;
 
   getDeveloperProfile(
     req: Request<
       dto.GetDeveloperProfileParams,
-      dto.ResponseBody<dto.GetDeveloperProfileResponse>,
+      dto.GetDeveloperProfileResponse,
+      {},
       dto.GetDeveloperProfileQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetDeveloperProfileResponse>>,
+    res: Response<dto.GetDeveloperProfileResponse>,
   ): Promise<void>;
 
   // Settings management
   setDeveloperPreferences(
     req: Request<
       dto.SetDeveloperPreferencesParams,
-      dto.ResponseBody<dto.SetDeveloperPreferencesResponse>,
+      dto.SetDeveloperPreferencesResponse,
       dto.SetDeveloperPreferencesBody,
       dto.SetDeveloperPreferencesQuery
     >,
-    res: Response<dto.ResponseBody<dto.SetDeveloperPreferencesResponse>>,
+    res: Response<dto.SetDeveloperPreferencesResponse>,
   ): Promise<void>;
 
   setDeveloperServiceSettings(
     req: Request<
       dto.SetDeveloperServiceSettingsParams,
-      dto.ResponseBody<dto.SetDeveloperServiceSettingsResponse>,
+      dto.SetDeveloperServiceSettingsResponse,
       dto.SetDeveloperServiceSettingsBody,
       dto.SetDeveloperServiceSettingsQuery
     >,
-    res: Response<dto.ResponseBody<dto.SetDeveloperServiceSettingsResponse>>,
+    res: Response<dto.SetDeveloperServiceSettingsResponse>,
   ): Promise<void>;
 
   getPotentialProjectsItems(
     req: Request<
-      dto.GetPotentialDeveloperProjectItemsParams,
-      dto.ResponseBody<dto.GetPotentialDeveloperProjectItemsResponse>,
-      dto.GetPotentialDeveloperProjectItemsBody,
-      dto.GetPotentialDeveloperProjectItemsQuery
+      dto.GetPotentialProjectItemsParams,
+      dto.GetPotentialProjectItemsResponse,
+      {},
+      dto.GetPotentialProjectItemsQuery
     >,
-    res: Response<
-      dto.ResponseBody<dto.GetPotentialDeveloperProjectItemsResponse>
-    >,
+    res: Response<dto.GetPotentialProjectItemsResponse>,
   ): Promise<void>;
 
   upsertProjectProjectItem(
     req: Request<
       dto.UpsertDeveloperProjectItemParams,
-      dto.ResponseBody<dto.UpsertDeveloperProjectItemResponse>,
+      dto.UpsertDeveloperProjectItemResponse,
       dto.UpsertDeveloperProjectItemBody,
       dto.UpsertDeveloperProjectItemQuery
     >,
-    res: Response<dto.ResponseBody<dto.UpsertDeveloperProjectItemResponse>>,
+    res: Response<dto.UpsertDeveloperProjectItemResponse>,
   ): Promise<void>;
 
   removeProjectProjectItem(
     req: Request<
       dto.RemoveDeveloperProjectItemParams,
-      dto.ResponseBody<dto.RemoveDeveloperProjectItemResponse>,
-      dto.RemoveDeveloperProjectItemBody,
+      any,
+      {},
       dto.RemoveDeveloperProjectItemQuery
     >,
-    res: Response<dto.ResponseBody<dto.RemoveDeveloperProjectItemResponse>>,
+    res: Response<any>,
   ): Promise<void>;
 
   // Service management
   getServiceHierarchy(
     req: Request<
       dto.GetServiceHierarchyParams,
-      dto.ResponseBody<dto.GetServiceHierarchyResponse>,
-      dto.GetServiceHierarchyBody,
+      dto.GetServiceHierarchyResponse,
+      {},
       dto.GetServiceHierarchyQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetServiceHierarchyResponse>>,
+    res: Response<dto.GetServiceHierarchyResponse>,
   ): Promise<void>;
 
   createCustomService(
     req: Request<
       dto.CreateCustomServiceParams,
-      dto.ResponseBody<dto.CreateCustomServiceResponse>,
+      dto.CreateCustomServiceResponse,
       dto.CreateCustomServiceBody,
       dto.CreateCustomServiceQuery
     >,
-    res: Response<dto.ResponseBody<dto.CreateCustomServiceResponse>>,
+    res: Response<dto.CreateCustomServiceResponse>,
   ): Promise<void>;
 
   /**
@@ -147,11 +147,11 @@ export interface OnboardingController {
   upsertDeveloperService(
     req: Request<
       dto.UpsertDeveloperServiceParams,
-      dto.ResponseBody<dto.UpsertDeveloperServiceResponse>,
+      dto.UpsertDeveloperServiceResponse,
       dto.UpsertDeveloperServiceBody,
       dto.UpsertDeveloperServiceQuery
     >,
-    res: Response<dto.ResponseBody<dto.UpsertDeveloperServiceResponse>>,
+    res: Response<dto.UpsertDeveloperServiceResponse>,
   ): Promise<void>;
 
   /**
@@ -162,56 +162,55 @@ export interface OnboardingController {
   upsertDeveloperServices(
     req: Request<
       dto.UpsertDeveloperServicesParams,
-      dto.ResponseBody<dto.UpsertDeveloperServicesResponse>,
+      dto.UpsertDeveloperServicesResponse,
       dto.UpsertDeveloperServicesBody,
       dto.UpsertDeveloperServicesQuery
     >,
-    res: Response<dto.ResponseBody<dto.UpsertDeveloperServicesResponse>>,
+    res: Response<dto.UpsertDeveloperServicesResponse>,
   ): Promise<void>;
 
   deleteDeveloperService(
     req: Request<
       dto.DeleteDeveloperServiceParams,
-      dto.ResponseBody<dto.DeleteDeveloperServiceResponse>,
-      dto.DeleteDeveloperServiceBody,
+      dto.UpsertDeveloperServiceResponse,
+      {},
       dto.DeleteDeveloperServiceQuery
     >,
-    res: Response<dto.ResponseBody<dto.DeleteDeveloperServiceResponse>>,
+    res: Response<dto.UpsertDeveloperServiceResponse>,
   ): Promise<void>;
 
   // Onboarding completion
   completeOnboarding(
     req: Request<
       dto.CompleteOnboardingParams,
-      dto.ResponseBody<dto.CompleteOnboardingResponse>,
+      dto.CompleteOnboardingResponse,
       dto.CompleteOnboardingBody,
       dto.CompleteOnboardingQuery
     >,
-    res: Response<dto.ResponseBody<dto.CompleteOnboardingResponse>>,
+    res: Response<dto.CompleteOnboardingResponse>,
   ): Promise<void>;
 }
 
 export const OnboardingController: OnboardingController = {
   async createProfile(req, res) {
     const user = checkAuthenticatedUser(req);
-    const body: dto.CreateDeveloperProfileBody = req.body;
+    const body: dto.CreateProfileBody = req.body;
 
     const existingProfile = await developerProfileRepo.getByUserId(user.id);
 
     if (existingProfile) {
-      const response: dto.CreateDeveloperProfileResponse = {};
-      res.status(StatusCodes.OK).send({ success: response });
+      const response: dto.CreateProfileResponse = {};
+      res.status(StatusCodes.OK).send(response);
     } else {
       if (body.agreedToTerms) {
         await userRepository.updateName(user.id, body.name);
-        await userRepository.updateTermsAcceptedVersion(user.id, terms);
+        await userRepository.updateTermsAcceptedVersion(user.id, terms.version);
         await developerProfileRepo.create(user.id, body.email);
 
-        const response: dto.CreateDeveloperProfileResponse = {};
-        res.status(StatusCodes.CREATED).send({ success: response });
+        const response: dto.CreateProfileResponse = {};
+        res.status(StatusCodes.CREATED).send(response);
       } else {
-        throw new dto.ApiError(
-          StatusCodes.BAD_REQUEST,
+        throw ApiError.badRequest(
           "You must agree to the terms and conditions to create a profile.",
         );
       }
@@ -221,14 +220,14 @@ export const OnboardingController: OnboardingController = {
   async updateContactInfos(req, res) {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
 
-    const body: dto.UpdateDeveloperContactInfosBody = req.body;
+    const body: dto.UpdateContactInfosBody = req.body;
 
     await userRepository.updateName(developerProfile.userId, body.name);
 
-    await developerProfileRepo.updateEmail(developerProfile.userId, body.email);
+    await developerProfileRepo.updateEmail(developerProfile.id, body.email);
 
-    const response: dto.UpdateDeveloperContactInfosResponse = {};
-    res.status(StatusCodes.OK).send({ success: response });
+    const response: dto.UpdateContactInfosResponse = {};
+    res.status(StatusCodes.OK).send(response);
   },
 
   async getDeveloperProfile(req, res) {
@@ -240,7 +239,7 @@ export const OnboardingController: OnboardingController = {
       const response: dto.GetDeveloperProfileResponse = {
         profile: null,
       };
-      res.status(StatusCodes.OK).send({ success: response });
+      res.status(StatusCodes.OK).send(response);
     } else {
       const profile = await developerProfileService.buildFullDeveloperProfile(
         existingProfile,
@@ -251,7 +250,7 @@ export const OnboardingController: OnboardingController = {
         profile,
       };
 
-      res.status(StatusCodes.OK).send({ success: response });
+      res.status(StatusCodes.OK).send(response);
     }
   },
 
@@ -275,7 +274,7 @@ export const OnboardingController: OnboardingController = {
     }
 
     const response: dto.SetDeveloperPreferencesResponse = {};
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   async setDeveloperServiceSettings(req, res) {
@@ -287,41 +286,36 @@ export const OnboardingController: OnboardingController = {
     );
 
     if (!existingSettings) {
-      throw new dto.ApiError(
-        StatusCodes.BAD_REQUEST,
-        "Developer settings must be initialized before setting preferences. Please set preferences first.",
-      );
+      await developerSettingsRepo.create(developerProfile.id);
     }
 
     await developerSettingsRepo.updatePartial(developerProfile.id, body);
 
     const response: dto.SetDeveloperServiceSettingsResponse = {};
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   async getPotentialProjectsItems(
     req: Request<
-      dto.GetPotentialDeveloperProjectItemsParams,
-      dto.ResponseBody<dto.GetPotentialDeveloperProjectItemsResponse>,
-      dto.GetPotentialDeveloperProjectItemsBody,
-      dto.GetPotentialDeveloperProjectItemsQuery
+      dto.GetPotentialProjectItemsParams,
+      dto.GetPotentialProjectItemsResponse,
+      {},
+      dto.GetPotentialProjectItemsQuery
     >,
-    res: Response<
-      dto.ResponseBody<dto.GetPotentialDeveloperProjectItemsResponse>
-    >,
+    res: Response<dto.GetPotentialProjectItemsResponse>,
   ): Promise<void> {
-    const response: dto.GetPotentialDeveloperProjectItemsResponse = {};
-    res.status(StatusCodes.CREATED).send({ success: response });
+    const response: dto.GetPotentialProjectItemsResponse = {};
+    res.status(StatusCodes.CREATED).send(response);
   },
 
   async upsertProjectProjectItem(
     req: Request<
       dto.UpsertDeveloperProjectItemParams,
-      dto.ResponseBody<dto.UpsertDeveloperProjectItemResponse>,
+      dto.UpsertDeveloperProjectItemResponse,
       dto.UpsertDeveloperProjectItemBody,
       dto.UpsertDeveloperProjectItemQuery
     >,
-    res: Response<dto.ResponseBody<dto.UpsertDeveloperProjectItemResponse>>,
+    res: Response<dto.UpsertDeveloperProjectItemResponse>,
   ): Promise<void> {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
 
@@ -339,7 +333,7 @@ export const OnboardingController: OnboardingController = {
     }> = [];
     const urlItems: Array<{
       index: number;
-      sourceIdentifier: dto.SourceIdentifier;
+      sourceIdentifier: string;
     }> = [];
 
     body.projectItems.forEach((projectItemData, index) => {
@@ -347,21 +341,25 @@ export const OnboardingController: OnboardingController = {
         projectItemData.projectItemType ===
         dto.ProjectItemType.GITHUB_REPOSITORY
       ) {
+        const [owner, repo] = projectItemData.sourceIdentifier.split("/");
         repositoryItems.push({
           index,
-          repositoryId: projectItemData.sourceIdentifier as dto.RepositoryId,
+          repositoryId: {
+            ownerId: { login: owner },
+            name: repo,
+          } as dto.RepositoryId,
         });
       } else if (
         projectItemData.projectItemType === dto.ProjectItemType.GITHUB_OWNER
       ) {
         ownerItems.push({
           index,
-          ownerId: projectItemData.sourceIdentifier as dto.OwnerId,
+          ownerId: { login: projectItemData.sourceIdentifier } as dto.OwnerId,
         });
       } else {
         urlItems.push({
           index,
-          sourceIdentifier: projectItemData.sourceIdentifier,
+          sourceIdentifier: projectItemData.sourceIdentifier as string,
         });
       }
     });
@@ -369,7 +367,7 @@ export const OnboardingController: OnboardingController = {
     // Sync all repositories in bulk with rate limiting
     const repositoryResults: Array<{
       index: number;
-      sourceIdentifier: dto.SourceIdentifier;
+      sourceIdentifier: string;
     }> = [];
     if (repositoryItems.length > 0) {
       const repositoryIds = repositoryItems.map((item) => item.repositoryId);
@@ -379,7 +377,7 @@ export const OnboardingController: OnboardingController = {
         const [_, repository] = syncedRepositories[i];
         repositoryResults.push({
           index: item.index,
-          sourceIdentifier: repository.id,
+          sourceIdentifier: `${repository.id.ownerId.login}/${repository.id.name}`,
         });
       });
     }
@@ -387,7 +385,7 @@ export const OnboardingController: OnboardingController = {
     // Sync all owners in bulk with rate limiting
     const ownerResults: Array<{
       index: number;
-      sourceIdentifier: dto.SourceIdentifier;
+      sourceIdentifier: string;
     }> = [];
     if (ownerItems.length > 0) {
       const ownerIds = ownerItems.map((item) => item.ownerId);
@@ -396,13 +394,13 @@ export const OnboardingController: OnboardingController = {
         const owner = syncedOwners[i];
         ownerResults.push({
           index: item.index,
-          sourceIdentifier: owner.id,
+          sourceIdentifier: owner.id.login,
         });
       });
     }
 
     // Combine all resolved identifiers in the original order
-    const resolvedSourceIdentifiers: dto.SourceIdentifier[] = new Array(
+    const resolvedSourceIdentifiers: string[] = new Array(
       body.projectItems.length,
     );
     repositoryResults.forEach((result) => {
@@ -494,7 +492,7 @@ export const OnboardingController: OnboardingController = {
       };
 
       // Use CREATED status for bulk operations
-      res.status(StatusCodes.CREATED).send({ success: response });
+      res.status(StatusCodes.CREATED).send(response);
     } catch (error) {
       await client.query("ROLLBACK");
       throw error; // Let error handler deal with it
@@ -506,13 +504,11 @@ export const OnboardingController: OnboardingController = {
   async removeProjectProjectItem(req, res) {
     const _ = checkAuthenticatedDeveloperProfile(req);
 
-    const body: dto.RemoveDeveloperProjectItemBody = req.body;
+    await developerProjectItemRepo.delete(
+      (req.params as any).developerProjectItemId,
+    );
 
-    await developerProjectItemRepo.delete(body.developerProjectItemId);
-
-    const response: dto.RemoveDeveloperProjectItemResponse = {};
-
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send({});
   },
 
   async getServiceHierarchy(req, res) {
@@ -522,7 +518,7 @@ export const OnboardingController: OnboardingController = {
     const response: dto.GetServiceHierarchyResponse = {
       items: items,
     };
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   async createCustomService(req, res) {
@@ -537,7 +533,7 @@ export const OnboardingController: OnboardingController = {
     );
 
     const response: dto.CreateCustomServiceResponse = {};
-    res.status(StatusCodes.CREATED).send({ success: response });
+    res.status(StatusCodes.CREATED).send(response);
   },
 
   async upsertDeveloperService(req, res) {
@@ -553,18 +549,18 @@ export const OnboardingController: OnboardingController = {
       developerService: upsertedService,
     };
 
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   // TODO: not the best way to do it but it works for now
   async upsertDeveloperServices(
     req: Request<
       dto.UpsertDeveloperServicesParams,
-      dto.ResponseBody<dto.UpsertDeveloperServicesResponse>,
+      dto.UpsertDeveloperServicesResponse,
       dto.UpsertDeveloperServicesBody,
       dto.UpsertDeveloperServicesQuery
     >,
-    res: Response<dto.ResponseBody<dto.UpsertDeveloperServicesResponse>>,
+    res: Response<dto.UpsertDeveloperServicesResponse>,
   ): Promise<void> {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
     const body: dto.UpsertDeveloperServicesBody = req.body;
@@ -582,20 +578,17 @@ export const OnboardingController: OnboardingController = {
       developerServices: upsertedServices,
     };
 
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   async deleteDeveloperService(req, res) {
     const _ = checkAuthenticatedDeveloperProfile(req);
 
-    const params: dto.DeleteDeveloperServiceBody = req.body;
-
     // The delete method in the repository expects DeveloperServiceId
-    // Ensure params.serviceId is of type DeveloperServiceId
-    await developerServiceRepo.delete(params.developerServiceId);
+    await developerServiceRepo.delete((req.params as any).developerServiceId);
 
-    const response: dto.DeleteDeveloperServiceResponse = {};
-    res.status(StatusCodes.OK).send({ success: response });
+    const response: dto.UpsertDeveloperServiceResponse = {} as any;
+    res.status(StatusCodes.OK).send(response);
   },
 
   async completeOnboarding(req, res) {
@@ -606,10 +599,7 @@ export const OnboardingController: OnboardingController = {
       developerProfile.id,
     );
     if (!settings) {
-      throw new dto.ApiError(
-        StatusCodes.BAD_REQUEST,
-        "Developer settings not configured",
-      );
+      throw ApiError.badRequest("Developer settings not configured");
     }
 
     // Build FullDeveloperProfile using shared service
@@ -644,7 +634,7 @@ export const OnboardingController: OnboardingController = {
     }
 
     const response: dto.CompleteOnboardingResponse = {};
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 };
 

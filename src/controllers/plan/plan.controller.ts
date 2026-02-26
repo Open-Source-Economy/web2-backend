@@ -13,11 +13,11 @@ export interface PlanController {
   getPlans(
     req: Request<
       dto.GetPlansParams,
-      dto.ResponseBody<dto.GetPlansResponse>,
-      dto.GetPlansBody,
+      dto.GetPlansResponse,
+      {},
       dto.GetPlansQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetPlansResponse>>,
+    res: Response<dto.GetPlansResponse>,
   ): Promise<void>;
 }
 
@@ -25,11 +25,11 @@ export const PlanController: PlanController = {
   async getPlans(
     req: Request<
       dto.GetPlansParams,
-      dto.ResponseBody<dto.GetPlansResponse>,
-      dto.GetPlansBody,
+      dto.GetPlansResponse,
+      {},
       dto.GetPlansQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetPlansResponse>>,
+    res: Response<dto.GetPlansResponse>,
   ) {
     const prices: Record<
       PlanProductType,
@@ -40,6 +40,6 @@ export const PlanController: PlanController = {
       plans: prices,
     };
 
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 };

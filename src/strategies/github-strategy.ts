@@ -5,17 +5,11 @@ import {
   repositoryUserPermissionTokenRepo,
   userRepo,
 } from "../db/";
-import {
-  ApiError,
-  Provider,
-  ThirdPartyUserId,
-  UserRole,
-  ValidationError,
-} from "@open-source-economy/api-types";
+import { Provider, UserRole } from "@open-source-economy/api-types";
 import { config, logger } from "../config";
-import { StatusCodes } from "http-status-codes";
 import { ensureNoEndingTrailingSlash } from "../utils";
 import { ThirdPartyUserCompanion } from "../db/helpers/companions/user";
+import { ApiError } from "../errors";
 
 const scope = ["user:email" /*, "read:org", "repo"*/]; // "user:email,read:org,repo",
 passport.use(
@@ -30,9 +24,9 @@ passport.use(
     async (req, accessToken, refreshToken, profile, done) => {
       logger.debug("GitHub profile received:", profile);
       try {
-        const thirdPartyUserId = new ThirdPartyUserId(profile.id);
+        // ThirdPartyUserId was removed; use profile.id as a plain string
         const findUser = await userRepo.findByThirdPartyId(
-          thirdPartyUserId,
+          profile.id as any,
           Provider.Github,
         );
         logger.debug("Result of findByThirdPartyId:", findUser);
@@ -44,7 +38,7 @@ passport.use(
 
           let createUser: CreateUser;
 
-          if (thirdPartyUser instanceof ValidationError) {
+          if (thirdPartyUser instanceof Error) {
             return done(thirdPartyUser); // Properly handling the validation error
           }
 
@@ -65,8 +59,7 @@ passport.use(
               repositoryUserPermissionToken.userGithubOwnerLogin
             ) {
               return done(
-                new ApiError(
-                  StatusCodes.UNAUTHORIZED,
+                ApiError.unauthorized(
                   "Wrong GitHub login. Please use the GitHub account that was invited to the repository.",
                 ),
               );

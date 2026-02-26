@@ -1,8 +1,7 @@
 import { config, logger } from "../config";
 import jwt from "jsonwebtoken";
-import { ApiError } from "@open-source-economy/api-types";
-import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
+import { ApiError } from "../errors";
 
 export interface TokenData {
   email?: string;
@@ -44,10 +43,10 @@ export class secureToken {
     } catch (err) {
       if (err instanceof jwt.TokenExpiredError) {
         logger.error(`Token expired:`, err);
-        throw new ApiError(StatusCodes.UNAUTHORIZED, `Token expired`);
+        throw ApiError.unauthorized(`Token expired`);
       } else {
         logger.error(`Invalid token:`, err);
-        throw new ApiError(StatusCodes.BAD_REQUEST, `Invalid token`);
+        throw ApiError.badRequest(`Invalid token`);
       }
     }
   }

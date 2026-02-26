@@ -42,7 +42,7 @@ export class DeveloperProfileService {
 
     if (!user) {
       throw new Error(
-        `User not found for developer profile. UserId: ${developerProfile.userId.uuid}, ProfileId: ${developerProfile.id.uuid}`,
+        `User not found for developer profile. UserId: ${developerProfile.userId}, ProfileId: ${developerProfile.id}`,
       );
     }
 
@@ -61,7 +61,7 @@ export class DeveloperProfileService {
         const projectVerificationRecords =
           await this.verificationRecordRepo.findAllByEntity(
             dto.VerificationEntityType.DEVELOPER_PROJECT_ITEM,
-            dpi.id.uuid,
+            dpi.id,
           );
 
         projects.push({
@@ -91,13 +91,18 @@ export class DeveloperProfileService {
     const profileVerificationRecords =
       await this.verificationRecordRepo.findAllByEntity(
         dto.VerificationEntityType.DEVELOPER_PROFILE,
-        developerProfile.id.uuid,
+        developerProfile.id,
       );
 
     // Extract Owner from user data (if it's a GitHub user)
+    // NOTE: The backend's internal User representation may include extra fields
+    // beyond the api-types User interface (e.g., local/third-party user data).
+    // We use `any` here because the companion layer (UserCompanion) attaches
+    // provider data that isn't part of the public User interface.
     let owner: dto.Owner | null = null;
-    if ("providerData" in user.data) {
-      owner = user.data.providerData.owner;
+    const userData = (user as any).data;
+    if (userData && "providerData" in userData) {
+      owner = userData.providerData.owner;
     }
 
     const profileEntry: dto.DeveloperProfileEntry = {

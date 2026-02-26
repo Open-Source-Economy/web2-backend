@@ -86,10 +86,10 @@ class ServicesRepositoryImpl
   }
 
   async findById(id: ServiceId): Promise<Service | null> {
-    logger.debug(`Getting service by id:`, id.uuid);
+    logger.debug(`Getting service by id:`, id);
     const query = `SELECT * FROM services WHERE id = $1`;
 
-    const result = await this.pool.query(query, [id.uuid]);
+    const result = await this.pool.query(query, [id]);
     return this.getOptional(result.rows);
   }
 
@@ -144,6 +144,6 @@ class ServicesRepositoryImpl
 
   async delete(id: ServiceId): Promise<void> {
     const query = `DELETE FROM services WHERE id = $1`;
-    await this.pool.query(query, [id.uuid]);
+    await this.pool.query(query, [id]);
   }
 }

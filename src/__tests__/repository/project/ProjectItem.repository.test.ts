@@ -559,14 +559,12 @@ describe("ProjectItemRepository", () => {
       );
 
       const repoDetails = items.find(
-        (item) => item.projectItem.id.uuid === repoItem.id.uuid,
+        (item) => item.projectItem.id === repoItem.id,
       );
 
       expect(repoDetails).toBeDefined();
       expect(repoDetails?.developers).toHaveLength(1);
-      expect(repoDetails?.developers[0].developerProfile.id.uuid).toBe(
-        profile.id.uuid,
-      );
+      expect(repoDetails?.developers[0].developerProfile.id).toBe(profile.id);
     });
 
     it("sorts repositories by creation date ascending when requested", async () => {
@@ -638,17 +636,13 @@ describe("ProjectItemRepository", () => {
 
       // Should only return the repository with a developer
       expect(items).toHaveLength(1);
-      expect(items[0].projectItem.id.uuid).toEqual(repoItemWithDev.id.uuid);
+      expect(items[0].projectItem.id).toEqual(repoItemWithDev.id);
       expect(items[0].developers).toHaveLength(1);
-      expect(items[0].developers[0].developerProfile.id.uuid).toBe(
-        profile.id.uuid,
-      );
+      expect(items[0].developers[0].developerProfile.id).toBe(profile.id);
 
       // Verify the repository without developer is not returned
       expect(
-        items.find(
-          (item) => item.projectItem.id.uuid === repoItemWithoutDev.id.uuid,
-        ),
+        items.find((item) => item.projectItem.id === repoItemWithoutDev.id),
       ).toBeUndefined();
     });
 
@@ -694,17 +688,13 @@ describe("ProjectItemRepository", () => {
 
       // Should only return the URL item with a developer
       expect(items).toHaveLength(1);
-      expect(items[0].projectItem.id.uuid).toEqual(urlItemWithDev.id.uuid);
+      expect(items[0].projectItem.id).toEqual(urlItemWithDev.id);
       expect(items[0].developers).toHaveLength(1);
-      expect(items[0].developers[0].developerProfile.id.uuid).toBe(
-        profile.id.uuid,
-      );
+      expect(items[0].developers[0].developerProfile.id).toBe(profile.id);
 
       // Verify the URL item without developer is not returned
       expect(
-        items.find(
-          (item) => item.projectItem.id.uuid === urlItemWithoutDev.id.uuid,
-        ),
+        items.find((item) => item.projectItem.id === urlItemWithoutDev.id),
       ).toBeUndefined();
     });
 
@@ -727,17 +717,13 @@ describe("ProjectItemRepository", () => {
 
       // Should only return the owner with a developer
       expect(items).toHaveLength(1);
-      expect(items[0].projectItem.id.uuid).toEqual(ownerItemWithDev.id.uuid);
+      expect(items[0].projectItem.id).toEqual(ownerItemWithDev.id);
       expect(items[0].developers).toHaveLength(1);
-      expect(items[0].developers[0].developerProfile.id.uuid).toBe(
-        profile.id.uuid,
-      );
+      expect(items[0].developers[0].developerProfile.id).toBe(profile.id);
 
       // Verify the owner without developer is not returned
       expect(
-        items.find(
-          (item) => item.projectItem.id.uuid === ownerItemWithoutDev.id.uuid,
-        ),
+        items.find((item) => item.projectItem.id === ownerItemWithoutDev.id),
       ).toBeUndefined();
     });
   });
@@ -756,15 +742,13 @@ describe("ProjectItemRepository", () => {
       const details = await projectItemRepo.getByIdWithDetails(repoItem.id);
 
       expect(details).toBeDefined();
-      expect(details?.projectItem.id.uuid).toEqual(repoItem.id.uuid);
+      expect(details?.projectItem.id).toEqual(repoItem.id);
       expect(details?.developers).toHaveLength(1);
-      expect(details?.developers[0].developerProfile.id.uuid).toBe(
-        profile.id.uuid,
-      );
+      expect(details?.developers[0].developerProfile.id).toBe(profile.id);
     });
 
     it("returns null when project item does not exist", async () => {
-      const missingId = new dto.ProjectItemId(Fixture.uuid());
+      const missingId = Fixture.uuid() as dto.ProjectItemId;
 
       const details = await projectItemRepo.getByIdWithDetails(missingId);
 
@@ -840,11 +824,9 @@ describe("ProjectItemRepository", () => {
       );
 
       expect(details).toBeDefined();
-      expect(details?.projectItem.id.uuid).toEqual(repoItem.id.uuid);
+      expect(details?.projectItem.id).toEqual(repoItem.id);
       expect(details?.developers).toHaveLength(1);
-      expect(details?.developers[0].developerProfile.id.uuid).toEqual(
-        profile.id.uuid,
-      );
+      expect(details?.developers[0].developerProfile.id).toEqual(profile.id);
     });
 
     it("returns owner details when only owner slug is provided", async () => {
@@ -857,7 +839,7 @@ describe("ProjectItemRepository", () => {
       const details = await projectItemRepo.getBySlugWithDetails(ownerId.login);
 
       expect(details).toBeDefined();
-      expect(details?.projectItem.id.uuid).toEqual(ownerItem.id.uuid);
+      expect(details?.projectItem.id).toEqual(ownerItem.id);
       expect(details?.projectItem.projectItemType).toBe(
         dto.ProjectItemType.GITHUB_OWNER,
       );

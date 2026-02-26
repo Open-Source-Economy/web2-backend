@@ -3,9 +3,8 @@ import {
   RepositoryUserRole,
   UserId,
   UserRepository,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "./Validator";
 import { RepositoryIdCompanion } from "./github";
 
 export namespace UserRepositoryCompanion {
@@ -37,12 +36,12 @@ export namespace UserRepositoryCompanion {
       return error;
     }
 
-    return new UserRepository(
-      new UserId(userId),
+    return {
+      userId: userId as UserId,
       repositoryId,
       repositoryUserRole,
-      rate ?? null,
-      currency ?? null,
-    );
+      rate: rate ?? null,
+      currency: currency ?? null,
+    } as UserRepository;
   }
 }

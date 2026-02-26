@@ -1,7 +1,6 @@
 import { Pool } from "pg";
 import * as dto from "@open-source-economy/api-types";
 import {
-  ApiError,
   Currency,
   DeveloperProfileId,
   DeveloperSettings,
@@ -11,7 +10,6 @@ import {
 import { pool } from "../../dbPool";
 import { BaseRepository } from "../helpers";
 import { DeveloperSettingsCompanion } from "../helpers/companions";
-import { StatusCodes } from "http-status-codes";
 
 export function getDeveloperSettingsRepository(): DeveloperSettingsRepository {
   return new DeveloperSettingsRepositoryImpl(pool);
@@ -162,7 +160,7 @@ class DeveloperSettingsRepositoryImpl
     `;
 
     const values = [
-      developerProfileId.uuid,
+      developerProfileId,
       royaltiesPreference ?? null,
       servicesPreference ?? null,
       communitySupporterPreference ?? null,
@@ -204,7 +202,7 @@ class DeveloperSettingsRepositoryImpl
     `;
 
     const values = [
-      developerProfileId.uuid,
+      developerProfileId,
       royaltiesPreference,
       servicesPreference,
       communitySupporterPreference,
@@ -220,7 +218,7 @@ class DeveloperSettingsRepositoryImpl
     const result = await this.pool.query(query, values);
     if (result.rows.length === 0) {
       throw new Error(
-        `DeveloperSettings not found for profile ${developerProfileId.uuid}`,
+        `DeveloperSettings not found for profile ${developerProfileId}`,
       );
     }
     return this.getOne(result.rows);
@@ -242,7 +240,7 @@ class DeveloperSettingsRepositoryImpl
     },
   ): Promise<DeveloperSettings> {
     const setParts: string[] = [];
-    const values: any[] = [developerProfileId.uuid]; // $1 for WHERE clause
+    const values: any[] = [developerProfileId]; // $1 for WHERE clause
     let paramIndex = 2; // Start for dynamic parameters
 
     if (updates.royaltiesPreference !== undefined) {
@@ -297,10 +295,7 @@ class DeveloperSettingsRepositoryImpl
     }
 
     if (setParts.length === 0) {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        "No fields provided for partial update.",
-      );
+      throw new Error("No fields provided for partial update.");
     }
 
     setParts.push(`updated_at = now()`);
@@ -314,9 +309,8 @@ class DeveloperSettingsRepositoryImpl
 
     const result = await this.pool.query(query, values);
     if (result.rows.length === 0) {
-      throw new ApiError(
-        StatusCodes.NOT_FOUND,
-        `DeveloperSettings not found for profile ${developerProfileId.uuid}`,
+      throw new Error(
+        `DeveloperSettings not found for profile ${developerProfileId}`,
       );
     }
     return this.getOne(result.rows);
@@ -331,7 +325,7 @@ class DeveloperSettingsRepositoryImpl
       WHERE developer_profile_id = $1
     `;
 
-    const result = await this.pool.query(query, [developerProfileId.uuid]);
+    const result = await this.pool.query(query, [developerProfileId]);
     return this.getOptional(result.rows);
   }
 
@@ -379,7 +373,7 @@ class DeveloperSettingsRepositoryImpl
     `;
 
     const values = [
-      developerProfileId.uuid,
+      developerProfileId,
       royaltiesPreference,
       servicesPreference,
       communitySupporterPreference,

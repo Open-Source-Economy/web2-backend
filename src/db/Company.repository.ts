@@ -1,11 +1,14 @@
 import { Pool } from "pg";
-import {
-  Company,
-  CompanyId,
-  CreateCompanyBody,
-} from "@open-source-economy/api-types";
+import { AddressId, Company, CompanyId } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { logger } from "../config";
+import { CompanyCompanion } from "./helpers/companions";
+
+export interface CreateCompanyBody {
+  taxId?: string;
+  name: string;
+  addressId?: AddressId;
+}
 
 export function getCompanyRepository(): CompanyRepository {
   return new CompanyRepositoryImpl(pool);
@@ -40,7 +43,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple company found");
     } else {
-      const company = Company.fromBackend(rows[0]);
+      const company = CompanyCompanion.fromBackend(rows[0]);
       if (company instanceof Error) {
         throw company;
       }
@@ -50,7 +53,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
 
   private getCompanyList(rows: any[]): Company[] {
     return rows.map((r) => {
-      const company = Company.fromBackend(r);
+      const company = CompanyCompanion.fromBackend(r);
       if (company instanceof Error) {
         throw company;
       }
@@ -75,7 +78,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
       FROM company
       WHERE id = $1
       `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalCompany(result.rows);
@@ -89,10 +92,10 @@ class CompanyRepositoryImpl implements CompanyRepository {
       const result = await client.query(
         `
       INSERT INTO company (tax_id, name, address_id)
-      VALUES ($1, $2, $3) 
+      VALUES ($1, $2, $3)
       RETURNING *
       `,
-        [company.taxId, company.name, company.addressId?.uuid ?? null],
+        [company.taxId, company.name, company.addressId ?? null],
       );
 
       return this.getOneCompany(result.rows);
@@ -115,12 +118,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
         WHERE id = $4
         RETURNING *
         `,
-        [
-          company.taxId,
-          company.name,
-          company.addressId?.uuid ?? null,
-          company.id.uuid,
-        ],
+        [company.taxId, company.name, company.addressId ?? null, company.id],
       );
 
       return this.getOneCompany(result.rows);

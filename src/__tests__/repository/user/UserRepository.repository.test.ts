@@ -111,6 +111,6 @@ describe("UserRepositoryRepository", () => {
 
     await expect(
       userRepo.setPreferredCurrency(invalidUserId, newCurrency),
-    ).rejects.toThrowError(`User with id ${invalidUserId.uuid} not found`);
+    ).rejects.toThrowError(`User with id ${invalidUserId} not found`);
   });
 });

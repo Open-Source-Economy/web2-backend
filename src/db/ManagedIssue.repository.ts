@@ -1,10 +1,20 @@
 import { Pool } from "pg";
 import {
-  CreateManagedIssueBody,
+  ContributorVisibility,
   IssueId,
   ManagedIssue,
   ManagedIssueId,
+  ManagedIssueState,
+  UserId,
 } from "@open-source-economy/api-types";
+
+export interface CreateManagedIssueBody {
+  githubIssueId: IssueId;
+  requestedCreditAmount: number | null;
+  managerId: UserId;
+  contributorVisibility: ContributorVisibility;
+  state: ManagedIssueState;
+}
 import { pool } from "../dbPool";
 import { ManagedIssueCompanion } from "./helpers/companions";
 
@@ -101,7 +111,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
           managedIssue.githubIssueId.githubId,
           managedIssue.githubIssueId.number,
           managedIssue.requestedCreditAmount,
-          managedIssue.managerId.uuid,
+          managedIssue.managerId,
           managedIssue.contributorVisibility,
           managedIssue.state,
         ],
@@ -151,10 +161,10 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
           managedIssue.githubIssueId.githubId,
           managedIssue.githubIssueId.number,
           managedIssue.requestedCreditAmount,
-          managedIssue.managerId.uuid,
+          managedIssue.managerId,
           managedIssue.contributorVisibility,
           managedIssue.state,
-          managedIssue.id.uuid,
+          managedIssue.id,
         ],
       );
 
@@ -171,7 +181,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
                 FROM managed_issue
                 WHERE id = $1
             `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalManagedIssue(result.rows);

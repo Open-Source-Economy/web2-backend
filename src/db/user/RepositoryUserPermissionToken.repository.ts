@@ -212,7 +212,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
           token.rate ? token.rate.toString() : null,
           token.currency,
           token.expiresAt,
-          token.id.uuid,
+          token.id,
         ],
       );
 
@@ -233,7 +233,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
                 FROM repository_user_permission_token
                 WHERE id = $1
             `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalToken(result.rows);
@@ -253,7 +253,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
                 WHERE github_owner_login = $1
                   AND github_repository_name = $2
             `,
-      [repositoryId.ownerLogin(), repositoryId.name],
+      [repositoryId.ownerId.login, repositoryId.name],
     );
 
     return this.getTokenList(result.rows);
@@ -294,7 +294,7 @@ class RepositoryUserPermissionTokenRepositoryImpl
                   AND    github_owner_login = $2
                   AND github_repository_name = $3
             `,
-      [userGithubOwnerLogin, repositoryId.ownerLogin(), repositoryId.name],
+      [userGithubOwnerLogin, repositoryId.ownerId.login, repositoryId.name],
     );
 
     return this.getTokenList(result.rows);

@@ -2,20 +2,37 @@ import { setupTestDB } from "../__helpers__/jest.setup";
 import {
   CompanyId,
   CompanyUserRole,
-  CreateIssueFundingBody,
-  CreateManualInvoiceBody,
   Currency,
   OwnerId,
   PlanPriceType,
   PlanProductType,
   PriceType,
   ProductType,
-  productTypeUtils,
   RepositoryId,
   StripeCustomerId,
-  StripeCustomerUser,
   UserId,
 } from "@open-source-economy/api-types";
+import { StripeCustomerUser } from "../../db/helpers/companions";
+
+import { CreateIssueFundingBody } from "../../db/IssueFunding.repository";
+
+import { CreateManualInvoiceBody } from "../../db/ManualInvoice.repository";
+
+// Replacement for productTypeUtils.credits() - maps plan product types to their credit values
+function productTypeCredits(productType: ProductType): number {
+  switch (productType) {
+    case ProductType.INDIVIDUAL_PLAN:
+      return 100;
+    case ProductType.START_UP_PLAN:
+      return 500;
+    case ProductType.SCALE_UP_PLAN:
+      return 2000;
+    case ProductType.ENTERPRISE_PLAN:
+      return 10000;
+    default:
+      return 0;
+  }
+}
 import {
   companyRepo,
   issueFundingRepo,
@@ -80,6 +97,19 @@ describe("PlanAndCreditsRepository", () => {
     await manualInvoiceRepo.create(manualInvoiceBody);
   }
 
+  // Helper to convert OwnerId/RepositoryId to string for projectId field
+  function toProjectIdString(
+    projectId: OwnerId | RepositoryId | null,
+  ): string | null {
+    if (projectId === null) return null;
+    if ("name" in projectId && "ownerId" in projectId) {
+      // It's a RepositoryId
+      return `${projectId.ownerId.login}/${projectId.name}`;
+    }
+    // It's an OwnerId
+    return (projectId as OwnerId).login;
+  }
+
   /**
    * Creates a stripe invoice with the specified product type and quantity
    */
@@ -97,7 +127,7 @@ describe("PlanAndCreditsRepository", () => {
 
     const product = Fixture.stripeProduct(
       validStripeProductId,
-      projectId,
+      toProjectIdString(projectId),
       productType,
     );
     await stripeProductRepo.insert(product);
@@ -128,7 +158,7 @@ describe("PlanAndCreditsRepository", () => {
       lines,
     );
 
-    await stripeInvoiceRepo.insert(invoice);
+    await stripeInvoiceRepo.insert(invoice, lines);
   }
 
   beforeEach(async () => {
@@ -177,16 +207,19 @@ describe("PlanAndCreditsRepository", () => {
       Fixture.stripeCustomer(companyUserStripeCustomerId2),
     );
 
-    await stripeCustomerUserRepo.insert(
-      new StripeCustomerUser(lonelyUserStripeCustomerId, lonelyUserId),
-    );
+    await stripeCustomerUserRepo.insert({
+      stripeCustomerId: lonelyUserStripeCustomerId,
+      userId: lonelyUserId,
+    } as StripeCustomerUser);
 
-    await stripeCustomerUserRepo.insert(
-      new StripeCustomerUser(companyUserStripeCustomerId1, companyUserId1),
-    );
-    await stripeCustomerUserRepo.insert(
-      new StripeCustomerUser(companyUserStripeCustomerId2, companyUserId2),
-    );
+    await stripeCustomerUserRepo.insert({
+      stripeCustomerId: companyUserStripeCustomerId1,
+      userId: companyUserId1,
+    } as StripeCustomerUser);
+    await stripeCustomerUserRepo.insert({
+      stripeCustomerId: companyUserStripeCustomerId2,
+      userId: companyUserId2,
+    } as StripeCustomerUser);
 
     testUser = {
       stripeCustomerId: lonelyUserStripeCustomerId,
@@ -261,7 +294,7 @@ describe("PlanAndCreditsRepository", () => {
           );
           await expected(testedUser, 0);
         };
-        describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+        describe(`project id set to ${projectId && "name" in projectId ? "Repository" : projectId && "login" in projectId ? "Owner" : "null"}`, () => {
           it("for lonely user", async () => {
             await test(testUser);
           });
@@ -283,7 +316,7 @@ describe("PlanAndCreditsRepository", () => {
           );
           await expected(testedUser, 200);
         };
-        describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+        describe(`project id set to ${projectId && "name" in projectId ? "Repository" : projectId && "login" in projectId ? "Owner" : "null"}`, () => {
           it("for lonely user", async () => {
             await test(testUser);
           });
@@ -305,11 +338,11 @@ describe("PlanAndCreditsRepository", () => {
           );
           await expected(
             testedUser,
-            productTypeUtils.credits(ProductType.ENTERPRISE_PLAN),
+            productTypeCredits(ProductType.ENTERPRISE_PLAN),
           );
         };
 
-        describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+        describe(`project id set to ${projectId && "name" in projectId ? "Repository" : projectId && "login" in projectId ? "Owner" : "null"}`, () => {
           it("for lonely user", async () => {
             await test(testUser);
           });
@@ -365,7 +398,7 @@ describe("PlanAndCreditsRepository", () => {
           );
         };
 
-        describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+        describe(`project id set to ${projectId && "name" in projectId ? "Repository" : projectId && "login" in projectId ? "Owner" : "null"}`, () => {
           it("for lonely user", async () => {
             await test(testUser);
           });
@@ -431,7 +464,7 @@ describe("PlanAndCreditsRepository", () => {
                 expect(priceResult).toEqual(priceType);
               };
 
-              describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+              describe(`project id set to ${projectId && "name" in projectId ? "Repository" : projectId && "login" in projectId ? "Owner" : "null"}`, () => {
                 it("for lonely user", async () => {
                   await test(testUser);
                 });
@@ -521,7 +554,7 @@ describe("PlanAndCreditsRepository", () => {
                   expect(priceResult).toEqual(priceType);
                 };
 
-                describe(`project id set to ${projectId instanceof RepositoryId ? "Repository" : projectId instanceof OwnerId ? "Owner" : "null"}`, () => {
+                describe(`project id set to ${projectId && "name" in projectId ? "Repository" : projectId && "login" in projectId ? "Owner" : "null"}`, () => {
                   it("for lonely user", async () => {
                     await test(testUser);
                   });

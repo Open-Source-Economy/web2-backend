@@ -1,6 +1,6 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
-import { OwnerId, ProjectUtils } from "@open-source-economy/api-types";
+import { OwnerId } from "@open-source-economy/api-types";
 import { ownerRepo, projectRepo, repositoryRepo } from "../../../db";
 
 describe("ProjectRepository", () => {
@@ -16,7 +16,7 @@ describe("ProjectRepository", () => {
         const created = await projectRepo.createOrUpdate(project);
         expect(created).toEqual(project);
 
-        const found = await projectRepo.getById(project.id);
+        const found = await projectRepo.getById(ownerId);
         expect(found).toEqual(project);
       });
 
@@ -31,7 +31,7 @@ describe("ProjectRepository", () => {
         const created = await projectRepo.createOrUpdate(project);
         expect(created).toEqual(project);
 
-        const found = await projectRepo.getById(project.id);
+        const found = await projectRepo.getById(repositoryId);
         expect(found).toEqual(project);
       });
 
@@ -43,7 +43,7 @@ describe("ProjectRepository", () => {
         const created = await projectRepo.createOrUpdate(project);
         expect(created).toEqual(project);
 
-        const found = await projectRepo.getById(project.id);
+        const found = await projectRepo.getById(ownerId);
         expect(found).toEqual(project);
       });
 
@@ -91,7 +91,7 @@ describe("ProjectRepository", () => {
         const updated = await projectRepo.createOrUpdate(updatedProject);
         expect(updated).toEqual(updatedProject);
 
-        const found = await projectRepo.getById(project.id);
+        const found = await projectRepo.getById(ownerId);
         expect(found).toEqual(updatedProject);
       });
 
@@ -109,7 +109,7 @@ describe("ProjectRepository", () => {
         const updated = await projectRepo.createOrUpdate(updatedProject);
         expect(updated).toEqual(updatedProject);
 
-        const found = await projectRepo.getById(project.id);
+        const found = await projectRepo.getById(repositoryId);
         expect(found).toEqual(updatedProject);
       });
 
@@ -124,7 +124,7 @@ describe("ProjectRepository", () => {
         const updated = await projectRepo.createOrUpdate(updatedProject);
         expect(updated).toEqual(updatedProject);
 
-        const found = await projectRepo.getById(project.id);
+        const found = await projectRepo.getById(ownerId);
         expect(found).toEqual(updatedProject);
       });
     });
@@ -133,9 +133,8 @@ describe("ProjectRepository", () => {
   describe("getById", () => {
     it("should return null if project not found", async () => {
       const ownerId = Fixture.ownerId();
-      const projectId = ProjectUtils.getId(ownerId.login);
 
-      const found = await projectRepo.getById(projectId);
+      const found = await projectRepo.getById(ownerId);
       expect(found).toBeNull();
     });
 
@@ -171,7 +170,10 @@ describe("ProjectRepository", () => {
       const project = Fixture.project(ownerId);
       await projectRepo.createOrUpdate(project);
 
-      const undefinedOwnerId = new OwnerId(ownerId.login, undefined);
+      const undefinedOwnerId: OwnerId = {
+        login: ownerId.login,
+        githubId: undefined,
+      };
       const found = await projectRepo.getById(undefinedOwnerId);
       expect(found).toEqual(project);
     });

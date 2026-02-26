@@ -12,8 +12,9 @@ import {
   ProjectItemWithDetails,
   Repository,
   RepositoryId,
-  SourceIdentifier,
 } from "@open-source-economy/api-types";
+
+type SourceIdentifier = OwnerId | RepositoryId | string;
 import { BaseRepository } from "../helpers";
 import {
   DeveloperProfileCompanion,
@@ -294,23 +295,23 @@ class ProjectItemRepositoryImpl
       WHERE id = $1
       RETURNING ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
     `;
-    const result = await this.pool.query(query, [id.uuid, categories]);
+    const result = await this.pool.query(query, [id, categories]);
 
     if (result.rows.length === 0) {
-      throw new Error(`ProjectItem not found with id ${id.uuid}`);
+      throw new Error(`ProjectItem not found with id ${id}`);
     }
 
     return this.getOne(result.rows);
   }
 
   async delete(id: ProjectItemId): Promise<void> {
-    await this.pool.query(`DELETE FROM project_item WHERE id = $1`, [id.uuid]);
+    await this.pool.query(`DELETE FROM project_item WHERE id = $1`, [id]);
   }
 
   async getById(id: ProjectItemId): Promise<ProjectItem | null> {
     const result = await this.pool.query(
       `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS} FROM project_item WHERE id = $1`,
-      [id.uuid],
+      [id],
     );
     return this.getOptional(result.rows);
   }
@@ -322,7 +323,7 @@ class ProjectItemRepositoryImpl
     const result = await this.pool.query(
       `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
        FROM project_item WHERE id = $1 ORDER BY created_at DESC`,
-      [projectItemId.uuid], // Access uuid property
+      [projectItemId], // Access uuid property
     );
     return this.getOptional(result.rows);
   }
@@ -374,20 +375,31 @@ class ProjectItemRepositoryImpl
   ): Promise<ProjectItem | null> {
     switch (projectItemType) {
       case ProjectItemType.GITHUB_REPOSITORY:
-        if (!(sourceIdentifier instanceof RepositoryId)) {
+        if (
+          typeof sourceIdentifier !== "object" ||
+          !("name" in sourceIdentifier) ||
+          !("ownerId" in sourceIdentifier)
+        ) {
           throw new Error(
             `getBySourceIdentifier: sourceIdentifier must be a RepositoryId object for GITHUB_REPOSITORY type. Received type: ${typeof sourceIdentifier}, with value: ${JSON.stringify(sourceIdentifier)}`,
           );
         }
-        return await this.getByGithubRepository(sourceIdentifier);
+        return await this.getByGithubRepository(
+          sourceIdentifier as RepositoryId,
+        );
 
       case ProjectItemType.GITHUB_OWNER:
-        if (!(sourceIdentifier instanceof OwnerId)) {
+        if (
+          typeof sourceIdentifier !== "object" ||
+          !("login" in sourceIdentifier)
+        ) {
           throw new Error(
             `getBySourceIdentifier: sourceIdentifier must be an OwnerId object for GITHUB_OWNER type. Received type: ${typeof sourceIdentifier}, with value: ${JSON.stringify(sourceIdentifier)}`,
           );
         }
-        const ownerItems = await this.getByGithubOwner(sourceIdentifier);
+        const ownerItems = await this.getByGithubOwner(
+          sourceIdentifier as OwnerId,
+        );
         return ownerItems.length > 0 ? ownerItems[0] : null;
 
       case ProjectItemType.URL:
@@ -657,7 +669,7 @@ class ProjectItemRepositoryImpl
 
         const existingDeveloper = projectItemDetails.developers.find(
           (dev: { developerProfile: any; developerOwner: any }) =>
-            dev.developerProfile.id.uuid === developerProfile.id.uuid ||
+            dev.developerProfile.id === developerProfile.id ||
             dev.developerOwner.id.login === developerOwner.id.login,
         );
 
@@ -680,11 +692,11 @@ class ProjectItemRepositoryImpl
               mergeResult.mergedMergeRights;
 
             logger.info(
-              `Deduplicating developer with conflicts: @${developerOwner.id.login} (${developerProfile.id.uuid}) ` +
+              `Deduplicating developer with conflicts: @${developerOwner.id.login} (${developerProfile.id}) ` +
                 `on project ${projectItemDetails.projectItem.projectItemType}`,
               {
                 developer: {
-                  profileId: developerProfile.id.uuid,
+                  profileId: developerProfile.id,
                   githubLogin: developerOwner.id.login,
                   githubName: developerOwner.name || "N/A",
                 },
@@ -848,7 +860,7 @@ class ProjectItemRepositoryImpl
       "pi.created_at DESC",
     );
 
-    const result = await this.pool.query(query, [projectItemId.uuid]);
+    const result = await this.pool.query(query, [projectItemId]);
     const projectItems = this.hydrateProjectItemsFromRows(result.rows);
 
     return projectItems[0] ?? null;

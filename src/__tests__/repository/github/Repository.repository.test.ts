@@ -80,12 +80,15 @@ describe("RepositoryRepository", () => {
       const repository = Fixture.repository(repositoryId);
       await repositoryRepo.insertOrUpdate(repository);
 
-      const undefinedOwnerId = new OwnerId(ownerId.login, undefined);
-      const undefinedRepositoryId = new RepositoryId(
-        undefinedOwnerId,
-        repositoryId.name,
-        undefined,
-      );
+      const undefinedOwnerId: OwnerId = {
+        login: ownerId.login,
+        githubId: undefined,
+      };
+      const undefinedRepositoryId: RepositoryId = {
+        ownerId: undefinedOwnerId,
+        name: repositoryId.name,
+        githubId: undefined,
+      };
 
       const found = await repositoryRepo.getById(undefinedRepositoryId);
       expect(found).toEqual(repository);

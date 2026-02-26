@@ -70,7 +70,7 @@ describe("ProjectController.getProjectDetails", () => {
     expect(response.status).toBe(StatusCodes.OK);
     const payload = response.body.success as dto.GetProjectDetailsResponse;
 
-    expect(payload.project.projectItem.id.uuid).toEqual(repositoryItem.id.uuid);
+    expect(payload.project.projectItem.id).toEqual(repositoryItem.id);
     expect(payload.project.projectItem.projectItemType).toBe(
       dto.ProjectItemType.GITHUB_REPOSITORY,
     );
@@ -78,9 +78,9 @@ describe("ProjectController.getProjectDetails", () => {
     expect(payload.serviceOfferings).toEqual({});
 
     const developerKeys = Object.keys(payload.developers ?? {});
-    expect(developerKeys).toContain(developerProfile.id.uuid);
+    expect(developerKeys).toContain(developerProfile.id);
     const developer =
-      payload.developers[developerProfile.id.uuid] ??
+      payload.developers[developerProfile.id] ??
       payload.developers[developerKeys[0]];
     expect(developer.project).toBeDefined();
   });
@@ -98,7 +98,7 @@ describe("ProjectController.getProjectDetails", () => {
     expect(payload.project.projectItem.projectItemType).toBe(
       dto.ProjectItemType.GITHUB_OWNER,
     );
-    expect(Object.keys(payload.developers)).toContain(developerProfile.id.uuid);
+    expect(Object.keys(payload.developers)).toContain(developerProfile.id);
     expect(payload.serviceOfferings).toBeDefined();
   });
 });

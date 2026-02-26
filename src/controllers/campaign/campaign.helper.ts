@@ -1,12 +1,12 @@
 import {
-  ApiError,
   CampaignPriceType,
   CampaignProductType,
   Currency,
+  OwnerId,
   Price,
-  productTypeUtils,
+  ProductType,
   Project,
-  ProjectId,
+  RepositoryId,
   StripePrice,
   StripeProduct,
   StripeProductId,
@@ -18,6 +18,7 @@ import { currencyAPI } from "../../services";
 import { logger } from "../../config";
 import Stripe from "stripe";
 import { CampaignProductPriceConfig } from "./campaign.controller";
+import { ApiError } from "../../errors";
 
 // 1 credit - one-time payment  = 2.3$
 // 1 credit - recurring payment = 1.84$
@@ -48,14 +49,19 @@ export function getRoundedCreditAmount(
   } else if (priceType === CampaignPriceType.MONTHLY) {
     return Math.floor($amount / creditRecurring$CentsPrice);
   } else {
-    throw new ApiError(StatusCodes.NOT_IMPLEMENTED, "Price type not supported");
+    throw ApiError.internal("Price type not supported");
   }
+}
+
+// Convert CampaignProductType to ProductType
+function toProductType(campaignProductType: CampaignProductType): ProductType {
+  return campaignProductType as unknown as ProductType;
 }
 
 export interface CampaignHelper {
   createProductsAndPrices(project: Project): Promise<void>;
   getPrices(
-    projectId: ProjectId,
+    projectId: OwnerId | RepositoryId,
     currencyPriceConfigs: CampaignProductPriceConfig,
   ): Promise<
     Record<
@@ -96,7 +102,7 @@ const CampaignHelpers = {
   },
 
   async createProductAndPrices(
-    projectId: ProjectId,
+    projectId: OwnerId | RepositoryId,
     campaignProductType: CampaignProductType,
     params: Stripe.ProductCreateParams,
     recurringCentsPrices: Record<Currency, number>,
@@ -104,13 +110,17 @@ const CampaignHelpers = {
   ): Promise<void> {
     const product: Stripe.Product = await stripe.products.create(params);
 
-    await stripeProductRepo.insert(
-      new StripeProduct(
-        new StripeProductId(product.id),
-        projectId,
-        productTypeUtils.toProductType(campaignProductType),
-      ),
-    );
+    // Serialize projectId as a string for storage
+    const projectIdStr =
+      "ownerId" in projectId
+        ? `${projectId.ownerId.login}/${projectId.name}`
+        : projectId.login;
+
+    await stripeProductRepo.insert({
+      id: product.id as unknown as StripeProductId,
+      projectId: projectIdStr as any,
+      productType: toProductType(campaignProductType),
+    } as unknown as StripeProduct);
 
     const recurringOptions: Stripe.PriceCreateParams.Recurring = {
       interval: "month",
@@ -139,6 +149,11 @@ export const CampaignHelper: CampaignHelper = {
       ? [project.owner.avatarUrl]
       : undefined;
 
+    // Construct the projectId from the project
+    const projectId: OwnerId | RepositoryId = project.repository
+      ? project.repository.id
+      : project.owner.id;
+
     // --- credit product ---
 
     const creditParams: Stripe.ProductCreateParams = {
@@ -152,7 +167,7 @@ export const CampaignHelper: CampaignHelper = {
     };
 
     await CampaignHelpers.createProductAndPrices(
-      project.id,
+      projectId,
       CampaignProductType.CREDIT,
       creditParams,
       currencyAPI.getConvertedPrices(creditRecurring$CentsPrice),
@@ -169,7 +184,7 @@ export const CampaignHelper: CampaignHelper = {
     };
 
     await CampaignHelpers.createProductAndPrices(
-      project.id,
+      projectId,
       CampaignProductType.DONATION,
       donationParams,
       donationUnits,
@@ -178,7 +193,7 @@ export const CampaignHelper: CampaignHelper = {
   },
 
   async getPrices(
-    projectId: ProjectId,
+    projectId: OwnerId | RepositoryId,
     currencyPriceConfigs: CampaignProductPriceConfig,
   ): Promise<
     Record<

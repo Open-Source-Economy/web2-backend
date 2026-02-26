@@ -9,7 +9,6 @@ import {
   StripeCustomerId,
   StripeInvoice,
   StripePrice,
-  ValidationError,
 } from "@open-source-economy/api-types";
 import { config, logger } from "../../config";
 import { stripe } from "./index";
@@ -39,11 +38,9 @@ const StripeWebhookHelpers = {
     const currency = session.currency ?? undefined;
 
     const stripeCustomerId: StripeCustomerId | null = session.customer
-      ? new StripeCustomerId(
-          typeof session.customer === "string"
-            ? session.customer
-            : session.customer.id, // based on testing, it should be a string
-        )
+      ? ((typeof session.customer === "string"
+          ? session.customer
+          : session.customer.id) as StripeCustomerId) // based on testing, it should be a string
       : null;
 
     if (stripeCustomerId) {
@@ -52,11 +49,11 @@ const StripeWebhookHelpers = {
 
       if (stripeCustomerUser !== null) {
         logger.debug(
-          `🔔 Stripe customer, already registered: ${stripeCustomerUser?.stripeId.id}`,
+          `Stripe customer, already registered: ${stripeCustomerUser?.stripeId}`,
         );
       } else {
         logger.debug(
-          `🔔 Stripe customer creation, not registered: ${stripeCustomerId}`,
+          `Stripe customer creation, not registered: ${stripeCustomerId}`,
         );
         await StripeWebhookHelpers.saveAddressAndStripeCustomer(
           stripeCustomerId,
@@ -70,18 +67,16 @@ const StripeWebhookHelpers = {
         logger.error("No email in checkout session");
         throw new Error("No email in checkout session");
       } else {
-        logger.debug(`🔔  Email in checkout session: ${email}`);
+        logger.debug(`Email in checkout session: ${email}`);
         const stripeCustomer = await stripeCustomerRepo.getByEmail(email);
 
         if (stripeCustomer) {
           logger.debug(
-            `🔔  Stripe customer, already registered with email ${email}:`,
+            `Stripe customer, already registered with email ${email}:`,
             stripeCustomer,
           );
         } else {
-          logger.debug(
-            `🔔  Stripe customer, not registered with email ${email}`,
-          );
+          logger.debug(`Stripe customer, not registered with email ${email}`);
           const customerId =
             await StripeWebhookHelpers.createAddressAndStripeCustomer(
               email,
@@ -102,9 +97,9 @@ const StripeWebhookHelpers = {
     if (githubOwnerLogin && stripeCustomerId) {
       try {
         logger.debug(
-          `🔔 Sponsor GitHub owner: ${githubOwnerLogin} for customer ${stripeCustomerId.id}`,
+          `Sponsor GitHub owner: ${githubOwnerLogin} for customer ${stripeCustomerId}`,
         );
-        const ownerId = new OwnerId(githubOwnerLogin);
+        const ownerId: OwnerId = { login: githubOwnerLogin };
 
         // Ensure the owner exists in the database before creating sponsor record
         await githubSyncService.syncOwner(ownerId);
@@ -112,7 +107,7 @@ const StripeWebhookHelpers = {
         await sponsorRepo.createOrUpdate(stripeCustomerId, ownerId, true);
       } catch (error) {
         logger.error(
-          `Failed to create sponsor for customer ${stripeCustomerId.id}:`,
+          `Failed to create sponsor for customer ${stripeCustomerId}:`,
           error,
         );
         // Don't throw - this is just for sponsor recognition, not critical for payment processing
@@ -142,7 +137,7 @@ const StripeWebhookHelpers = {
 
     const customer: Stripe.Customer =
       await stripe.customers.create(customerCreateParams);
-    return new StripeCustomerId(customer.id);
+    return customer.id as StripeCustomerId;
   },
 
   async saveAddressAndStripeCustomer(
@@ -156,7 +151,7 @@ const StripeWebhookHelpers = {
 
     let address: Address | null = null;
     if (customerDetails?.address) {
-      const createAddressBody: dto.CreateAddressBody = {
+      const createAddressBody = {
         line1: customerDetails?.address?.line1 ?? undefined,
         line2: customerDetails?.address?.line2 ?? undefined,
         city: customerDetails?.address?.city ?? undefined,
@@ -167,35 +162,45 @@ const StripeWebhookHelpers = {
       address = await addressRepo.create(createAddressBody);
     }
 
-    const newStripeCustomer = new StripeCustomer(
-      customerId,
-      currency,
-      email ?? undefined,
+    const newStripeCustomer: StripeCustomer = {
+      stripeId: customerId,
+      currency: currency as any,
+      email: email ?? undefined,
       name,
-      phone,
-      [],
-      address ? address.id : null,
-    );
+    };
 
     logger.debug(
-      `🔔  Stripe customer, not registered, created: ${newStripeCustomer}`,
+      `Stripe customer, not registered, created: ${JSON.stringify(newStripeCustomer)}`,
     );
     await stripeCustomerRepo.insert(newStripeCustomer);
   },
 
   async invoicePaid(stripeInvoice: Stripe.Invoice): Promise<void> {
-    const invoice = StripeInvoice.fromStripeApi(stripeInvoice);
-    if (invoice instanceof ValidationError) {
-      throw invoice;
-    }
-    await stripeInvoiceRepo.insert(invoice);
+    const invoice: StripeInvoice = {
+      id: stripeInvoice.id as any,
+      stripeCustomerId: (typeof stripeInvoice.customer === "string"
+        ? stripeInvoice.customer
+        : stripeInvoice.customer?.id) as StripeCustomerId,
+      amountPaid: stripeInvoice.amount_paid,
+      currency: (stripeInvoice.currency?.toUpperCase() ?? "USD") as any,
+      status: stripeInvoice.status ?? "paid",
+      lines: [],
+    } as any;
+    await stripeInvoiceRepo.insert(invoice, []);
   },
 
   async createOrUpdateStripePrice(price: Stripe.Price): Promise<void> {
-    const stripePrice = StripePrice.fromStripeApi(price);
-    if (stripePrice instanceof ValidationError) {
-      throw stripePrice;
-    }
+    const stripePrice: StripePrice = {
+      id: price.id as any,
+      stripeProductId: (typeof price.product === "string"
+        ? price.product
+        : (price.product as any)?.id) as any,
+      currency: (price.currency?.toUpperCase() ?? "USD") as any,
+      unitAmount: price.unit_amount ?? 0,
+      recurring: price.recurring ? true : false,
+      interval: price.recurring?.interval ?? null,
+      active: price.active,
+    } as any;
     await stripePriceRepo.createOrUpdate(stripePrice);
   },
 };
@@ -210,7 +215,7 @@ export const StripeWebhookController: StripeWebhookController = {
         config.stripe.webhookSecret,
       );
     } catch (err) {
-      logger.error(`⚠️  Webhook signature verification failed.`, err);
+      logger.error(`Webhook signature verification failed.`, err);
       res.sendStatus(StatusCodes.BAD_REQUEST);
       return;
     }
@@ -219,8 +224,8 @@ export const StripeWebhookController: StripeWebhookController = {
     const object = data.object;
     const eventType: string = event.type;
 
-    logger.debug(`🔔  Webhook received an event of type: ${eventType}!`);
-    logger.debug(`🔔  Webhook data:`, data);
+    logger.debug(`Webhook received an event of type: ${eventType}!`);
+    logger.debug(`Webhook data:`, data);
 
     try {
       // Handle the event
@@ -231,18 +236,18 @@ export const StripeWebhookController: StripeWebhookController = {
       switch (eventType) {
         // TODO: https://docs.stripe.com/checkout/fulfillment?payment-ui=embedded-form#create-payment-event-handler
         case "checkout.session.completed": {
-          logger.debug("🔔 checkout.session.completed, starting!");
+          logger.debug("checkout.session.completed, starting!");
           await StripeWebhookHelpers.checkoutSessionCompleted(
             event.data.object as Stripe.Checkout.Session,
           );
-          logger.debug("🔔 checkout.session.completed, done!");
+          logger.debug("checkout.session.completed, done!");
           break;
         }
 
         case "invoice.paid": {
-          logger.debug(`🔔 invoice.paid, starting!`);
+          logger.debug(`invoice.paid, starting!`);
           await StripeWebhookHelpers.invoicePaid(object as Stripe.Invoice);
-          logger.debug(`🔔 invoice.paid, done!`);
+          logger.debug(`invoice.paid, done!`);
           break;
         }
 
@@ -252,63 +257,61 @@ export const StripeWebhookController: StripeWebhookController = {
 
         case "payment_intent.succeeded": {
           const paymentIntent = data.object as Stripe.PaymentIntent;
-          logger.debug(
-            `💰 Payment captured for amount: ${paymentIntent.amount}!`,
-          );
+          logger.debug(`Payment captured for amount: ${paymentIntent.amount}!`);
           break;
         }
 
         case "payment_intent.payment_failed": {
           const paymentIntent = data.object as Stripe.PaymentIntent;
-          logger.debug(`❌ Payment failed for amount: ${paymentIntent.amount}`);
+          logger.debug(`Payment failed for amount: ${paymentIntent.amount}`);
           break;
         }
 
         case "price.created": {
           const price = data.object as Stripe.Price;
-          logger.debug(`🔔 price.created`, price);
+          logger.debug(`price.created`, price);
           await StripeWebhookHelpers.createOrUpdateStripePrice(price);
           break;
         }
 
         case "price.updated": {
           const price = data.object as Stripe.Price;
-          logger.debug(`🔔 price.updated`, price);
+          logger.debug(`price.updated`, price);
           await StripeWebhookHelpers.createOrUpdateStripePrice(price);
           break;
         }
 
         case "price.deleted": {
           const price = data.object as Stripe.Price;
-          logger.debug(`🔔 price.deleted`, price);
+          logger.debug(`price.deleted`, price);
           await StripeWebhookHelpers.createOrUpdateStripePrice(price);
           break;
         }
 
         case "product.created": {
           const product = data.object as Stripe.Price;
-          logger.debug(`🔔 product.created`, product);
+          logger.debug(`product.created`, product);
           // await StripeWebhookHelpers.createOrUpdateStripeProduct(product);
           break;
         }
 
         case "product.updated": {
           const product = data.object as Stripe.Product;
-          logger.debug(`🔔 product.updated`, product);
+          logger.debug(`product.updated`, product);
           // await StripeWebhookHelpers.createOrUpdateStripeProduct(product);
           break;
         }
 
         case "product.deleted": {
           const product = data.object as Stripe.Product;
-          logger.debug(`🔔 product.deleted`, product);
+          logger.debug(`product.deleted`, product);
           // await StripeWebhookHelpers.createOrUpdateStripeProduct(product);
           break;
         }
 
         case "customer.subscription.created": {
           const subscription = data.object as Stripe.Subscription;
-          logger.debug(`🔔 subscription.deleted`, subscription);
+          logger.debug(`subscription.deleted`, subscription);
           break;
         }
       }

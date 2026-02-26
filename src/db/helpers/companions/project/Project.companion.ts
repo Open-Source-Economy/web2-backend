@@ -1,9 +1,5 @@
-import {
-  Project,
-  Repository,
-  ValidationError,
-  Validator,
-} from "@open-source-economy/api-types";
+import { Project, Repository } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 import { OwnerCompanion, RepositoryCompanion } from "../github";
 
 export namespace ProjectCompanion {
@@ -21,9 +17,10 @@ export namespace ProjectCompanion {
     if (error) return error;
     if (owner instanceof ValidationError) return owner;
 
-    return new Project(
+    return {
       owner,
-      repository instanceof Repository ? repository : undefined,
-    );
+      repository:
+        repository instanceof ValidationError ? undefined : repository,
+    } as Project;
   }
 }

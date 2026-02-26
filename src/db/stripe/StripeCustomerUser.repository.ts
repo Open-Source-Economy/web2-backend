@@ -1,10 +1,10 @@
 import { Pool } from "pg";
-import {
-  StripeCustomerId,
-  StripeCustomerUser,
-  UserId,
-} from "@open-source-economy/api-types";
+import { StripeCustomerId, UserId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import {
+  StripeCustomerUser,
+  StripeCustomerUserCompanion,
+} from "../helpers/companions";
 
 export function getStripeCustomerUserRepository(): StripeCustomerUserRepository {
   return new StripeCustomerUserRepositoryImpl(pool);
@@ -39,7 +39,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple customers found");
     } else {
-      const customer = StripeCustomerUser.fromBackend(rows[0]);
+      const customer = StripeCustomerUserCompanion.fromBackend(rows[0]);
       if (customer instanceof Error) {
         throw customer;
       }
@@ -49,7 +49,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
 
   private getCustomerList(rows: any[]): StripeCustomerUser[] {
     return rows.map((r) => {
-      const customer = StripeCustomerUser.fromBackend(r);
+      const customer = StripeCustomerUserCompanion.fromBackend(r);
       if (customer instanceof Error) {
         throw customer;
       }
@@ -75,7 +75,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
         FROM stripe_customer_user
         WHERE stripe_customer_id = $1
       `,
-      [id.id],
+      [id],
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -88,7 +88,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
         FROM stripe_customer_user
         WHERE user_id = $1
       `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -106,7 +106,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
           VALUES ($1, $2)
           RETURNING *
         `,
-        [customer.stripeCustomerId.id, customer.userId.uuid],
+        [customer.stripeCustomerId, customer.userId],
       );
 
       await client.query("COMMIT");

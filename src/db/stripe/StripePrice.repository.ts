@@ -7,6 +7,7 @@ import {
   StripePriceId,
   StripeProductId,
 } from "@open-source-economy/api-types";
+import { StripePriceCompanion } from "../helpers/companions";
 
 export function getStripePriceRepository(): StripePriceRepository {
   return new StripePriceRepositoryImpl(pool);
@@ -43,9 +44,8 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple prices found");
     } else {
-      const price = StripePrice.fromBackend(rows[0]);
+      const price = StripePriceCompanion.fromBackend(rows[0]);
       if (price instanceof Error) {
-        // We re-throw any validation errors
         throw price;
       }
       return price;
@@ -54,7 +54,7 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
 
   private getPriceList(rows: any[]): StripePrice[] {
     return rows.map((r) => {
-      const price = StripePrice.fromBackend(r);
+      const price = StripePriceCompanion.fromBackend(r);
       if (price instanceof Error) {
         throw price;
       }
@@ -69,7 +69,7 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
         FROM stripe_price
         WHERE stripe_id = $1
       `,
-      [id.id],
+      [id],
     );
     return this.getOptionalPrice(result.rows);
   }
@@ -81,12 +81,12 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
       `
         SELECT *
         FROM stripe_price
-        WHERE product_id = $1 
+        WHERE product_id = $1
           AND type IN (${Object.values(CampaignPriceType)
             .map((type) => `'${type}'`)
             .join(", ")})
       `,
-      [productId.id],
+      [productId],
     );
 
     const priceList = this.getPriceList(result.rows);
@@ -147,8 +147,8 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
       RETURNING stripe_id, product_id, unit_amount, currency, active, type
     `,
         [
-          price.stripeId.id,
-          price.productId.id,
+          price.stripeId,
+          price.productId,
           price.unitAmount,
           price.currency,
           price.active,

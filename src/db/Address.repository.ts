@@ -3,10 +3,20 @@ import {
   Address,
   AddressId,
   CompanyId,
-  CreateAddressBody,
   UserId,
 } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
+import { AddressCompanion } from "./helpers/companions";
+
+export interface CreateAddressBody {
+  name?: string;
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+}
 
 export function getAddressRepository(): AddressRepository {
   return new AddressRepositoryImpl(pool);
@@ -43,7 +53,7 @@ class AddressRepositoryImpl implements AddressRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple company address found");
     } else {
-      const address = Address.fromBackend(rows[0]);
+      const address = AddressCompanion.fromBackend(rows[0]);
       if (address instanceof Error) {
         throw address;
       }
@@ -53,7 +63,7 @@ class AddressRepositoryImpl implements AddressRepository {
 
   private getAddressList(rows: any[]): Address[] {
     return rows.map((r) => {
-      const address = Address.fromBackend(r);
+      const address = AddressCompanion.fromBackend(r);
       if (address instanceof Error) {
         throw address;
       }
@@ -69,7 +79,7 @@ class AddressRepositoryImpl implements AddressRepository {
       JOIN company c ON a.id = c.address_id
       WHERE c.id = $1
       `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalAddress(result.rows);
@@ -84,7 +94,7 @@ class AddressRepositoryImpl implements AddressRepository {
       JOIN address a ON c.address_id = a.id
       WHERE uc.user_id = $1
       `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalAddress(result.rows);
@@ -106,7 +116,7 @@ class AddressRepositoryImpl implements AddressRepository {
       FROM address
       WHERE id = $1
       `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalAddress(result.rows);
@@ -166,7 +176,7 @@ class AddressRepositoryImpl implements AddressRepository {
           address.state,
           address.postalCode,
           address.country,
-          address.id.uuid,
+          address.id,
         ],
       );
 

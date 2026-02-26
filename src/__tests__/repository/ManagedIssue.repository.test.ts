@@ -1,6 +1,5 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
 import {
-  CreateManagedIssueBody,
   IssueId,
   ManagedIssueId,
   ManagedIssueState,
@@ -51,9 +50,7 @@ describe("ManagedIssueRepository", () => {
         Fixture.managedIssueFromBody(created.id, managedIssueBody),
       );
 
-      const found = await managedIssueRepo.getById(
-        new ManagedIssueId(created.id.uuid),
-      );
+      const found = await managedIssueRepo.getById(created.id);
       expect(found).toEqual(created);
     });
 
@@ -69,9 +66,7 @@ describe("ManagedIssueRepository", () => {
         Fixture.managedIssueFromBody(created.id, managedIssueBody),
       );
 
-      const found = await managedIssueRepo.getById(
-        new ManagedIssueId(created.id.uuid),
-      );
+      const found = await managedIssueRepo.getById(created.id);
       expect(found).toEqual(created);
     });
 
@@ -93,7 +88,7 @@ describe("ManagedIssueRepository", () => {
         Fixture.managedIssueFromBody(created.id, managedIssueBody),
       );
 
-      const updatedManagedIssueBody: CreateManagedIssueBody = {
+      const updatedManagedIssueBody = {
         ...managedIssueBody,
         state: ManagedIssueState.SOLVED, // Update the state
       };
@@ -119,7 +114,7 @@ describe("ManagedIssueRepository", () => {
 
   describe("getById", () => {
     it("should return null if managed issue not found", async () => {
-      const nonExistentManagedIssueId = new ManagedIssueId(uuidv());
+      const nonExistentManagedIssueId = uuidv() as ManagedIssueId;
       const found = await managedIssueRepo.getById(nonExistentManagedIssueId);
 
       expect(found).toBeNull();

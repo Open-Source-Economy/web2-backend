@@ -3,12 +3,12 @@ import {
   DeveloperProjectItem,
   DeveloperProjectItemId,
   DeveloperRoleType,
+  ISODateTimeString,
   MergeRightsType,
   ProjectCategory,
   ProjectItemId,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 
 export interface MergeRolesAndRightsResult {
   hasChanges: boolean;
@@ -56,17 +56,17 @@ export namespace DeveloperProjectItemCompanion {
     }
 
     return {
-      id: new DeveloperProjectItemId(id),
-      developerProfileId: new DeveloperProfileId(developerProfileId),
-      projectItemId: new ProjectItemId(projectItemId),
+      id: id as DeveloperProjectItemId,
+      developerProfileId: developerProfileId as DeveloperProfileId,
+      projectItemId: projectItemId as ProjectItemId,
       roles,
       mergeRights,
       comment,
       customCategories: customCategories,
       predefinedCategories: predefinedCategories,
-      createdAt,
-      updatedAt,
-    };
+      createdAt: createdAt as ISODateTimeString,
+      updatedAt: updatedAt as ISODateTimeString,
+    } as DeveloperProjectItem;
   }
 
   /**

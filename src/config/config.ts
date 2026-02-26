@@ -1,7 +1,13 @@
 import * as dotenv from "dotenv";
 import Joi from "joi";
 import { NodeEnv } from "./NodeEnv";
-import { Terms } from "@open-source-economy/api-types";
+
+/**
+ * Local definition of Terms (previously from @open-source-economy/api-types).
+ */
+export interface Terms {
+  version: string;
+}
 
 dotenv.config();
 

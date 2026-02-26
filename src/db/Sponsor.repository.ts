@@ -67,7 +67,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
           WHERE stripe_customer_id = $1
             AND github_owner_login = $2
         `,
-        [stripeCustomerId.id, githubOwnerLogin],
+        [stripeCustomerId, githubOwnerLogin],
       );
 
       if (existingResult.rows.length > 0) {
@@ -87,7 +87,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
             githubOwnerId,
             githubOwnerLogin,
             isPublic,
-            stripeCustomerId.id,
+            stripeCustomerId,
             githubOwnerLogin,
           ],
         );
@@ -112,7 +112,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
             VALUES ($1, $2, $3, $4)
             RETURNING *
           `,
-          [stripeCustomerId.id, githubOwnerId, githubOwnerLogin, isPublic],
+          [stripeCustomerId, githubOwnerId, githubOwnerLogin, isPublic],
         );
 
         await client.query("COMMIT");
@@ -141,7 +141,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
         ORDER BY created_at DESC
         LIMIT 1
       `,
-      [stripeCustomerId.id],
+      [stripeCustomerId],
     );
 
     if (result.rows.length === 0) {

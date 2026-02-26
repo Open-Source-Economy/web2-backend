@@ -1,11 +1,11 @@
 import {
   Currency,
+  ISODateTimeString,
   RepositoryUserPermissionToken,
   RepositoryUserPermissionTokenId,
   RepositoryUserRole,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "./Validator";
 import { RepositoryIdCompanion } from "./github";
 
 export namespace RepositoryUserPermissionTokenCompanion {
@@ -47,18 +47,18 @@ export namespace RepositoryUserPermissionTokenCompanion {
       return error;
     }
 
-    return new RepositoryUserPermissionToken(
-      new RepositoryUserPermissionTokenId(id),
-      userName ?? null,
-      userEmail ?? null,
+    return {
+      id: id as RepositoryUserPermissionTokenId,
+      userName: userName ?? null,
+      userEmail: userEmail ?? null,
       userGithubOwnerLogin,
       token,
       repositoryId,
       repositoryUserRole,
-      rate ?? null,
-      currency ?? null,
-      expiresAt,
+      rate: rate ?? null,
+      currency: currency ?? null,
+      expiresAt: expiresAt as ISODateTimeString,
       hasBeenUsed,
-    );
+    } as RepositoryUserPermissionToken;
   }
 }

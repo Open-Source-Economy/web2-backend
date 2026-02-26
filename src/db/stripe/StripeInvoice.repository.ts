@@ -7,6 +7,7 @@ import {
   UserId,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import { StripeInvoiceCompanion } from "../helpers/companions";
 import {
   getStripeInvoiceLineRepository,
   StripeInvoiceLineRepository,
@@ -17,8 +18,13 @@ export function getStripeInvoiceRepository(): StripeInvoiceRepository {
 }
 
 export interface StripeInvoiceRepository {
-  insert(invoice: StripeInvoice): Promise<StripeInvoice>;
+  insert(
+    invoice: StripeInvoice,
+    lines: StripeInvoiceLine[],
+  ): Promise<StripeInvoice>;
   getById(id: StripeInvoiceId): Promise<StripeInvoice | null>;
+  getAllInvoicePaidByCompany(id: CompanyId): Promise<any[]>;
+  getAllInvoicePaidByUser(id: UserId): Promise<any[]>;
 }
 
 class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
@@ -30,11 +36,8 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
     this.stripeInvoiceLineRepository = getStripeInvoiceLineRepository();
   }
 
-  private getOneInvoice(
-    rows: any[],
-    lines: StripeInvoiceLine[],
-  ): StripeInvoice {
-    const invoice = this.getOptionalInvoice(rows, lines);
+  private getOneInvoice(rows: any[]): StripeInvoice {
+    const invoice = this.getOptionalInvoice(rows);
     if (invoice === null) {
       throw new Error("Invoice not found");
     } else {
@@ -42,16 +45,13 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
     }
   }
 
-  private getOptionalInvoice(
-    rows: any[],
-    lines: StripeInvoiceLine[],
-  ): StripeInvoice | null {
+  private getOptionalInvoice(rows: any[]): StripeInvoice | null {
     if (rows.length === 0) {
       return null;
     } else if (rows.length > 1) {
       throw new Error("Multiple invoices found");
     } else {
-      const invoice = StripeInvoice.fromBackend(rows[0], lines);
+      const invoice = StripeInvoiceCompanion.fromBackend(rows[0]);
       if (invoice instanceof Error) {
         throw invoice;
       }
@@ -66,20 +66,16 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                 FROM stripe_invoice
                 WHERE stripe_id = $1
             `,
-      [id.id],
+      [id],
     );
 
-    const lines = await this.stripeInvoiceLineRepository.getByInvoiceId(id);
-
-    const invoice = this.getOptionalInvoice(result.rows, lines);
-    if (!invoice) {
-      return null;
-    }
-
-    return invoice;
+    return this.getOptionalInvoice(result.rows);
   }
 
-  async insert(invoice: StripeInvoice): Promise<StripeInvoice> {
+  async insert(
+    invoice: StripeInvoice,
+    lines: StripeInvoiceLine[],
+  ): Promise<StripeInvoice> {
     const client = await this.pool.connect();
 
     try {
@@ -88,37 +84,37 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
       const result = await client.query(
         `
                     INSERT INTO stripe_invoice (
-                        stripe_id, 
-                        stripe_customer_id, 
-                        paid, 
-                        account_country, 
-                        currency, 
+                        stripe_id,
+                        stripe_customer_id,
+                        paid,
+                        account_country,
+                        currency,
                         total,
-                        total_excl_tax, 
-                        subtotal, 
-                        subtotal_excl_tax, 
+                        total_excl_tax,
+                        subtotal,
+                        subtotal_excl_tax,
                         hosted_invoice_url,
                         invoice_pdf,
                         number
                     )
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                    RETURNING 
-                        stripe_id, 
-                        stripe_customer_id, 
-                        paid, 
-                        account_country, 
-                        currency, 
-                        total, 
-                        total_excl_tax, 
-                        subtotal, 
-                        subtotal_excl_tax, 
-                        hosted_invoice_url, 
+                    RETURNING
+                        stripe_id,
+                        stripe_customer_id,
+                        paid,
+                        account_country,
+                        currency,
+                        total,
+                        total_excl_tax,
+                        subtotal,
+                        subtotal_excl_tax,
+                        hosted_invoice_url,
                         invoice_pdf,
                         number
                 `,
         [
-          invoice.id.id,
-          invoice.customerId.id,
+          invoice.stripeId,
+          invoice.customerId,
           invoice.paid,
           invoice.accountCountry,
           invoice.currency,
@@ -133,25 +129,25 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
       );
 
       // Insert associated invoice lines
-      for (const line of invoice.lines) {
+      for (const line of lines) {
         await client.query(
           `
                         INSERT INTO stripe_invoice_line (
-                            stripe_id, 
-                            invoice_id, 
-                            stripe_customer_id, 
-                            product_id, 
+                            stripe_id,
+                            invoice_id,
+                            stripe_customer_id,
+                            product_id,
                             price_id,
                             quantity
                         )
                         VALUES ($1, $2, $3, $4, $5, $6)
                     `,
           [
-            line.stripeId.id,
-            line.invoiceId.id,
-            line.customerId.id,
-            line.productId.id,
-            line.priceId.id,
+            line.stripeId,
+            line.invoiceId,
+            line.customerId,
+            line.productId,
+            line.priceId,
             line.quantity,
           ],
         );
@@ -159,7 +155,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
 
       await client.query("COMMIT");
 
-      return invoice;
+      return this.getOneInvoice(result.rows);
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -168,34 +164,34 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
     }
   }
 
-  async getAllInvoicePaidBy(id: CompanyId | UserId): Promise<any[]> {
-    let result;
-
-    if (id instanceof CompanyId) {
-      result = await this.pool.query(
-        `
+  async getAllInvoicePaidByCompany(id: CompanyId): Promise<any[]> {
+    const result = await this.pool.query(
+      `
                     SELECT *
                     FROM stripe_invoice
                     WHERE stripe_customer_id IN (
-                        SELECT stripe_id FROM stripe_customer_user WHERE user_id IN (
+                        SELECT stripe_customer_id FROM stripe_customer_user WHERE user_id IN (
                             SELECT user_id FROM user_company WHERE company_id = $1
                         )
                     ) AND paid = TRUE
                 `,
-        [id.uuid],
-      );
-    } else {
-      result = await this.pool.query(
-        `
+      [id],
+    );
+
+    return result.rows;
+  }
+
+  async getAllInvoicePaidByUser(id: UserId): Promise<any[]> {
+    const result = await this.pool.query(
+      `
                     SELECT *
                     FROM stripe_invoice
                     WHERE stripe_customer_id IN (
-                        SELECT stripe_id FROM stripe_customer_user WHERE user_id = $1
+                        SELECT stripe_customer_id FROM stripe_customer_user WHERE user_id = $1
                     ) AND paid = TRUE
                 `,
-        [id.uuid],
-      );
-    }
+      [id],
+    );
 
     return result.rows;
   }

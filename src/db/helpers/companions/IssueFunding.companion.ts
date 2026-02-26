@@ -2,9 +2,8 @@ import {
   IssueFunding,
   IssueFundingId,
   UserId,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "./Validator";
 import { IssueIdCompanion } from "./github";
 
 export namespace IssueFundingCompanion {
@@ -30,11 +29,11 @@ export namespace IssueFundingCompanion {
       return error;
     }
 
-    return new IssueFunding(
-      new IssueFundingId(id),
+    return {
+      id: id as IssueFundingId,
       githubIssueId,
-      new UserId(userId),
-      amount,
-    );
+      userId: userId as UserId,
+      credit: amount,
+    } as IssueFunding;
   }
 }

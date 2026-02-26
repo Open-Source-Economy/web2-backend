@@ -5,6 +5,7 @@ import {
   StripeInvoiceLineId,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import { StripeInvoiceLineCompanion } from "../helpers/companions";
 
 export function getStripeInvoiceLineRepository(): StripeInvoiceLineRepository {
   return new StripeInvoiceLineRepositoryImpl(pool);
@@ -39,7 +40,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple invoice lines found");
     } else {
-      const invoiceLine = StripeInvoiceLine.fromBackend(rows[0]);
+      const invoiceLine = StripeInvoiceLineCompanion.fromBackend(rows[0]);
       if (invoiceLine instanceof Error) {
         throw invoiceLine;
       }
@@ -49,7 +50,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
 
   private getInvoiceLineList(rows: any[]): StripeInvoiceLine[] {
     return rows.map((r) => {
-      const invoiceLine = StripeInvoiceLine.fromBackend(r);
+      const invoiceLine = StripeInvoiceLineCompanion.fromBackend(r);
       if (invoiceLine instanceof Error) {
         throw invoiceLine;
       }
@@ -73,7 +74,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
             FROM stripe_invoice_line
             WHERE stripe_id = $1
         `,
-      [id.id],
+      [id],
     );
 
     return this.getOptionalInvoiceLine(result.rows);
@@ -86,7 +87,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
             FROM stripe_invoice_line
             WHERE invoice_id = $1
         `,
-      [id.id],
+      [id],
     );
 
     return this.getInvoiceLineList(result.rows);
@@ -104,11 +105,11 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
                 RETURNING stripe_id, invoice_id, stripe_customer_id, product_id, price_id, quantity
             `,
         [
-          invoiceLine.stripeId.id,
-          invoiceLine.invoiceId.id,
-          invoiceLine.customerId.id,
-          invoiceLine.productId.id,
-          invoiceLine.priceId.id,
+          invoiceLine.stripeId,
+          invoiceLine.invoiceId,
+          invoiceLine.customerId,
+          invoiceLine.productId,
+          invoiceLine.priceId,
           invoiceLine.quantity,
         ],
       );

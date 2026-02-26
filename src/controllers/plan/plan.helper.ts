@@ -1,8 +1,7 @@
 import {
-  ApiError,
   Currency,
   PlanProductType,
-  productTypeUtils,
+  ProductType,
   StripeProduct,
   StripeProductId,
 } from "@open-source-economy/api-types";
@@ -10,6 +9,7 @@ import { StatusCodes } from "http-status-codes";
 import { stripeProductRepo } from "../../db";
 import { stripe, StripeHelper } from "../stripe";
 import Stripe from "stripe";
+import { ApiError } from "../../errors";
 
 export interface PlanHelper {
   createProductsAndPrices(): Promise<void>;
@@ -28,10 +28,7 @@ const PlanHelpers = {
       case PlanProductType.ENTERPRISE_PLAN:
         return "Enterprise Plan";
       default:
-        throw new ApiError(
-          StatusCodes.NOT_IMPLEMENTED,
-          `Unknown product type: ${productType}`,
-        );
+        throw ApiError.internal(`Unknown product type: ${productType}`);
     }
   },
 
@@ -75,10 +72,7 @@ const PlanHelpers = {
           [Currency.CHF]: 2299_00,
         };
       default:
-        throw new ApiError(
-          StatusCodes.NOT_IMPLEMENTED,
-          `Unknown product type: ${productType}`,
-        );
+        throw ApiError.internal(`Unknown product type: ${productType}`);
     }
   },
 
@@ -105,6 +99,12 @@ const PlanHelpers = {
     return result;
   },
 
+  // Convert PlanProductType to ProductType
+  toProductType(planProductType: PlanProductType): ProductType {
+    // Map plan product types to generic product types
+    return planProductType as unknown as ProductType;
+  },
+
   async createProductAndPrices(
     productType: PlanProductType,
     params: Stripe.ProductCreateParams,
@@ -113,13 +113,11 @@ const PlanHelpers = {
   ): Promise<void> {
     const product: Stripe.Product = await stripe.products.create(params);
 
-    await stripeProductRepo.insert(
-      new StripeProduct(
-        new StripeProductId(product.id),
-        null,
-        productTypeUtils.toProductType(productType),
-      ),
-    );
+    await stripeProductRepo.insert({
+      id: product.id as unknown as StripeProductId,
+      projectId: null,
+      productType: PlanHelpers.toProductType(productType),
+    } as unknown as StripeProduct);
 
     // --- monthly price ---
     const monthlyOptions: Stripe.PriceCreateParams.Recurring = {

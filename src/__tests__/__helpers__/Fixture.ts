@@ -7,14 +7,9 @@ import {
   CompanyUserPermissionTokenId,
   CompanyUserRole,
   ContributorVisibility,
-  CreateAddressBody,
-  CreateCompanyBody,
-  CreateCompanyUserPermissionTokenBody,
-  CreateIssueFundingBody,
-  CreateManagedIssueBody,
-  CreateManualInvoiceBody,
   Currency,
   GithubData,
+  ISODateTimeString,
   Issue,
   IssueFunding,
   IssueFundingId,
@@ -31,13 +26,13 @@ import {
   PriceType,
   ProductType,
   Project,
-  ProjectId,
   Provider,
   Repository,
   RepositoryId,
   RepositoryUserPermissionToken,
   RepositoryUserPermissionTokenId,
   RepositoryUserRole,
+  RequestIssueFundingBody,
   StripeCustomer,
   StripeCustomerId,
   StripeInvoice,
@@ -49,7 +44,6 @@ import {
   StripeProduct,
   StripeProductId,
   ThirdPartyUser,
-  ThirdPartyUserId,
   UserId,
   UserRepository,
   UserRole,
@@ -57,7 +51,51 @@ import {
 import { v4 as uuid } from "uuid";
 import Decimal from "decimal.js";
 import { CreateUser } from "../../db";
+import { BackendLocalUser } from "../../db/helpers/companions/user/backend-user.types";
 import { CreateRepositoryUserPermissionTokenDto } from "../../db/user/RepositoryUserPermissionToken.repository";
+
+// Locally defined body types that were removed from api-types
+
+interface CreateAddressBody {
+  name?: string;
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+}
+
+interface CreateCompanyBody {
+  name: string;
+  taxId?: string;
+  addressId?: AddressId;
+}
+
+interface CreateCompanyUserPermissionTokenBody {
+  userName: string;
+  userEmail: string;
+  token: string;
+  companyId: CompanyId;
+  companyUserRole: CompanyUserRole;
+  expiresAt: Date;
+}
+
+interface CreateManualInvoiceBody {
+  number: number;
+  companyId?: CompanyId;
+  userId?: UserId;
+  paid: boolean;
+  creditAmount: number;
+}
+
+interface CreateManagedIssueBody {
+  githubIssueId: IssueId;
+  requestedCreditAmount: number | null;
+  managerId: UserId;
+  contributorVisibility: ContributorVisibility;
+  state: ManagedIssueState;
+}
 
 export const Fixture = {
   id(): number {
@@ -69,25 +107,30 @@ export const Fixture = {
 
   userId(): UserId {
     const id = this.uuid();
-    return new UserId(id);
+    return id as UserId;
   },
 
-  localUser(): LocalUser {
-    return new LocalUser("d@gmail.com" + this.uuid(), false, "password");
+  localUser(): BackendLocalUser {
+    return {
+      email: "d@gmail.com" + this.uuid(),
+      isEmailVerified: false,
+      password: "testPassword123!",
+    } as BackendLocalUser;
   },
   thirdPartyUser(
     id: string,
     provider: Provider = Provider.Github,
     email: string = "lauriane@gmail.com",
   ): ThirdPartyUser {
-    return new ThirdPartyUser(
+    return {
       provider,
-      new ThirdPartyUserId(id),
       email,
-      new GithubData(Fixture.owner(Fixture.ownerId())),
-    );
+      providerData: {
+        owner: Fixture.owner(Fixture.ownerId()),
+      } as GithubData,
+    } as ThirdPartyUser;
   },
-  createUser(data: LocalUser | ThirdPartyUser): CreateUser {
+  createUser(data: BackendLocalUser | ThirdPartyUser): CreateUser {
     return {
       name: null,
       data: data,
@@ -98,59 +141,53 @@ export const Fixture = {
 
   ownerId(): OwnerId {
     const id = this.id();
-    return new OwnerId(`owner-${id}`, id);
+    return { login: `owner-${id}`, githubId: id } as OwnerId;
   },
 
   owner(ownerId: OwnerId, payload: string = "payload"): Owner {
-    return new Owner(
-      ownerId,
-      OwnerType.Organization,
-      "url",
-      payload,
-      undefined, // followers
-      undefined, // following
-      undefined, // publicRepos
-      undefined, // publicGists
-      undefined, // name
-      undefined, // twitterUsername
-      undefined, // company
-      undefined, // blog
-      undefined, // location
-      undefined, // email
-    );
+    return {
+      id: ownerId,
+      type: OwnerType.Organization,
+      htmlUrl: "url",
+      avatarUrl: payload,
+    } as Owner;
   },
 
   repositoryId(ownerId: OwnerId): RepositoryId {
     const id = this.id();
-    return new RepositoryId(ownerId, `repo-${id}`, id);
+    return { ownerId, name: `repo-${id}`, githubId: id } as RepositoryId;
   },
 
   repository(
     repositoryId: RepositoryId,
     payload: string = "payload",
   ): Repository {
-    return new Repository(repositoryId, "https://example.com", payload);
+    return {
+      id: repositoryId,
+      htmlUrl: "https://example.com",
+      description: payload,
+    } as Repository;
   },
 
   issueId(repositoryId: RepositoryId): IssueId {
     const number = this.id();
-    return new IssueId(repositoryId, number, number);
+    return { repositoryId, number, githubId: number } as IssueId;
   },
 
   issue(issueId: IssueId, openByOwnerId: OwnerId, payload = "payload"): Issue {
-    return new Issue(
-      issueId,
-      "issue title",
-      "url",
-      new Date("2022-01-01T00:00:00.000Z"),
-      null,
-      openByOwnerId,
-      payload,
-    );
+    return {
+      id: issueId,
+      title: "issue title",
+      htmlUrl: "url",
+      createdAt: "2022-01-01T00:00:00.000Z" as ISODateTimeString,
+      closedAt: null,
+      openBy: openByOwnerId,
+      body: payload,
+    } as Issue;
   },
   addressId(): AddressId {
-    const uuid = this.uuid();
-    return new AddressId(uuid);
+    const id = this.uuid();
+    return id as AddressId;
   },
   createAddressBody(): CreateAddressBody {
     return {
@@ -163,66 +200,70 @@ export const Fixture = {
     } as CreateAddressBody;
   },
   address(addressId: AddressId): Address {
-    return new Address(addressId);
+    return { id: addressId } as Address;
   },
   addressFromBody(addressId: AddressId, dto: CreateAddressBody): Address {
-    return new Address(
-      addressId,
-      dto.name,
-      dto.line1,
-      dto.line2,
-      dto.city,
-      dto.state,
-      dto.postalCode,
-      dto.country,
-    );
+    return {
+      id: addressId,
+      name: dto.name,
+      line1: dto.line1,
+      line2: dto.line2,
+      city: dto.city,
+      state: dto.state,
+      postalCode: dto.postalCode,
+      country: dto.country,
+    } as Address;
   },
 
   companyId(): CompanyId {
-    const uuid = this.uuid();
-    return new CompanyId(uuid);
+    const id = this.uuid();
+    return id as CompanyId;
   },
 
   createCompanyBody(addressId?: AddressId): CreateCompanyBody {
     return {
       name: "company",
       taxId: "taxId" + this.uuid(),
-      addressId: addressId ?? null,
+      addressId: addressId,
     };
   },
   company(companyId: CompanyId, addressId: AddressId | null = null): Company {
-    return new Company(
-      companyId,
-      null,
-      "Company",
-      addressId !== null ? addressId : null,
-    );
+    return {
+      id: companyId,
+      taxId: null,
+      name: "Company",
+      addressId: addressId,
+    } as Company;
   },
   companyFromBody(companyId: CompanyId, dto: CreateCompanyBody): Company {
-    return new Company(
-      companyId,
-      dto.taxId ?? null,
-      dto.name ?? null,
-      dto.addressId ?? null,
-    );
+    return {
+      id: companyId,
+      taxId: dto.taxId ?? null,
+      name: dto.name ?? null,
+      addressId: dto.addressId ?? null,
+    } as Company;
   },
 
   stripeProductId(): StripeProductId {
-    const uuid = this.uuid();
-    return new StripeProductId(uuid);
+    const id = this.uuid();
+    return id as StripeProductId;
   },
 
   stripeProduct(
     productId: StripeProductId,
-    projectId: ProjectId | null,
+    projectId: string | null,
     productType: ProductType = ProductType.CREDIT,
   ): StripeProduct {
-    return new StripeProduct(productId, projectId, productType);
+    return {
+      stripeId: productId,
+      projectId,
+      type: productType,
+    } as StripeProduct;
   },
 
   stripePriceId(): StripePriceId {
-    const uuid = this.uuid();
-    return new StripePriceId(uuid);
+    const id = this.uuid();
+    return id as StripePriceId;
   },
 
   stripePrice(
@@ -232,19 +273,19 @@ export const Fixture = {
     currency: Currency = Currency.USD,
     priceType: PriceType = PriceType.MONTHLY,
   ): StripePrice {
-    return new StripePrice(
+    return {
       stripeId,
       productId,
       unitAmount,
       currency,
-      true,
-      priceType,
-    );
+      active: true,
+      type: priceType,
+    } as StripePrice;
   },
 
   stripeCustomerId(): StripeCustomerId {
-    const uuid = this.uuid();
-    return new StripeCustomerId(uuid);
+    const id = this.uuid();
+    return id as StripeCustomerId;
   },
 
   stripeCustomer(
@@ -255,19 +296,17 @@ export const Fixture = {
     phone?: string,
     preferredLocales: string[] = [],
   ): StripeCustomer {
-    return new StripeCustomer(
+    return {
       stripeId,
-      currency,
+      currency: currency as unknown as Currency,
       email,
       name,
-      phone,
-      preferredLocales,
-    );
+    } as StripeCustomer;
   },
 
   stripeInvoiceId(): StripeInvoiceId {
-    const uuid = this.uuid();
-    return new StripeInvoiceId(uuid);
+    const id = this.uuid();
+    return id as StripeInvoiceId;
   },
 
   stripeInvoice(
@@ -278,26 +317,25 @@ export const Fixture = {
     total: number = 1000,
     invoiceNumber: string | null = "123",
   ): StripeInvoice {
-    return new StripeInvoice(
-      invoiceId,
+    return {
+      stripeId: invoiceId,
       customerId,
-      true,
-      "US",
-      lines,
+      paid: true,
+      accountCountry: "US",
       currency,
       total,
-      900,
-      800,
-      700,
-      "https://hosted_invoice_url.com",
-      "https://invoice_pdf.com",
-      invoiceNumber,
-    );
+      totalExclTax: 900,
+      subtotal: 800,
+      subtotalExclTax: 700,
+      hostedInvoiceUrl: "https://hosted_invoice_url.com",
+      invoicePdf: "https://invoice_pdf.com",
+      number: invoiceNumber,
+    } as StripeInvoice;
   },
 
   stripeInvoiceLineId(): StripeInvoiceLineId {
-    const uuid = this.uuid();
-    return new StripeInvoiceLineId(uuid);
+    const id = this.uuid();
+    return id as StripeInvoiceLineId;
   },
   stripeInvoiceLine(
     stripeId: StripeInvoiceLineId,
@@ -307,19 +345,19 @@ export const Fixture = {
     priceId: StripePriceId,
     quantity: number = 100,
   ): StripeInvoiceLine {
-    return new StripeInvoiceLine(
+    return {
       stripeId,
       invoiceId,
       customerId,
       productId,
       priceId,
       quantity,
-    );
+    } as StripeInvoiceLine;
   },
 
   manualInvoiceId(): ManualInvoiceId {
-    const uuid = this.uuid();
-    return new ManualInvoiceId(uuid);
+    const id = this.uuid();
+    return id as ManualInvoiceId;
   },
 
   createManualInvoiceBody(
@@ -340,35 +378,35 @@ export const Fixture = {
     id: ManualInvoiceId,
     dto: CreateManualInvoiceBody,
   ): ManualInvoice {
-    return new ManualInvoice(
+    return {
       id,
-      dto.number,
-      dto.companyId,
-      dto.userId,
-      dto.paid,
-      dto.creditAmount,
-    );
+      number: dto.number,
+      companyId: dto.companyId,
+      userId: dto.userId,
+      paid: dto.paid,
+      creditAmount: dto.creditAmount,
+    } as ManualInvoice;
   },
 
   issueFundingId(): IssueFundingId {
-    const uuid = this.uuid();
-    return new IssueFundingId(uuid);
+    const id = this.uuid();
+    return id as IssueFundingId;
   },
 
   issueFundingFromBody(
     issueFundingId: IssueFundingId,
-    dto: CreateIssueFundingBody,
+    dto: RequestIssueFundingBody,
   ): IssueFunding {
-    return new IssueFunding(
-      issueFundingId,
-      dto.githubIssueId,
-      dto.userId,
-      dto.creditAmount,
-    );
+    return {
+      id: issueFundingId,
+      githubIssueId: {} as IssueId,
+      userId: "" as UserId,
+      credit: dto.creditAmount ?? 0,
+    } as IssueFunding;
   },
   managedIssueId(): ManagedIssueId {
-    const uuid = this.uuid();
-    return new ManagedIssueId(uuid);
+    const id = this.uuid();
+    return id as ManagedIssueId;
   },
   createManagedIssueBody(
     githubIssueId: IssueId,
@@ -387,14 +425,14 @@ export const Fixture = {
     managedIssueId: ManagedIssueId,
     dto: CreateManagedIssueBody,
   ): ManagedIssue {
-    return new ManagedIssue(
-      managedIssueId,
-      dto.githubIssueId,
-      dto.requestedCreditAmount,
-      dto.managerId,
-      dto.contributorVisibility,
-      dto.state,
-    );
+    return {
+      id: managedIssueId,
+      githubIssueId: dto.githubIssueId,
+      requestedCreditAmount: dto.requestedCreditAmount,
+      managerId: dto.managerId,
+      contributorVisibility: dto.contributorVisibility,
+      state: dto.state,
+    } as ManagedIssue;
   },
 
   createUserCompanyPermissionTokenBody(
@@ -416,16 +454,16 @@ export const Fixture = {
     tokenId: CompanyUserPermissionTokenId,
     dto: CreateCompanyUserPermissionTokenBody,
   ): CompanyUserPermissionToken {
-    return new CompanyUserPermissionToken(
-      tokenId,
-      dto.userName,
-      dto.userEmail,
-      dto.token,
-      dto.companyId,
-      dto.companyUserRole,
-      dto.expiresAt,
-      false,
-    );
+    return {
+      id: tokenId,
+      userName: dto.userName,
+      userEmail: dto.userEmail,
+      token: dto.token,
+      companyId: dto.companyId,
+      companyUserRole: dto.companyUserRole,
+      expiresAt: dto.expiresAt.toISOString() as ISODateTimeString,
+      hasBeenUsed: false,
+    } as CompanyUserPermissionToken;
   },
 
   createRepositoryUserPermissionTokenBody(
@@ -450,19 +488,19 @@ export const Fixture = {
     tokenId: RepositoryUserPermissionTokenId,
     dto: CreateRepositoryUserPermissionTokenDto,
   ): RepositoryUserPermissionToken {
-    return new RepositoryUserPermissionToken(
-      tokenId,
-      dto.userName,
-      dto.userEmail,
-      dto.userGithubOwnerLogin,
-      dto.token,
-      dto.repositoryId,
-      dto.repositoryUserRole,
-      dto.rate,
-      dto.currency,
-      dto.expiresAt,
-      false,
-    );
+    return {
+      id: tokenId,
+      userName: dto.userName,
+      userEmail: dto.userEmail,
+      userGithubOwnerLogin: dto.userGithubOwnerLogin,
+      token: dto.token,
+      repositoryId: dto.repositoryId,
+      repositoryUserRole: dto.repositoryUserRole,
+      rate: dto.rate ? dto.rate.toNumber() : null,
+      currency: dto.currency,
+      expiresAt: dto.expiresAt.toISOString() as ISODateTimeString,
+      hasBeenUsed: false,
+    } as RepositoryUserPermissionToken;
   },
 
   userRepository(
@@ -472,25 +510,30 @@ export const Fixture = {
     rate: number = 1.0,
     currency: Currency = Currency.USD,
   ): UserRepository {
-    return new UserRepository(
+    return {
       userId,
       repositoryId,
       repositoryUserRole,
-      new Decimal(rate),
+      rate,
       currency,
-    );
+    } as UserRepository;
   },
 
-  project(projectId: ProjectId): Project {
+  project(projectId: OwnerId | RepositoryId): Project {
     let owner: Owner;
     let repository: Repository | undefined = undefined;
-    if (projectId instanceof OwnerId) {
-      owner = this.owner(projectId);
-    } else {
+    if ("name" in projectId && "ownerId" in projectId) {
+      // It's a RepositoryId
       owner = this.owner(projectId.ownerId);
       repository = this.repository(projectId);
+    } else {
+      // It's an OwnerId
+      owner = this.owner(projectId as OwnerId);
     }
 
-    return new Project(owner, repository);
+    return {
+      owner,
+      repository,
+    } as Project;
   },
 };

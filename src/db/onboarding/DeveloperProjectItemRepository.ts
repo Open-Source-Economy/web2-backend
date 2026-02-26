@@ -137,8 +137,8 @@ class DeveloperProjectItemRepositoryImpl
     `;
 
     const values = [
-      developerProfileId.uuid,
-      projectItemId.uuid,
+      developerProfileId,
+      projectItemId,
       mergeRights,
       roles,
       comment ?? null,
@@ -174,7 +174,7 @@ class DeveloperProjectItemRepositoryImpl
     `;
 
     const values = [
-      id.uuid,
+      id,
       mergeRights,
       roles,
       comment ?? null,
@@ -185,7 +185,7 @@ class DeveloperProjectItemRepositoryImpl
     const queryClient = client || this.pool;
     const result = await queryClient.query(query, values);
     if (result.rows.length === 0) {
-      throw new Error(`DeveloperProjectItem not found with id ${id.uuid}`);
+      throw new Error(`DeveloperProjectItem not found with id ${id}`);
     }
     return this.getOne(result.rows);
   }
@@ -199,7 +199,7 @@ class DeveloperProjectItemRepositoryImpl
       WHERE developer_profile_id = $1
       ORDER BY created_at DESC
     `;
-    const result = await this.pool.query(query, [developerProfileId.uuid]);
+    const result = await this.pool.query(query, [developerProfileId]);
     return this.getList(result.rows);
   }
 
@@ -212,7 +212,7 @@ class DeveloperProjectItemRepositoryImpl
       WHERE project_item_id = $1
       ORDER BY created_at DESC
     `;
-    const result = await this.pool.query(query, [projectItemId.uuid]);
+    const result = await this.pool.query(query, [projectItemId]);
     return this.getList(result.rows);
   }
 
@@ -228,20 +228,20 @@ class DeveloperProjectItemRepositoryImpl
     `;
     const queryClient = client || this.pool;
     const result = await queryClient.query(query, [
-      developerProfileId.uuid,
-      projectItemId.uuid,
+      developerProfileId,
+      projectItemId,
     ]);
     return this.getOptional(result.rows);
   }
 
   async delete(id: DeveloperProjectItemId): Promise<void> {
     const query = `DELETE FROM developer_project_items WHERE id = $1`;
-    await this.pool.query(query, [id.uuid]);
+    await this.pool.query(query, [id]);
   }
 
   async deleteByProjectItemId(projectItemId: ProjectItemId): Promise<void> {
     const query = `DELETE FROM developer_project_items WHERE project_item_id = $1`;
-    await this.pool.query(query, [projectItemId.uuid]);
+    await this.pool.query(query, [projectItemId]);
   }
 
   async deleteByProfileAndProjectItemId(
@@ -253,13 +253,13 @@ class DeveloperProjectItemRepositoryImpl
     WHERE developer_profile_id = $1 AND project_item_id = $2
   `;
     const result = await this.pool.query(query, [
-      developerProfileId.uuid,
-      projectItemId.uuid,
+      developerProfileId,
+      projectItemId,
     ]);
 
     if (result.rowCount === 0) {
       throw new Error(
-        `DeveloperProjectItem not found for developerProfileId=${developerProfileId.uuid} and projectItemId=${projectItemId.uuid}`,
+        `DeveloperProjectItem not found for developerProfileId=${developerProfileId} and projectItemId=${projectItemId}`,
       );
     }
   }

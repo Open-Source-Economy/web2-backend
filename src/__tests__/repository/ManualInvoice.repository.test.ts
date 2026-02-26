@@ -1,7 +1,6 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
 import {
   CompanyId,
-  CreateManualInvoiceBody,
   ManualInvoiceId,
   UserId,
 } from "@open-source-economy/api-types";
@@ -10,6 +9,7 @@ import {
   getManualInvoiceRepository,
   getUserRepository,
 } from "../../db/";
+import { CreateManualInvoiceBody } from "../../db/ManualInvoice.repository";
 import { Fixture } from "../__helpers__/Fixture";
 import { v4 as uuidv } from "uuid";
 
@@ -107,7 +107,7 @@ describe("ManualInvoiceRepository", () => {
 
   describe("getById", () => {
     it("should return null if manual invoice not found", async () => {
-      const nonExistentManualInvoiceId = new ManualInvoiceId(uuidv());
+      const nonExistentManualInvoiceId = uuidv() as ManualInvoiceId;
       const found = await manualInvoiceRepo.getById(nonExistentManualInvoiceId);
 
       expect(found).toBeNull();
@@ -151,7 +151,7 @@ describe("ManualInvoiceRepository", () => {
       await manualInvoiceRepo.create(unpaidInvoiceBody);
 
       const paidInvoices =
-        await manualInvoiceRepo.getAllInvoicePaidBy(companyId);
+        await manualInvoiceRepo.getAllInvoicePaidByCompany(companyId);
 
       expect(paidInvoices.length).toBe(1);
       expect(paidInvoices[0].paid).toBe(true);
@@ -171,7 +171,8 @@ describe("ManualInvoiceRepository", () => {
       await manualInvoiceRepo.create(paidInvoiceBody);
       await manualInvoiceRepo.create(unpaidInvoiceBody);
 
-      const paidInvoices = await manualInvoiceRepo.getAllInvoicePaidBy(userId);
+      const paidInvoices =
+        await manualInvoiceRepo.getAllInvoicePaidByUser(userId);
 
       expect(paidInvoices.length).toBe(1);
       expect(paidInvoices[0].paid).toBe(true);

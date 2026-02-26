@@ -1,14 +1,11 @@
 import { Request, Response } from "express";
 import * as dto from "@open-source-economy/api-types";
 import {
-  ApiError,
   CompanyId,
   ContributorVisibility,
   IssueId,
   ManagedIssueState,
   OwnerId,
-  Project,
-  ProjectUtils,
   RepositoryId,
 } from "@open-source-economy/api-types";
 import { StatusCodes } from "http-status-codes";
@@ -23,6 +20,7 @@ import {
 } from "../db";
 import { DeveloperProfileService, githubSyncService } from "../services";
 import { pool } from "../dbPool";
+import { ApiError } from "../errors";
 
 const financialIssueRepo = getFinancialIssueRepository();
 const developerProfileService = new DeveloperProfileService(pool);
@@ -31,91 +29,91 @@ export interface ProjectController {
   getProject(
     req: Request<
       dto.GetProjectParams,
-      dto.ResponseBody<dto.GetProjectResponse>,
-      dto.GetProjectBody,
+      dto.GetProjectResponse,
+      {},
       dto.GetProjectQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetProjectResponse>>,
+    res: Response<dto.GetProjectResponse>,
   ): Promise<void>;
 
   getProjects(
     req: Request<
       dto.GetProjectsParams,
-      dto.ResponseBody<dto.GetProjectsResponse>,
-      dto.GetProjectsBody,
+      dto.GetProjectsResponse,
+      {},
       dto.GetProjectsQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetProjectsResponse>>,
+    res: Response<dto.GetProjectsResponse>,
   ): Promise<void>;
 
   getAllFinancialIssues(
     req: Request<
-      dto.GetIssuesParams,
-      dto.ResponseBody<dto.GetIssuesResponse>,
-      dto.GetIssuesBody,
-      dto.GetIssuesQuery
+      dto.GetAllFinancialIssuesParams,
+      dto.GetAllFinancialIssuesResponse,
+      {},
+      dto.GetAllFinancialIssuesQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetIssuesResponse>>,
+    res: Response<dto.GetAllFinancialIssuesResponse>,
   ): Promise<void>;
 
   getIssue(
     req: Request<
       dto.GetIssueParams,
-      dto.ResponseBody<dto.GetIssueResponse>,
-      dto.GetIssueBody,
+      dto.GetIssueResponse,
+      {},
       dto.GetIssueQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetIssueResponse>>,
+    res: Response<dto.GetIssueResponse>,
   ): Promise<void>;
 
   createProject(
     req: Request<
-      dto.CreateProjectParams,
-      dto.ResponseBody<dto.CreateProjectResponse>,
-      dto.CreateProjectBody,
-      dto.CreateProjectQuery
+      dto.GetProjectParams,
+      dto.GetProjectResponse,
+      {},
+      dto.GetProjectQuery
     >,
-    res: Response<dto.ResponseBody<dto.CreateProjectResponse>>,
+    res: Response<dto.GetProjectResponse>,
   ): Promise<void>;
 
   fundIssue(
     req: Request<
       dto.FundIssueParams,
-      dto.ResponseBody<dto.FundIssueResponse>,
+      dto.FundIssueResponse,
       dto.FundIssueBody,
       dto.FundIssueQuery
     >,
-    res: Response<dto.ResponseBody<dto.FundIssueResponse>>,
+    res: Response<dto.FundIssueResponse>,
   ): Promise<void>;
 
   requestIssueFunding(
     req: Request<
       dto.RequestIssueFundingParams,
-      dto.ResponseBody<dto.RequestIssueFundingResponse>,
+      dto.RequestIssueFundingResponse,
       dto.RequestIssueFundingBody,
       dto.RequestIssueFundingQuery
     >,
-    res: Response<dto.ResponseBody<dto.RequestIssueFundingResponse>>,
+    res: Response<dto.RequestIssueFundingResponse>,
   ): Promise<void>;
 
   getProjectItemsWithDetails(
     req: Request<
       dto.GetProjectItemsWithDetailsParams,
-      dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>,
-      dto.GetProjectItemsWithDetailsBody,
+      dto.GetProjectItemsWithDetailsResponse,
+      {},
       dto.GetProjectItemsWithDetailsQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>>,
+    res: Response<dto.GetProjectItemsWithDetailsResponse>,
   ): Promise<void>;
 
   getProjectDetails(
     req: Request<
       dto.GetProjectDetailsParams,
-      dto.ResponseBody<dto.GetProjectDetailsResponse>,
-      dto.GetProjectDetailsBody,
+      dto.GetProjectDetailsResponse,
+      {},
       dto.GetProjectDetailsQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetProjectDetailsResponse>>,
+    res: Response<dto.GetProjectDetailsResponse>,
   ): Promise<void>;
 }
 
@@ -123,119 +121,128 @@ export const ProjectController: ProjectController = {
   async getProject(
     req: Request<
       dto.GetProjectParams,
-      dto.ResponseBody<dto.GetProjectResponse>,
-      dto.GetProjectBody,
+      dto.GetProjectResponse,
+      {},
       dto.GetProjectQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetProjectResponse>>,
+    res: Response<dto.GetProjectResponse>,
   ): Promise<void> {
-    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
+    const ownerId: OwnerId = { login: req.params.owner };
+    const projectId: OwnerId | RepositoryId = req.params.repo
+      ? { ownerId, name: req.params.repo }
+      : ownerId;
     const project = await projectRepo.getById(projectId);
     if (project === null) {
       res.sendStatus(StatusCodes.NOT_FOUND);
     } else {
       const response: dto.GetProjectResponse = { project: project };
-      res.status(StatusCodes.OK).send({ success: response });
+      res.status(StatusCodes.OK).send(response);
     }
   },
 
   async getProjects(
     req: Request<
       dto.GetProjectsParams,
-      dto.ResponseBody<dto.GetProjectsResponse>,
-      dto.GetProjectsBody,
+      dto.GetProjectsResponse,
+      {},
       dto.GetProjectsQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetProjectsResponse>>,
+    res: Response<dto.GetProjectsResponse>,
   ): Promise<void> {
     const projects = await projectRepo.getAll();
     const response: dto.GetProjectsResponse = { projects: projects };
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   async getAllFinancialIssues(
     req: Request<
-      dto.GetIssuesParams,
-      dto.ResponseBody<dto.GetIssuesResponse>,
-      dto.GetIssuesBody,
-      dto.GetIssuesQuery
+      dto.GetAllFinancialIssuesParams,
+      dto.GetAllFinancialIssuesResponse,
+      {},
+      dto.GetAllFinancialIssuesQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetIssuesResponse>>,
+    res: Response<dto.GetAllFinancialIssuesResponse>,
   ) {
     const issues = await financialIssueRepo.getAll();
-    const response: dto.GetIssuesResponse = { issues };
-    res.status(StatusCodes.OK).send({ success: response });
+    const response: dto.GetAllFinancialIssuesResponse = { issues };
+    res.status(StatusCodes.OK).send(response);
   },
 
   async getIssue(
     req: Request<
       dto.GetIssueParams,
-      dto.ResponseBody<dto.GetIssueResponse>,
-      dto.GetIssueBody,
+      dto.GetIssueResponse,
+      {},
       dto.GetIssueQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetIssueResponse>>,
+    res: Response<dto.GetIssueResponse>,
   ) {
-    const ownerId = new OwnerId(req.params.owner);
-    const repositoryId = new RepositoryId(ownerId, req.params.repo);
-    const issueId = new IssueId(repositoryId, req.params.number);
+    const ownerId: OwnerId = { login: req.params.owner };
+    const repositoryId: RepositoryId = { ownerId, name: req.params.repo };
+    const issueId: IssueId = { repositoryId, number: req.params.number };
     const issue = await financialIssueRepo.get(issueId);
     if (!issue) {
       res.sendStatus(StatusCodes.NOT_FOUND);
     } else {
       const response: dto.GetIssueResponse = { issue };
-      res.status(StatusCodes.OK).send({ success: response });
+      res.status(StatusCodes.OK).send(response);
     }
   },
 
   async createProject(
     req: Request<
-      dto.CreateProjectParams,
-      dto.ResponseBody<dto.CreateProjectResponse>,
-      dto.CreateProjectBody,
-      dto.CreateProjectQuery
+      dto.GetProjectParams,
+      dto.GetProjectResponse,
+      {},
+      dto.GetProjectQuery
     >,
-    res: Response<dto.ResponseBody<dto.CreateProjectResponse>>,
+    res: Response<dto.GetProjectResponse>,
   ): Promise<void> {
-    const projectId = ProjectUtils.getId(req.params.owner, req.params.repo);
+    const ownerId: OwnerId = { login: req.params.owner };
+    const projectId: OwnerId | RepositoryId = req.params.repo
+      ? { ownerId, name: req.params.repo }
+      : ownerId;
     const [owner, repositoryOp] =
       await githubSyncService.syncProject(projectId);
-    const project = new Project(owner, repositoryOp ?? undefined);
+    const project: dto.Project = {
+      owner,
+      repository: repositoryOp ?? undefined,
+    };
     const createdProject = await projectRepo.createOrUpdate(project);
 
-    const response: dto.CreateProjectResponse = { project: createdProject };
-    res.status(StatusCodes.CREATED).send({ success: response });
+    const response: dto.GetProjectResponse = { project: createdProject };
+    res.status(StatusCodes.CREATED).send(response);
   },
 
   async fundIssue(
     req: Request<
       dto.FundIssueParams,
-      dto.ResponseBody<dto.FundIssueResponse>,
+      dto.FundIssueResponse,
       dto.FundIssueBody,
       dto.FundIssueQuery
     >,
-    res: Response<dto.ResponseBody<dto.FundIssueResponse>>,
+    res: Response<dto.FundIssueResponse>,
   ) {
     if (!req.user) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized");
+      throw ApiError.unauthorized("Unauthorized");
     }
-    const ownerId = new OwnerId(req.params.owner);
-    const repositoryId = new RepositoryId(ownerId, req.params.repo);
-    const issue = await issueRepo.getById(
-      new IssueId(repositoryId, req.params.number),
-    );
+    const ownerId: OwnerId = { login: req.params.owner };
+    const repositoryId: RepositoryId = { ownerId, name: req.params.repo };
+    const issue = await issueRepo.getById({
+      repositoryId,
+      number: req.params.number,
+    } as IssueId);
     if (!issue) {
       res.sendStatus(StatusCodes.NOT_FOUND);
       return;
     }
     const companyId = req.body.companyId
-      ? new CompanyId(req.body.companyId)
+      ? (req.body.companyId as CompanyId)
       : undefined;
     const creditAmount = req.body.creditAmount;
     const managedIssue = await managedIssueRepo.getByIssueId(issue.id);
     if (managedIssue?.state === ManagedIssueState.REJECTED) {
-      throw new ApiError(
-        StatusCodes.FORBIDDEN,
+      throw ApiError.forbidden(
         "Cannot fund an issue where funding was rejected before.",
       );
     }
@@ -244,19 +251,16 @@ export const ProjectController: ProjectController = {
       companyId,
     );
     if (creditAmount > availableCredit) {
-      throw new ApiError(StatusCodes.PAYMENT_REQUIRED, "Not enough credits");
+      throw ApiError.paymentRequired("Not enough credits");
     }
     if (availableCredit < 0) {
-      throw new ApiError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        "The amount of available credit is negative",
-      );
+      throw ApiError.internal("The amount of available credit is negative");
     }
-    const funding: dto.CreateIssueFundingBody = {
+    const funding = {
       githubIssueId: issue.id,
       userId: req.user.id,
       creditAmount,
-    };
+    } as any;
     await issueFundingRepo.create(funding);
     res.sendStatus(StatusCodes.CREATED);
   },
@@ -264,32 +268,30 @@ export const ProjectController: ProjectController = {
   async requestIssueFunding(
     req: Request<
       dto.RequestIssueFundingParams,
-      dto.ResponseBody<dto.RequestIssueFundingResponse>,
+      dto.RequestIssueFundingResponse,
       dto.RequestIssueFundingBody,
       dto.RequestIssueFundingQuery
     >,
-    res: Response<dto.ResponseBody<dto.RequestIssueFundingResponse>>,
+    res: Response<dto.RequestIssueFundingResponse>,
   ) {
     if (!req.user) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized");
+      throw ApiError.unauthorized("Unauthorized");
     }
-    const ownerId = new OwnerId(req.params.owner);
-    const repositoryId = new RepositoryId(ownerId, req.params.repo);
-    const issue = await issueRepo.getById(
-      new IssueId(repositoryId, req.params.number),
-    );
+    const ownerId: OwnerId = { login: req.params.owner };
+    const repositoryId: RepositoryId = { ownerId, name: req.params.repo };
+    const issue = await issueRepo.getById({
+      repositoryId,
+      number: req.params.number,
+    } as IssueId);
     if (!issue) {
-      throw new ApiError(StatusCodes.NOT_FOUND, "Issue not found in the DB");
+      throw ApiError.notFound("Issue not found in the DB");
     }
     if (issue.closedAt) {
-      throw new ApiError(
-        StatusCodes.FORBIDDEN,
-        "Cannot request funding for a closed issue",
-      );
+      throw ApiError.forbidden("Cannot request funding for a closed issue");
     }
     const managedIssue = await managedIssueRepo.getByIssueId(issue.id);
     if (!managedIssue) {
-      const body: dto.CreateManagedIssueBody = {
+      const body = {
         githubIssueId: issue.id,
         requestedCreditAmount: req.body.creditAmount,
         managerId: req.user.id,
@@ -297,32 +299,28 @@ export const ProjectController: ProjectController = {
         state: ManagedIssueState.OPEN,
       };
       await managedIssueRepo.create(body);
-      res.status(StatusCodes.CREATED).send({ success: {} });
+      res.status(StatusCodes.CREATED).send({});
     } else if (managedIssue.managerId !== req.user.id) {
-      throw new ApiError(
-        StatusCodes.FORBIDDEN,
-        "Someone else is already managing this issue",
-      );
+      throw ApiError.forbidden("Someone else is already managing this issue");
     } else if (managedIssue.state !== ManagedIssueState.OPEN) {
-      throw new ApiError(
-        StatusCodes.FORBIDDEN,
+      throw ApiError.forbidden(
         "This issue funding is already being REJECTED or SOLVED",
       );
     } else {
       managedIssue.requestedCreditAmount = req.body.creditAmount;
       await managedIssueRepo.update(managedIssue);
-      res.status(StatusCodes.OK).send({ success: {} });
+      res.status(StatusCodes.OK).send({});
     }
   },
 
   async getProjectItemsWithDetails(
     req: Request<
       dto.GetProjectItemsWithDetailsParams,
-      dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>,
-      dto.GetProjectItemsWithDetailsBody,
+      dto.GetProjectItemsWithDetailsResponse,
+      {},
       dto.GetProjectItemsWithDetailsQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetProjectItemsWithDetailsResponse>>,
+    res: Response<dto.GetProjectItemsWithDetailsResponse>,
   ): Promise<void> {
     const {
       repositories: repoQuery,
@@ -349,17 +347,17 @@ export const ProjectController: ProjectController = {
       urls,
       stats,
     };
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   async getProjectDetails(
     req: Request<
       dto.GetProjectDetailsParams,
-      dto.ResponseBody<dto.GetProjectDetailsResponse>,
-      dto.GetProjectDetailsBody,
+      dto.GetProjectDetailsResponse,
+      {},
       dto.GetProjectDetailsQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetProjectDetailsResponse>>,
+    res: Response<dto.GetProjectDetailsResponse>,
   ): Promise<void> {
     // 1. Load the project (owner or repo) together with raw developer rows.
     const { owner, repo } = req.params;
@@ -375,50 +373,41 @@ export const ProjectController: ProjectController = {
 
     // 2. Prepare a couple of helpers used throughout the rest of the routine.
     const targetItem = projectItemDetails.projectItem;
-    const targetItemId = targetItem.id.uuid;
+    const targetItemId = targetItem.id;
+    // sourceIdentifier is now a string; parse owner/repo info from it
+    const parsedSourceId = targetItem.sourceIdentifier;
     const ownerLoginLower =
-      projectItemDetails.owner?.id.login.toLowerCase() ??
-      (targetItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY &&
-      targetItem.sourceIdentifier instanceof RepositoryId
-        ? targetItem.sourceIdentifier.ownerId.login.toLowerCase()
-        : targetItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER &&
-            targetItem.sourceIdentifier instanceof OwnerId
-          ? targetItem.sourceIdentifier.login.toLowerCase()
-          : undefined);
+      projectItemDetails.owner?.id.login.toLowerCase() ?? undefined;
     const repositoryNameLower =
-      targetItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY &&
-      targetItem.sourceIdentifier instanceof RepositoryId
-        ? targetItem.sourceIdentifier.name.toLowerCase()
-        : undefined;
+      projectItemDetails.repository?.id.name.toLowerCase() ?? undefined;
 
     const isProjectRelevant = (projectItem: dto.ProjectItem): boolean => {
-      if (projectItem.id.uuid === targetItemId) {
+      if (projectItem.id === targetItemId) {
         return true;
       }
 
-      const identifier = projectItem.sourceIdentifier;
-
       if (
         ownerLoginLower &&
-        projectItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER &&
-        identifier instanceof OwnerId
+        projectItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER
       ) {
-        return identifier.login.toLowerCase() === ownerLoginLower;
+        return projectItem.sourceIdentifier.toLowerCase() === ownerLoginLower;
       }
 
       if (
         ownerLoginLower &&
-        projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY &&
-        identifier instanceof RepositoryId &&
-        identifier.ownerId.login.toLowerCase() === ownerLoginLower
+        projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY
       ) {
-        if (targetItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER) {
-          return true;
+        // sourceIdentifier for repos is typically "owner/name"
+        const parts = projectItem.sourceIdentifier.split("/");
+        if (parts.length >= 2 && parts[0].toLowerCase() === ownerLoginLower) {
+          if (targetItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER) {
+            return true;
+          }
+          if (!repositoryNameLower) {
+            return false;
+          }
+          return parts[1].toLowerCase() === repositoryNameLower;
         }
-        if (!repositoryNameLower) {
-          return false;
-        }
-        return identifier.name.toLowerCase() === repositoryNameLower;
       }
 
       return false;
@@ -428,7 +417,7 @@ export const ProjectController: ProjectController = {
     const dedupedDevelopers = Array.from(
       new Map(
         projectItemDetails.developers.map((developer) => [
-          developer.developerProfile.id.uuid,
+          developer.developerProfile.id,
           developer,
         ]),
       ).values(),
@@ -449,16 +438,15 @@ export const ProjectController: ProjectController = {
 
     for (const { developer, fullProfile } of hydratedDevelopers) {
       const profileId =
-        fullProfile.profileEntry?.profile.id.uuid ??
-        developer.developerProfile.id.uuid;
+        fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
 
       const sortedProjects = [...fullProfile.projects].sort((a, b) => {
         const aRelevant = isProjectRelevant(a.projectItem);
         const bRelevant = isProjectRelevant(b.projectItem);
 
         if (aRelevant && bRelevant) {
-          const aIsTarget = a.projectItem.id.uuid === targetItemId;
-          const bIsTarget = b.projectItem.id.uuid === targetItemId;
+          const aIsTarget = a.projectItem.id === targetItemId;
+          const bIsTarget = b.projectItem.id === targetItemId;
           if (aIsTarget || bIsTarget) {
             return aIsTarget === bIsTarget ? 0 : aIsTarget ? -1 : 1;
           }
@@ -484,9 +472,7 @@ export const ProjectController: ProjectController = {
       });
 
       const primaryProject =
-        sortedProjects.find(
-          (entry) => entry.projectItem.id.uuid === targetItemId,
-        ) ??
+        sortedProjects.find((entry) => entry.projectItem.id === targetItemId) ??
         sortedProjects.find((entry) => isProjectRelevant(entry.projectItem)) ??
         sortedProjects[0];
 
@@ -494,7 +480,7 @@ export const ProjectController: ProjectController = {
         continue;
       }
 
-      const relevantProjectItemId = primaryProject.developerProjectItem.id.uuid;
+      const relevantProjectItemId = primaryProject.developerProjectItem.id;
 
       const developerServices: Record<string, dto.DeveloperService> = {};
 
@@ -505,13 +491,13 @@ export const ProjectController: ProjectController = {
         }
 
         const isLinkedToProject = developerService.developerProjectItemIds.some(
-          (dpiId) => dpiId.uuid === relevantProjectItemId,
+          (dpiId) => dpiId === relevantProjectItemId,
         );
         if (!isLinkedToProject) {
           continue;
         }
 
-        const serviceId = serviceEntry.service.id.uuid;
+        const serviceId = serviceEntry.service.id;
         developerServices[serviceId] = developerService;
         servicesMap.set(serviceId, serviceEntry.service);
 
@@ -554,6 +540,6 @@ export const ProjectController: ProjectController = {
       serviceOfferings: Object.fromEntries(serviceOfferingsMap.entries()),
     };
 
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 };

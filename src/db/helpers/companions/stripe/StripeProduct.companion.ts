@@ -1,11 +1,11 @@
 import {
+  OwnerId,
   ProductType,
-  ProjectId,
+  RepositoryId,
   StripeProduct,
   StripeProductId,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 import { OwnerIdCompanion, RepositoryIdCompanion } from "../github";
 
 export namespace StripeProductCompanion {
@@ -25,7 +25,7 @@ export namespace StripeProductCompanion {
       return error;
     }
 
-    let projectId: ProjectId | null | ValidationError = null;
+    let projectId: OwnerId | RepositoryId | null | ValidationError = null;
     if (row[`${table_prefix}github_repository_name`]) {
       projectId = RepositoryIdCompanion.fromBackendForeignKey(
         row,
@@ -40,6 +40,23 @@ export namespace StripeProductCompanion {
       projectId = null;
     }
 
-    return new StripeProduct(new StripeProductId(stripeId), projectId, type);
+    // StripeProduct.projectId is now a string | null
+    // Serialize the project ID to a string representation
+    let projectIdStr: string | null = null;
+    if (projectId !== null) {
+      if ("name" in projectId) {
+        // It's a RepositoryId
+        projectIdStr = `${(projectId as RepositoryId).ownerId.login}/${(projectId as RepositoryId).name}`;
+      } else {
+        // It's an OwnerId
+        projectIdStr = (projectId as OwnerId).login;
+      }
+    }
+
+    return {
+      stripeId: stripeId as StripeProductId,
+      projectId: projectIdStr,
+      type,
+    } as StripeProduct;
   }
 }

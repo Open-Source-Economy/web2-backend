@@ -59,8 +59,15 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
           })
           .then(async () => {
             const i = issue as Issue;
-            i.setRepositoryId((repo as Repository).id); // TODO: not very elegant way to deal with the fact that github query doesn't return repository id nor owner id
-            await issueRepo.createOrUpdate(i);
+            // Update the issue's repositoryId to include the full repo info
+            const updatedIssue: Issue = {
+              ...i,
+              id: {
+                ...i.id,
+                repositoryId: (repo as Repository).id,
+              },
+            };
+            await issueRepo.createOrUpdate(updatedIssue);
           });
       })
       .catch((error) => {
@@ -119,21 +126,6 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       });
 
     const managedIssue = managedIssueRepo.getByIssueId(issueId);
-    const issueManager = managedIssue
-      .then((managedIssue) => {
-        if (!managedIssue) {
-          return null;
-        } else {
-          return userRepo.getById(managedIssue.managerId);
-        }
-      })
-      .catch((error) => {
-        logger.error(
-          `Got an error fetching the manager for managed issue for issue ${JSON.stringify(issueId)}:`,
-          error,
-        );
-        return null;
-      });
 
     const o = await owner;
     const r = await repo;
@@ -141,14 +133,13 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
 
     if (o && r && i) {
       const issueFundings = issueFundingRepo.getAll(issueId);
-      return new FinancialIssue(
-        o,
-        r,
-        i,
-        await issueManager,
-        await managedIssue,
-        await issueFundings,
-      );
+      return {
+        owner: o,
+        repository: r,
+        issue: i,
+        managedIssue: (await managedIssue) ?? undefined,
+        issueFundings: await issueFundings,
+      } as FinancialIssue;
     } else {
       throw new Error(
         `Failed to fetch all required data for managed issue ${JSON.stringify(issueId)}`,
@@ -224,10 +215,6 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       }
 
       const managedIssue = managedIssues.get(githubId) ?? null;
-      let issueManager: User | null = null;
-      if (managedIssue !== null) {
-        issueManager = await userRepo.getById(managedIssue.managerId);
-      }
       const fundings = issueFundings.get(githubId) ?? [];
 
       const owner = await ownerRepo.getById(issueId.repositoryId.ownerId);
@@ -241,16 +228,13 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
         continue; // Use continue to skip to the next iteration
       }
 
-      financialIssues.push(
-        new FinancialIssue(
-          owner,
-          repo,
-          issue,
-          issueManager,
-          managedIssue,
-          fundings,
-        ),
-      );
+      financialIssues.push({
+        owner,
+        repository: repo,
+        issue,
+        managedIssue: managedIssue ?? undefined,
+        issueFundings: fundings,
+      } as FinancialIssue);
     }
     return financialIssues;
   }

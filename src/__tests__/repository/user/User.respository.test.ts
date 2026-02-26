@@ -3,11 +3,18 @@ import {
   LocalUser,
   Provider,
   ThirdPartyUser,
-  ThirdPartyUserId,
   UserRole,
 } from "@open-source-economy/api-types";
 import { Fixture } from "../../__helpers__/Fixture";
 import { getUserRepository } from "../../../db";
+import {
+  BackendUser,
+  isBackendLocalUser,
+  isThirdPartyUser,
+} from "../../../db/helpers/companions/user/backend-user.types";
+
+// ThirdPartyUserId was removed from api-types; define locally for backward compat
+type ThirdPartyUserId = string & { readonly __brand: "ThirdPartyUser" };
 
 describe("UserRepository", () => {
   setupTestDB();
@@ -18,13 +25,14 @@ describe("UserRepository", () => {
     it("should create and return a local user", async () => {
       const userBody = Fixture.localUser();
       const created = await repo.insert(Fixture.createUser(userBody));
+      const backendUser = created as BackendUser;
 
-      expect(created.data).toBeInstanceOf(LocalUser);
-      if (created.data instanceof LocalUser) {
-        expect(created.data.email).toBe(userBody.email);
+      expect(isBackendLocalUser(backendUser.data)).toBe(true);
+      if (isBackendLocalUser(backendUser.data)) {
+        expect(backendUser.data.email).toBe(userBody.email);
         expect(created.name).toBe(null);
-        expect(created.data.isEmailVerified).toBe(false);
-        expect(created.data.password).toBeDefined();
+        expect(backendUser.data.isEmailVerified).toBe(false);
+        expect(backendUser.data.password).toBeDefined();
       }
 
       const found = await repo.getById(created.id);
@@ -37,10 +45,11 @@ describe("UserRepository", () => {
       const thirdPartyUser = Fixture.thirdPartyUser("1");
 
       const created = await repo.insert(Fixture.createUser(thirdPartyUser));
+      const backendUser = created as BackendUser;
 
-      expect(created.data).toBeInstanceOf(ThirdPartyUser);
-      if (created.data instanceof ThirdPartyUser) {
-        expect(created.data).toEqual(thirdPartyUser);
+      expect(isThirdPartyUser(backendUser.data)).toBe(true);
+      if (isThirdPartyUser(backendUser.data)) {
+        expect(backendUser.data).toEqual(thirdPartyUser);
       }
 
       expect(created.role).toBe(UserRole.USER);
@@ -74,12 +83,13 @@ describe("UserRepository", () => {
       const user = await repo.validateEmail(userBody.email);
 
       expect(user).toBeDefined();
-      expect(user!.data).toBeInstanceOf(LocalUser);
-      if (user!.data instanceof LocalUser) {
-        expect(user!.data.email).toBe(userBody.email);
+      const backendUser = user as BackendUser;
+      expect(isBackendLocalUser(backendUser.data)).toBe(true);
+      if (isBackendLocalUser(backendUser.data)) {
+        expect(backendUser.data.email).toBe(userBody.email);
         expect(user!.name).toBe(null);
-        expect(user!.data.isEmailVerified).toBe(true);
-        expect(user!.data.password).toBeDefined();
+        expect(backendUser.data.isEmailVerified).toBe(true);
+        expect(backendUser.data.password).toBeDefined();
       }
 
       const found = await repo.getById(user!.id);
@@ -120,13 +130,14 @@ describe("UserRepository", () => {
     it("should find a local user by email", async () => {
       const userBody = Fixture.localUser();
       const created = await repo.insert(Fixture.createUser(userBody));
+      const backendUser = created as BackendUser;
 
-      expect(created.data).toBeInstanceOf(LocalUser);
-      if (created.data instanceof LocalUser) {
-        expect(created.data.email).toBe(userBody.email);
+      expect(isBackendLocalUser(backendUser.data)).toBe(true);
+      if (isBackendLocalUser(backendUser.data)) {
+        expect(backendUser.data.email).toBe(userBody.email);
         expect(created.name).toBe(null);
-        expect(created.data.isEmailVerified).toBe(false);
-        expect(created.data.password).toBeDefined();
+        expect(backendUser.data.isEmailVerified).toBe(false);
+        expect(backendUser.data.password).toBeDefined();
       }
 
       const found = await repo.findOne(userBody.email);
@@ -137,10 +148,11 @@ describe("UserRepository", () => {
       const thirdPartyUser = Fixture.thirdPartyUser("1");
 
       const created = await repo.insert(Fixture.createUser(thirdPartyUser));
+      const backendUser = created as BackendUser;
 
-      expect(created.data).toBeInstanceOf(ThirdPartyUser);
-      if (created.data instanceof ThirdPartyUser) {
-        expect(created.data).toEqual(thirdPartyUser);
+      expect(isThirdPartyUser(backendUser.data)).toBe(true);
+      if (isThirdPartyUser(backendUser.data)) {
+        expect(backendUser.data).toEqual(thirdPartyUser);
       }
 
       expect(created.role).toBe(UserRole.USER);
@@ -161,23 +173,24 @@ describe("UserRepository", () => {
       const thirdPartyUser = Fixture.thirdPartyUser("1");
 
       const created = await repo.insert(Fixture.createUser(thirdPartyUser));
+      const backendUser = created as BackendUser;
 
-      expect(created.data).toBeInstanceOf(ThirdPartyUser);
-      if (created.data instanceof ThirdPartyUser) {
-        expect(created.data).toEqual(thirdPartyUser);
+      expect(isThirdPartyUser(backendUser.data)).toBe(true);
+      if (isThirdPartyUser(backendUser.data)) {
+        expect(backendUser.data).toEqual(thirdPartyUser);
       }
 
       expect(created.role).toBe(UserRole.USER);
 
       const foundByThirdPartyId = await repo.findByThirdPartyId(
-        thirdPartyUser.id,
+        "1" as ThirdPartyUserId,
         thirdPartyUser.provider,
       );
       expect(foundByThirdPartyId).toEqual(created);
     });
 
     it("should return null if user not found by third-party ID", async () => {
-      const nonExistentThirdPartyId = new ThirdPartyUserId("nonexistentid");
+      const nonExistentThirdPartyId = "nonexistentid" as ThirdPartyUserId;
       const found = await repo.findByThirdPartyId(
         nonExistentThirdPartyId,
         Provider.Github,

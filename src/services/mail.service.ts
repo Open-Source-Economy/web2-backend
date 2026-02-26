@@ -6,7 +6,6 @@ import {
   Owner,
   Repository,
   User,
-  userUtils,
 } from "@open-source-economy/api-types";
 import { promises as fs } from "fs";
 import * as path from "path";
@@ -214,9 +213,14 @@ export class MailService {
     });
 
     // Build GitHub section
-    const githubData = userUtils.githubData(user);
-    const githubSection = githubData?.owner.id.login
-      ? `<div class="item-detail"><strong>GitHub:</strong> <a href="https://github.com/${githubData.owner.id.login}">@${githubData.owner.id.login}</a></div>`
+    // NOTE: The backend's internal User may carry extra data (e.g., ThirdPartyUser with providerData)
+    // beyond the api-types User interface. We use `any` to access it during migration.
+    const userData = (user as any).data;
+    const githubData =
+      userData && "providerData" in userData ? userData.providerData : null;
+    const githubOwnerLogin: string | undefined = githubData?.owner?.id?.login;
+    const githubSection = githubOwnerLogin
+      ? `<div class="item-detail"><strong>GitHub:</strong> <a href="https://github.com/${githubOwnerLogin}">@${githubOwnerLogin}</a></div>`
       : "";
 
     // Build projects section
@@ -226,28 +230,25 @@ export class MailService {
             .map((entry, index) => {
               const projectItem = entry.projectItem;
               const developerProjectItem = entry.developerProjectItem;
+              // sourceIdentifier is now a plain string (e.g., "owner/repo", "owner", or a URL)
               const sourceIdentifier = projectItem.sourceIdentifier;
 
-              let name = "Unknown";
-              let url = "Unknown";
+              let name = sourceIdentifier || "Unknown";
+              let url = sourceIdentifier || "Unknown";
 
-              if (typeof sourceIdentifier === "string") {
-                name = sourceIdentifier;
-                url = sourceIdentifier;
-              } else if ("login" in sourceIdentifier) {
-                name = sourceIdentifier.login;
-                url = `https://github.com/${sourceIdentifier.login}`;
-              } else if (
-                "name" in sourceIdentifier &&
-                "ownerId" in sourceIdentifier
-              ) {
-                const ownerLogin =
-                  typeof sourceIdentifier.ownerId === "object" &&
-                  "login" in sourceIdentifier.ownerId
-                    ? sourceIdentifier.ownerId.login
-                    : String(sourceIdentifier.ownerId);
-                name = `${ownerLogin}/${sourceIdentifier.name}`;
-                url = `https://github.com/${ownerLogin}/${sourceIdentifier.name}`;
+              // Try to detect format and build appropriate URLs
+              if (sourceIdentifier) {
+                if (
+                  sourceIdentifier.includes("/") &&
+                  !sourceIdentifier.startsWith("http")
+                ) {
+                  // Looks like "owner/repo" format
+                  url = `https://github.com/${sourceIdentifier}`;
+                } else if (!sourceIdentifier.startsWith("http")) {
+                  // Looks like a GitHub login
+                  url = `https://github.com/${sourceIdentifier}`;
+                }
+                // else: already a URL
               }
 
               const roleText = developerProjectItem.roles?.[0]
@@ -284,28 +285,13 @@ export class MailService {
               const serviceProjectNames: string[] = [];
               for (const projectItemId of developerService.developerProjectItemIds) {
                 const projectEntry = fullProfile.projects.find(
-                  (p) => p.developerProjectItem.id.uuid === projectItemId.uuid,
+                  (p) => p.developerProjectItem.id === projectItemId,
                 );
                 if (projectEntry) {
+                  // sourceIdentifier is now a plain string
                   const sourceIdentifier =
                     projectEntry.projectItem.sourceIdentifier;
-                  if (typeof sourceIdentifier === "string") {
-                    serviceProjectNames.push(sourceIdentifier);
-                  } else if ("login" in sourceIdentifier) {
-                    serviceProjectNames.push(sourceIdentifier.login);
-                  } else if (
-                    "name" in sourceIdentifier &&
-                    "ownerId" in sourceIdentifier
-                  ) {
-                    const ownerLogin =
-                      typeof sourceIdentifier.ownerId === "object" &&
-                      "login" in sourceIdentifier.ownerId
-                        ? sourceIdentifier.ownerId.login
-                        : String(sourceIdentifier.ownerId);
-                    serviceProjectNames.push(
-                      `${ownerLogin}/${sourceIdentifier.name}`,
-                    );
-                  }
+                  serviceProjectNames.push(sourceIdentifier || "Unknown");
                 }
               }
 

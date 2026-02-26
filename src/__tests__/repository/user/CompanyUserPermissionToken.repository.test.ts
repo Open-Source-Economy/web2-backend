@@ -2,7 +2,6 @@ import { setupTestDB } from "../../__helpers__/jest.setup";
 import {
   CompanyId,
   CompanyUserPermissionTokenId,
-  CreateCompanyUserPermissionTokenBody,
 } from "@open-source-economy/api-types";
 import { companyRepo, companyUserPermissionTokenRepo } from "../../../db";
 import { Fixture } from "../../__helpers__/Fixture";
@@ -51,7 +50,7 @@ describe("CompanyUserPermissionTokenRepository", () => {
         Fixture.userCompanyPermissionTokenFromBody(created.id, tokenBody),
       );
 
-      const updatedTokenBody: CreateCompanyUserPermissionTokenBody = {
+      const updatedTokenBody = {
         ...tokenBody,
         userEmail: "updated@example.com",
       };
@@ -71,9 +70,7 @@ describe("CompanyUserPermissionTokenRepository", () => {
 
   describe("getById", () => {
     it("should return null if token not found", async () => {
-      const nonExistentTokenId = new CompanyUserPermissionTokenId(
-        Fixture.uuid(),
-      );
+      const nonExistentTokenId = Fixture.uuid() as CompanyUserPermissionTokenId;
       const found = await tokenRepo.getById(nonExistentTokenId);
 
       expect(found).toBeNull();

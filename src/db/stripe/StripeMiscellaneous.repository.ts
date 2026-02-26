@@ -1,10 +1,12 @@
 import { Pool } from "pg";
 import {
   Currency,
-  ProjectId,
-  ProjectUtils,
+  OwnerId,
+  RepositoryId,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+
+type ProjectId = OwnerId | RepositoryId;
 
 export function getStripeMiscellaneousRepository(): StripeMiscellaneousRepository {
   return new StripeMiscellaneousRepositoryImpl(pool);
@@ -28,7 +30,9 @@ class StripeMiscellaneousRepositoryImpl
   async getRaisedAmountPerCurrency(
     projectId: ProjectId,
   ): Promise<Record<Currency, number>> {
-    const { ownerLogin, repoName } = ProjectUtils.getDBParams(projectId);
+    const ownerLogin =
+      "name" in projectId ? projectId.ownerId.login : projectId.login;
+    const repoName = "name" in projectId ? projectId.name : null;
 
     // Base query with owner condition
     let query = `

@@ -83,7 +83,7 @@ class DeveloperProfileRepositoryImpl
             VALUES ($1, $2)
             RETURNING *
           `,
-        [userId.uuid, contactEmail],
+        [userId, contactEmail],
       );
 
       return this.getOne(result.rows);
@@ -95,14 +95,14 @@ class DeveloperProfileRepositoryImpl
   }
 
   async getByUserId(userId: UserId): Promise<DeveloperProfile | null> {
-    logger.debug(`Getting developer profile by user id:`, userId.uuid);
+    logger.debug(`Getting developer profile by user id:`, userId);
     const result = await this.pool.query(
       `
           SELECT *
           FROM developer_profile
           WHERE user_id = $1
         `,
-      [userId.uuid],
+      [userId],
     );
 
     return this.getOptional(result.rows);
@@ -111,14 +111,14 @@ class DeveloperProfileRepositoryImpl
   async getById(
     profileId: DeveloperProfileId,
   ): Promise<DeveloperProfile | null> {
-    logger.debug(`Getting developer profile by id:`, profileId.uuid);
+    logger.debug(`Getting developer profile by id:`, profileId);
     const result = await this.pool.query(
       `
           SELECT *
           FROM developer_profile
           WHERE id = $1
         `,
-      [profileId.uuid],
+      [profileId],
     );
 
     return this.getOptional(result.rows);
@@ -135,7 +135,7 @@ class DeveloperProfileRepositoryImpl
                 updated_at           = $1
             WHERE id = $2
           `,
-        [new Date(), profileId.uuid],
+        [new Date(), profileId],
       );
     } catch (error) {
       throw error;
@@ -156,14 +156,14 @@ class DeveloperProfileRepositoryImpl
                     UPDATE developer_profile
                     SET contact_email = $1,
                         updated_at = $2
-                    WHERE user_id = $3
+                    WHERE id = $3
                     RETURNING *
                 `,
-        [email, new Date(), profileId.uuid],
+        [email, new Date(), profileId],
       );
 
       if (result.rows.length === 0) {
-        throw new Error(`DeveloperProfile not found with id ${profileId.uuid}`);
+        throw new Error(`DeveloperProfile not found with id ${profileId}`);
       }
       return this.getOne(result.rows);
     } catch (error) {

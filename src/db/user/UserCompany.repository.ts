@@ -36,7 +36,7 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
   ): Promise<[UserId, CompanyId, CompanyUserRole]> {
     const client = await this.pool.connect();
     logger.debug(
-      `Inserting user ${userId.uuid} to company ${companyId.uuid} with role ${role}...`,
+      `Inserting user ${userId} to company ${companyId} with role ${role}...`,
     );
 
     try {
@@ -46,12 +46,12 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 VALUES ($1, $2, $3)
                 RETURNING *
                 `,
-        [userId.uuid, companyId.uuid, role],
+        [userId, companyId, role],
       );
 
       return [
-        new UserId(result.rows[0].user_id),
-        new CompanyId(result.rows[0].company_id),
+        result.rows[0].user_id as UserId,
+        result.rows[0].company_id as CompanyId,
         role,
       ];
     } catch (error) {
@@ -70,7 +70,7 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 DELETE FROM user_company
                 WHERE user_id = $1 AND company_id = $2
                 `,
-        [userId.uuid, companyId.uuid],
+        [userId, companyId],
       );
     } catch (error) {
       throw error; // Handle errors as needed
@@ -89,11 +89,11 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 FROM user_company
                 WHERE user_id = $1
                 `,
-        [userId.uuid],
+        [userId],
       );
 
       return result.rows.map((row) => [
-        new CompanyId(row.company_id),
+        row.company_id as CompanyId,
         row.role as CompanyUserRole,
       ]);
     } catch (error) {
@@ -115,11 +115,11 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 FROM user_company
                 WHERE company_id = $1
                 `,
-        [companyId.uuid],
+        [companyId],
       );
 
       return result.rows.map((row) => [
-        new UserId(row.user_id),
+        row.user_id as UserId,
         row.role as CompanyUserRole,
       ]);
     } catch (error) {

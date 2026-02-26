@@ -2,24 +2,21 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
 import * as dto from "@open-source-economy/api-types";
-import {
-  ApiError,
-  StripeCustomerUser,
-  userUtils,
-} from "@open-source-economy/api-types";
+// userUtils removed from api-types
 import { StripeHelper } from "./stripe.helper";
 import { stripe } from "./index";
 import { logger } from "../../config";
+import { ApiError } from "../../errors";
 
 export interface StripeCheckoutController {
   checkout(
     req: Request<
       dto.CheckoutParams,
-      dto.ResponseBody<dto.CheckoutResponse>,
+      dto.CheckoutResponse,
       dto.CheckoutBody,
       dto.CheckoutQuery
     >,
-    res: Response<dto.ResponseBody<dto.CheckoutResponse>>,
+    res: Response<dto.CheckoutResponse>,
   ): Promise<void>;
 }
 
@@ -35,13 +32,13 @@ export const StripeCheckoutController: StripeCheckoutController = {
   async checkout(
     req: Request<
       dto.CheckoutParams,
-      dto.ResponseBody<dto.CheckoutResponse>,
+      dto.CheckoutResponse,
       dto.CheckoutBody,
       dto.CheckoutQuery
     >,
-    res: Response<dto.ResponseBody<dto.CheckoutResponse>>,
+    res: Response<dto.CheckoutResponse>,
   ) {
-    let customer: StripeCustomerUser | null = null;
+    let customer: any = null;
     if (req.user) {
       logger.debug("Checkout request received", req.body);
       const stripeCustomerUser =
@@ -58,7 +55,7 @@ export const StripeCheckoutController: StripeCheckoutController = {
 
     const items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     for (const item of req.body.priceItems) {
-      items.push({ price: item.priceId.id, quantity: item.quantity });
+      items.push({ price: item.priceId as string, quantity: item.quantity });
     }
     logger.debug("Creating checkout session with items:", items);
 
@@ -67,11 +64,11 @@ export const StripeCheckoutController: StripeCheckoutController = {
       invoice_creation:
         req.body.mode === `payment` ? { enabled: true } : undefined,
       line_items: items,
-      customer: customer?.stripeCustomerId.id,
+      customer: customer?.stripeCustomerId,
       customer_email: customer
         ? undefined
         : req.user
-          ? (userUtils.email(req.user) ?? undefined)
+          ? ((req.user as any)?.email ?? undefined)
           : undefined,
       allow_promotion_codes: true,
       metadata: req.body.metadata,
@@ -92,20 +89,14 @@ export const StripeCheckoutController: StripeCheckoutController = {
         const response: dto.CheckoutResponse = {
           redirectUrl: session.url,
         };
-        res.status(StatusCodes.CREATED).send({ success: response });
+        res.status(StatusCodes.CREATED).send(response);
       } else {
         logger.error("No redirect URL available", session);
-        throw new ApiError(
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          "Failed to create checkout session",
-        );
+        throw ApiError.internal("Failed to create checkout session");
       }
     } catch (error) {
       logger.error("Failed to create checkout session", error);
-      throw new ApiError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        "Failed to create checkout session",
-      );
+      throw ApiError.internal("Failed to create checkout session");
     }
   },
 };

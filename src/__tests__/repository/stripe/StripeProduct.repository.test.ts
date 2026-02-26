@@ -10,7 +10,7 @@ describe("StripeProductRepository", () => {
 
   describe("create", () => {
     it("should insert a product", async () => {
-      const productId = new StripeProductId("1");
+      const productId = "1" as StripeProductId;
 
       const product = Fixture.stripeProduct(productId, null);
 
@@ -22,7 +22,7 @@ describe("StripeProductRepository", () => {
     });
 
     it("should fail with constraint violation if duplicate stripe_id is inserted", async () => {
-      const productId = new StripeProductId("1");
+      const productId = "1" as StripeProductId;
 
       const product = Fixture.stripeProduct(productId, null);
 
@@ -42,14 +42,14 @@ describe("StripeProductRepository", () => {
 
   describe("getById", () => {
     it("should return null if product not found", async () => {
-      const nonExistentStripeProductId = new StripeProductId("non-existent-id");
+      const nonExistentStripeProductId = "non-existent-id" as StripeProductId;
       const found = await productRepo.getById(nonExistentStripeProductId);
 
       expect(found).toBeNull();
     });
 
     it("should return a product by ID", async () => {
-      const productId = new StripeProductId("1");
+      const productId = "1" as StripeProductId;
 
       const product = Fixture.stripeProduct(productId, null);
 
@@ -62,8 +62,8 @@ describe("StripeProductRepository", () => {
 
   describe("getAll", () => {
     it("should return all products", async () => {
-      const productId1 = new StripeProductId("1");
-      const productId2 = new StripeProductId("2");
+      const productId1 = "1" as StripeProductId;
+      const productId2 = "2" as StripeProductId;
 
       const product1 = Fixture.stripeProduct(productId1, null);
       const product2 = Fixture.stripeProduct(productId2, null);

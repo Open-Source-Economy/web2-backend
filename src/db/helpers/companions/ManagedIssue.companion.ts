@@ -4,9 +4,8 @@ import {
   ManagedIssueId,
   ManagedIssueState,
   UserId,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "./Validator";
 import { IssueIdCompanion } from "./github";
 
 export namespace ManagedIssueCompanion {
@@ -42,13 +41,13 @@ export namespace ManagedIssueCompanion {
       return error;
     }
 
-    return new ManagedIssue(
-      new ManagedIssueId(id),
+    return {
+      id: id as ManagedIssueId,
       githubIssueId,
-      requestedCreditAmount ?? null,
-      new UserId(managerId),
+      requestedCreditAmount: requestedCreditAmount ?? null,
+      managerId: managerId as UserId,
       contributorVisibility,
       state,
-    );
+    } as ManagedIssue;
   }
 }

@@ -2,15 +2,68 @@ import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
 import {
   Issue,
+  ISODateTimeString,
   IssueId,
   Owner,
   OwnerId,
+  OwnerType,
   Repository,
   RepositoryId,
 } from "@open-source-economy/api-types";
 import fs from "fs";
 import { logger } from "../../../config";
 import { issueRepo, ownerRepo, repositoryRepo } from "../../../db";
+
+// Local parsing helpers (replace the old static fromGithubApi methods)
+function parseOwnerFromGithubApi(json: any): Owner {
+  if (!json || !json.login) {
+    throw new Error(`Invalid GitHub owner data: missing login field`);
+  }
+  return {
+    id: { login: json.login, githubId: json.id } as OwnerId,
+    type:
+      json.type === "Organization" ? OwnerType.Organization : OwnerType.User,
+    htmlUrl: json.html_url,
+    avatarUrl: json.avatar_url,
+    followers: json.followers,
+    following: json.following,
+    publicRepos: json.public_repos,
+    publicGists: json.public_gists,
+    name: json.name,
+    twitterUsername: json.twitter_username,
+    company: json.company,
+    blog: json.website_url ?? json.blog,
+    location: json.location,
+    email: json.email,
+  } as Owner;
+}
+
+function parseRepositoryFromGithubApi(json: any): Repository {
+  if (!json || !json.name || !json.owner) {
+    throw new Error(`Invalid GitHub repository data: missing required fields`);
+  }
+  const ownerId: OwnerId = { login: json.owner.login, githubId: json.owner.id };
+  return {
+    id: { ownerId, name: json.name, githubId: json.id } as RepositoryId,
+    htmlUrl: json.html_url,
+    description: json.description,
+  } as Repository;
+}
+
+function parseIssueFromGithubApi(repositoryId: RepositoryId, json: any): Issue {
+  if (!json || json.number == null) {
+    throw new Error(`Invalid GitHub issue data: missing required fields`);
+  }
+  return {
+    id: { repositoryId, number: json.number, githubId: json.id } as IssueId,
+    title: json.title,
+    htmlUrl: json.html_url,
+    createdAt: json.created_at as ISODateTimeString,
+    closedAt: json.closed_at ? (json.closed_at as ISODateTimeString) : null,
+    openBy: { login: json.user?.login, githubId: json.user?.id } as OwnerId,
+    body: json.body,
+  } as Issue;
+}
 
 describe("IssueRepository", () => {
   setupTestDB();
@@ -68,33 +121,22 @@ describe("IssueRepository", () => {
           "utf8",
         );
 
-        const owner = Owner.fromGithubApi(ownerData);
-        const repository = Repository.fromGithubApi(repoData);
+        const ownerJson = JSON.parse(ownerData);
+        const repoJson = JSON.parse(repoData);
+        const issueJson = JSON.parse(issueData);
 
-        if (owner instanceof Error) {
-          logger.error(owner);
-          fail("Owner parsing failed");
-        } else if (repository instanceof Error) {
-          logger.error(repository);
-          fail("Repository parsing failed");
-        } else {
-          const issue = Issue.fromGithubApi(repository.id, issueData);
-          const openBy = Owner.fromGithubApi(JSON.parse(issueData).user);
-          if (issue instanceof Error) {
-            logger.error(issue);
-            fail(issue);
-          } else if (openBy instanceof Error) {
-            logger.error(openBy);
-            fail(openBy);
-          } else {
-            await ownerRepo.insertOrUpdate(owner);
-            await repositoryRepo.insertOrUpdate(repository);
-            await ownerRepo.insertOrUpdate(openBy);
-            const created = await issueRepo.createOrUpdate(issue);
+        const owner = parseOwnerFromGithubApi(ownerJson);
+        const repository = parseRepositoryFromGithubApi(repoJson);
+        const issue = parseIssueFromGithubApi(repository.id, issueJson);
+        const openBy = parseOwnerFromGithubApi(issueJson.user);
 
-            expect(created).toBeInstanceOf(Issue);
-          }
-        }
+        await ownerRepo.insertOrUpdate(owner);
+        await repositoryRepo.insertOrUpdate(repository);
+        await ownerRepo.insertOrUpdate(openBy);
+        const created = await issueRepo.createOrUpdate(issue);
+
+        expect(created).toBeDefined();
+        expect(created.id).toBeDefined();
       });
     });
 
@@ -142,17 +184,20 @@ describe("IssueRepository", () => {
       const issue = Fixture.issue(issueId, ownerId);
       await issueRepo.createOrUpdate(issue);
 
-      const undefinedOwnerId = new OwnerId(ownerId.login, undefined);
-      const undefinedRepositoryId = new RepositoryId(
-        undefinedOwnerId,
-        repositoryId.name,
-        undefined,
-      );
-      const undefinedIssueId = new IssueId(
-        undefinedRepositoryId,
-        issueId.number,
-        undefined,
-      );
+      const undefinedOwnerId: OwnerId = {
+        login: ownerId.login,
+        githubId: undefined,
+      };
+      const undefinedRepositoryId: RepositoryId = {
+        ownerId: undefinedOwnerId,
+        name: repositoryId.name,
+        githubId: undefined,
+      };
+      const undefinedIssueId: IssueId = {
+        repositoryId: undefinedRepositoryId,
+        number: issueId.number,
+        githubId: undefined,
+      };
 
       const found = await issueRepo.getById(undefinedIssueId);
       expect(found).toEqual(issue);

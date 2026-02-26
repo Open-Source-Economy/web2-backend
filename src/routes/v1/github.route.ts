@@ -13,33 +13,33 @@ router.post("/sync/all", GitHubController.syncAll);
 
 router.post(
   "/owners/:owner/sync",
-  validateParams(dto.SyncOwnerCompanion.paramsSchema),
-  validateBody(dto.SyncOwnerCompanion.bodySchema),
-  validateQuery(dto.SyncOwnerCompanion.querySchema),
+  validateParams(dto.syncOwnerEndpoint.pathParams as any),
+  validateBody(dto.syncOwnerEndpoint.body as any),
+  validateQuery(dto.syncOwnerEndpoint.query as any),
   GitHubController.syncOwner as any,
 );
 
 router.post(
   "/repos/:owner/:repo/sync",
-  validateParams(dto.SyncRepositoryCompanion.paramsSchema),
-  validateBody(dto.SyncRepositoryCompanion.bodySchema),
-  validateQuery(dto.SyncRepositoryCompanion.querySchema),
+  validateParams(dto.syncRepositoryEndpoint.pathParams as any),
+  validateBody(dto.syncRepositoryEndpoint.body as any),
+  validateQuery(dto.syncRepositoryEndpoint.query as any),
   GitHubController.syncRepository as any,
 );
 
 router.post(
   "/projects/:owner/sync",
-  validateParams(dto.SyncProjectCompanion.paramsSchema),
-  validateBody(dto.SyncProjectCompanion.bodySchema),
-  validateQuery(dto.SyncProjectCompanion.querySchema),
+  validateParams(dto.syncProjectEndpoint.pathParams as any),
+  validateBody(dto.syncProjectEndpoint.body as any),
+  validateQuery(dto.syncProjectEndpoint.query as any),
   GitHubController.syncProject as any,
 );
 
 router.post(
   "/projects/:owner/:repo/sync",
-  validateParams(dto.SyncProjectCompanion.paramsSchema),
-  validateBody(dto.SyncProjectCompanion.bodySchema),
-  validateQuery(dto.SyncProjectCompanion.querySchema),
+  validateParams(dto.syncProjectEndpoint.pathParams as any),
+  validateBody(dto.syncProjectEndpoint.body as any),
+  validateQuery(dto.syncProjectEndpoint.query as any),
   GitHubController.syncProject as any,
 );
 

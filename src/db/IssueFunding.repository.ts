@@ -1,13 +1,19 @@
 import { Pool, QueryResult } from "pg";
 import {
-  CreateIssueFundingBody,
   IssueFunding,
   IssueFundingId,
   IssueId,
+  UserId,
 } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { logger } from "../config";
 import { IssueFundingCompanion } from "./helpers/companions";
+
+export interface CreateIssueFundingBody {
+  githubIssueId: IssueId;
+  userId: UserId;
+  creditAmount: number;
+}
 
 export function getIssueFundingRepository(): IssueFundingRepository {
   return new IssueFundingRepositoryImpl(pool);
@@ -94,7 +100,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
           issueFunding.githubIssueId.repositoryId.name,
           issueFunding.githubIssueId.githubId,
           issueFunding.githubIssueId.number,
-          issueFunding.userId.uuid,
+          issueFunding.userId,
           issueFunding.creditAmount,
         ],
       );
@@ -112,7 +118,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
                 FROM issue_funding
                 WHERE id = $1
             `,
-      [id.uuid],
+      [id],
     );
 
     return this.getOptionalIssueFunding(result.rows);

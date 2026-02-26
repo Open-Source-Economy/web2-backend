@@ -2,7 +2,13 @@ import express from "express";
 import session from "express-session";
 import passport from "passport";
 import v1Routes from "./routes/v1";
-import { errorConverter, errorHandler } from "./middlewares/errorHandler";
+import {
+  errorConverter,
+  errorHandler,
+  problemDetailsErrorHandler,
+  tsRestValidationErrorHandler,
+  globalErrorHandler,
+} from "./middlewares/errorHandler";
 import "./strategies";
 import { pool } from "./dbPool";
 import helmet from "helmet";
@@ -10,7 +16,17 @@ import { StatusCodes } from "http-status-codes";
 import * as morgan from "./config";
 import { config, logger, NodeEnv } from "./config";
 import { authLimiter } from "./middlewares/rateLimiter";
-import { ApiError } from "@open-source-economy/api-types";
+import { LegacyApiError } from "./middlewares/errorHandler";
+import { createExpressEndpoints } from "@ts-rest/express";
+import { contract } from "@open-source-economy/api-types";
+import { githubRouter } from "./routes/ts-rest/github.router";
+import { miscRouter } from "./routes/ts-rest/misc.router";
+import { usersRouter } from "./routes/ts-rest/users.router";
+import { projectsRouter } from "./routes/ts-rest/projects.router";
+import { adminRouter } from "./routes/ts-rest/admin.router";
+import { onboardingRouter } from "./routes/ts-rest/onboarding.router";
+import { authRouter } from "./routes/ts-rest/auth.router";
+import { stripeRouter } from "./routes/ts-rest/stripe.router";
 import path from "path";
 
 var cors = require("cors");
@@ -139,6 +155,38 @@ export function createApp() {
   if (config.env === NodeEnv.Production) {
     app.use("/api/v1/auth", authLimiter);
   }
+
+  // ts-rest routes (registered before old Express routes, mounted at /api/v1)
+  const tsRestApp = express.Router();
+  createExpressEndpoints(contract.github, githubRouter, tsRestApp, {
+    responseValidation: false,
+  });
+  createExpressEndpoints(contract.misc, miscRouter, tsRestApp, {
+    responseValidation: false,
+  });
+  createExpressEndpoints(contract.users, usersRouter, tsRestApp, {
+    responseValidation: false,
+  });
+  createExpressEndpoints(contract.projects, projectsRouter, tsRestApp, {
+    responseValidation: false,
+  });
+  createExpressEndpoints(contract.admin, adminRouter, tsRestApp, {
+    responseValidation: false,
+  });
+  createExpressEndpoints(contract.onboarding, onboardingRouter, tsRestApp, {
+    responseValidation: false,
+  });
+  createExpressEndpoints(contract.stripe, stripeRouter, tsRestApp, {
+    responseValidation: false,
+  });
+  // Auth: only non-Passport endpoints are handled by ts-rest.
+  // Passport-dependent routes (register, login, github OAuth, logout) stay in Express.
+  createExpressEndpoints(contract.auth, authRouter, tsRestApp, {
+    responseValidation: false,
+  });
+  app.use("/api/v1", tsRestApp);
+
+  // Existing Express routes: only auth (Passport-dependent), stripe webhook remain
   app.use("/api/v1", v1Routes);
 
   app.get("/", (req, res) => {
@@ -148,11 +196,15 @@ export function createApp() {
   // send back a 404 error for any unknown api request
   app.use((req, res, next) => {
     const errorMessage = `Not found: ${req.originalUrl}`;
-    next(new ApiError(StatusCodes.NOT_FOUND, errorMessage));
+    next(new LegacyApiError(StatusCodes.NOT_FOUND, errorMessage));
   });
 
-  app.use(errorConverter);
-  app.use(errorHandler);
+  // Error handling: new ProblemDetails-based handlers first, then legacy
+  app.use(problemDetailsErrorHandler);
+  app.use(tsRestValidationErrorHandler);
+  app.use(errorConverter); // legacy - removed in Phase 5
+  app.use(errorHandler); // legacy - removed in Phase 5
+  app.use(globalErrorHandler);
 
   return app;
 }

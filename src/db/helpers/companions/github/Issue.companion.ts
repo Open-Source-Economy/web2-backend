@@ -1,11 +1,11 @@
 import {
   Issue,
   IssueId,
+  ISODateTimeString,
   OwnerId,
   RepositoryId,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 import { RepositoryIdCompanion } from "./Repository.companion";
 
 export namespace IssueIdCompanion {
@@ -63,7 +63,7 @@ export namespace IssueIdCompanion {
       return error;
     }
 
-    return new IssueId(repositoryId, number, id);
+    return { repositoryId, number, githubId: id } as IssueId;
   }
 }
 
@@ -114,23 +114,25 @@ export namespace IssueCompanion {
       return error;
     }
 
-    const owner = new OwnerId(ownerLogin, ownerGithubId);
-    const repositoryId = new RepositoryId(
-      owner,
-      repositoryName,
-      repositoryGithubId,
-    );
-    const issueId = new IssueId(repositoryId, number, id);
-    const openByOwnerId = new OwnerId(openByLogin, openById);
+    const owner: OwnerId = { login: ownerLogin, githubId: ownerGithubId };
+    const repositoryId: RepositoryId = {
+      ownerId: owner,
+      name: repositoryName,
+      githubId: repositoryGithubId,
+    };
+    const issueId: IssueId = { repositoryId, number, githubId: id };
+    const openByOwnerId: OwnerId = { login: openByLogin, githubId: openById };
 
-    return new Issue(
-      issueId,
+    return {
+      id: issueId,
       title,
       htmlUrl,
-      new Date(createdAt),
-      closedAt ? new Date(closedAt) : null,
-      openByOwnerId,
+      createdAt: new Date(createdAt).toISOString() as ISODateTimeString,
+      closedAt: closedAt
+        ? (new Date(closedAt).toISOString() as ISODateTimeString)
+        : null,
+      openBy: openByOwnerId,
       body,
-    );
+    } as Issue;
   }
 }

@@ -1,26 +1,24 @@
 import express from "express";
 import authRoute from "./auth.route";
-import userRoute from "./user.route";
 import stripeRoute from "./stripe.route";
-import adminRoute from "./admin.route";
-import { MiscellaneousController } from "../../controllers/miscellaneous.controller";
-import projectRoute from "./project.route";
-import { PlanController } from "../../controllers/plan/plan.controller";
-import githubRoute from "./github.route";
-import onboardingRoute from "./onboarding.route";
 
 const router = express.Router();
 
+// Auth routes: Passport-dependent routes (register, login, github OAuth, logout) stay here.
+// Non-Passport auth endpoints (status, check-email, forgot-password, reset-password, invite-info)
+// are handled by ts-rest but Express auth routes take precedence for Passport endpoints.
 router.use("/auth", authRoute);
-router.use("/user", userRoute);
-router.use("/stripe", stripeRoute);
-router.use("/admin", adminRoute);
-router.use("/projects", projectRoute);
-router.use("/github", githubRoute);
-router.use("/onboarding", onboardingRoute);
 
-router.post("/newsletter", MiscellaneousController.subscribeToNewsletter);
-router.post("/contact", MiscellaneousController.submitContactForm);
-router.get("/plans", PlanController.getPlans);
+// Stripe: only the webhook route stays here (needs express.raw() body parser).
+// Checkout is migrated to ts-rest.
+router.use("/stripe", stripeRoute);
+
+// All other routes migrated to ts-rest:
+// - /github → src/routes/ts-rest/github.router.ts
+// - /user → src/routes/ts-rest/users.router.ts
+// - /admin → src/routes/ts-rest/admin.router.ts
+// - /projects → src/routes/ts-rest/projects.router.ts
+// - /onboarding → src/routes/ts-rest/onboarding.router.ts
+// - /newsletter, /contact, /plans → src/routes/ts-rest/misc.router.ts
 
 export default router;

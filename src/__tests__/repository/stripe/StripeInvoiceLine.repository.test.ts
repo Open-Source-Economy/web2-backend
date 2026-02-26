@@ -22,6 +22,7 @@ describe("StripeInvoiceLineRepository", () => {
     await stripeCustomerRepo.insert(stripeCustomer);
     await stripeInvoiceRepo.insert(
       Fixture.stripeInvoice(validInvoiceId, validCustomerId, []),
+      [],
     );
 
     const product = Fixture.stripeProduct(validProductId, null);
@@ -79,9 +80,7 @@ describe("StripeInvoiceLineRepository", () => {
 
   describe("getById", () => {
     it("should return null if invoice line not found", async () => {
-      const nonExistentInvoiceLineId = new StripeInvoiceLineId(
-        "non-existent-id",
-      );
+      const nonExistentInvoiceLineId = "non-existent-id" as StripeInvoiceLineId;
       const found = await stripeInvoiceLineRepo.getById(
         nonExistentInvoiceLineId,
       );

@@ -1,14 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import * as dto from "@open-source-economy/api-types";
 import {
-  ApiError,
   Company,
   CompanyUserPermissionToken,
   CompanyUserRole,
-  Provider,
   RepositoryId,
   RepositoryUserPermissionToken,
-  ThirdPartyUser,
   User,
   UserId,
   UserRepository,
@@ -28,140 +25,136 @@ import {
 } from "../db";
 import { config, logger } from "../config";
 import { MailService } from "../services/mail.service";
+import { ApiError } from "../errors";
 
 const mailService = new MailService();
 
 export interface AuthController {
   status(
     req: Request<
-      dto.StatusParams,
-      dto.ResponseBody<dto.StatusResponse>,
-      dto.StatusBody,
-      dto.StatusQuery
+      dto.GetStatusParams,
+      dto.GetStatusResponse,
+      {},
+      dto.GetStatusQuery
     >,
-    res: Response<dto.ResponseBody<dto.StatusResponse>>,
+    res: Response<dto.GetStatusResponse>,
   ): Promise<void>;
 
   verifyCompanyToken(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
     next: NextFunction,
   ): Promise<void>;
 
   registerAsCompany(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
   ): Promise<void>;
 
   verifyRepositoryToken(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
     next: NextFunction,
   ): Promise<void>;
 
   registerForRepository(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
   ): Promise<void>;
 
   register(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
   ): Promise<void>;
 
   login(
     req: Request<
       dto.LoginParams,
-      dto.ResponseBody<dto.LoginResponse>,
+      dto.LoginResponse,
       dto.LoginBody,
       dto.LoginQuery
     >,
-    res: Response<dto.ResponseBody<dto.LoginResponse>>,
+    res: Response<dto.LoginResponse>,
   ): Promise<void>;
 
   logout(
     req: Request<
       dto.LogoutParams,
-      dto.ResponseBody<dto.LogoutResponse>,
+      dto.LogoutResponse,
       dto.LogoutBody,
       dto.LogoutQuery
     >,
-    res: Response<dto.ResponseBody<dto.LogoutResponse>>,
+    res: Response<dto.LogoutResponse>,
   ): Promise<void>;
 
   getCompanyUserInviteInfo(
     req: Request<
       dto.GetCompanyUserInviteInfoParams,
-      dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>,
-      dto.GetCompanyUserInviteInfoBody,
+      dto.GetCompanyUserInviteInfoResponse,
+      {},
       dto.GetCompanyUserInviteInfoQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>>,
+    res: Response<dto.GetCompanyUserInviteInfoResponse>,
   ): Promise<void>;
 
   getRepositoryUserInviteInfo(
     req: Request<
       dto.GetRepositoryUserInviteInfoParams,
-      dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>,
-      dto.GetRepositoryUserInviteInfoBody,
+      dto.GetRepositoryUserInviteInfoResponse,
+      {},
       dto.GetRepositoryUserInviteInfoQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>>,
+    res: Response<dto.GetRepositoryUserInviteInfoResponse>,
   ): Promise<void>;
 
   checkEmail(
     req: Request<
       dto.CheckEmailParams,
-      dto.ResponseBody<dto.CheckEmailResponse>,
-      dto.CheckEmailBody,
+      dto.CheckEmailResponse,
+      {},
       dto.CheckEmailQuery
     >,
-    res: Response<dto.ResponseBody<dto.CheckEmailResponse>>,
+    res: Response<dto.CheckEmailResponse>,
   ): Promise<void>;
 
   forgotPassword(
-    req: Request<
-      {},
-      dto.ResponseBody<dto.ForgotPasswordResponse>,
-      dto.ForgotPasswordBody,
-      {}
-    >,
-    res: Response<dto.ResponseBody<dto.ForgotPasswordResponse>>,
+    req: Request<{}, dto.ForgotPasswordResponse, dto.ForgotPasswordBody, {}>,
+    res: Response<dto.ForgotPasswordResponse>,
   ): Promise<void>;
 
   resetPassword(
     req: Request<
       {},
-      dto.ResponseBody<dto.ResetPasswordResponse>,
+      dto.ResetPasswordResponse,
       dto.ResetPasswordBody,
       dto.ResetPasswordQuery
     >,
-    res: Response<dto.ResponseBody<dto.ResetPasswordResponse>>,
+    res: Response<dto.ResetPasswordResponse>,
   ): Promise<void>;
 }
 
@@ -177,10 +170,7 @@ const AuthHelpers = {
 
     const companyRoles = await userCompanyRepo.getByUserId(userId);
     if (companyRoles.length > 1) {
-      throw new ApiError(
-        StatusCodes.NOT_IMPLEMENTED,
-        "User has multiple company roles",
-      );
+      throw ApiError.internal("User has multiple company roles");
     } else if (companyRoles.length === 1) {
       const [companyId, role] = companyRoles[0];
       company = await companyRepo.getById(companyId);
@@ -204,7 +194,7 @@ const AuthHelpers = {
     });
   },
 
-  async getAuthInfo(user: User): Promise<dto.AuthInfo> {
+  async getAuthInfo(user: User): Promise<dto.GetStatusResponse> {
     const [company, companyRole] = await AuthHelpers.getCompanyRoles(user.id);
     const repositories = await AuthHelpers.getRepositoryInfos(user.id);
     const serviceTokens = await planAndCreditsRepo.getAvailableCredit(
@@ -227,34 +217,34 @@ const AuthHelpers = {
 export const AuthController: AuthController = {
   async status(
     req: Request<
-      dto.StatusParams,
-      dto.ResponseBody<dto.StatusResponse>,
-      dto.StatusBody,
-      dto.StatusQuery
+      dto.GetStatusParams,
+      dto.GetStatusResponse,
+      {},
+      dto.GetStatusQuery
     >,
-    res: Response<dto.ResponseBody<dto.StatusResponse>>,
+    res: Response<dto.GetStatusResponse>,
   ) {
     if (req.isAuthenticated() && req.user) {
-      const response: dto.StatusResponse = await AuthHelpers.getAuthInfo(
+      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(
         req.user as User,
       );
-      res.status(StatusCodes.OK).send({ success: response }); // TODO: json instead of send ?
+      res.status(StatusCodes.OK).send(response); // TODO: json instead of send ?
     } else {
-      const response: dto.StatusResponse = {
+      const response: dto.GetStatusResponse = {
         authenticatedUser: null,
       };
-      res.status(StatusCodes.OK).send({ success: response });
+      res.status(StatusCodes.OK).send(response);
     }
   },
 
   async verifyCompanyToken(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
     next: NextFunction,
   ) {
     const token = req.query.companyToken;
@@ -264,40 +254,35 @@ export const AuthController: AuthController = {
         await companyUserPermissionTokenRepo.getByToken(token);
       const tokenData = await secureToken.verify(token);
 
-      const error = new ApiError(
-        StatusCodes.BAD_REQUEST,
-        "Token expired or invalid",
-      );
+      const error = ApiError.badRequest("Token expired or invalid");
       if (companyUserPermissionToken === null) next(error);
       else if (companyUserPermissionToken.hasBeenUsed) next(error);
       else if (companyUserPermissionToken?.userEmail !== req.body.email)
         next(error);
       else if (companyUserPermissionToken?.userEmail !== tokenData.email) {
-        next(
-          new ApiError(
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            "Tokens are not matching",
-          ),
-        );
-      } else if (companyUserPermissionToken.expiresAt < new Date()) next(error);
+        next(ApiError.internal("Tokens are not matching"));
+      } else if (
+        new Date(companyUserPermissionToken.expiresAt as string) < new Date()
+      )
+        next(error);
       else {
         // @ts-ignore
         req.companyUserPermissionToken = companyUserPermissionToken;
         next();
       }
     } else {
-      next(new ApiError(StatusCodes.BAD_REQUEST, "No company token provided"));
+      next(ApiError.badRequest("No company token provided"));
     }
   },
 
   async registerAsCompany(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
   ) {
     if (req.isAuthenticated() && req.user) {
       // @ts-ignore
@@ -315,10 +300,10 @@ export const AuthController: AuthController = {
           companyUserPermissionToken.token,
         );
       }
-      const response: dto.StatusResponse = await AuthHelpers.getAuthInfo(
+      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(
         req.user as User,
       );
-      res.status(StatusCodes.CREATED).send({ success: response });
+      res.status(StatusCodes.CREATED).send(response);
     } else {
       res.sendStatus(StatusCodes.UNAUTHORIZED);
     }
@@ -327,11 +312,11 @@ export const AuthController: AuthController = {
   async verifyRepositoryToken(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
     next: NextFunction,
   ) {
     const token = req.query.repositoryToken;
@@ -340,12 +325,11 @@ export const AuthController: AuthController = {
         await repositoryUserPermissionTokenRepo.getByToken(token);
       const tokenData = await secureToken.verify(token);
 
-      const error = new ApiError(
-        StatusCodes.BAD_REQUEST,
-        "Token expired or invalid",
-      );
+      const error = ApiError.badRequest("Token expired or invalid");
       if (repositoryUserPermissionToken === null) next(error);
-      else if (repositoryUserPermissionToken.expiresAt < new Date())
+      else if (
+        new Date(repositoryUserPermissionToken.expiresAt as string) < new Date()
+      )
         next(error);
       else {
         // @ts-ignore
@@ -353,45 +337,37 @@ export const AuthController: AuthController = {
         next();
       }
     } else {
-      next(
-        new ApiError(StatusCodes.BAD_REQUEST, "No repository token provided"),
-      );
+      next(ApiError.badRequest("No repository token provided"));
     }
   },
 
   async registerForRepository(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
   ) {
-    const userData = req.user?.data!;
+    // User no longer has .data property; access provider data differently
+    const user = req.user as any;
     const userId = req.user?.id!; // TODO: improve
-
-    if (!(userData instanceof ThirdPartyUser)) {
-      throw new ApiError(
-        StatusCodes.UNAUTHORIZED,
-        "User is not a third party user",
-      );
-    }
 
     // TODO: could be not only one
     const repositoryUserPermissionToken =
       await repositoryUserPermissionTokenRepo.getByUserGithubOwnerLogin(
-        userData.providerData.owner.id.login,
+        user?.providerData?.owner?.id?.login ?? user?.githubLogin,
       );
 
     if (repositoryUserPermissionToken) {
-      const userRepository = new UserRepository(
+      const userRepository: UserRepository = {
         userId,
-        repositoryUserPermissionToken.repositoryId,
-        repositoryUserPermissionToken.repositoryUserRole,
-        repositoryUserPermissionToken.rate,
-        repositoryUserPermissionToken.currency,
-      );
+        repositoryId: repositoryUserPermissionToken.repositoryId,
+        repositoryUserRole: repositoryUserPermissionToken.repositoryUserRole,
+        rate: repositoryUserPermissionToken.rate,
+        currency: repositoryUserPermissionToken.currency,
+      } as any;
 
       await userRepositoryRepo.create(userRepository);
 
@@ -409,17 +385,17 @@ export const AuthController: AuthController = {
   async register(
     req: Request<
       dto.RegisterParams,
-      dto.ResponseBody<dto.RegisterResponse>,
+      dto.RegisterResponse,
       dto.RegisterBody,
       dto.RegisterQuery
     >,
-    res: Response<dto.ResponseBody<dto.RegisterResponse>>,
+    res: Response<dto.RegisterResponse>,
   ) {
     if (req.isAuthenticated() && req.user) {
-      const response: dto.StatusResponse = await AuthHelpers.getAuthInfo(
+      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(
         req.user as User,
       );
-      res.status(StatusCodes.CREATED).send({ success: response });
+      res.status(StatusCodes.CREATED).send(response);
     } else {
       res.sendStatus(StatusCodes.UNAUTHORIZED);
     }
@@ -428,17 +404,17 @@ export const AuthController: AuthController = {
   async login(
     req: Request<
       dto.LoginParams,
-      dto.ResponseBody<dto.LoginResponse>,
+      dto.LoginResponse,
       dto.LoginBody,
       dto.LoginQuery
     >,
-    res: Response<dto.ResponseBody<dto.LoginResponse>>,
+    res: Response<dto.LoginResponse>,
   ) {
     if (req.isAuthenticated() && req.user) {
-      const response: dto.StatusResponse = await AuthHelpers.getAuthInfo(
+      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(
         req.user as User,
       );
-      res.status(StatusCodes.OK).send({ success: response }); // TODO: json instead of send ?
+      res.status(StatusCodes.OK).send(response); // TODO: json instead of send ?
     } else {
       res.sendStatus(StatusCodes.UNAUTHORIZED);
     }
@@ -447,14 +423,14 @@ export const AuthController: AuthController = {
   async logout(
     req: Request<
       dto.LogoutParams,
-      dto.ResponseBody<dto.LogoutResponse>,
+      dto.LogoutResponse,
       dto.LogoutBody,
       dto.LogoutQuery
     >,
-    res: Response<dto.ResponseBody<dto.LogoutResponse>>,
+    res: Response<dto.LogoutResponse>,
   ) {
     if (!req.user) {
-      res.status(StatusCodes.OK).send({ success: {} });
+      res.status(StatusCodes.OK).send({});
       return;
     }
     req.logout((err) => {
@@ -467,18 +443,18 @@ export const AuthController: AuthController = {
         });
         return;
       }
-      res.status(StatusCodes.OK).send({ success: {} });
+      res.status(StatusCodes.OK).send({});
     });
   },
 
   async getCompanyUserInviteInfo(
     req: Request<
       dto.GetCompanyUserInviteInfoParams,
-      dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>,
-      dto.GetCompanyUserInviteInfoBody,
+      dto.GetCompanyUserInviteInfoResponse,
+      {},
       dto.GetCompanyUserInviteInfoQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetCompanyUserInviteInfoResponse>>,
+    res: Response<dto.GetCompanyUserInviteInfoResponse>,
   ) {
     const query: dto.GetCompanyUserInviteInfoQuery = req.query;
 
@@ -489,17 +465,17 @@ export const AuthController: AuthController = {
       userName: companyUserPermissionToken?.userName,
       userEmail: companyUserPermissionToken?.userEmail,
     };
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   async getRepositoryUserInviteInfo(
     req: Request<
       dto.GetRepositoryUserInviteInfoParams,
-      dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>,
-      dto.GetRepositoryUserInviteInfoBody,
+      dto.GetRepositoryUserInviteInfoResponse,
+      {},
       dto.GetRepositoryUserInviteInfoQuery
     >,
-    res: Response<dto.ResponseBody<dto.GetRepositoryUserInviteInfoResponse>>,
+    res: Response<dto.GetRepositoryUserInviteInfoResponse>,
   ) {
     const query: dto.GetRepositoryUserInviteInfoQuery = req.query;
 
@@ -511,23 +487,23 @@ export const AuthController: AuthController = {
       userGithubOwnerLogin: repositoryUserPermissionToken?.userGithubOwnerLogin,
       repositoryId: repositoryUserPermissionToken?.repositoryId,
     };
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   async checkEmail(
     req: Request<
       dto.CheckEmailParams,
-      dto.ResponseBody<dto.CheckEmailResponse>,
-      dto.CheckEmailBody,
+      dto.CheckEmailResponse,
+      {},
       dto.CheckEmailQuery
     >,
-    res: Response<dto.ResponseBody<dto.CheckEmailResponse>>,
+    res: Response<dto.CheckEmailResponse>,
   ) {
     const query: dto.CheckEmailQuery = req.query;
     const { email } = query;
 
     if (!email) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Email is required");
+      throw ApiError.badRequest("Email is required");
     }
 
     logger.debug(`Checking status for email: ${email}`);
@@ -540,29 +516,23 @@ export const AuthController: AuthController = {
         exists: false,
         // provider is undefined for non-existent users (locally registered)
       };
-      res.status(StatusCodes.OK).send({ success: response });
+      res.status(StatusCodes.OK).send(response);
       return;
     }
 
     logger.debug(`User found for email: ${email}`);
-    // If provider is "github", set it; otherwise leave undefined (locally registered)
-    const provider =
-      user.data instanceof ThirdPartyUser ? user.data.provider : undefined;
+    // provider info is no longer on user.data; access it via separate lookup if needed
+    const provider = (user as any).provider ?? undefined;
     const response: dto.CheckEmailResponse = {
       exists: true,
       provider,
     };
-    res.status(StatusCodes.OK).send({ success: response });
+    res.status(StatusCodes.OK).send(response);
   },
 
   async forgotPassword(
-    req: Request<
-      {},
-      dto.ResponseBody<dto.ForgotPasswordResponse>,
-      dto.ForgotPasswordBody,
-      {}
-    >,
-    res: Response<dto.ResponseBody<dto.ForgotPasswordResponse>>,
+    req: Request<{}, dto.ForgotPasswordResponse, dto.ForgotPasswordBody, {}>,
+    res: Response<dto.ForgotPasswordResponse>,
   ) {
     const { email } = req.body;
     const user = await userRepo.findOne(email);
@@ -581,17 +551,17 @@ export const AuthController: AuthController = {
     }
 
     // Always return OK
-    res.status(StatusCodes.OK).send({ success: {} });
+    res.status(StatusCodes.OK).send({});
   },
 
   async resetPassword(
     req: Request<
       {},
-      dto.ResponseBody<dto.ResetPasswordResponse>,
+      dto.ResetPasswordResponse,
       dto.ResetPasswordBody,
       dto.ResetPasswordQuery
     >,
-    res: Response<dto.ResponseBody<dto.ResetPasswordResponse>>,
+    res: Response<dto.ResetPasswordResponse>,
   ) {
     const { token } = req.query;
     const { password } = req.body;
@@ -604,18 +574,18 @@ export const AuthController: AuthController = {
       resetToken.hasBeenUsed ||
       resetToken.expiresAt < new Date()
     ) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid or expired token");
+      throw ApiError.badRequest("Invalid or expired token");
     }
 
     // Update password
     const user = await userRepo.findOne(resetToken.userEmail);
     if (!user) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "User not found");
+      throw ApiError.badRequest("User not found");
     }
 
     await userRepo.updatePassword(user.id, password);
     await passwordResetTokenRepo.use(token);
 
-    res.status(StatusCodes.OK).send({ success: {} });
+    res.status(StatusCodes.OK).send({});
   },
 };

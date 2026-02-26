@@ -2,11 +2,11 @@ import {
   DeveloperProfileId,
   DeveloperService,
   DeveloperServiceId,
+  ISODateTimeString,
   ResponseTimeType,
   ServiceId,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 
 export namespace DeveloperServiceCompanion {
   export function fromBackend(
@@ -37,15 +37,15 @@ export namespace DeveloperServiceCompanion {
     // We initialize it as an empty array here as it's not present in the main
     // `developer_service_offering` table row.
     return {
-      id: new DeveloperServiceId(id),
-      developerProfileId: new DeveloperProfileId(developerProfileId),
+      id: id as DeveloperServiceId,
+      developerProfileId: developerProfileId as DeveloperProfileId,
       developerProjectItemIds: [],
-      serviceId: new ServiceId(serviceId),
+      serviceId: serviceId as ServiceId,
       hourlyRate,
       responseTimeHours: responseTimeHours,
       comment,
-      createdAt,
-      updatedAt,
-    };
+      createdAt: createdAt as ISODateTimeString,
+      updatedAt: updatedAt as ISODateTimeString,
+    } as DeveloperService;
   }
 }

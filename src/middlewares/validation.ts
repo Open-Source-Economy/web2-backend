@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
 import { StatusCodes } from "http-status-codes";
-import { ApiError } from "@open-source-economy/api-types";
+import { LegacyApiError } from "./errorHandler";
 
 /**
  * Custom error class for Joi validation failures.
- * Extends ApiError to integrate with a centralized error handling system.
+ * Extends LegacyApiError to integrate with the legacy error handling system.
  */
-export class ValidationError extends ApiError {
+export class ValidationError extends LegacyApiError {
   public details: Joi.ValidationErrorItem[];
 
   constructor(

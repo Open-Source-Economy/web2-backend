@@ -1,22 +1,20 @@
 import {
   Currency,
-  LocalUser,
   Owner,
   ThirdPartyUser,
-  User,
   UserId,
   UserRole,
-  ValidationError,
-  Validator,
 } from "@open-source-economy/api-types";
+import { ValidationError, Validator } from "../Validator";
 import { LocalUserCompanion } from "./LocalUser.companion";
 import { ThirdPartyUserCompanion } from "./ThirdPartyUser.companion";
+import { BackendLocalUser, BackendUser } from "./backend-user.types";
 
 export namespace UserCompanion {
   export function fromRaw(
     row: any,
     owner: Owner | null = null,
-  ): User | ValidationError {
+  ): BackendUser | ValidationError {
     const validator = new Validator(row);
     const id = validator.requiredString("id");
     const name = validator.optionalString("name");
@@ -37,7 +35,7 @@ export namespace UserCompanion {
       return error;
     }
 
-    let user: LocalUser | ThirdPartyUser | ValidationError;
+    let user: BackendLocalUser | ThirdPartyUser | ValidationError;
 
     if (row.hashed_password) {
       user = LocalUserCompanion.fromRaw(row);
@@ -52,12 +50,12 @@ export namespace UserCompanion {
     }
 
     return {
-      id: new UserId(id),
+      id: id as UserId,
       name: name ?? null,
       data: user,
       role,
       preferredCurrency,
       termsAcceptedVersion,
-    };
+    } as BackendUser;
   }
 }
