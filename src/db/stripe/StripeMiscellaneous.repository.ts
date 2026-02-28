@@ -5,6 +5,7 @@ import {
   RepositoryId,
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
+import { parseCurrency } from "../../utils/enum-utils";
 
 type ProjectId = OwnerId | RepositoryId;
 
@@ -79,9 +80,10 @@ class StripeMiscellaneousRepositoryImpl
     );
 
     result.rows.forEach((row) => {
-      totalRaised[row.currency.toLowerCase() as Currency] = Number(
-        row.total_raised,
-      );
+      const currency = parseCurrency(row.currency);
+      if (currency) {
+        totalRaised[currency] = Number(row.total_raised);
+      }
     });
 
     return totalRaised;

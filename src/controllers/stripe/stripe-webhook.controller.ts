@@ -20,6 +20,7 @@ import {
   stripePriceRepo,
 } from "../../db";
 import { githubSyncService } from "../../services";
+import { parseCurrency, requireCurrency } from "../../utils/enum-utils";
 
 export interface StripeWebhookController {
   webhook(req: Request, res: Response): Promise<void>;
@@ -164,7 +165,7 @@ const StripeWebhookHelpers = {
 
     const newStripeCustomer: StripeCustomer = {
       stripeId: customerId,
-      currency: currency as any,
+      currency: parseCurrency(currency) ?? undefined,
       email: email ?? undefined,
       name,
     };
@@ -182,7 +183,7 @@ const StripeWebhookHelpers = {
         ? stripeInvoice.customer
         : stripeInvoice.customer?.id) as StripeCustomerId,
       amountPaid: stripeInvoice.amount_paid,
-      currency: (stripeInvoice.currency?.toUpperCase() ?? "USD") as any,
+      currency: requireCurrency(stripeInvoice.currency, "stripe invoice"),
       status: stripeInvoice.status ?? "paid",
       lines: [],
     } as any;
@@ -195,7 +196,7 @@ const StripeWebhookHelpers = {
       stripeProductId: (typeof price.product === "string"
         ? price.product
         : (price.product as any)?.id) as any,
-      currency: (price.currency?.toUpperCase() ?? "USD") as any,
+      currency: requireCurrency(price.currency, "stripe price"),
       unitAmount: price.unit_amount ?? 0,
       recurring: price.recurring ? true : false,
       interval: price.recurring?.interval ?? null,

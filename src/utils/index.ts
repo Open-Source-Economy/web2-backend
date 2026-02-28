@@ -4,3 +4,4 @@ export * from "./ensureNoEndingTrailingSlash";
 export * from "./RateLimiter";
 export * from "./Paginator";
 export * from "./Batcher";
+export * from "./enum-utils";

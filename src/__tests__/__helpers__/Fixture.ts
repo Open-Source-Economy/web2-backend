@@ -290,7 +290,7 @@ export const Fixture = {
 
   stripeCustomer(
     stripeId: StripeCustomerId,
-    currency: string = "usd",
+    currency: Currency = Currency.USD,
     email: string = "default@example.com",
     name: string = "Default Name",
     phone?: string,
@@ -298,7 +298,7 @@ export const Fixture = {
   ): StripeCustomer {
     return {
       stripeId,
-      currency: currency as unknown as Currency,
+      currency,
       email,
       name,
     } as StripeCustomer;

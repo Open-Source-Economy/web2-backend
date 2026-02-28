@@ -1,3 +1,4 @@
+import { Currency } from "@open-source-economy/api-types";
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
 import { getStripeCustomerRepository } from "../../../db";
@@ -36,7 +37,7 @@ describe("StripeCustomerRepository", () => {
       const stripeId = Fixture.stripeCustomerId();
       const customer = Fixture.stripeCustomer(
         stripeId,
-        "EUR",
+        Currency.EUR,
         "customer@example.com",
         "Customer Name",
         "987-654-3210",
@@ -66,7 +67,7 @@ describe("StripeCustomerRepository", () => {
 
       const customer1 = Fixture.stripeCustomer(
         stripeId1,
-        "GBP",
+        Currency.GBP,
         "customer1@example.com",
         "Customer One",
         undefined,
@@ -75,7 +76,7 @@ describe("StripeCustomerRepository", () => {
 
       const customer2 = Fixture.stripeCustomer(
         stripeId2,
-        "AUD",
+        Currency.CHF,
         "customer2@example.com",
         "Customer Two",
         "111-222-3333",

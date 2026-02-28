@@ -17,6 +17,7 @@ import { StatusCodes } from "http-status-codes";
 import { stripe } from "./index";
 import { logger } from "../../config";
 import { ApiError } from "../../errors";
+import { requireCurrency } from "../../utils/enum-utils";
 
 // StripeCustomerUser is removed from api-types; define a local interface
 interface StripeCustomerUser {
@@ -106,7 +107,7 @@ export const StripeHelper: StripeHelper = {
         const stripePrice: StripePrice = {
           id: priceResponse.id as any,
           stripeProductId: product.id as any,
-          currency: currency.toUpperCase() as Currency,
+          currency: requireCurrency(currency, "stripe price creation"),
           unitAmount: priceResponse.unit_amount ?? 0,
           recurring: priceResponse.recurring ? true : false,
           interval: priceResponse.recurring?.interval ?? null,

@@ -1,10 +1,10 @@
 import {
-  Currency,
   StripeCustomerId,
   StripeInvoice,
   StripeInvoiceId,
 } from "@open-source-economy/api-types";
 import * as fs from "fs";
+import { requireCurrency } from "../../../utils/enum-utils";
 
 // Local parsing helper (replaces the old static StripeInvoice.fromStripeApi method)
 function parseStripeInvoiceFromStripeApi(json: any): StripeInvoice | Error {
@@ -18,7 +18,7 @@ function parseStripeInvoiceFromStripeApi(json: any): StripeInvoice | Error {
       : json.customer?.id) as StripeCustomerId,
     paid: json.paid ?? false,
     accountCountry: json.account_country ?? "",
-    currency: (json.currency?.toUpperCase() ?? "USD") as Currency,
+    currency: requireCurrency(json.currency, "test stripe invoice"),
     total: json.total ?? 0,
     totalExclTax: json.total_excluding_tax ?? 0,
     subtotal: json.subtotal ?? 0,

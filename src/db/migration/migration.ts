@@ -30,6 +30,7 @@ export class Migration {
       "18.sql",
       "19.sql",
       "20.sql",
+      "21.sql", // Enum CHECK constraints + normalize uppercase currencies
     ];
 
     const migrations = migrationFiles.map((file) => {
