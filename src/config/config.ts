@@ -24,7 +24,7 @@ const envVarsSchema = Joi.object({
   PORT: Joi.number().required(),
   FRONT_END_URL: Joi.string().required().description("The front end url. Required for CORS and redirecting"),
 
-  SHOW_DEBUG_LOGS: Joi.boolean().default(true).description("Show debug logs"),
+  SHOW_DEBUG_LOGS: Joi.boolean().default(false).description("Show debug logs"),
 
   JWT_SECRET: Joi.string().required().description("JWT secret key"),
   JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
@@ -43,7 +43,7 @@ const envVarsSchema = Joi.object({
   PGPORT: Joi.number().required().description("postgres database port"),
   PGDATABASE: Joi.string().required().description("postgres database"),
   PGPASSWORD: Joi.string().required().description("postgres password"),
-  PGPOOL_MAX_SIZE: Joi.number().description("postgres database pool max size"),
+  PGPOOL_MAX_SIZE: Joi.number().default(10).description("postgres database pool max size"),
   PGPOOL_MIN_SIZE: Joi.number().required().description("postgres database pool min size"),
   PGPOOL_IDLE_TIMEOUT_MILLIS: Joi.number().required().description("postgres: close idle clients after x millis"),
 
@@ -95,7 +95,6 @@ interface Postgres {
   user: string;
   host: string;
   port: number;
-  frontEndPort: number;
   database: string;
   password: string;
   pool: {
@@ -159,7 +158,7 @@ export const config: Config = {
     accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,
     refreshExpirationDays: envVars.JWT_REFRESH_EXPIRATION_DAYS,
     resetPasswordExpirationMinutes: envVars.JWT_RESET_PASSWORD_EXPIRATION_MINUTES,
-  } as Jwt,
+  },
 
   postgres: {
     connectionString: envVars.DATABASE_URL,
@@ -173,7 +172,7 @@ export const config: Config = {
       minSize: envVars.PGPOOL_MIN_SIZE,
       idleTimeoutMillis: envVars.PGPOOL_IDLE_TIMEOUT_MILLIS,
     },
-  } as Postgres,
+  },
 
   github: {
     clientId: envVars.GITHUB_CLIENT_ID,
@@ -185,20 +184,20 @@ export const config: Config = {
       maxRepos: envVars.GITHUB_SYNC_MAX_REPOS,
       chunkSize: envVars.GITHUB_SYNC_CHUNK_SIZE,
     },
-  } as Github,
+  },
 
   stripe: {
     secretKey: envVars.STRIPE_SECRET_KEY,
     webhookSecret: envVars.STRIPE_WEBHOOK_SECRET,
-  } as Stripe,
+  },
 
   email: {
     postmarkApiToken: envVars.POSTMARK_API_TOKEN,
     from: envVars.POSTMARK_SENDER_EMAIL,
     contactRecipient: envVars.CONTACT_RECIPIENT_EMAIL,
-  } as Email,
+  },
 
   encrypt: {
     saltRounds: envVars.SALT_ROUNDS,
-  } as Encrypt,
+  },
 };
