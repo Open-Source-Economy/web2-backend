@@ -29,7 +29,7 @@ import { authRouter } from "./routes/ts-rest/auth.router";
 import { stripeRouter } from "./routes/ts-rest/stripe.router";
 import path from "path";
 
-var cors = require("cors");
+const cors = require("cors");
 
 export function createApp() {
   const app = express();
@@ -52,15 +52,12 @@ export function createApp() {
 
   // Handle unhandled promise rejections from session pruning
   // connect-pg-simple uses async/await internally, so pruning errors become unhandled rejections
-  process.on("unhandledRejection", (reason, promise) => {
+  process.on("unhandledRejection", (reason, _promise) => {
     if (reason && typeof reason === "object" && "code" in reason) {
       const err = reason as { code?: string; message?: string };
       // Connection reset errors are common in serverless environments and can be safely ignored
       if (err.code === "ECONNRESET" || err.code === "EPIPE") {
-        logger.warn(
-          "Unhandled promise rejection from session pruning (connection reset):",
-          err.message,
-        );
+        logger.warn("Unhandled promise rejection from session pruning (connection reset):", err.message);
         return; // Don't log as error, just warn
       }
     }
@@ -117,7 +114,7 @@ export function createApp() {
           "font-src": ["'self'", "https:"], // Allow fonts from the same origin and HTTPS
         },
       },
-    }),
+    })
   );
 
   app.use(helmet.hsts({ maxAge: 31536000 })); // 1 year
@@ -146,7 +143,7 @@ export function createApp() {
         sameSite: config.env === NodeEnv.Production ? "lax" : "none", // TODO: lolo
       },
       store: sessionStore,
-    }),
+    })
   );
 
   app.use(passport.initialize());

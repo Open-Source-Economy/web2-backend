@@ -1,14 +1,7 @@
 import { OwnerRepository } from "../db/github/Owner.repository";
 import { RepositoryRepository } from "../db/github/Repository.repository";
 import { GitHubApi } from "./github.service";
-import {
-  Owner,
-  OwnerId,
-  OwnerType,
-  ProjectItemType,
-  Repository,
-  RepositoryId,
-} from "@open-source-economy/api-types";
+import { Owner, OwnerId, OwnerType, ProjectItemType, Repository, RepositoryId } from "@open-source-economy/api-types";
 
 /**
  * Local alias: a project can be identified by either a RepositoryId or an OwnerId.
@@ -24,15 +17,9 @@ export function getGithubSyncService(
   ownerRepo: OwnerRepository,
   repositoryRepo: RepositoryRepository,
   projectRepo: ProjectRepository,
-  projectItemRepo: ProjectItemRepository,
+  projectItemRepo: ProjectItemRepository
 ): GithubSyncService {
-  return new GithubSyncServiceImpl(
-    githubService,
-    ownerRepo,
-    repositoryRepo,
-    projectRepo,
-    projectItemRepo,
-  );
+  return new GithubSyncServiceImpl(githubService, ownerRepo, repositoryRepo, projectRepo, projectItemRepo);
 }
 
 export interface GithubSyncService {
@@ -113,9 +100,7 @@ export interface GithubSyncService {
    * @throws {Error}
    *   If any repository sync fails (including rate limit errors), the operation stops.
    */
-  syncRepositories(
-    repositoryIds: RepositoryId[],
-  ): Promise<Array<[Owner, Repository]>>;
+  syncRepositories(repositoryIds: RepositoryId[]): Promise<Array<[Owner, Repository]>>;
 
   /**
    * Syncs a project which can be either a repository or an owner-only project.
@@ -159,7 +144,7 @@ export interface GithubSyncService {
     ownerType: OwnerType,
     offset?: number,
     batchSize?: number,
-    fetchDetails?: boolean,
+    fetchDetails?: boolean
   ): Promise<OrganizationSyncResult>;
 }
 
@@ -182,7 +167,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
     private ownerRepo: OwnerRepository,
     private repositoryRepo: RepositoryRepository,
     private projectRepo: ProjectRepository,
-    private projectItemRepo: ProjectItemRepository,
+    private projectItemRepo: ProjectItemRepository
   ) {}
 
   async syncOwner(ownerId: OwnerId): Promise<Owner> {
@@ -207,10 +192,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
         return owner;
       })
       .catch(async (error) => {
-        logger.error(
-          `Owner ${JSON.stringify(ownerId)} does not exist in the DB, trying GitHub:`,
-          error,
-        );
+        logger.error(`Owner ${JSON.stringify(ownerId)} does not exist in the DB, trying GitHub:`, error);
         try {
           return await githubOwnerPromise;
         } catch (githubError) {
@@ -222,9 +204,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
     if (owner) {
       return owner;
     } else {
-      throw new Error(
-        `Failed to fetch owner data for ${JSON.stringify(ownerId)}`,
-      );
+      throw new Error(`Failed to fetch owner data for ${JSON.stringify(ownerId)}`);
     }
   }
 
@@ -242,7 +222,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
     }
 
     logger.info(
-      `Starting bulk sync of ${ownerIds.length} owners via GraphQL (${chunks.length} request${chunks.length > 1 ? "s" : ""})`,
+      `Starting bulk sync of ${ownerIds.length} owners via GraphQL (${chunks.length} request${chunks.length > 1 ? "s" : ""})`
     );
 
     const allOwners: Owner[] = [];
@@ -251,9 +231,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
       // Process each chunk
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
         const chunk = chunks[chunkIndex];
-        logger.debug(
-          `Processing chunk ${chunkIndex + 1}/${chunks.length} (${chunk.length} owners)`,
-        );
+        logger.debug(`Processing chunk ${chunkIndex + 1}/${chunks.length} (${chunk.length} owners)`);
 
         // Fetch owners in this chunk via GraphQL
         const owners = await this.githubService.getOwnersBulk(chunk);
@@ -269,18 +247,14 @@ class GithubSyncServiceImpl implements GithubSyncService {
 
       return allOwners;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to sync owners: ${errorMessage}`);
       throw new Error(`Failed to sync owners: ${errorMessage}`);
     }
   }
 
-  async syncRepository(
-    repositoryId: RepositoryId,
-  ): Promise<[Owner, Repository]> {
-    const githubRepoPromise: Promise<[Owner, Repository]> =
-      this.githubService.getOwnerAndRepository(repositoryId);
+  async syncRepository(repositoryId: RepositoryId): Promise<[Owner, Repository]> {
+    const githubRepoPromise: Promise<[Owner, Repository]> = this.githubService.getOwnerAndRepository(repositoryId);
 
     // Start the GitHub fetch and DB upsert in parallel
     githubRepoPromise
@@ -307,10 +281,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
         return owner;
       })
       .catch(async (error) => {
-        logger.error(
-          `Owner ${JSON.stringify(repositoryId.ownerId)} does not exist in the DB, trying GitHub:`,
-          error,
-        );
+        logger.error(`Owner ${JSON.stringify(repositoryId.ownerId)} does not exist in the DB, trying GitHub:`, error);
         try {
           const [fetchedOwner, _] = await githubRepoPromise;
           return fetchedOwner;
@@ -331,10 +302,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
         return repo;
       })
       .catch(async (error) => {
-        logger.error(
-          `Repository ${JSON.stringify(repositoryId)} does not exist in the DB, trying GitHub:`,
-          error,
-        );
+        logger.error(`Repository ${JSON.stringify(repositoryId)} does not exist in the DB, trying GitHub:`, error);
         try {
           const [_, fetchedRepo] = await githubRepoPromise;
           return fetchedRepo;
@@ -347,15 +315,11 @@ class GithubSyncServiceImpl implements GithubSyncService {
     if (owner && repo) {
       return [owner, repo];
     } else {
-      throw new Error(
-        `Failed to fetch all required data for repository ${JSON.stringify(repositoryId)}`,
-      );
+      throw new Error(`Failed to fetch all required data for repository ${JSON.stringify(repositoryId)}`);
     }
   }
 
-  async syncRepositories(
-    repositoryIds: RepositoryId[],
-  ): Promise<Array<[Owner, Repository]>> {
+  async syncRepositories(repositoryIds: RepositoryId[]): Promise<Array<[Owner, Repository]>> {
     if (repositoryIds.length === 0) {
       return [];
     }
@@ -369,7 +333,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
     }
 
     logger.info(
-      `Starting bulk sync of ${repositoryIds.length} repositories via GraphQL (${chunks.length} request${chunks.length > 1 ? "s" : ""})`,
+      `Starting bulk sync of ${repositoryIds.length} repositories via GraphQL (${chunks.length} request${chunks.length > 1 ? "s" : ""})`
     );
 
     const allResults: Array<[Owner, Repository]> = [];
@@ -379,13 +343,10 @@ class GithubSyncServiceImpl implements GithubSyncService {
       // Process each chunk
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
         const chunk = chunks[chunkIndex];
-        logger.debug(
-          `Processing chunk ${chunkIndex + 1}/${chunks.length} (${chunk.length} repositories)`,
-        );
+        logger.debug(`Processing chunk ${chunkIndex + 1}/${chunks.length} (${chunk.length} repositories)`);
 
         // Fetch repositories in this chunk via GraphQL
-        const ownersAndRepos =
-          await this.githubService.getRepositoriesBulk(chunk);
+        const ownersAndRepos = await this.githubService.getRepositoriesBulk(chunk);
 
         // Store all owners and repositories in the database
         for (const [owner, repo] of ownersAndRepos) {
@@ -401,14 +362,11 @@ class GithubSyncServiceImpl implements GithubSyncService {
         }
       }
 
-      logger.info(
-        `Successfully synced all ${allResults.length} repositories via GraphQL`,
-      );
+      logger.info(`Successfully synced all ${allResults.length} repositories via GraphQL`);
 
       return allResults;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to sync repositories via GraphQL: ${errorMessage}`);
       throw new Error(`Failed to sync repositories: ${errorMessage}`);
     }
@@ -417,9 +375,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
   async syncProject(projectId: ProjectId): Promise<[Owner, Repository | null]> {
     // Discriminate: RepositoryId has a `name` property, OwnerId does not.
     if ("name" in projectId && "ownerId" in projectId) {
-      const [owner, repo] = await this.syncRepository(
-        projectId as RepositoryId,
-      );
+      const [owner, repo] = await this.syncRepository(projectId as RepositoryId);
       return [owner, repo];
     } else {
       const owner = await this.syncOwner(projectId as OwnerId);
@@ -453,9 +409,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
           // sourceIdentifier is stored as "owner/repo" string; parse into RepositoryId
           const parts = projectItem.sourceIdentifier.split("/");
           if (parts.length < 2) {
-            logger.warn(
-              `Invalid repository sourceIdentifier format: ${projectItem.sourceIdentifier}`,
-            );
+            logger.warn(`Invalid repository sourceIdentifier format: ${projectItem.sourceIdentifier}`);
             continue;
           }
           const repositoryId: RepositoryId = {
@@ -478,9 +432,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
           } else {
             logger.debug(`Skipping already synced repository: ${repoKey}`);
           }
-        } else if (
-          projectItem.projectItemType === ProjectItemType.GITHUB_OWNER
-        ) {
+        } else if (projectItem.projectItemType === ProjectItemType.GITHUB_OWNER) {
           // sourceIdentifier is stored as the owner login string
           const ownerId: OwnerId = { login: projectItem.sourceIdentifier };
           const ownerKey = ownerId.login;
@@ -506,9 +458,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
       }
     }
 
-    logger.info(
-      `Sync completed: ${syncedOwners} owners, ${syncedRepositories} repositories, ${errors} errors`,
-    );
+    logger.info(`Sync completed: ${syncedOwners} owners, ${syncedRepositories} repositories, ${errors} errors`);
 
     return {
       syncedOwners,
@@ -522,12 +472,11 @@ class GithubSyncServiceImpl implements GithubSyncService {
     ownerType: OwnerType,
     offset: number = 0,
     batchSize?: number,
-    fetchDetails: boolean = false,
+    fetchDetails: boolean = false
   ): Promise<OrganizationSyncResult> {
-    const ownerTypeLabel =
-      ownerType === OwnerType.Organization ? "organization" : "user";
+    const ownerTypeLabel = ownerType === OwnerType.Organization ? "organization" : "user";
     logger.info(
-      `Starting sync of repositories for ${ownerTypeLabel}: ${ownerId.login} (offset: ${offset}, batchSize: ${batchSize || "default"}, fetchDetails: ${fetchDetails})`,
+      `Starting sync of repositories for ${ownerTypeLabel}: ${ownerId.login} (offset: ${offset}, batchSize: ${batchSize || "default"}, fetchDetails: ${fetchDetails})`
     );
 
     try {
@@ -538,33 +487,23 @@ class GithubSyncServiceImpl implements GithubSyncService {
           ? await this.githubService.listAllOrganizationRepositories(ownerId)
           : await this.githubService.listAllUserRepositories(ownerId);
 
-      logger.info(
-        `Total repositories available for ${ownerTypeLabel} ${ownerId.login}: ${repositories.length}`,
-      );
+      logger.info(`Total repositories available for ${ownerTypeLabel} ${ownerId.login}: ${repositories.length}`);
 
       // Process batch based on sync mode
       let batchResult;
 
       if (fetchDetails) {
         // Detailed sync: fetch individual repo details via API (slower but complete)
-        logger.info(
-          `Using detailed sync mode (fetching individual repo details from GitHub API)`,
-        );
+        logger.info(`Using detailed sync mode (fetching individual repo details from GitHub API)`);
 
-        const rateLimiter = new RateLimiter(
-          config.github.sync.rateLimitDelayMs,
-        );
+        const rateLimiter = new RateLimiter(config.github.sync.rateLimitDelayMs);
 
         batchResult = await Batcher.processBatch(
           repositories,
           async (repo, index) => {
-            logger.debug(
-              `Syncing repository ${index + 1}: ${repo.id.ownerId.login}/${repo.id.name}`,
-            );
+            logger.debug(`Syncing repository ${index + 1}: ${repo.id.ownerId.login}/${repo.id.name}`);
             const [, syncedRepo] = await this.syncRepository(repo.id);
-            logger.debug(
-              `Successfully synced repository: ${repo.id.ownerId.login}/${repo.id.name}`,
-            );
+            logger.debug(`Successfully synced repository: ${repo.id.ownerId.login}/${repo.id.name}`);
             return syncedRepo;
           },
           {
@@ -573,13 +512,11 @@ class GithubSyncServiceImpl implements GithubSyncService {
             maxBatchSize: config.github.sync.maxRepos,
             rateLimiter, // Rate limiting for detailed API calls
           },
-          `for organization ${ownerId.login}`,
+          `for organization ${ownerId.login}`
         );
       } else {
         // Fast sync: directly upsert repositories using bulk data (no additional API calls)
-        logger.info(
-          `Using fast sync mode (upserting repositories from bulk data)`,
-        );
+        logger.info(`Using fast sync mode (upserting repositories from bulk data)`);
 
         batchResult = await Batcher.processBatch(
           repositories,
@@ -589,16 +526,12 @@ class GithubSyncServiceImpl implements GithubSyncService {
             if (!owner) {
               // Owner doesn't exist, try to sync it
               await this.syncOwner(repo.id.ownerId);
-              logger.debug(
-                `Successfully synced owner for repository: ${repo.id.ownerId.login}`,
-              );
+              logger.debug(`Successfully synced owner for repository: ${repo.id.ownerId.login}`);
             }
 
             // Upsert repository directly from the data we already have
             await this.repositoryRepo.insertOrUpdate(repo);
-            logger.debug(
-              `Successfully upserted repository: ${repo.id.ownerId.login}/${repo.id.name}`,
-            );
+            logger.debug(`Successfully upserted repository: ${repo.id.ownerId.login}/${repo.id.name}`);
             return repo;
           },
           {
@@ -607,7 +540,7 @@ class GithubSyncServiceImpl implements GithubSyncService {
             maxBatchSize: config.github.sync.maxRepos,
             // No rate limiter for fast mode (no API calls needed)
           },
-          `for organization ${ownerId.login}`,
+          `for organization ${ownerId.login}`
         );
       }
 
@@ -627,12 +560,9 @@ class GithubSyncServiceImpl implements GithubSyncService {
         },
       };
     } catch (error) {
-      logger.error(
-        `Error fetching repositories for organization ${ownerId.login}:`,
-        error,
-      );
+      logger.error(`Error fetching repositories for organization ${ownerId.login}:`, error);
       throw new Error(
-        `Failed to fetch repositories for organization ${ownerId.login}: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to fetch repositories for organization ${ownerId.login}: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }

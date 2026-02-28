@@ -13,7 +13,7 @@ export interface MiscellaneousController {
       dto.SubscribeNewsletterBody,
       dto.SubscribeNewsletterQuery
     >,
-    res: Response<dto.SubscribeNewsletterResponse>,
+    res: Response<dto.SubscribeNewsletterResponse>
   ): Promise<void>;
 
   submitContactForm(
@@ -23,7 +23,7 @@ export interface MiscellaneousController {
       dto.SubmitContactFormBody,
       dto.SubmitContactFormQuery
     >,
-    res: Response<dto.SubmitContactFormResponse>,
+    res: Response<dto.SubmitContactFormResponse>
   ): Promise<void>;
 }
 
@@ -35,11 +35,9 @@ export const MiscellaneousController: MiscellaneousController = {
       dto.SubscribeNewsletterBody,
       dto.SubscribeNewsletterQuery
     >,
-    res: Response<dto.SubscribeNewsletterResponse>,
+    res: Response<dto.SubscribeNewsletterResponse>
   ) {
-    const existingSubscription = await newsletterSubscriptionRepo.getByEmail(
-      req.body.email,
-    );
+    const existingSubscription = await newsletterSubscriptionRepo.getByEmail(req.body.email);
 
     if (existingSubscription) {
       const response: dto.SubscribeNewsletterResponse = {};
@@ -50,7 +48,7 @@ export const MiscellaneousController: MiscellaneousController = {
 
       mailService.sendWebsiteAdminNotification(
         "New newsletter subscription",
-        `${req.body.email} just subscribed to the newsletter`,
+        `${req.body.email} just subscribed to the newsletter`
       );
 
       const response: dto.SubscribeNewsletterResponse = {};
@@ -65,7 +63,7 @@ export const MiscellaneousController: MiscellaneousController = {
       dto.SubmitContactFormBody,
       dto.SubmitContactFormQuery
     >,
-    res: Response<dto.SubmitContactFormResponse>,
+    res: Response<dto.SubmitContactFormResponse>
   ) {
     try {
       // Send email with all the contact form data

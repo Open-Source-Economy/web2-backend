@@ -1,10 +1,5 @@
 import { Pool, QueryResult } from "pg";
-import {
-  IssueFunding,
-  IssueFundingId,
-  IssueId,
-  UserId,
-} from "@open-source-economy/api-types";
+import { IssueFunding, IssueFundingId, IssueId, UserId } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { logger } from "../config";
 import { IssueFundingCompanion } from "./helpers/companions";
@@ -102,7 +97,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
           issueFunding.githubIssueId.number,
           issueFunding.userId,
           issueFunding.creditAmount,
-        ],
+        ]
       );
 
       return this.getOneIssueFunding(result.rows);
@@ -118,7 +113,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
                 FROM issue_funding
                 WHERE id = $1
             `,
-      [id],
+      [id]
     );
 
     return this.getOptionalIssueFunding(result.rows);
@@ -134,11 +129,7 @@ class IssueFundingRepositoryImpl implements IssueFundingRepository {
                 FROM issue_funding
                 WHERE github_owner_login = $1 AND github_repository_name = $2 AND github_issue_number = $3
             `,
-        [
-          issueId.repositoryId.ownerId.login,
-          issueId.repositoryId.name,
-          issueId.number,
-        ],
+        [issueId.repositoryId.ownerId.login, issueId.repositoryId.name, issueId.number]
       );
     } else {
       result = await this.pool.query(`

@@ -1,11 +1,4 @@
-import {
-  Currency,
-  PlanProductType,
-  ProductType,
-  StripeProduct,
-  StripeProductId,
-} from "@open-source-economy/api-types";
-import { StatusCodes } from "http-status-codes";
+import { Currency, PlanProductType, ProductType, StripeProduct, StripeProductId } from "@open-source-economy/api-types";
 import { stripeProductRepo } from "../../db";
 import { stripe, StripeHelper } from "../stripe";
 import Stripe from "stripe";
@@ -32,7 +25,7 @@ const PlanHelpers = {
     }
   },
 
-  productDescription(productType: PlanProductType): string {
+  productDescription(_productType: PlanProductType): string {
     return "Access expert support. Fund critical dependencies.";
   },
 
@@ -91,8 +84,7 @@ const PlanHelpers = {
     for (const currency of Object.values(Currency)) {
       // Calculate: monthly price * 12 months * 0.8 (20% off)
       // Price per month should be rounded to whole currency unit (divide by 100, round, multiply by 100)
-      const monthlyPrice =
-        Math.round((monthlyPrices[currency] * 0.8) / 100) * 100;
+      const monthlyPrice = Math.round((monthlyPrices[currency] * 0.8) / 100) * 100;
       result[currency] = monthlyPrice * 12;
     }
 
@@ -109,7 +101,7 @@ const PlanHelpers = {
     productType: PlanProductType,
     params: Stripe.ProductCreateParams,
     monthlyCentsPrices: Record<Currency, number>,
-    yearlyCentsPrices: Record<Currency, number>,
+    yearlyCentsPrices: Record<Currency, number>
   ): Promise<void> {
     const product: Stripe.Product = await stripe.products.create(params);
 
@@ -123,21 +115,13 @@ const PlanHelpers = {
     const monthlyOptions: Stripe.PriceCreateParams.Recurring = {
       interval: "month",
     };
-    await StripeHelper.createAndStoreStripePrices(
-      product,
-      monthlyCentsPrices,
-      monthlyOptions,
-    );
+    await StripeHelper.createAndStoreStripePrices(product, monthlyCentsPrices, monthlyOptions);
 
     // --- yearly price ---
     const yearlyOptions: Stripe.PriceCreateParams.Recurring = {
       interval: "year",
     };
-    await StripeHelper.createAndStoreStripePrices(
-      product,
-      yearlyCentsPrices,
-      yearlyOptions,
-    );
+    await StripeHelper.createAndStoreStripePrices(product, yearlyCentsPrices, yearlyOptions);
   },
 };
 
@@ -145,9 +129,7 @@ export const PlanHelper: PlanHelper = {
   async createProductsAndPrices() {
     const images: string[] | undefined = undefined;
 
-    for (const productType of Object.values(
-      PlanProductType,
-    ) as PlanProductType[]) {
+    for (const productType of Object.values(PlanProductType) as PlanProductType[]) {
       const productParams: Stripe.ProductCreateParams = {
         name: PlanHelpers.productName(productType),
         type: "service",
@@ -160,7 +142,7 @@ export const PlanHelper: PlanHelper = {
         productType,
         productParams,
         PlanHelpers.monthly$CentsPrices(productType),
-        PlanHelpers.yearly$CentsPrices(productType),
+        PlanHelpers.yearly$CentsPrices(productType)
       );
     }
   },

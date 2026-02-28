@@ -78,7 +78,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
       FROM company
       WHERE id = $1
       `,
-      [id],
+      [id]
     );
 
     return this.getOptionalCompany(result.rows);
@@ -95,7 +95,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
       VALUES ($1, $2, $3)
       RETURNING *
       `,
-        [company.taxId, company.name, company.addressId ?? null],
+        [company.taxId, company.name, company.addressId ?? null]
       );
 
       return this.getOneCompany(result.rows);
@@ -118,7 +118,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
         WHERE id = $4
         RETURNING *
         `,
-        [company.taxId, company.name, company.addressId ?? null, company.id],
+        [company.taxId, company.name, company.addressId ?? null, company.id]
       );
 
       return this.getOneCompany(result.rows);

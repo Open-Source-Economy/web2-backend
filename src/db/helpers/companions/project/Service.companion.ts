@@ -1,19 +1,11 @@
-import {
-  ISODateTimeString,
-  Service,
-  ServiceId,
-  ServiceType,
-} from "@open-source-economy/api-types";
+import { ISODateTimeString, Service, ServiceId, ServiceType } from "@open-source-economy/api-types";
 import { ValidationError, Validator } from "../Validator";
 
 export namespace ServiceCompanion {
   export function fromBackend(row: any): Service | ValidationError {
     const validator = new Validator(row);
     const id = validator.requiredString("id");
-    const serviceType = validator.requiredEnum(
-      "service_type",
-      Object.values(ServiceType) as ServiceType[],
-    );
+    const serviceType = validator.requiredEnum("service_type", Object.values(ServiceType) as ServiceType[]);
     const name = validator.requiredString("name");
     const description = validator.optionalString("description");
     const isCustom = validator.requiredBoolean("is_custom");

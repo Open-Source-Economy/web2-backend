@@ -34,7 +34,10 @@ Typed methods for each endpoint. Handles authentication headers, response valida
 ```typescript
 // src/services/github.client.ts
 export class GitHubApiClient {
-  constructor(private http: HttpClient, private token: string) {}
+  constructor(
+    private http: HttpClient,
+    private token: string
+  ) {}
 
   async getRepository(owner: string, repo: string): Promise<GitHubRepository> {
     return this.http.get(`/repos/${owner}/${repo}`, {
@@ -51,7 +54,10 @@ Orchestrates API client calls, transforms data to domain models, handles busines
 ```typescript
 // src/services/github.service.ts
 export class GitHubService {
-  constructor(private client: GitHubApiClient, private repo: RepositoryRepository) {}
+  constructor(
+    private client: GitHubApiClient,
+    private repo: RepositoryRepository
+  ) {}
 
   async syncRepository(owner: string, repoName: string): Promise<Repository> {
     const ghRepo = await this.client.getRepository(owner, repoName);
@@ -70,13 +76,13 @@ export class GitHubService {
 handler: async ({ params }) => {
   const response = await fetch(`https://api.github.com/repos/${params.owner}/${params.repo}`);
   // ...
-}
+};
 
 // CORRECT — call through service → client → http
 handler: async ({ params }) => {
   const repo = await githubService.syncRepository(params.owner, params.repo);
   return { status: 200 as const, body: { repository: repo } };
-}
+};
 ```
 
 ### Typed Response Validation
@@ -125,14 +131,20 @@ export class HttpClientError extends Error {
   constructor(
     public readonly serviceName: string,
     public readonly status: number,
-    public readonly url: string,
+    public readonly url: string
   ) {
     super(`${serviceName} request failed: ${status} ${url}`);
     this.name = "HttpClientError";
   }
 
-  isAuthError(): boolean { return this.status === 401 || this.status === 403; }
-  isNotFound(): boolean { return this.status === 404; }
-  isServerError(): boolean { return this.status >= 500; }
+  isAuthError(): boolean {
+    return this.status === 401 || this.status === 403;
+  }
+  isNotFound(): boolean {
+    return this.status === 404;
+  }
+  isServerError(): boolean {
+    return this.status >= 500;
+  }
 }
 ```

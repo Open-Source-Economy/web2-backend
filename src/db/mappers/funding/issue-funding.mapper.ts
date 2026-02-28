@@ -1,14 +1,7 @@
-import type {
-  IssueFunding,
-  IssueFundingId,
-  UserId,
-} from "@open-source-economy/api-types";
+import type { IssueFunding, IssueFundingId, UserId } from "@open-source-economy/api-types";
 import { mapIssueIdFromForeignKey } from "../github/issue.mapper";
 
-export function mapIssueFundingFromRow(
-  row: Record<string, any>,
-  prefix = "",
-): IssueFunding {
+export function mapIssueFundingFromRow(row: Record<string, any>, prefix = ""): IssueFunding {
   const id = row[`${prefix}id`];
   if (!id) throw new Error(`Missing ${prefix}id`);
 

@@ -1,13 +1,7 @@
 import { setupTestDB } from "../__helpers__/jest.setup";
 import { UserId } from "@open-source-economy/api-types";
 import { Fixture } from "../__helpers__/Fixture";
-import {
-  issueFundingRepo,
-  issueRepo,
-  ownerRepo,
-  repositoryRepo,
-  userRepo,
-} from "../../db";
+import { issueFundingRepo, issueRepo, ownerRepo, repositoryRepo, userRepo } from "../../db";
 import { CreateIssueFundingBody } from "../../db/IssueFunding.repository";
 
 describe("IssueFundingRepository", () => {
@@ -15,9 +9,7 @@ describe("IssueFundingRepository", () => {
   let validUserId: UserId;
 
   beforeEach(async () => {
-    const validUser = await userRepo.insert(
-      Fixture.createUser(Fixture.localUser()),
-    );
+    const validUser = await userRepo.insert(Fixture.createUser(Fixture.localUser()));
     validUserId = validUser.id;
   });
 
@@ -42,9 +34,7 @@ describe("IssueFundingRepository", () => {
       expect(true).toEqual(true);
       const created = await issueFundingRepo.create(issueFundingBody);
 
-      expect(created).toEqual(
-        Fixture.issueFundingFromBody(created.id, issueFundingBody),
-      );
+      expect(created).toEqual(Fixture.issueFundingFromBody(created.id, issueFundingBody));
 
       const found = await issueFundingRepo.getById(created.id);
       expect(found).toEqual(created);
@@ -100,12 +90,8 @@ describe("IssueFundingRepository", () => {
       const allIssueFundings = await issueFundingRepo.getAll();
 
       expect(allIssueFundings).toHaveLength(2);
-      expect(allIssueFundings).toContainEqual(
-        Fixture.issueFundingFromBody(issueFunding1.id, issueFundingBody1),
-      );
-      expect(allIssueFundings).toContainEqual(
-        Fixture.issueFundingFromBody(issueFunding2.id, issueFundingBody2),
-      );
+      expect(allIssueFundings).toContainEqual(Fixture.issueFundingFromBody(issueFunding1.id, issueFundingBody1));
+      expect(allIssueFundings).toContainEqual(Fixture.issueFundingFromBody(issueFunding2.id, issueFundingBody2));
     });
   });
 });

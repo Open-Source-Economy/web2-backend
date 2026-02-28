@@ -1,10 +1,7 @@
 import { Pool } from "pg";
 import { StripeCustomerId, UserId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
-import {
-  StripeCustomerUser,
-  StripeCustomerUserCompanion,
-} from "../helpers/companions";
+import { StripeCustomerUser, StripeCustomerUserCompanion } from "../helpers/companions";
 
 export function getStripeCustomerUserRepository(): StripeCustomerUserRepository {
   return new StripeCustomerUserRepositoryImpl(pool);
@@ -66,16 +63,14 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
     return this.getCustomerList(result.rows);
   }
 
-  async getByStripeId(
-    id: StripeCustomerId,
-  ): Promise<StripeCustomerUser | null> {
+  async getByStripeId(id: StripeCustomerId): Promise<StripeCustomerUser | null> {
     const result = await this.pool.query(
       `
         SELECT *
         FROM stripe_customer_user
         WHERE stripe_customer_id = $1
       `,
-      [id],
+      [id]
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -88,7 +83,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
         FROM stripe_customer_user
         WHERE user_id = $1
       `,
-      [id],
+      [id]
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -106,7 +101,7 @@ class StripeCustomerUserRepositoryImpl implements StripeCustomerUserRepository {
           VALUES ($1, $2)
           RETURNING *
         `,
-        [customer.stripeCustomerId, customer.userId],
+        [customer.stripeCustomerId, customer.userId]
       );
 
       await client.query("COMMIT");

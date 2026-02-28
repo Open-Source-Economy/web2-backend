@@ -29,7 +29,7 @@ export interface DeveloperProjectItemRepository {
     comment?: string,
     customCategories?: string[],
     predefinedCategories?: ProjectCategory[],
-    client?: PoolClient,
+    client?: PoolClient
   ): Promise<DeveloperProjectItem>;
 
   /**
@@ -43,22 +43,18 @@ export interface DeveloperProjectItemRepository {
     comment?: string,
     customCategories?: string[],
     predefinedCategories?: ProjectCategory[],
-    client?: PoolClient,
+    client?: PoolClient
   ): Promise<DeveloperProjectItem>;
 
   /**
    * Finds all DeveloperProjectItems associated with a specific developer profile.
    */
-  findByProfileId(
-    developerProfileId: DeveloperProfileId,
-  ): Promise<DeveloperProjectItem[]>;
+  findByProfileId(developerProfileId: DeveloperProfileId): Promise<DeveloperProjectItem[]>;
 
   /**
    * Finds all DeveloperProjectItems associated with a specific project item.
    */
-  findByProjectItemId(
-    projectItemId: ProjectItemId,
-  ): Promise<DeveloperProjectItem[]>;
+  findByProjectItemId(projectItemId: ProjectItemId): Promise<DeveloperProjectItem[]>;
 
   /**
    * Finds a specific DeveloperProjectItem by developer profile ID and project item ID.
@@ -67,7 +63,7 @@ export interface DeveloperProjectItemRepository {
   findByProfileAndProjectItem(
     developerProfileId: DeveloperProfileId,
     projectItemId: ProjectItemId,
-    client?: PoolClient,
+    client?: PoolClient
   ): Promise<DeveloperProjectItem | null>;
 
   /**
@@ -83,10 +79,7 @@ export interface DeveloperProjectItemRepository {
   /**
    * Deletes a DeveloperProjectItem by its developer profile ID and project item ID.
    */
-  deleteByProfileAndProjectItemId(
-    developerProfileId: DeveloperProfileId,
-    projectItemId: ProjectItemId,
-  ): Promise<void>;
+  deleteByProfileAndProjectItemId(developerProfileId: DeveloperProfileId, projectItemId: ProjectItemId): Promise<void>;
 }
 
 class DeveloperProjectItemRepositoryImpl
@@ -121,7 +114,7 @@ class DeveloperProjectItemRepositoryImpl
     comment?: string,
     customCategories?: string[],
     predefinedCategories?: ProjectCategory[],
-    client?: PoolClient,
+    client?: PoolClient
   ): Promise<DeveloperProjectItem> {
     const query = `
       INSERT INTO developer_project_items (
@@ -158,7 +151,7 @@ class DeveloperProjectItemRepositoryImpl
     comment?: string,
     customCategories?: string[],
     predefinedCategories?: ProjectCategory[],
-    client?: PoolClient,
+    client?: PoolClient
   ): Promise<DeveloperProjectItem> {
     const query = `
       UPDATE developer_project_items
@@ -173,14 +166,7 @@ class DeveloperProjectItemRepositoryImpl
       RETURNING ${DeveloperProjectItemRepositoryImpl.SELECT_COLUMNS}
     `;
 
-    const values = [
-      id,
-      mergeRights,
-      roles,
-      comment ?? null,
-      customCategories ?? null,
-      predefinedCategories ?? null,
-    ];
+    const values = [id, mergeRights, roles, comment ?? null, customCategories ?? null, predefinedCategories ?? null];
 
     const queryClient = client || this.pool;
     const result = await queryClient.query(query, values);
@@ -190,9 +176,7 @@ class DeveloperProjectItemRepositoryImpl
     return this.getOne(result.rows);
   }
 
-  async findByProfileId(
-    developerProfileId: DeveloperProfileId,
-  ): Promise<DeveloperProjectItem[]> {
+  async findByProfileId(developerProfileId: DeveloperProfileId): Promise<DeveloperProjectItem[]> {
     const query = `
       SELECT ${DeveloperProjectItemRepositoryImpl.SELECT_COLUMNS}
       FROM developer_project_items
@@ -203,9 +187,7 @@ class DeveloperProjectItemRepositoryImpl
     return this.getList(result.rows);
   }
 
-  async findByProjectItemId(
-    projectItemId: ProjectItemId,
-  ): Promise<DeveloperProjectItem[]> {
+  async findByProjectItemId(projectItemId: ProjectItemId): Promise<DeveloperProjectItem[]> {
     const query = `
       SELECT ${DeveloperProjectItemRepositoryImpl.SELECT_COLUMNS}
       FROM developer_project_items
@@ -219,7 +201,7 @@ class DeveloperProjectItemRepositoryImpl
   async findByProfileAndProjectItem(
     developerProfileId: DeveloperProfileId,
     projectItemId: ProjectItemId,
-    client?: PoolClient,
+    client?: PoolClient
   ): Promise<DeveloperProjectItem | null> {
     const query = `
       SELECT ${DeveloperProjectItemRepositoryImpl.SELECT_COLUMNS}
@@ -227,10 +209,7 @@ class DeveloperProjectItemRepositoryImpl
       WHERE developer_profile_id = $1 AND project_item_id = $2
     `;
     const queryClient = client || this.pool;
-    const result = await queryClient.query(query, [
-      developerProfileId,
-      projectItemId,
-    ]);
+    const result = await queryClient.query(query, [developerProfileId, projectItemId]);
     return this.getOptional(result.rows);
   }
 
@@ -246,20 +225,17 @@ class DeveloperProjectItemRepositoryImpl
 
   async deleteByProfileAndProjectItemId(
     developerProfileId: DeveloperProfileId,
-    projectItemId: ProjectItemId,
+    projectItemId: ProjectItemId
   ): Promise<void> {
     const query = `
     DELETE FROM developer_project_items
     WHERE developer_profile_id = $1 AND project_item_id = $2
   `;
-    const result = await this.pool.query(query, [
-      developerProfileId,
-      projectItemId,
-    ]);
+    const result = await this.pool.query(query, [developerProfileId, projectItemId]);
 
     if (result.rowCount === 0) {
       throw new Error(
-        `DeveloperProjectItem not found for developerProfileId=${developerProfileId} and projectItemId=${projectItemId}`,
+        `DeveloperProjectItem not found for developerProfileId=${developerProfileId} and projectItemId=${projectItemId}`
       );
     }
   }

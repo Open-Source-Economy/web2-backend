@@ -1,9 +1,6 @@
 import { Pool } from "pg";
 import { pool } from "../dbPool";
-import {
-  NewsletterSubscription,
-  NewsletterSubscriptionCompanion,
-} from "./helpers/companions";
+import { NewsletterSubscription, NewsletterSubscriptionCompanion } from "./helpers/companions";
 
 export function getNewsletterSubscriptionRepository(): NewsletterSubscriptionRepository {
   return new NewsletterSubscriptionRepositoryImpl(pool);
@@ -16,9 +13,7 @@ export interface NewsletterSubscriptionRepository {
   delete(email: string): Promise<void>;
 }
 
-class NewsletterSubscriptionRepositoryImpl
-  implements NewsletterSubscriptionRepository
-{
+class NewsletterSubscriptionRepositoryImpl implements NewsletterSubscriptionRepository {
   pool: Pool;
 
   constructor(pool: Pool) {
@@ -57,9 +52,7 @@ class NewsletterSubscriptionRepositoryImpl
     });
   }
 
-  async create(
-    subscription: NewsletterSubscription,
-  ): Promise<NewsletterSubscription> {
+  async create(subscription: NewsletterSubscription): Promise<NewsletterSubscription> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
@@ -68,7 +61,7 @@ class NewsletterSubscriptionRepositoryImpl
           VALUES ($1)
           RETURNING email, created_at, updated_at
         `,
-        [subscription.email],
+        [subscription.email]
       );
 
       return this.getOneSubscription(result.rows);
@@ -84,7 +77,7 @@ class NewsletterSubscriptionRepositoryImpl
         FROM newsletter_subscription
         WHERE email = $1
       `,
-      [email],
+      [email]
     );
 
     return this.getOptionalSubscription(result.rows);
@@ -107,7 +100,7 @@ class NewsletterSubscriptionRepositoryImpl
           DELETE FROM newsletter_subscription
           WHERE email = $1
         `,
-        [email],
+        [email]
       );
     } finally {
       client.release();

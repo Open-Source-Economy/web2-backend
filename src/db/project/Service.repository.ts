@@ -1,10 +1,5 @@
 import { Pool } from "pg";
-import {
-  Service,
-  ServiceHierarchyItem,
-  ServiceId,
-  ServiceType,
-} from "@open-source-economy/api-types";
+import { Service, ServiceHierarchyItem, ServiceId, ServiceType } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 import { BaseRepository } from "../helpers";
@@ -20,7 +15,7 @@ export interface ServiceRepository {
     name: string,
     description: string,
     isCustom: boolean,
-    hasResponseTime: boolean,
+    hasResponseTime: boolean
   ): Promise<Service>;
 
   findAll(): Promise<Service[]>;
@@ -43,10 +38,7 @@ export interface ServiceRepository {
   delete(id: ServiceId): Promise<void>;
 }
 
-class ServicesRepositoryImpl
-  extends BaseRepository<Service>
-  implements ServiceRepository
-{
+class ServicesRepositoryImpl extends BaseRepository<Service> implements ServiceRepository {
   constructor(dbPool: Pool) {
     super(dbPool, ServiceCompanion);
   }
@@ -56,7 +48,7 @@ class ServicesRepositoryImpl
     name: string,
     description: string,
     isCustom: boolean,
-    hasResponseTime: boolean,
+    hasResponseTime: boolean
   ): Promise<Service> {
     const query = `
       INSERT INTO services (
@@ -133,7 +125,7 @@ class ServicesRepositoryImpl
         acc[category].push(service);
         return acc;
       },
-      {} as Record<ServiceType, Service[]>,
+      {} as Record<ServiceType, Service[]>
     );
 
     return Object.entries(groupedServices).map(([category, services]) => ({

@@ -33,36 +33,31 @@ export class DeveloperProfileService {
    */
   async buildFullDeveloperProfile(
     developerProfile: dto.DeveloperProfile,
-    user?: dto.User,
+    user?: dto.User
   ): Promise<dto.FullDeveloperProfile> {
     if (!user) {
-      user =
-        (await this.userRepo.getById(developerProfile.userId)) || undefined;
+      user = (await this.userRepo.getById(developerProfile.userId)) || undefined;
     }
 
     if (!user) {
       throw new Error(
-        `User not found for developer profile. UserId: ${developerProfile.userId}, ProfileId: ${developerProfile.id}`,
+        `User not found for developer profile. UserId: ${developerProfile.userId}, ProfileId: ${developerProfile.id}`
       );
     }
 
-    const settings = await this.developerSettingsRepo.findByProfileId(
-      developerProfile.id,
-    );
+    const settings = await this.developerSettingsRepo.findByProfileId(developerProfile.id);
 
-    const developerProjectItems =
-      await this.developerProjectItemRepo.findByProfileId(developerProfile.id);
+    const developerProjectItems = await this.developerProjectItemRepo.findByProfileId(developerProfile.id);
 
     const projects: dto.DeveloperProjectItemEntry[] = [];
     for (const dpi of developerProjectItems) {
       const projectItem = await this.projectItemRepo.getById(dpi.projectItemId);
       if (projectItem) {
         // Fetch verification records for this project item
-        const projectVerificationRecords =
-          await this.verificationRecordRepo.findAllByEntity(
-            dto.VerificationEntityType.DEVELOPER_PROJECT_ITEM,
-            dpi.id,
-          );
+        const projectVerificationRecords = await this.verificationRecordRepo.findAllByEntity(
+          dto.VerificationEntityType.DEVELOPER_PROJECT_ITEM,
+          dpi.id
+        );
 
         projects.push({
           projectItem,
@@ -72,9 +67,7 @@ export class DeveloperProfileService {
       }
     }
 
-    const developerServices = await this.developerServiceRepo.getByProfileId(
-      developerProfile.id,
-    );
+    const developerServices = await this.developerServiceRepo.getByProfileId(developerProfile.id);
 
     const services: dto.DeveloperServiceEntry[] = [];
     for (const ds of developerServices) {
@@ -88,11 +81,10 @@ export class DeveloperProfileService {
     }
 
     // Fetch verification records for the profile and create profile entry
-    const profileVerificationRecords =
-      await this.verificationRecordRepo.findAllByEntity(
-        dto.VerificationEntityType.DEVELOPER_PROFILE,
-        developerProfile.id,
-      );
+    const profileVerificationRecords = await this.verificationRecordRepo.findAllByEntity(
+      dto.VerificationEntityType.DEVELOPER_PROFILE,
+      developerProfile.id
+    );
 
     // Extract Owner from user data (if it's a GitHub user)
     // NOTE: The backend's internal User representation may include extra fields

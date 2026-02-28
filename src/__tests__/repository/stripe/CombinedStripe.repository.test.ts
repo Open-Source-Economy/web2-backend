@@ -1,10 +1,6 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
-import {
-  combinedStripeRepo,
-  getStripePriceRepository,
-  getStripeProductRepository,
-} from "../../../db";
+import { combinedStripeRepo, getStripePriceRepository, getStripeProductRepository } from "../../../db";
 
 import {
   Currency,
@@ -26,7 +22,7 @@ describe("CombinedStripeRepository", () => {
     const product = Fixture.stripeProduct(
       "product-1" as StripeProductId,
       null,
-      planProductType as unknown as ProductType,
+      planProductType as unknown as ProductType
     );
 
     await productRepo.insert(product);
@@ -37,14 +33,14 @@ describe("CombinedStripeRepository", () => {
         product.stripeId,
         100,
         currency as Currency,
-        PriceType.MONTHLY,
+        PriceType.MONTHLY
       );
       const price2 = Fixture.stripePrice(
         Fixture.stripePriceId(),
         product.stripeId,
         250,
         currency as Currency,
-        PriceType.ANNUALLY,
+        PriceType.ANNUALLY
       );
 
       await priceRepo.createOrUpdate(price1);
@@ -65,11 +61,7 @@ describe("CombinedStripeRepository", () => {
   it("should return an error is the DB is missing a price type", async () => {
     for (const productType of Object.values(PlanProductType)) {
       const planProductType = productType as PlanProductType;
-      const product = Fixture.stripeProduct(
-        Fixture.stripeProductId(),
-        null,
-        planProductType as unknown as ProductType,
-      );
+      const product = Fixture.stripeProduct(Fixture.stripeProductId(), null, planProductType as unknown as ProductType);
 
       await productRepo.insert(product);
 
@@ -79,7 +71,7 @@ describe("CombinedStripeRepository", () => {
           product.stripeId,
           100,
           currency as Currency,
-          PriceType.MONTHLY,
+          PriceType.MONTHLY
         );
 
         await priceRepo.createOrUpdate(price1);
@@ -100,11 +92,7 @@ describe("CombinedStripeRepository", () => {
   it("should return prices for products", async () => {
     for (const productType of Object.values(PlanProductType)) {
       const planProductType = productType as PlanProductType;
-      const product = Fixture.stripeProduct(
-        Fixture.stripeProductId(),
-        null,
-        planProductType as unknown as ProductType,
-      );
+      const product = Fixture.stripeProduct(Fixture.stripeProductId(), null, planProductType as unknown as ProductType);
 
       await productRepo.insert(product);
 
@@ -114,14 +102,14 @@ describe("CombinedStripeRepository", () => {
           product.stripeId,
           100,
           currency as Currency,
-          PriceType.MONTHLY,
+          PriceType.MONTHLY
         );
         const price2 = Fixture.stripePrice(
           Fixture.stripePriceId(),
           product.stripeId,
           250,
           currency as Currency,
-          PriceType.ANNUALLY,
+          PriceType.ANNUALLY
         );
 
         await priceRepo.createOrUpdate(price1);
@@ -133,12 +121,12 @@ describe("CombinedStripeRepository", () => {
 
     Object.values(Currency).forEach((currency) => {
       Object.values(PlanProductType).forEach((planProductType) => {
-        expect(
-          prices[planProductType][currency][PlanPriceType.MONTHLY],
-        ).toEqual(expect.objectContaining({ unitAmount: 100 }));
-        expect(
-          prices[planProductType][currency][PlanPriceType.ANNUALLY],
-        ).toEqual(expect.objectContaining({ unitAmount: 250 }));
+        expect(prices[planProductType][currency][PlanPriceType.MONTHLY]).toEqual(
+          expect.objectContaining({ unitAmount: 100 })
+        );
+        expect(prices[planProductType][currency][PlanPriceType.ANNUALLY]).toEqual(
+          expect.objectContaining({ unitAmount: 250 })
+        );
       });
     });
   });

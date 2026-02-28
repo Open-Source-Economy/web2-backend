@@ -1,8 +1,4 @@
-import {
-  Sponsor,
-  SponsorId,
-  StripeCustomerId,
-} from "@open-source-economy/api-types";
+import { Sponsor, SponsorId, StripeCustomerId } from "@open-source-economy/api-types";
 import { ValidationError, Validator } from "./Validator";
 import { OwnerIdCompanion } from "./github";
 
@@ -14,15 +10,10 @@ export namespace SponsorCompanion {
    * @param table_prefix - Optional prefix used to avoid column name conflicts when SQL joins are performed.
    * @returns A new `Sponsor` instance if validation succeeds, or a `ValidationError` otherwise.
    */
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): Sponsor | ValidationError {
+  export function fromBackend(row: any, table_prefix: string = ""): Sponsor | ValidationError {
     const validator = new Validator(row);
     const id = validator.requiredString(`${table_prefix}id`);
-    const stripeCustomerId = validator.requiredString(
-      `${table_prefix}stripe_customer_id`,
-    );
+    const stripeCustomerId = validator.requiredString(`${table_prefix}stripe_customer_id`);
     const isPublic = validator.requiredBoolean(`${table_prefix}is_public`);
 
     const error = validator.getFirstError();

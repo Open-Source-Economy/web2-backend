@@ -29,12 +29,12 @@ describe("ProjectItemRepository", () => {
     const thirdPartyUser = Fixture.thirdPartyUser(
       Fixture.uuid(),
       dto.Provider.Github,
-      `developer-${Fixture.uuid()}@example.com`,
+      `developer-${Fixture.uuid()}@example.com`
     );
     const user = await userRepo.insert(Fixture.createUser(thirdPartyUser));
     const profile = await developerProfileRepo.create(
       user.id,
-      thirdPartyUser.email ?? `developer-${Fixture.uuid()}@example.com`,
+      thirdPartyUser.email ?? `developer-${Fixture.uuid()}@example.com`
     );
 
     const ownerItem = await projectItemRepo.create({
@@ -49,7 +49,7 @@ describe("ProjectItemRepository", () => {
       [] as dto.DeveloperRoleType[],
       undefined,
       [],
-      [] as dto.ProjectCategory[],
+      [] as dto.ProjectCategory[]
     );
 
     return { profile, ownerItem };
@@ -65,9 +65,7 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: repositoryId,
       });
 
-      expect(created.projectItemType).toBe(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-      );
+      expect(created.projectItemType).toBe(dto.ProjectItemType.GITHUB_REPOSITORY);
       expect(created.sourceIdentifier).toEqual(repositoryId);
 
       const found = await projectItemRepo.getById(created.id);
@@ -108,15 +106,9 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: repositoryId,
       });
 
-      const categories = [
-        dto.ProjectCategory.Frontend,
-        dto.ProjectCategory.BuildTools,
-      ];
+      const categories = [dto.ProjectCategory.Frontend, dto.ProjectCategory.BuildTools];
 
-      const updated = await projectItemRepo.updateCategories(
-        created.id,
-        categories,
-      );
+      const updated = await projectItemRepo.updateCategories(created.id, categories);
 
       expect(updated.categories).toEqual(categories);
     });
@@ -187,10 +179,7 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: repositoryId,
       });
 
-      const found = await projectItemRepo.getBySourceIdentifier(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-        repositoryId,
-      );
+      const found = await projectItemRepo.getBySourceIdentifier(dto.ProjectItemType.GITHUB_REPOSITORY, repositoryId);
       expect(found).toEqual(created);
     });
 
@@ -201,10 +190,7 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: ownerId,
       });
 
-      const found = await projectItemRepo.getBySourceIdentifier(
-        dto.ProjectItemType.GITHUB_OWNER,
-        ownerId,
-      );
+      const found = await projectItemRepo.getBySourceIdentifier(dto.ProjectItemType.GITHUB_OWNER, ownerId);
       expect(found).toEqual(created);
     });
 
@@ -215,10 +201,7 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: url,
       });
 
-      const found = await projectItemRepo.getBySourceIdentifier(
-        dto.ProjectItemType.URL,
-        url,
-      );
+      const found = await projectItemRepo.getBySourceIdentifier(dto.ProjectItemType.URL, url);
       expect(found).toEqual(created);
     });
   });
@@ -245,9 +228,7 @@ describe("ProjectItemRepository", () => {
 
       const all = await projectItemRepo.getAll();
       expect(all).toHaveLength(3);
-      expect(all).toEqual(
-        expect.arrayContaining([repoItem, ownerItem, urlItem]),
-      );
+      expect(all).toEqual(expect.arrayContaining([repoItem, ownerItem, urlItem]));
     });
   });
 
@@ -268,14 +249,11 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: repositoryId2,
       });
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-        {
-          sortBy: dto.ProjectItemSortField.CREATED_AT,
-          sortOrder: dto.SortOrder.DESC,
-          limit: 1,
-        },
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_REPOSITORY, {
+        sortBy: dto.ProjectItemSortField.CREATED_AT,
+        sortOrder: dto.SortOrder.DESC,
+        limit: 1,
+      });
 
       expect(items).toHaveLength(1);
       expect(items[0].projectItem.id).toEqual(second.id);
@@ -319,20 +297,13 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: midForksRepoId,
       });
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-        {
-          sortBy: dto.ProjectItemSortField.FORKS,
-          sortOrder: dto.SortOrder.DESC,
-        },
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_REPOSITORY, {
+        sortBy: dto.ProjectItemSortField.FORKS,
+        sortOrder: dto.SortOrder.DESC,
+      });
 
       expect(items.map((item) => item.projectItem.id)).toEqual(
-        expect.arrayContaining([
-          highForksItem.id,
-          midForksItem.id,
-          lowForksItem.id,
-        ]),
+        expect.arrayContaining([highForksItem.id, midForksItem.id, lowForksItem.id])
       );
       const [first, second] = items;
       const firstForks = first.repository?.forksCount ?? 0;
@@ -342,21 +313,16 @@ describe("ProjectItemRepository", () => {
 
     it("applies owners limit when repository query is absent", async () => {
       const ownerId1 = await insertOwner();
-      const { ownerItem: ownerItem1 } =
-        await createDeveloperLinkedToOwner(ownerId1);
+      const { ownerItem: _ownerItem1 } = await createDeveloperLinkedToOwner(ownerId1);
 
       const ownerId2 = await insertOwner();
-      const { ownerItem: ownerItem2 } =
-        await createDeveloperLinkedToOwner(ownerId2);
+      const { ownerItem: ownerItem2 } = await createDeveloperLinkedToOwner(ownerId2);
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_OWNER,
-        {
-          sortBy: dto.ProjectItemSortField.CREATED_AT,
-          sortOrder: dto.SortOrder.DESC,
-          limit: 1,
-        },
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_OWNER, {
+        sortBy: dto.ProjectItemSortField.CREATED_AT,
+        sortOrder: dto.SortOrder.DESC,
+        limit: 1,
+      });
 
       expect(items).toHaveLength(1);
       expect(items[0].projectItem.id).toEqual(ownerItem2.id);
@@ -379,12 +345,12 @@ describe("ProjectItemRepository", () => {
       const thirdPartyUser1 = Fixture.thirdPartyUser(
         Fixture.uuid(),
         dto.Provider.Github,
-        `developer-${Fixture.uuid()}@example.com`,
+        `developer-${Fixture.uuid()}@example.com`
       );
       const user1 = await userRepo.insert(Fixture.createUser(thirdPartyUser1));
       const profile1 = await developerProfileRepo.create(
         user1.id,
-        thirdPartyUser1.email ?? `developer-${Fixture.uuid()}@example.com`,
+        thirdPartyUser1.email ?? `developer-${Fixture.uuid()}@example.com`
       );
       await developerProjectItemRepo.create(
         profile1.id,
@@ -393,18 +359,18 @@ describe("ProjectItemRepository", () => {
         [] as dto.DeveloperRoleType[],
         undefined,
         [],
-        [] as dto.ProjectCategory[],
+        [] as dto.ProjectCategory[]
       );
 
       const thirdPartyUser2 = Fixture.thirdPartyUser(
         Fixture.uuid(),
         dto.Provider.Github,
-        `developer-${Fixture.uuid()}@example.com`,
+        `developer-${Fixture.uuid()}@example.com`
       );
       const user2 = await userRepo.insert(Fixture.createUser(thirdPartyUser2));
       const profile2 = await developerProfileRepo.create(
         user2.id,
-        thirdPartyUser2.email ?? `developer-${Fixture.uuid()}@example.com`,
+        thirdPartyUser2.email ?? `developer-${Fixture.uuid()}@example.com`
       );
       await developerProjectItemRepo.create(
         profile2.id,
@@ -413,17 +379,14 @@ describe("ProjectItemRepository", () => {
         [] as dto.DeveloperRoleType[],
         undefined,
         [],
-        [] as dto.ProjectCategory[],
+        [] as dto.ProjectCategory[]
       );
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.URL,
-        {
-          sortBy: dto.ProjectItemSortField.CREATED_AT,
-          sortOrder: dto.SortOrder.DESC,
-          limit: 1,
-        },
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.URL, {
+        sortBy: dto.ProjectItemSortField.CREATED_AT,
+        sortOrder: dto.SortOrder.DESC,
+        limit: 1,
+      });
 
       expect(items).toHaveLength(1);
       expect(items[0].projectItem.id).toEqual(item2.id);
@@ -450,21 +413,13 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: "https://docs.example.com",
       });
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_REPOSITORY);
 
       expect(items).toHaveLength(1);
       expect(items[0].projectItem.id).toEqual(repoItem.id);
-      expect(items[0].projectItem.projectItemType).toBe(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-      );
-      expect(
-        items.find((item) => item.projectItem.id === ownerItem.id),
-      ).toBeUndefined();
-      expect(
-        items.find((item) => item.projectItem.id === urlItem.id),
-      ).toBeUndefined();
+      expect(items[0].projectItem.projectItemType).toBe(dto.ProjectItemType.GITHUB_REPOSITORY);
+      expect(items.find((item) => item.projectItem.id === ownerItem.id)).toBeUndefined();
+      expect(items.find((item) => item.projectItem.id === urlItem.id)).toBeUndefined();
     });
 
     it("returns only owner items when owners query is provided", async () => {
@@ -482,15 +437,11 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: "https://docs.example.com",
       });
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_OWNER,
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_OWNER);
 
       expect(items).toHaveLength(1);
       expect(items[0].projectItem.id).toEqual(ownerItem.id);
-      expect(items[0].projectItem.projectItemType).toBe(
-        dto.ProjectItemType.GITHUB_OWNER,
-      );
+      expect(items[0].projectItem.projectItemType).toBe(dto.ProjectItemType.GITHUB_OWNER);
     });
 
     it("returns only url items when urls query is provided", async () => {
@@ -516,12 +467,12 @@ describe("ProjectItemRepository", () => {
       const thirdPartyUser = Fixture.thirdPartyUser(
         Fixture.uuid(),
         dto.Provider.Github,
-        `developer-${Fixture.uuid()}@example.com`,
+        `developer-${Fixture.uuid()}@example.com`
       );
       const user = await userRepo.insert(Fixture.createUser(thirdPartyUser));
       const profile = await developerProfileRepo.create(
         user.id,
-        thirdPartyUser.email ?? `developer-${Fixture.uuid()}@example.com`,
+        thirdPartyUser.email ?? `developer-${Fixture.uuid()}@example.com`
       );
       await developerProjectItemRepo.create(
         profile.id,
@@ -530,18 +481,14 @@ describe("ProjectItemRepository", () => {
         [] as dto.DeveloperRoleType[],
         undefined,
         [],
-        [] as dto.ProjectCategory[],
+        [] as dto.ProjectCategory[]
       );
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.URL,
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.URL);
 
       expect(items).toHaveLength(1);
       expect(items[0].projectItem.id).toEqual(urlItem.id);
-      expect(items[0].projectItem.projectItemType).toBe(
-        dto.ProjectItemType.URL,
-      );
+      expect(items[0].projectItem.projectItemType).toBe(dto.ProjectItemType.URL);
     });
 
     it("includes developers linked to the owner when fetching repositories", async () => {
@@ -554,13 +501,9 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: repositoryId,
       });
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_REPOSITORY);
 
-      const repoDetails = items.find(
-        (item) => item.projectItem.id === repoItem.id,
-      );
+      const repoDetails = items.find((item) => item.projectItem.id === repoItem.id);
 
       expect(repoDetails).toBeDefined();
       expect(repoDetails?.developers).toHaveLength(1);
@@ -583,27 +526,19 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: newerRepoId,
       });
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-        {
-          sortBy: dto.ProjectItemSortField.CREATED_AT,
-          sortOrder: dto.SortOrder.ASC,
-        },
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_REPOSITORY, {
+        sortBy: dto.ProjectItemSortField.CREATED_AT,
+        sortOrder: dto.SortOrder.ASC,
+      });
 
-      expect(items.map((item) => item.projectItem.id)).toEqual([
-        olderItem.id,
-        newerItem.id,
-      ]);
+      expect(items.map((item) => item.projectItem.id)).toEqual([olderItem.id, newerItem.id]);
     });
 
     it("returns empty repository list when only github_repository rows exist", async () => {
       const ownerId = await insertOwner();
       await insertRepository(ownerId); // insert into github_repository
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_REPOSITORY);
 
       expect(items).toEqual([]);
     });
@@ -630,9 +565,7 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: repositoryIdWithoutDev,
       });
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_REPOSITORY);
 
       // Should only return the repository with a developer
       expect(items).toHaveLength(1);
@@ -641,9 +574,7 @@ describe("ProjectItemRepository", () => {
       expect(items[0].developers[0].developerProfile.id).toBe(profile.id);
 
       // Verify the repository without developer is not returned
-      expect(
-        items.find((item) => item.projectItem.id === repoItemWithoutDev.id),
-      ).toBeUndefined();
+      expect(items.find((item) => item.projectItem.id === repoItemWithoutDev.id)).toBeUndefined();
     });
 
     it("returns only url items that have a developer associated with it", async () => {
@@ -658,12 +589,12 @@ describe("ProjectItemRepository", () => {
       const thirdPartyUser = Fixture.thirdPartyUser(
         Fixture.uuid(),
         dto.Provider.Github,
-        `developer-${Fixture.uuid()}@example.com`,
+        `developer-${Fixture.uuid()}@example.com`
       );
       const user = await userRepo.insert(Fixture.createUser(thirdPartyUser));
       const profile = await developerProfileRepo.create(
         user.id,
-        thirdPartyUser.email ?? `developer-${Fixture.uuid()}@example.com`,
+        thirdPartyUser.email ?? `developer-${Fixture.uuid()}@example.com`
       );
       await developerProjectItemRepo.create(
         profile.id,
@@ -672,7 +603,7 @@ describe("ProjectItemRepository", () => {
         [] as dto.DeveloperRoleType[],
         undefined,
         [],
-        [] as dto.ProjectCategory[],
+        [] as dto.ProjectCategory[]
       );
 
       // Create a URL item without a developer
@@ -682,9 +613,7 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: urlWithoutDev,
       });
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.URL,
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.URL);
 
       // Should only return the URL item with a developer
       expect(items).toHaveLength(1);
@@ -693,16 +622,13 @@ describe("ProjectItemRepository", () => {
       expect(items[0].developers[0].developerProfile.id).toBe(profile.id);
 
       // Verify the URL item without developer is not returned
-      expect(
-        items.find((item) => item.projectItem.id === urlItemWithoutDev.id),
-      ).toBeUndefined();
+      expect(items.find((item) => item.projectItem.id === urlItemWithoutDev.id)).toBeUndefined();
     });
 
     it("returns only owner items that have a developer associated with it", async () => {
       // Create an owner with a developer
       const ownerIdWithDev = await insertOwner();
-      const { profile, ownerItem: ownerItemWithDev } =
-        await createDeveloperLinkedToOwner(ownerIdWithDev);
+      const { profile, ownerItem: ownerItemWithDev } = await createDeveloperLinkedToOwner(ownerIdWithDev);
 
       // Create an owner without a developer
       const ownerIdWithoutDev = await insertOwner();
@@ -711,9 +637,7 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: ownerIdWithoutDev,
       });
 
-      const items = await projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_OWNER,
-      );
+      const items = await projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_OWNER);
 
       // Should only return the owner with a developer
       expect(items).toHaveLength(1);
@@ -722,9 +646,7 @@ describe("ProjectItemRepository", () => {
       expect(items[0].developers[0].developerProfile.id).toBe(profile.id);
 
       // Verify the owner without developer is not returned
-      expect(
-        items.find((item) => item.projectItem.id === ownerItemWithoutDev.id),
-      ).toBeUndefined();
+      expect(items.find((item) => item.projectItem.id === ownerItemWithoutDev.id)).toBeUndefined();
     });
   });
 
@@ -769,7 +691,7 @@ describe("ProjectItemRepository", () => {
       repositoryRecord.forksCount = 17;
       await repositoryRepo.insertOrUpdate(repositoryRecord);
 
-      const ownerItem = await projectItemRepo.create({
+      const _ownerItem = await projectItemRepo.create({
         projectItemType: dto.ProjectItemType.GITHUB_OWNER,
         sourceIdentifier: ownerId,
       });
@@ -781,18 +703,18 @@ describe("ProjectItemRepository", () => {
       const maintainerUser = Fixture.thirdPartyUser(
         Fixture.uuid(),
         dto.Provider.Github,
-        `maintainer-${Fixture.uuid()}@example.com`,
+        `maintainer-${Fixture.uuid()}@example.com`
       );
       const user = await userRepo.insert(Fixture.createUser(maintainerUser));
       const profile = await developerProfileRepo.create(
         user.id,
-        maintainerUser.email ?? `maintainer-${Fixture.uuid()}@example.com`,
+        maintainerUser.email ?? `maintainer-${Fixture.uuid()}@example.com`
       );
       await developerProjectItemRepo.create(
         profile.id,
         repoItem.id,
         [] as dto.MergeRightsType[],
-        [] as dto.DeveloperRoleType[],
+        [] as dto.DeveloperRoleType[]
       );
 
       const stats = await projectItemRepo.getProjectItemsStats();
@@ -818,10 +740,7 @@ describe("ProjectItemRepository", () => {
         sourceIdentifier: repositoryId,
       });
 
-      const details = await projectItemRepo.getBySlugWithDetails(
-        ownerId.login,
-        repositoryId.name,
-      );
+      const details = await projectItemRepo.getBySlugWithDetails(ownerId.login, repositoryId.name);
 
       expect(details).toBeDefined();
       expect(details?.projectItem.id).toEqual(repoItem.id);
@@ -840,16 +759,11 @@ describe("ProjectItemRepository", () => {
 
       expect(details).toBeDefined();
       expect(details?.projectItem.id).toEqual(ownerItem.id);
-      expect(details?.projectItem.projectItemType).toBe(
-        dto.ProjectItemType.GITHUB_OWNER,
-      );
+      expect(details?.projectItem.projectItemType).toBe(dto.ProjectItemType.GITHUB_OWNER);
     });
 
     it("returns null when no project item matches slug", async () => {
-      const details = await projectItemRepo.getBySlugWithDetails(
-        "unknown-owner",
-        "unknown-repo",
-      );
+      const details = await projectItemRepo.getBySlugWithDetails("unknown-owner", "unknown-repo");
 
       expect(details).toBeNull();
     });

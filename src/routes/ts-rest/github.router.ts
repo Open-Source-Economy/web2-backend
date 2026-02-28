@@ -18,8 +18,7 @@ export const githubRouter = s.router(contract.github, {
   getRepository: async ({ params }) => {
     const ownerId = { login: params.owner } as OwnerId;
     const repositoryId = { ownerId, name: params.repo } as RepositoryId;
-    const [owner, repository] =
-      await githubSyncService.syncRepository(repositoryId);
+    const [owner, repository] = await githubSyncService.syncRepository(repositoryId);
     return {
       status: 200 as const,
       body: {
@@ -51,8 +50,7 @@ export const githubRouter = s.router(contract.github, {
   syncRepository: async ({ params }) => {
     const ownerId = { login: params.owner } as OwnerId;
     const repositoryId = { ownerId, name: params.repo } as RepositoryId;
-    const [owner, repository] =
-      await githubSyncService.syncRepository(repositoryId);
+    const [owner, repository] = await githubSyncService.syncRepository(repositoryId);
     return {
       status: 201 as const,
       body: {

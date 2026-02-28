@@ -1,11 +1,4 @@
-import type {
-  User,
-  UserId,
-  UserRole,
-  Currency,
-  Provider,
-  Owner,
-} from "@open-source-economy/api-types";
+import type { User, UserId, UserRole, Currency, Provider, Owner } from "@open-source-economy/api-types";
 import { mapOwnerFromRow } from "../github/owner.mapper";
 
 /**
@@ -25,10 +18,7 @@ export interface UserWithAuth extends User {
  * Map a database row to a UserWithAuth object.
  * The row may come from a JOIN with the github_owner table.
  */
-export function mapUserFromRow(
-  row: Record<string, any>,
-  owner: Owner | null = null,
-): UserWithAuth {
+export function mapUserFromRow(row: Record<string, any>, owner: Owner | null = null): UserWithAuth {
   const id = row.id;
   if (!id) throw new Error("Missing user id");
 

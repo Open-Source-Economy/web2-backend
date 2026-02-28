@@ -1,9 +1,5 @@
 import { Pool } from "pg";
-import {
-  DeveloperProfile,
-  DeveloperProfileId,
-  UserId,
-} from "@open-source-economy/api-types";
+import { DeveloperProfile, DeveloperProfileId, UserId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 import { BaseRepository } from "../helpers";
@@ -50,10 +46,7 @@ export interface DeveloperProfileRepository {
    * @returns A promise that resolves to the updated DeveloperProfile.
    * @throws Error if the developer profile is not found.
    */
-  updateEmail(
-    profileId: DeveloperProfileId,
-    email: string,
-  ): Promise<DeveloperProfile>;
+  updateEmail(profileId: DeveloperProfileId, email: string): Promise<DeveloperProfile>;
 
   /**
    * Retrieves all developer profiles.
@@ -62,18 +55,12 @@ export interface DeveloperProfileRepository {
   getAll(): Promise<DeveloperProfile[]>;
 }
 
-class DeveloperProfileRepositoryImpl
-  extends BaseRepository<DeveloperProfile>
-  implements DeveloperProfileRepository
-{
+class DeveloperProfileRepositoryImpl extends BaseRepository<DeveloperProfile> implements DeveloperProfileRepository {
   constructor(pool: Pool) {
     super(pool, DeveloperProfileCompanion);
   }
 
-  async create(
-    userId: UserId,
-    contactEmail: string,
-  ): Promise<DeveloperProfile> {
+  async create(userId: UserId, contactEmail: string): Promise<DeveloperProfile> {
     const client = await this.pool.connect();
 
     try {
@@ -83,7 +70,7 @@ class DeveloperProfileRepositoryImpl
             VALUES ($1, $2)
             RETURNING *
           `,
-        [userId, contactEmail],
+        [userId, contactEmail]
       );
 
       return this.getOne(result.rows);
@@ -102,15 +89,13 @@ class DeveloperProfileRepositoryImpl
           FROM developer_profile
           WHERE user_id = $1
         `,
-      [userId],
+      [userId]
     );
 
     return this.getOptional(result.rows);
   }
 
-  async getById(
-    profileId: DeveloperProfileId,
-  ): Promise<DeveloperProfile | null> {
+  async getById(profileId: DeveloperProfileId): Promise<DeveloperProfile | null> {
     logger.debug(`Getting developer profile by id:`, profileId);
     const result = await this.pool.query(
       `
@@ -118,7 +103,7 @@ class DeveloperProfileRepositoryImpl
           FROM developer_profile
           WHERE id = $1
         `,
-      [profileId],
+      [profileId]
     );
 
     return this.getOptional(result.rows);
@@ -135,7 +120,7 @@ class DeveloperProfileRepositoryImpl
                 updated_at           = $1
             WHERE id = $2
           `,
-        [new Date(), profileId],
+        [new Date(), profileId]
       );
     } catch (error) {
       throw error;
@@ -144,10 +129,7 @@ class DeveloperProfileRepositoryImpl
     }
   }
 
-  async updateEmail(
-    profileId: DeveloperProfileId,
-    email: string,
-  ): Promise<DeveloperProfile> {
+  async updateEmail(profileId: DeveloperProfileId, email: string): Promise<DeveloperProfile> {
     const client = await this.pool.connect();
 
     try {
@@ -159,7 +141,7 @@ class DeveloperProfileRepositoryImpl
                     WHERE id = $3
                     RETURNING *
                 `,
-        [email, new Date(), profileId],
+        [email, new Date(), profileId]
       );
 
       if (result.rows.length === 0) {
@@ -180,7 +162,7 @@ class DeveloperProfileRepositoryImpl
         SELECT *
         FROM developer_profile
         ORDER BY created_at DESC
-      `,
+      `
     );
 
     return this.getList(result.rows);

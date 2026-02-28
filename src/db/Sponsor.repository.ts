@@ -1,9 +1,5 @@
 import { Pool } from "pg";
-import {
-  OwnerId,
-  Sponsor,
-  StripeCustomerId,
-} from "@open-source-economy/api-types";
+import { OwnerId, Sponsor, StripeCustomerId } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { SponsorCompanion } from "./helpers/companions";
 
@@ -12,14 +8,8 @@ export function getSponsorRepository(): SponsorRepository {
 }
 
 export interface SponsorRepository {
-  createOrUpdate(
-    stripeCustomerId: StripeCustomerId,
-    ownerId: OwnerId,
-    isPublic?: boolean,
-  ): Promise<Sponsor>;
-  getByStripeCustomerId(
-    stripeCustomerId: StripeCustomerId,
-  ): Promise<Sponsor | null>;
+  createOrUpdate(stripeCustomerId: StripeCustomerId, ownerId: OwnerId, isPublic?: boolean): Promise<Sponsor>;
+  getByStripeCustomerId(stripeCustomerId: StripeCustomerId): Promise<Sponsor | null>;
   getAllPublic(): Promise<Sponsor[]>;
 }
 
@@ -33,7 +23,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
   async createOrUpdate(
     stripeCustomerId: StripeCustomerId,
     ownerId: OwnerId,
-    isPublic: boolean = true,
+    isPublic: boolean = true
   ): Promise<Sponsor> {
     const client = await this.pool.connect();
 
@@ -48,7 +38,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
             SELECT github_id FROM github_owner
             WHERE github_login = $1
           `,
-          [ownerId.login],
+          [ownerId.login]
         );
 
         if (ownerResult.rows.length === 0) {
@@ -67,7 +57,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
           WHERE stripe_customer_id = $1
             AND github_owner_login = $2
         `,
-        [stripeCustomerId, githubOwnerLogin],
+        [stripeCustomerId, githubOwnerLogin]
       );
 
       if (existingResult.rows.length > 0) {
@@ -83,13 +73,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
               AND github_owner_login = $5
             RETURNING *
           `,
-          [
-            githubOwnerId,
-            githubOwnerLogin,
-            isPublic,
-            stripeCustomerId,
-            githubOwnerLogin,
-          ],
+          [githubOwnerId, githubOwnerLogin, isPublic, stripeCustomerId, githubOwnerLogin]
         );
 
         await client.query("COMMIT");
@@ -112,7 +96,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
             VALUES ($1, $2, $3, $4)
             RETURNING *
           `,
-          [stripeCustomerId, githubOwnerId, githubOwnerLogin, isPublic],
+          [stripeCustomerId, githubOwnerId, githubOwnerLogin, isPublic]
         );
 
         await client.query("COMMIT");
@@ -131,9 +115,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
     }
   }
 
-  async getByStripeCustomerId(
-    stripeCustomerId: StripeCustomerId,
-  ): Promise<Sponsor | null> {
+  async getByStripeCustomerId(stripeCustomerId: StripeCustomerId): Promise<Sponsor | null> {
     const result = await this.pool.query(
       `
         SELECT * FROM sponsor
@@ -141,7 +123,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
         ORDER BY created_at DESC
         LIMIT 1
       `,
-      [stripeCustomerId],
+      [stripeCustomerId]
     );
 
     if (result.rows.length === 0) {
@@ -161,7 +143,7 @@ class SponsorRepositoryImpl implements SponsorRepository {
         SELECT * FROM sponsor
         WHERE is_public = true
         ORDER BY created_at DESC
-      `,
+      `
     );
 
     return result.rows.map((row) => {

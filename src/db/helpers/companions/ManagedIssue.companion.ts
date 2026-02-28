@@ -9,31 +9,23 @@ import { ValidationError, Validator } from "./Validator";
 import { IssueIdCompanion } from "./github";
 
 export namespace ManagedIssueCompanion {
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): ManagedIssue | ValidationError {
-    const githubIssueId = IssueIdCompanion.fromBackendForeignKey(
-      row,
-      table_prefix,
-    );
+  export function fromBackend(row: any, table_prefix: string = ""): ManagedIssue | ValidationError {
+    const githubIssueId = IssueIdCompanion.fromBackendForeignKey(row, table_prefix);
     if (githubIssueId instanceof ValidationError) {
       return githubIssueId;
     }
 
     const validator = new Validator(row);
     const id = validator.requiredString(`${table_prefix}id`);
-    const requestedCreditAmount = validator.optionalNumber(
-      `${table_prefix}requested_credit_amount`,
-    );
+    const requestedCreditAmount = validator.optionalNumber(`${table_prefix}requested_credit_amount`);
     const managerId = validator.requiredString(`${table_prefix}manager_id`);
     const contributorVisibility = validator.requiredEnum(
       `${table_prefix}contributor_visibility`,
-      Object.values(ContributorVisibility) as ContributorVisibility[],
+      Object.values(ContributorVisibility) as ContributorVisibility[]
     );
     const state = validator.requiredEnum(
       `${table_prefix}state`,
-      Object.values(ManagedIssueState) as ManagedIssueState[],
+      Object.values(ManagedIssueState) as ManagedIssueState[]
     );
 
     const error = validator.getFirstError();

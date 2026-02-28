@@ -68,6 +68,7 @@ export function createMockRepository(overrides?: Partial<Repository>): Repositor
 ```
 
 Rules:
+
 - Factory produces valid, complete objects by default
 - Use `overrides` parameter to customize specific fields
 - Never use factory data as production defaults — factories are test-only

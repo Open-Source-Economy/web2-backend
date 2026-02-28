@@ -48,12 +48,12 @@ export const featureRouter = s.router(contract.feature, {
 
 Always use `as const` for literal status types:
 
-| Operation | Status | Example |
-|-----------|--------|---------|
-| GET (read) | `200 as const` | Fetch a resource |
-| POST (create) | `201 as const` | Create a new resource |
-| PATCH/PUT (update) | `200 as const` | Update a resource |
-| DELETE | `204 as const` | Delete a resource |
+| Operation          | Status         | Example               |
+| ------------------ | -------------- | --------------------- |
+| GET (read)         | `200 as const` | Fetch a resource      |
+| POST (create)      | `201 as const` | Create a new resource |
+| PATCH/PUT (update) | `200 as const` | Update a resource     |
+| DELETE             | `204 as const` | Delete a resource     |
 
 ```typescript
 // CORRECT

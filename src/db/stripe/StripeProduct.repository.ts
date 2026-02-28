@@ -18,9 +18,7 @@ export interface StripeProductRepository {
 
   getById(id: StripeProductId): Promise<StripeProduct | null>;
 
-  getCampaignProduct(
-    projectId: OwnerId | RepositoryId,
-  ): Promise<[CampaignProductType, StripeProduct][]>;
+  getCampaignProduct(projectId: OwnerId | RepositoryId): Promise<[CampaignProductType, StripeProduct][]>;
 
   getAll(): Promise<StripeProduct[]>;
 }
@@ -81,15 +79,13 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
                 FROM stripe_product
                 WHERE stripe_id = $1
             `,
-      [id],
+      [id]
     );
 
     return this.getOptionalProduct(result.rows);
   }
 
-  async getCampaignProduct(
-    projectId: OwnerId | RepositoryId,
-  ): Promise<[CampaignProductType, StripeProduct][]> {
+  async getCampaignProduct(projectId: OwnerId | RepositoryId): Promise<[CampaignProductType, StripeProduct][]> {
     const campaignProductTypesClause = `
     AND type IN (${Object.values(CampaignProductType)
       .map((type) => `'${type}'`)
@@ -97,12 +93,10 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
   `;
 
     const isRepositoryId = "name" in projectId;
-    const login = isRepositoryId
-      ? (projectId as RepositoryId).ownerId.login
-      : (projectId as OwnerId).login;
+    const login = isRepositoryId ? (projectId as RepositoryId).ownerId.login : (projectId as OwnerId).login;
     const name = isRepositoryId ? (projectId as RepositoryId).name : null;
 
-    let result = await this.pool.query(
+    const result = await this.pool.query(
       `
         SELECT *
         FROM stripe_product
@@ -110,7 +104,7 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
           AND github_repository_name = $2
           ${campaignProductTypesClause}
       `,
-      [login, name],
+      [login, name]
     );
 
     // Use existing helper to get products
@@ -157,7 +151,7 @@ class StripeProductRepositoryImpl implements StripeProductRepository {
           ownerLogin,
           null, // github_repository_id not available from string projectId
           repoName,
-        ],
+        ]
       );
 
       return this.getOneProduct(result.rows);

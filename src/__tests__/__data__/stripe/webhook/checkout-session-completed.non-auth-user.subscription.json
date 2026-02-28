@@ -46,16 +46,13 @@
       "customer_phone": null,
       "customer_shipping": null,
       "customer_tax_exempt": "none",
-      "customer_tax_ids": [
-      ],
+      "customer_tax_ids": [],
       "default_payment_method": null,
       "default_source": null,
-      "default_tax_rates": [
-      ],
+      "default_tax_rates": [],
       "description": null,
       "discount": null,
-      "discounts": [
-      ],
+      "discounts": [],
       "due_date": null,
       "effective_at": 1736757712,
       "ending_balance": 0,
@@ -78,15 +75,12 @@
             "amount_excluding_tax": 1300,
             "currency": "eur",
             "description": "13 × Donation for apache/pekko (at €1.00 / month)",
-            "discount_amounts": [
-            ],
+            "discount_amounts": [],
             "discountable": true,
-            "discounts": [
-            ],
+            "discounts": [],
             "invoice": "in_1QgjDYP1IOinjlLp1jFjBFa3",
             "livemode": false,
-            "metadata": {
-            },
+            "metadata": {},
             "period": {
               "end": 1739436112,
               "start": 1736757712
@@ -104,8 +98,7 @@
               "interval": "month",
               "interval_count": 1,
               "livemode": false,
-              "metadata": {
-              },
+              "metadata": {},
               "meter": null,
               "nickname": null,
               "product": "prod_RZ8sQoaCWKtV2D",
@@ -114,8 +107,7 @@
               "trial_period_days": null,
               "usage_type": "licensed"
             },
-            "pretax_credit_amounts": [
-            ],
+            "pretax_credit_amounts": [],
             "price": {
               "id": "price_1Qg0aZP1IOinjlLpwVy7gQRj",
               "object": "price",
@@ -126,8 +118,7 @@
               "custom_unit_amount": null,
               "livemode": false,
               "lookup_key": null,
-              "metadata": {
-              },
+              "metadata": {},
               "nickname": null,
               "product": "prod_RZ8sQoaCWKtV2D",
               "recurring": {
@@ -152,10 +143,8 @@
             "quantity": 13,
             "subscription": "sub_1QgjDYP1IOinjlLpY6PZc8eu",
             "subscription_item": "si_RZszRyA4oAYUtn",
-            "tax_amounts": [
-            ],
-            "tax_rates": [
-            ],
+            "tax_amounts": [],
+            "tax_rates": [],
             "type": "subscription",
             "unit_amount_excluding_tax": "100"
           }
@@ -165,8 +154,7 @@
         "url": "/v1/invoices/in_1QgjDYP1IOinjlLp1jFjBFa3/lines"
       },
       "livemode": false,
-      "metadata": {
-      },
+      "metadata": {},
       "next_payment_attempt": null,
       "number": "115F90FC-0001",
       "on_behalf_of": null,
@@ -208,21 +196,17 @@
       },
       "subscription": "sub_1QgjDYP1IOinjlLpY6PZc8eu",
       "subscription_details": {
-        "metadata": {
-        }
+        "metadata": {}
       },
       "subtotal": 1300,
       "subtotal_excluding_tax": 1300,
       "tax": null,
       "test_clock": null,
       "total": 1300,
-      "total_discount_amounts": [
-      ],
+      "total_discount_amounts": [],
       "total_excluding_tax": 1300,
-      "total_pretax_credit_amounts": [
-      ],
-      "total_tax_amounts": [
-      ],
+      "total_pretax_credit_amounts": [],
+      "total_tax_amounts": [],
       "transfer_data": null,
       "webhooks_delivered_at": 1736757712
     }

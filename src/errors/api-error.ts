@@ -62,11 +62,7 @@ export class ApiError extends Error implements ProblemDetails {
     });
   }
 
-  static validationError(
-    detail: string,
-    errors: Record<string, string[]>,
-    instance?: string,
-  ): ApiError {
+  static validationError(detail: string, errors: Record<string, string[]>, instance?: string): ApiError {
     return new ApiError({
       type: "BAD_REQUEST",
       detail,

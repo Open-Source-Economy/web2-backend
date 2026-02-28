@@ -119,7 +119,7 @@ class RepositoryRepositoryImpl implements RepositoryRepository {
           repository.visibility,
           repository.subscribersCount,
           repository.networkCount,
-        ],
+        ]
       );
 
       return this.getOneRepository(result.rows);

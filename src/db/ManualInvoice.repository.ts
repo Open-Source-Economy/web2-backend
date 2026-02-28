@@ -1,10 +1,5 @@
 import { Pool } from "pg";
-import {
-  CompanyId,
-  ManualInvoice,
-  ManualInvoiceId,
-  UserId,
-} from "@open-source-economy/api-types";
+import { CompanyId, ManualInvoice, ManualInvoiceId, UserId } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { logger } from "../config";
 import { ManualInvoiceCompanion } from "./helpers/companions";
@@ -93,7 +88,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
           manualInvoice.userId ?? null,
           manualInvoice.paid,
           manualInvoice.creditAmount,
-        ],
+        ]
       );
 
       return this.getOneManualInvoice(result.rows);
@@ -124,7 +119,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
           manualInvoice.paid,
           manualInvoice.creditAmount,
           manualInvoice.id,
-        ],
+        ]
       );
 
       return this.getOneManualInvoice(result.rows);
@@ -140,7 +135,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                 FROM manual_invoice
                 WHERE id = $1
             `,
-      [id],
+      [id]
     );
 
     return this.getOptionalManualInvoice(result.rows);
@@ -151,7 +146,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
       `
                 SELECT *
                 FROM manual_invoice
-            `,
+            `
     );
 
     return this.getManualInvoiceList(result.rows);
@@ -165,7 +160,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                         FROM manual_invoice
                         WHERE company_id = $1 AND paid = TRUE
                     `,
-      [id],
+      [id]
     );
 
     return this.getManualInvoiceList(result.rows);
@@ -178,7 +173,7 @@ class ManualInvoiceRepositoryImpl implements ManualInvoiceRepository {
                         FROM manual_invoice
                         WHERE user_id = $1 AND paid = TRUE
                     `,
-      [id],
+      [id]
     );
 
     return this.getManualInvoiceList(result.rows);

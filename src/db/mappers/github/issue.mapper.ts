@@ -1,16 +1,8 @@
-import type {
-  Issue,
-  IssueId,
-  OwnerId,
-  ISODateTimeString,
-} from "@open-source-economy/api-types";
+import type { Issue, IssueId, OwnerId } from "@open-source-economy/api-types";
 import { mapRepositoryIdFromForeignKey } from "./repository.mapper";
 import { toISODateTimeString } from "../../../utils/date.utils";
 
-export function mapIssueIdFromRow(
-  row: Record<string, any>,
-  prefix = "",
-): IssueId {
+export function mapIssueIdFromRow(row: Record<string, any>, prefix = ""): IssueId {
   const repositoryId = mapRepositoryIdFromForeignKey(row, prefix);
   const number = row[`${prefix}github_number`];
   if (number == null) throw new Error(`Missing ${prefix}github_number`);
@@ -19,10 +11,7 @@ export function mapIssueIdFromRow(
   return { repositoryId, number, githubId };
 }
 
-export function mapIssueIdFromForeignKey(
-  row: Record<string, any>,
-  prefix = "",
-): IssueId {
+export function mapIssueIdFromForeignKey(row: Record<string, any>, prefix = ""): IssueId {
   const repositoryId = mapRepositoryIdFromForeignKey(row, prefix);
   const number = row[`${prefix}github_issue_number`];
   if (number == null) throw new Error(`Missing ${prefix}github_issue_number`);
@@ -52,8 +41,7 @@ export function mapIssueFromRow(row: Record<string, any>, prefix = ""): Issue {
   };
 
   const openByLogin = row[`${prefix}github_open_by_owner_login`];
-  if (!openByLogin)
-    throw new Error(`Missing ${prefix}github_open_by_owner_login`);
+  if (!openByLogin) throw new Error(`Missing ${prefix}github_open_by_owner_login`);
 
   const createdAtRaw = row[`${prefix}github_created_at`];
   if (!createdAtRaw) throw new Error(`Missing ${prefix}github_created_at`);

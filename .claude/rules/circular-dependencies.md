@@ -3,6 +3,7 @@
 ## The Problem
 
 Circular dependencies happen when:
+
 1. Module A imports from a barrel (e.g., `src/services/index.ts`)
 2. The barrel loads a module that imports Module A
 3. At runtime, exports are `undefined` → `TypeError: X is not a function`
@@ -66,6 +67,6 @@ If you suspect a circular dependency:
 ```typescript
 // Add temporary debug logging to find the cycle
 console.log("Loading module A...");
-import { B } from "./b";  // If B is undefined here, B depends on A
+import { B } from "./b"; // If B is undefined here, B depends on A
 console.log("B is:", B);
 ```

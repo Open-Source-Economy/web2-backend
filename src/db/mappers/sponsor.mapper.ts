@@ -1,14 +1,7 @@
-import type {
-  Sponsor,
-  SponsorId,
-  StripeCustomerId,
-} from "@open-source-economy/api-types";
+import type { Sponsor, SponsorId, StripeCustomerId } from "@open-source-economy/api-types";
 import { mapOwnerIdFromForeignKey } from "./github/owner.mapper";
 
-export function mapSponsorFromRow(
-  row: Record<string, any>,
-  prefix = "",
-): Sponsor {
+export function mapSponsorFromRow(row: Record<string, any>, prefix = ""): Sponsor {
   const id = row[`${prefix}id`];
   if (!id) throw new Error(`Missing ${prefix}id`);
 

@@ -1,10 +1,6 @@
 import passport from "passport";
 import { Strategy } from "passport-github";
-import {
-  CreateUser,
-  repositoryUserPermissionTokenRepo,
-  userRepo,
-} from "../db/";
+import { CreateUser, repositoryUserPermissionTokenRepo, userRepo } from "../db/";
 import { Provider, UserRole } from "@open-source-economy/api-types";
 import { config, logger } from "../config";
 import { ensureNoEndingTrailingSlash } from "../utils";
@@ -25,10 +21,7 @@ passport.use(
       logger.debug("GitHub profile received:", profile);
       try {
         // ThirdPartyUserId was removed; use profile.id as a plain string
-        const findUser = await userRepo.findByThirdPartyId(
-          profile.id as any,
-          Provider.Github,
-        );
+        const findUser = await userRepo.findByThirdPartyId(profile.id as any, Provider.Github);
         logger.debug("Result of findByThirdPartyId:", findUser);
 
         if (!findUser) {
@@ -43,25 +36,18 @@ passport.use(
           }
 
           // const repositoryUserPermissionToken = req.repositoryUserPermissionToken; // TODO: does not work, repositoryUserPermissionToken is undefined...
-          const repositoryUserPermissionToken =
-            await repositoryUserPermissionTokenRepo.getByUserGithubOwnerLogin(
-              thirdPartyUser.providerData.owner.id.login,
-            );
-          logger.debug(
-            "Repository user permission token:",
-            repositoryUserPermissionToken,
+          const repositoryUserPermissionToken = await repositoryUserPermissionTokenRepo.getByUserGithubOwnerLogin(
+            thirdPartyUser.providerData.owner.id.login
           );
+          logger.debug("Repository user permission token:", repositoryUserPermissionToken);
 
           if (repositoryUserPermissionToken) {
             // if the user has received a repository user permission token (to get some rights about a repository)
-            if (
-              thirdPartyUser.providerData.owner.id.login !==
-              repositoryUserPermissionToken.userGithubOwnerLogin
-            ) {
+            if (thirdPartyUser.providerData.owner.id.login !== repositoryUserPermissionToken.userGithubOwnerLogin) {
               return done(
                 ApiError.unauthorized(
-                  "Wrong GitHub login. Please use the GitHub account that was invited to the repository.",
-                ),
+                  "Wrong GitHub login. Please use the GitHub account that was invited to the repository."
+                )
               );
             } else {
               thirdPartyUser.email = repositoryUserPermissionToken.userEmail;
@@ -92,6 +78,6 @@ passport.use(
         console.error("Error during GitHub authentication:", err);
         return done(err); // Handling any unexpected errors during authentication
       }
-    },
-  ),
+    }
+  )
 );

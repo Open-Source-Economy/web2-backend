@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
-import * as dto from "@open-source-economy/api-types";
 import {
   Address,
   OwnerId,
@@ -12,13 +11,7 @@ import {
 } from "@open-source-economy/api-types";
 import { config, logger } from "../../config";
 import { stripe } from "./index";
-import {
-  addressRepo,
-  sponsorRepo,
-  stripeCustomerRepo,
-  stripeInvoiceRepo,
-  stripePriceRepo,
-} from "../../db";
+import { addressRepo, sponsorRepo, stripeCustomerRepo, stripeInvoiceRepo, stripePriceRepo } from "../../db";
 import { githubSyncService } from "../../services";
 import { parseCurrency, requireCurrency } from "../../utils/enum-utils";
 
@@ -28,9 +21,7 @@ export interface StripeWebhookController {
 
 // Helper functions
 const StripeWebhookHelpers = {
-  async checkoutSessionCompleted(
-    session: Stripe.Checkout.Session,
-  ): Promise<void> {
+  async checkoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
     // Stripe comments:
     // Payment is successful and the subscription is created.
     // You should provision the subscription and save the customer ID to your database.
@@ -39,28 +30,21 @@ const StripeWebhookHelpers = {
     const currency = session.currency ?? undefined;
 
     const stripeCustomerId: StripeCustomerId | null = session.customer
-      ? ((typeof session.customer === "string"
-          ? session.customer
-          : session.customer.id) as StripeCustomerId) // based on testing, it should be a string
+      ? ((typeof session.customer === "string" ? session.customer : session.customer.id) as StripeCustomerId) // based on testing, it should be a string
       : null;
 
     if (stripeCustomerId) {
-      const stripeCustomerUser =
-        await stripeCustomerRepo.getByStripeId(stripeCustomerId);
+      const stripeCustomerUser = await stripeCustomerRepo.getByStripeId(stripeCustomerId);
 
       if (stripeCustomerUser !== null) {
-        logger.debug(
-          `Stripe customer, already registered: ${stripeCustomerUser?.stripeId}`,
-        );
+        logger.debug(`Stripe customer, already registered: ${stripeCustomerUser?.stripeId}`);
       } else {
-        logger.debug(
-          `Stripe customer creation, not registered: ${stripeCustomerId}`,
-        );
+        logger.debug(`Stripe customer creation, not registered: ${stripeCustomerId}`);
         await StripeWebhookHelpers.saveAddressAndStripeCustomer(
           stripeCustomerId,
           email,
           session.customer_details,
-          currency,
+          currency
         );
       }
     } else {
@@ -72,22 +56,15 @@ const StripeWebhookHelpers = {
         const stripeCustomer = await stripeCustomerRepo.getByEmail(email);
 
         if (stripeCustomer) {
-          logger.debug(
-            `Stripe customer, already registered with email ${email}:`,
-            stripeCustomer,
-          );
+          logger.debug(`Stripe customer, already registered with email ${email}:`, stripeCustomer);
         } else {
           logger.debug(`Stripe customer, not registered with email ${email}`);
-          const customerId =
-            await StripeWebhookHelpers.createAddressAndStripeCustomer(
-              email,
-              session.customer_details,
-            );
+          const customerId = await StripeWebhookHelpers.createAddressAndStripeCustomer(email, session.customer_details);
           await StripeWebhookHelpers.saveAddressAndStripeCustomer(
             customerId,
             email,
             session.customer_details,
-            currency,
+            currency
           );
         }
       }
@@ -97,9 +74,7 @@ const StripeWebhookHelpers = {
     const githubOwnerLogin = session.metadata?.githubOwnerLogin;
     if (githubOwnerLogin && stripeCustomerId) {
       try {
-        logger.debug(
-          `Sponsor GitHub owner: ${githubOwnerLogin} for customer ${stripeCustomerId}`,
-        );
+        logger.debug(`Sponsor GitHub owner: ${githubOwnerLogin} for customer ${stripeCustomerId}`);
         const ownerId: OwnerId = { login: githubOwnerLogin };
 
         // Ensure the owner exists in the database before creating sponsor record
@@ -107,10 +82,7 @@ const StripeWebhookHelpers = {
 
         await sponsorRepo.createOrUpdate(stripeCustomerId, ownerId, true);
       } catch (error) {
-        logger.error(
-          `Failed to create sponsor for customer ${stripeCustomerId}:`,
-          error,
-        );
+        logger.error(`Failed to create sponsor for customer ${stripeCustomerId}:`, error);
         // Don't throw - this is just for sponsor recognition, not critical for payment processing
       }
     }
@@ -118,9 +90,9 @@ const StripeWebhookHelpers = {
 
   async createAddressAndStripeCustomer(
     email: string | null,
-    customerDetails: Stripe.Checkout.Session.CustomerDetails | null,
+    customerDetails: Stripe.Checkout.Session.CustomerDetails | null
   ): Promise<StripeCustomerId> {
-    let stripeAddress: Stripe.Emptyable<Stripe.AddressParam> = {
+    const stripeAddress: Stripe.Emptyable<Stripe.AddressParam> = {
       city: customerDetails?.address?.city ?? undefined,
       country: customerDetails?.address?.country ?? undefined,
       line1: customerDetails?.address?.line1 ?? undefined,
@@ -136,8 +108,7 @@ const StripeWebhookHelpers = {
 
     logger.debug("Creating stripe customer...", customerCreateParams);
 
-    const customer: Stripe.Customer =
-      await stripe.customers.create(customerCreateParams);
+    const customer: Stripe.Customer = await stripe.customers.create(customerCreateParams);
     return customer.id as StripeCustomerId;
   },
 
@@ -145,12 +116,12 @@ const StripeWebhookHelpers = {
     customerId: StripeCustomerId,
     email: string | null,
     customerDetails: Stripe.Checkout.Session.CustomerDetails | null,
-    currency?: string,
+    currency?: string
   ): Promise<void> {
     const name = customerDetails?.name ?? undefined;
-    const phone = customerDetails?.phone ?? undefined;
+    const _phone = customerDetails?.phone ?? undefined;
 
-    let address: Address | null = null;
+    let _address: Address | null = null;
     if (customerDetails?.address) {
       const createAddressBody = {
         line1: customerDetails?.address?.line1 ?? undefined,
@@ -160,7 +131,7 @@ const StripeWebhookHelpers = {
         postalCode: customerDetails?.address?.postal_code ?? undefined,
         country: customerDetails?.address?.country ?? undefined,
       };
-      address = await addressRepo.create(createAddressBody);
+      _address = await addressRepo.create(createAddressBody);
     }
 
     const newStripeCustomer: StripeCustomer = {
@@ -170,9 +141,7 @@ const StripeWebhookHelpers = {
       name,
     };
 
-    logger.debug(
-      `Stripe customer, not registered, created: ${JSON.stringify(newStripeCustomer)}`,
-    );
+    logger.debug(`Stripe customer, not registered, created: ${JSON.stringify(newStripeCustomer)}`);
     await stripeCustomerRepo.insert(newStripeCustomer);
   },
 
@@ -193,9 +162,7 @@ const StripeWebhookHelpers = {
   async createOrUpdateStripePrice(price: Stripe.Price): Promise<void> {
     const stripePrice: StripePrice = {
       id: price.id as any,
-      stripeProductId: (typeof price.product === "string"
-        ? price.product
-        : (price.product as any)?.id) as any,
+      stripeProductId: (typeof price.product === "string" ? price.product : (price.product as any)?.id) as any,
       currency: requireCurrency(price.currency, "stripe price"),
       unitAmount: price.unit_amount ?? 0,
       recurring: price.recurring ? true : false,
@@ -213,7 +180,7 @@ export const StripeWebhookController: StripeWebhookController = {
       event = stripe.webhooks.constructEvent(
         req.body,
         req.headers["stripe-signature"] as string,
-        config.stripe.webhookSecret,
+        config.stripe.webhookSecret
       );
     } catch (err) {
       logger.error(`Webhook signature verification failed.`, err);
@@ -238,9 +205,7 @@ export const StripeWebhookController: StripeWebhookController = {
         // TODO: https://docs.stripe.com/checkout/fulfillment?payment-ui=embedded-form#create-payment-event-handler
         case "checkout.session.completed": {
           logger.debug("checkout.session.completed, starting!");
-          await StripeWebhookHelpers.checkoutSessionCompleted(
-            event.data.object as Stripe.Checkout.Session,
-          );
+          await StripeWebhookHelpers.checkoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
           logger.debug("checkout.session.completed, done!");
           break;
         }

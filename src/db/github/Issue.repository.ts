@@ -66,11 +66,7 @@ class IssueRepositoryImpl implements IssueRepository {
     const query = `SELECT *
                        FROM github_issue
                        WHERE github_owner_login = $1 AND github_repository_name = $2 AND github_number = $3;`;
-    const result = await this.pool.query(query, [
-      id.repositoryId.ownerId.login,
-      id.repositoryId.name,
-      id.number,
-    ]);
+    const result = await this.pool.query(query, [id.repositoryId.ownerId.login, id.repositoryId.name, id.number]);
 
     return this.getOptionalIssue(result.rows);
   }

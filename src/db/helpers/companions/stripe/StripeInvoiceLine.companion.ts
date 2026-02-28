@@ -9,10 +9,7 @@ import {
 import { ValidationError, Validator } from "../Validator";
 
 export namespace StripeInvoiceLineCompanion {
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): StripeInvoiceLine | ValidationError {
+  export function fromBackend(row: any, table_prefix: string = ""): StripeInvoiceLine | ValidationError {
     const validator = new Validator(row);
     const stripeId = validator.requiredString(`${table_prefix}stripe_id`);
     const invoiceId = validator.requiredString(`${table_prefix}invoice_id`);

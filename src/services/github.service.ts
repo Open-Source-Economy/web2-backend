@@ -21,8 +21,7 @@ function parseOwnerFromGithubApi(json: any): Owner {
   }
   return {
     id: { login: json.login, githubId: json.id } as OwnerId,
-    type:
-      json.type === "Organization" ? OwnerType.Organization : OwnerType.User,
+    type: json.type === "Organization" ? OwnerType.Organization : OwnerType.User,
     htmlUrl: json.html_url,
     avatarUrl: json.avatar_url,
     followers: json.followers,
@@ -88,9 +87,7 @@ export function getGitHubService(): GitHubApi {
 export interface GitHubApi {
   getOwner(ownerId: OwnerId): Promise<Owner>;
 
-  getOwnerAndRepository(
-    repositoryId: RepositoryId,
-  ): Promise<[Owner, Repository]>;
+  getOwnerAndRepository(repositoryId: RepositoryId): Promise<[Owner, Repository]>;
 
   getIssue(issueId: IssueId): Promise<[Issue, Owner]>;
 
@@ -109,11 +106,7 @@ export interface GitHubApi {
    * @param perPage - Number of repositories per page (max: 100, default: 100).
    * @returns A promise that resolves to an array of Repository objects.
    */
-  listOrganizationRepositories(
-    ownerId: OwnerId,
-    page?: number,
-    perPage?: number,
-  ): Promise<Repository[]>;
+  listOrganizationRepositories(ownerId: OwnerId, page?: number, perPage?: number): Promise<Repository[]>;
 
   /**
    * Retrieves ALL repositories for a given organization with pagination and rate limiting.
@@ -137,11 +130,7 @@ export interface GitHubApi {
    * @param perPage - Number of repositories per page (max: 100, default: 100).
    * @returns A promise that resolves to an array of Repository objects.
    */
-  listUserRepositories(
-    ownerId: OwnerId,
-    page?: number,
-    perPage?: number,
-  ): Promise<Repository[]>;
+  listUserRepositories(ownerId: OwnerId, page?: number, perPage?: number): Promise<Repository[]>;
 
   /**
    * Retrieves ALL repositories for a given user with pagination and rate limiting.
@@ -172,7 +161,7 @@ export interface GitHubApi {
   listRepositoriesWithUserContribution(
     accessToken: string,
     userGithubId: OwnerId,
-    minContributions: number,
+    minContributions: number
   ): Promise<Repository[]>;
 
   /**
@@ -182,9 +171,7 @@ export interface GitHubApi {
    * @param repositoryIds - Array of repository IDs to fetch
    * @returns Promise resolving to array of [Owner, Repository] tuples in the same order as input
    */
-  getRepositoriesBulk(
-    repositoryIds: RepositoryId[],
-  ): Promise<Array<[Owner, Repository]>>;
+  getRepositoriesBulk(repositoryIds: RepositoryId[]): Promise<Array<[Owner, Repository]>>;
 
   /**
    * Fetches multiple owners (users/organizations) in a single GraphQL request.
@@ -198,12 +185,7 @@ export interface GitHubApi {
 
 class GitHubApiImpl implements GitHubApi {
   // Centralized GitHub API request handler
-  private async request<T>(
-    url: string,
-    method: string,
-    errorHandlerMessage: string,
-    accessToken?: string,
-  ): Promise<T> {
+  private async request<T>(url: string, method: string, errorHandlerMessage: string, accessToken?: string): Promise<T> {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       Accept: "application/vnd.github.v3+json",
@@ -224,15 +206,11 @@ class GitHubApiImpl implements GitHubApi {
       if (!response.ok) {
         const errorDetails = `Status ${response.status} - ${response.statusText}. URL: ${response.url}`;
         logger.error(`${errorHandlerMessage}: ${errorDetails}`);
-        throw new Error(
-          `${errorHandlerMessage}. Status: ${response.status} - ${response.statusText}`,
-        );
+        throw new Error(`${errorHandlerMessage}. Status: ${response.status} - ${response.statusText}`);
       }
       return await response.json();
     } catch (error) {
-      logger.error(
-        `Failed to call GitHub API for ${errorHandlerMessage}: ${error}`,
-      );
+      logger.error(`Failed to call GitHub API for ${errorHandlerMessage}: ${error}`);
       throw new Error(`Call to GitHub API failed: ${error}`);
     }
   }
@@ -258,11 +236,9 @@ class GitHubApiImpl implements GitHubApi {
   private async graphqlRequest<T>(
     query: string,
     errorHandlerMessage: string,
-    useOrgToken: boolean = false,
+    useOrgToken: boolean = false
   ): Promise<T> {
-    const token = useOrgToken
-      ? config.github.readOrgToken
-      : config.github.publicAccessToken;
+    const token = useOrgToken ? config.github.readOrgToken : config.github.publicAccessToken;
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -280,25 +256,19 @@ class GitHubApiImpl implements GitHubApi {
       if (!response.ok) {
         const errorDetails = `Status ${response.status} - ${response.statusText}`;
         logger.error(`${errorHandlerMessage}: ${errorDetails}`);
-        throw new Error(
-          `${errorHandlerMessage}. Status: ${response.status} - ${response.statusText}`,
-        );
+        throw new Error(`${errorHandlerMessage}. Status: ${response.status} - ${response.statusText}`);
       }
 
       const json = await response.json();
       if (json.errors) {
         const errorMessages = json.errors.map((e: any) => e.message).join("; ");
-        logger.error(
-          `${errorHandlerMessage}: GraphQL errors: ${errorMessages}`,
-        );
+        logger.error(`${errorHandlerMessage}: GraphQL errors: ${errorMessages}`);
         throw new Error(`${errorHandlerMessage}: ${errorMessages}`);
       }
 
       return json.data as T;
     } catch (error) {
-      logger.error(
-        `Failed to call GitHub GraphQL API for ${errorHandlerMessage}: ${error}`,
-      );
+      logger.error(`Failed to call GitHub GraphQL API for ${errorHandlerMessage}: ${error}`);
       throw new Error(`Call to GitHub GraphQL API failed: ${error}`);
     }
   }
@@ -309,20 +279,12 @@ class GitHubApiImpl implements GitHubApi {
     return parseOwnerFromGithubApi(json);
   }
 
-  async getOwnerAndRepository(
-    repositoryId: RepositoryId,
-  ): Promise<[Owner, Repository]> {
+  async getOwnerAndRepository(repositoryId: RepositoryId): Promise<[Owner, Repository]> {
     const url = `https://api.github.com/repos/${repositoryId.ownerId.login.trim()}/${repositoryId.name.trim()}`;
-    const json = await this.request<any>(
-      url,
-      "GET",
-      "Error fetching repository",
-    );
+    const json = await this.request<any>(url, "GET", "Error fetching repository");
 
     if (!json.owner) {
-      throw new Error(
-        `Invalid JSON response: Missing owner field. URL: ${url}`,
-      );
+      throw new Error(`Invalid JSON response: Missing owner field. URL: ${url}`);
     }
 
     const owner = parseOwnerFromGithubApi(json.owner);
@@ -341,90 +303,61 @@ class GitHubApiImpl implements GitHubApi {
 
   async listAuthenticatedUserOrganizations(): Promise<Owner[]> {
     const url = "https://api.github.com/user/orgs";
-    const orgsJson = await this.request<any[]>(
-      url,
-      "GET",
-      "Error fetching user organizations",
-    );
+    const orgsJson = await this.request<any[]>(url, "GET", "Error fetching user organizations");
 
     return orgsJson
       .map((org: any) => {
         try {
           return parseOwnerFromGithubApi(org);
         } catch (e) {
-          logger.warn(
-            `Failed to parse organization as Owner: ${e instanceof Error ? e.message : String(e)}`,
-          );
+          logger.warn(`Failed to parse organization as Owner: ${e instanceof Error ? e.message : String(e)}`);
           return null;
         }
       })
       .filter(Boolean) as Owner[];
   }
 
-  async listOrganizationRepositories(
-    ownerId: OwnerId,
-    page: number = 1,
-    perPage: number = 100,
-  ): Promise<Repository[]> {
+  async listOrganizationRepositories(ownerId: OwnerId, page: number = 1, perPage: number = 100): Promise<Repository[]> {
     const url = `https://api.github.com/orgs/${ownerId.login.trim()}/repos?per_page=${perPage}&page=${page}`;
-    const reposJson = await this.request<any[]>(
-      url,
-      "GET",
-      `Error fetching organization repositories (page ${page})`,
-    );
+    const reposJson = await this.request<any[]>(url, "GET", `Error fetching organization repositories (page ${page})`);
 
     return reposJson
       .map((repo: any) => {
         try {
           return parseRepositoryFromGithubApi(repo);
         } catch (e) {
-          logger.warn(
-            `Failed to parse repository: ${e instanceof Error ? e.message : String(e)}`,
-          );
+          logger.warn(`Failed to parse repository: ${e instanceof Error ? e.message : String(e)}`);
           return null;
         }
       })
       .filter(Boolean) as Repository[];
   }
 
-  async listAllOrganizationRepositories(
-    ownerId: OwnerId,
-  ): Promise<Repository[]> {
+  async listAllOrganizationRepositories(ownerId: OwnerId): Promise<Repository[]> {
     const rateLimiter = new RateLimiter(config.github.sync.rateLimitDelayMs);
 
     const result = await Paginator.fetchAllPages(
-      (page, perPage) =>
-        this.listOrganizationRepositories(ownerId, page, perPage),
+      (page, perPage) => this.listOrganizationRepositories(ownerId, page, perPage),
       {
         perPage: 100,
         rateLimiter,
       },
-      `organization ${ownerId.login} repositories`,
+      `organization ${ownerId.login} repositories`
     );
 
     return result.allItems;
   }
 
-  async listUserRepositories(
-    ownerId: OwnerId,
-    page: number = 1,
-    perPage: number = 100,
-  ): Promise<Repository[]> {
+  async listUserRepositories(ownerId: OwnerId, page: number = 1, perPage: number = 100): Promise<Repository[]> {
     const url = `https://api.github.com/users/${ownerId.login.trim()}/repos?per_page=${perPage}&page=${page}&type=owner`;
-    const reposJson = await this.request<any[]>(
-      url,
-      "GET",
-      `Error fetching user repositories (page ${page})`,
-    );
+    const reposJson = await this.request<any[]>(url, "GET", `Error fetching user repositories (page ${page})`);
 
     return reposJson
       .map((repo: any) => {
         try {
           return parseRepositoryFromGithubApi(repo);
         } catch (e) {
-          logger.warn(
-            `Failed to parse repository: ${e instanceof Error ? e.message : String(e)}`,
-          );
+          logger.warn(`Failed to parse repository: ${e instanceof Error ? e.message : String(e)}`);
           return null;
         }
       })
@@ -440,32 +373,22 @@ class GitHubApiImpl implements GitHubApi {
         perPage: 100,
         rateLimiter,
       },
-      `user ${ownerId.login} repositories`,
+      `user ${ownerId.login} repositories`
     );
 
     return result.allItems;
   }
 
-  async listAuthenticatedUserRepositories(
-    accessToken: string,
-  ): Promise<Repository[]> {
-    const url =
-      "https://api.github.com/user/repos?per_page=100&affiliation=owner,collaborator";
-    const reposJson = await this.request<any[]>(
-      url,
-      "GET",
-      "Error fetching user repositories",
-      accessToken,
-    );
+  async listAuthenticatedUserRepositories(accessToken: string): Promise<Repository[]> {
+    const url = "https://api.github.com/user/repos?per_page=100&affiliation=owner,collaborator";
+    const reposJson = await this.request<any[]>(url, "GET", "Error fetching user repositories", accessToken);
 
     return reposJson
       .map((repo: any) => {
         try {
           return parseRepositoryFromGithubApi(repo);
         } catch (e) {
-          logger.warn(
-            `Failed to parse repository: ${e instanceof Error ? e.message : String(e)}`,
-          );
+          logger.warn(`Failed to parse repository: ${e instanceof Error ? e.message : String(e)}`);
           return null;
         }
       })
@@ -476,13 +399,12 @@ class GitHubApiImpl implements GitHubApi {
   async listRepositoriesWithUserContribution(
     accessToken: string,
     userGithubId: OwnerId,
-    minContributions: number,
+    minContributions: number
   ): Promise<Repository[]> {
     const contributedRepositories: Repository[] = [];
 
     // First, get all repositories the authenticated user has access to
-    const allAccessibleRepos =
-      await this.listAuthenticatedUserRepositories(accessToken);
+    const allAccessibleRepos = await this.listAuthenticatedUserRepositories(accessToken);
 
     for (const repo of allAccessibleRepos) {
       try {
@@ -491,34 +413,25 @@ class GitHubApiImpl implements GitHubApi {
           contributorsUrl,
           "GET",
           `Error fetching contributors for ${repo.id.ownerId.login}/${repo.id.name}`,
-          accessToken,
+          accessToken
         );
 
         // Find the specific user's contributions
-        const userContributor = contributors.find(
-          (contributor: any) => contributor.id === userGithubId.githubId,
-        );
+        const userContributor = contributors.find((contributor: any) => contributor.id === userGithubId.githubId);
 
-        if (
-          userContributor &&
-          userContributor.contributions >= minContributions
-        ) {
+        if (userContributor && userContributor.contributions >= minContributions) {
           contributedRepositories.push(repo);
         }
       } catch (error) {
         // Log the error but don't stop the entire process for one failed repo
-        logger.warn(
-          `Could not get contributions for repository ${repo.id.ownerId.login}/${repo.id.name}: ${error}`,
-        );
+        logger.warn(`Could not get contributions for repository ${repo.id.ownerId.login}/${repo.id.name}: ${error}`);
       }
     }
 
     return contributedRepositories;
   }
 
-  async getRepositoriesBulk(
-    repositoryIds: RepositoryId[],
-  ): Promise<Array<[Owner, Repository]>> {
+  async getRepositoriesBulk(repositoryIds: RepositoryId[]): Promise<Array<[Owner, Repository]>> {
     if (repositoryIds.length === 0) {
       return [];
     }
@@ -607,7 +520,7 @@ class GitHubApiImpl implements GitHubApi {
       repo${index}: repository(owner: "${repoId.ownerId.login}", name: "${repoId.name}") {
         ${repositoryFields}
       }
-    `,
+    `
     );
 
     const query = `
@@ -618,19 +531,14 @@ class GitHubApiImpl implements GitHubApi {
 
     logger.debug(`Fetching ${repositoryIds.length} repositories via GraphQL`);
 
-    const data = await this.graphqlRequest<Record<string, any>>(
-      query,
-      "Error fetching repositories via GraphQL",
-    );
+    const data = await this.graphqlRequest<Record<string, any>>(query, "Error fetching repositories via GraphQL");
 
     const results: Array<[Owner, Repository]> = [];
 
     for (let i = 0; i < repositoryIds.length; i++) {
       const repoData = data[`repo${i}`];
       if (!repoData) {
-        throw new Error(
-          `Repository not found: ${repositoryIds[i].ownerId.login}/${repositoryIds[i].name}`,
-        );
+        throw new Error(`Repository not found: ${repositoryIds[i].ownerId.login}/${repositoryIds[i].name}`);
       }
 
       // Convert GraphQL response to REST API format for parsing
@@ -668,8 +576,7 @@ class GitHubApiImpl implements GitHubApi {
         stargazers_count: repoData.stargazerCount,
         watchers_count: repoData.watchers?.totalCount,
         fork: repoData.isFork,
-        topics:
-          repoData.repositoryTopics?.nodes?.map((n: any) => n.topic.name) || [],
+        topics: repoData.repositoryTopics?.nodes?.map((n: any) => n.topic.name) || [],
         open_issues_count: repoData.issues?.totalCount,
         visibility: repoData.visibility?.toLowerCase(),
         subscribers_count: repoData.watchers?.totalCount,
@@ -785,7 +692,7 @@ class GitHubApiImpl implements GitHubApi {
 
         const userResponse = await this.graphqlRequest<{ owner: any }>(
           userQuery,
-          `Error fetching user ${ownerId.login}`,
+          `Error fetching user ${ownerId.login}`
         );
 
         if (userResponse.owner) {
@@ -794,8 +701,7 @@ class GitHubApiImpl implements GitHubApi {
         }
       } catch (userError) {
         // If user query fails, try organization
-        const errorMessage =
-          userError instanceof Error ? userError.message : String(userError);
+        const errorMessage = userError instanceof Error ? userError.message : String(userError);
         if (errorMessage.includes("Could not resolve to a User")) {
           try {
             const orgQuery = `
@@ -810,17 +716,15 @@ class GitHubApiImpl implements GitHubApi {
             const orgResponse = await this.graphqlRequest<{ owner: any }>(
               orgQuery,
               `Error fetching organization ${ownerId.login}`,
-              true, // useOrgToken = true
+              true // useOrgToken = true
             );
 
             if (orgResponse.owner) {
               ownerData = orgResponse.owner;
               isOrganization = true;
             }
-          } catch (orgError) {
-            throw new Error(
-              `Owner not found (neither user nor organization): ${ownerId.login}`,
-            );
+          } catch (_orgError) {
+            throw new Error(`Owner not found (neither user nor organization): ${ownerId.login}`);
           }
         } else {
           throw userError;

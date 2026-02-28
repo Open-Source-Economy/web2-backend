@@ -3,6 +3,7 @@
 ## When to Use
 
 Use this pattern for batch operations that can partially succeed:
+
 - GitHub data sync (some repos may fail to sync)
 - Bulk imports
 - Multi-step operations where individual items can fail independently
@@ -18,17 +19,15 @@ interface ProcessingSuccess<T> {
 }
 
 // A single item either succeeds (with optional warnings) or fails (with errors)
-type ProcessingResult<T> =
-  | { ok: true; value: T; warnings: WarningIssue[] }
-  | { ok: false; errors: ErrorIssue[] };
+type ProcessingResult<T> = { ok: true; value: T; warnings: WarningIssue[] } | { ok: false; errors: ErrorIssue[] };
 ```
 
 ### Batch Result (Partial Success)
 
 ```typescript
 interface ProcessingOutcome<T> {
-  items: T[];                  // Successfully processed items
-  issues: ProcessingIssue[];   // All errors + warnings across the batch
+  items: T[]; // Successfully processed items
+  issues: ProcessingIssue[]; // All errors + warnings across the batch
 }
 ```
 
@@ -36,17 +35,17 @@ interface ProcessingOutcome<T> {
 
 ```typescript
 enum IssueSeverity {
-  Error = "error",     // Item failed, was skipped
+  Error = "error", // Item failed, was skipped
   Warning = "warning", // Item succeeded, but has a data quality concern
 }
 
 interface ProcessingIssue {
   severity: IssueSeverity;
-  code: string;           // e.g., "MISSING_FIELD", "UNKNOWN_VALUE"
+  code: string; // e.g., "MISSING_FIELD", "UNKNOWN_VALUE"
   message: string;
-  field?: string;         // Which field caused the issue
-  rawValue?: unknown;     // The problematic value
-  row?: number;           // Row number for batch operations
+  field?: string; // Which field caused the issue
+  rawValue?: unknown; // The problematic value
+  row?: number; // Row number for batch operations
 }
 
 type ErrorIssue = ProcessingIssue & { severity: IssueSeverity.Error };
@@ -62,7 +61,9 @@ class IssueCollector {
   private errors: ErrorIssue[] = [];
   private warnings: WarningIssue[] = [];
 
-  get hasErrors(): boolean { return this.errors.length > 0; }
+  get hasErrors(): boolean {
+    return this.errors.length > 0;
+  }
 
   addError(code: string, message: string, field?: string): void {
     this.errors.push({ severity: IssueSeverity.Error, code, message, field });
@@ -85,9 +86,7 @@ class IssueCollector {
 ## Usage Example: GitHub Sync
 
 ```typescript
-async function syncRepositories(
-  repos: GitHubRepoResponse[],
-): Promise<ProcessingOutcome<Repository>> {
+async function syncRepositories(repos: GitHubRepoResponse[]): Promise<ProcessingOutcome<Repository>> {
   const items: Repository[] = [];
   const issues: ProcessingIssue[] = [];
 
@@ -126,7 +125,7 @@ Decide how to handle issues after processing:
 ```typescript
 // Lenient — log errors, continue with partial results
 function lenientPolicy(outcome: ProcessingOutcome<any>): boolean {
-  const errorCount = outcome.issues.filter(i => i.severity === IssueSeverity.Error).length;
+  const errorCount = outcome.issues.filter((i) => i.severity === IssueSeverity.Error).length;
   if (errorCount > 0) {
     logger.warn(`Sync completed with ${errorCount} error(s)`);
   }
@@ -135,7 +134,7 @@ function lenientPolicy(outcome: ProcessingOutcome<any>): boolean {
 
 // Strict — block if any errors
 function strictPolicy(outcome: ProcessingOutcome<any>): boolean {
-  const hasErrors = outcome.issues.some(i => i.severity === IssueSeverity.Error);
+  const hasErrors = outcome.issues.some((i) => i.severity === IssueSeverity.Error);
   if (hasErrors) {
     logger.error("Sync failed due to errors, rolling back");
     return false; // Block

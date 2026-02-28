@@ -3,7 +3,7 @@ import { createApp } from "../../createApp";
 import { setupTestDB } from "../__helpers__/jest.setup";
 
 describe("/api/v1/users", () => {
-  let app: Express = createApp();
+  const _app: Express = createApp();
 
   setupTestDB();
 

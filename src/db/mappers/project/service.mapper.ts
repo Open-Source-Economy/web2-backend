@@ -1,8 +1,4 @@
-import type {
-  Service,
-  ServiceId,
-  ServiceType,
-} from "@open-source-economy/api-types";
+import type { Service, ServiceId, ServiceType } from "@open-source-economy/api-types";
 import { toISODateTimeString } from "../../../utils/date.utils";
 
 export function mapServiceFromRow(row: Record<string, any>): Service {

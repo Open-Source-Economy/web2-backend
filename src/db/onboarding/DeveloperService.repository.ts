@@ -45,10 +45,7 @@ export interface DeveloperServiceRepository {
    * @param params - An object containing the service ID, and body with additional fields.
    * * @returns A promise that resolves to the newly created DeveloperService object (representing the offering with its links).
    */
-  create(
-    developerProfileId: DeveloperProfileId,
-    params: CreateDeveloperServiceParams,
-  ): Promise<DeveloperService>;
+  create(developerProfileId: DeveloperProfileId, params: CreateDeveloperServiceParams): Promise<DeveloperService>;
 
   /**
    * Updates an existing developer service offering, including its associated project items.
@@ -57,10 +54,7 @@ export interface DeveloperServiceRepository {
    * @param body - An object containing the fields to update
    * @returns A promise that resolves to the updated DeveloperService object.
    */
-  update(
-    id: DeveloperServiceId,
-    body: DeveloperServiceBody,
-  ): Promise<DeveloperService>;
+  update(id: DeveloperServiceId, body: DeveloperServiceBody): Promise<DeveloperService>;
 
   /**
    * Deletes a developer service offering by its ID.
@@ -92,14 +86,11 @@ export interface DeveloperServiceRepository {
    */
   getByProfileAndServiceId(
     developerProfileId: DeveloperProfileId,
-    serviceId: ServiceId,
+    serviceId: ServiceId
   ): Promise<DeveloperService | null>;
 }
 
-class DeveloperServiceRepositoryImpl
-  extends BaseRepository<DeveloperService>
-  implements DeveloperServiceRepository
-{
+class DeveloperServiceRepositoryImpl extends BaseRepository<DeveloperService> implements DeveloperServiceRepository {
   constructor(pool: Pool) {
     super(pool, DeveloperServiceCompanion);
   }
@@ -108,18 +99,14 @@ class DeveloperServiceRepositoryImpl
    * Helper function to retrieve all DeveloperProjectItemIds for a given service offering.
    * This is necessary because the links are stored in a separate junction table.
    */
-  private async getProjectItemLinks(
-    offeringId: DeveloperServiceId,
-  ): Promise<DeveloperProjectItemId[]> {
+  private async getProjectItemLinks(offeringId: DeveloperServiceId): Promise<DeveloperProjectItemId[]> {
     const result = await this.pool.query(
       `SELECT developer_project_item_id
          FROM developer_service_developer_project_item_link
          WHERE developer_service_id = $1`,
-      [offeringId],
+      [offeringId]
     );
-    return result.rows.map(
-      (row) => row.developer_project_item_id as DeveloperProjectItemId,
-    );
+    return result.rows.map((row) => row.developer_project_item_id as DeveloperProjectItemId);
   }
 
   /**
@@ -131,9 +118,7 @@ class DeveloperServiceRepositoryImpl
     if (baseOffering instanceof Error) {
       throw baseOffering;
     }
-    const developerProjectItemIds = await this.getProjectItemLinks(
-      baseOffering.id,
-    );
+    const developerProjectItemIds = await this.getProjectItemLinks(baseOffering.id);
     return { ...baseOffering, developerProjectItemIds };
   }
 
@@ -147,26 +132,24 @@ class DeveloperServiceRepositoryImpl
   private async insertProjectItemLinks(
     client: any,
     developerServiceId: DeveloperServiceId,
-    projectItemIds: DeveloperProjectItemId[],
+    projectItemIds: DeveloperProjectItemId[]
   ): Promise<void> {
     if (projectItemIds.length === 0) {
       return;
     }
     // Construct a single VALUES clause using a parameterized query.
     // This is the secure way to perform a bulk insert.
-    const valuesClause = projectItemIds
-      .map((_, index) => `($${index * 2 + 1}, $${index * 2 + 2})`)
-      .join(",");
+    const valuesClause = projectItemIds.map((_, index) => `($${index * 2 + 1}, $${index * 2 + 2})`).join(",");
     const values = projectItemIds.flatMap((piid) => [developerServiceId, piid]);
     await client.query(
       `INSERT INTO developer_service_developer_project_item_link (developer_service_id, developer_project_item_id) VALUES ${valuesClause}`,
-      values,
+      values
     );
   }
 
   async create(
     developerProfileId: DeveloperProfileId,
-    params: CreateDeveloperServiceParams,
+    params: CreateDeveloperServiceParams
   ): Promise<DeveloperService> {
     const client = await this.pool.connect();
     try {
@@ -190,17 +173,13 @@ class DeveloperServiceRepositoryImpl
           params.body.hourlyRate ?? null,
           params.body.responseTimeHours ?? null,
           params.body.comment ?? null,
-        ],
+        ]
       );
 
       const newOfferingId = offeringResult.rows[0].id as DeveloperServiceId;
 
       // Securely insert links using a parameterized query.
-      await this.insertProjectItemLinks(
-        client,
-        newOfferingId,
-        params.body.developerProjectItemIds,
-      );
+      await this.insertProjectItemLinks(client, newOfferingId, params.body.developerProjectItemIds);
 
       await client.query("COMMIT");
 
@@ -219,10 +198,7 @@ class DeveloperServiceRepositoryImpl
     }
   }
 
-  async update(
-    id: DeveloperServiceId,
-    body: DeveloperServiceBody,
-  ): Promise<DeveloperService> {
+  async update(id: DeveloperServiceId, body: DeveloperServiceBody): Promise<DeveloperService> {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
@@ -255,24 +231,16 @@ class DeveloperServiceRepositoryImpl
 
       // Only perform the UPDATE query if there are fields to update.
       if (setParts.length > 1) {
-        await client.query(
-          `UPDATE developer_service SET ${setParts.join(", ")} WHERE id = $${paramIndex}`,
-          values,
-        );
+        await client.query(`UPDATE developer_service SET ${setParts.join(", ")} WHERE id = $${paramIndex}`, values);
       }
 
       // Delete all existing links for this service offering.
-      await client.query(
-        `DELETE FROM developer_service_developer_project_item_link WHERE developer_service_id = $1`,
-        [id],
-      );
+      await client.query(`DELETE FROM developer_service_developer_project_item_link WHERE developer_service_id = $1`, [
+        id,
+      ]);
 
       // Re-insert the new set of links using the secure helper function.
-      await this.insertProjectItemLinks(
-        client,
-        id,
-        body.developerProjectItemIds,
-      );
+      await this.insertProjectItemLinks(client, id, body.developerProjectItemIds);
 
       await client.query("COMMIT");
 
@@ -292,22 +260,15 @@ class DeveloperServiceRepositoryImpl
 
   async delete(id: DeveloperServiceId): Promise<void> {
     try {
-      await this.pool.query(`DELETE FROM developer_service WHERE id = $1`, [
-        id,
-      ]);
+      await this.pool.query(`DELETE FROM developer_service WHERE id = $1`, [id]);
     } catch (error) {
       logger.error(`Error deleting developer service with ID ${id}:`, error);
       throw error;
     }
   }
 
-  async getByProfileId(
-    profileId: DeveloperProfileId,
-  ): Promise<DeveloperService[]> {
-    logger.debug(
-      `Getting developer service offerings by profile id:`,
-      profileId,
-    );
+  async getByProfileId(profileId: DeveloperProfileId): Promise<DeveloperService[]> {
+    logger.debug(`Getting developer service offerings by profile id:`, profileId);
     const result = await this.pool.query(
       `
           SELECT *
@@ -315,12 +276,10 @@ class DeveloperServiceRepositoryImpl
           WHERE developer_profile_id = $1
           ORDER BY created_at DESC
         `,
-      [profileId],
+      [profileId]
     );
 
-    return Promise.all(
-      result.rows.map((row) => this.mapRowToDeveloperService(row)),
-    );
+    return Promise.all(result.rows.map((row) => this.mapRowToDeveloperService(row)));
   }
 
   async getById(id: DeveloperServiceId): Promise<DeveloperService | null> {
@@ -331,7 +290,7 @@ class DeveloperServiceRepositoryImpl
           FROM developer_service
           WHERE id = $1
         `,
-      [id],
+      [id]
     );
 
     if (result.rows.length === 0) {
@@ -342,13 +301,9 @@ class DeveloperServiceRepositoryImpl
 
   async getByProfileAndServiceId(
     developerProfileId: DeveloperProfileId,
-    serviceId: ServiceId,
+    serviceId: ServiceId
   ): Promise<DeveloperService | null> {
-    logger.debug(
-      `Getting developer service offering by profile and service ID:`,
-      developerProfileId,
-      serviceId,
-    );
+    logger.debug(`Getting developer service offering by profile and service ID:`, developerProfileId, serviceId);
 
     const query = `
       SELECT *
@@ -356,10 +311,7 @@ class DeveloperServiceRepositoryImpl
       WHERE developer_profile_id = $1
         AND service_id = $2
     `;
-    const result = await this.pool.query(query, [
-      developerProfileId,
-      serviceId,
-    ]);
+    const result = await this.pool.query(query, [developerProfileId, serviceId]);
     if (result.rows.length === 0) {
       return null;
     }

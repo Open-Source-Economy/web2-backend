@@ -1,19 +1,9 @@
 import { Pool } from "pg";
-import {
-  Currency,
-  Owner,
-  Provider,
-  UserId,
-  UserRole,
-} from "@open-source-economy/api-types";
+import { Currency, Owner, Provider, UserId, UserRole } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { encrypt } from "../../utils";
 import { OwnerCompanion, UserCompanion } from "../helpers/companions";
-import {
-  BackendUser,
-  CreateUser,
-  isBackendLocalUser,
-} from "../helpers/companions/user/backend-user.types";
+import { BackendUser, CreateUser, isBackendLocalUser } from "../helpers/companions/user/backend-user.types";
 
 export function getUserRepository(): UserRepository {
   return new UserRepositoryImpl(pool);
@@ -27,19 +17,13 @@ export interface UserRepository {
   getById(id: UserId): Promise<BackendUser | null>;
   getAll(): Promise<BackendUser[]>;
   findOne(email: string): Promise<BackendUser | null>;
-  findByThirdPartyId(
-    thirdPartyId: string,
-    provider: Provider,
-  ): Promise<BackendUser | null>;
+  findByThirdPartyId(thirdPartyId: string, provider: Provider): Promise<BackendUser | null>;
   findByGithubLogin(githubLogin: string): Promise<BackendUser | null>;
   setPreferredCurrency(userId: UserId, currency: Currency): Promise<void>;
 
   updateName(userId: UserId, name: string): Promise<void>;
 
-  updateTermsAcceptedVersion(
-    userId: UserId,
-    termsVersion: string,
-  ): Promise<void>;
+  updateTermsAcceptedVersion(userId: UserId, termsVersion: string): Promise<void>;
 
   updatePassword(userId: UserId, password: string): Promise<void>;
 }
@@ -60,10 +44,7 @@ class UserRepositoryImpl implements UserRepository {
     }
   }
 
-  private getOptionalUser(
-    rows: any[],
-    owner: Owner | null = null,
-  ): BackendUser | null {
+  private getOptionalUser(rows: any[], owner: Owner | null = null): BackendUser | null {
     if (rows.length === 0) {
       return null;
     } else if (rows.length > 1) {
@@ -95,7 +76,7 @@ class UserRepositoryImpl implements UserRepository {
                 WHERE email = $1
                 RETURNING *
             `,
-      [email],
+      [email]
     );
 
     return this.getOptionalUser(result.rows);
@@ -113,7 +94,7 @@ class UserRepositoryImpl implements UserRepository {
                 FROM app_user au
                          LEFT JOIN github_owner go ON au.github_owner_id = go.github_id
             `,
-      [],
+      []
     );
     return this.getUserList(result.rows);
   }
@@ -131,7 +112,7 @@ class UserRepositoryImpl implements UserRepository {
                          LEFT JOIN github_owner go ON au.github_owner_id = go.github_id
                 WHERE au.id = $1
             `,
-      [id],
+      [id]
     );
     return this.getOptionalUser(result.rows);
   }
@@ -155,7 +136,7 @@ class UserRepositoryImpl implements UserRepository {
             user.role,
             user.preferredCurrency,
             user.termsAcceptedVersion,
-          ],
+          ]
         );
 
         return this.getOneUser(result.rows);
@@ -180,13 +161,7 @@ class UserRepositoryImpl implements UserRepository {
                   github_avatar_url = EXCLUDED.github_avatar_url
           RETURNING *
         `,
-          [
-            owner.id.githubId,
-            owner.type,
-            owner.id.login,
-            owner.htmlUrl,
-            owner.avatarUrl,
-          ],
+          [owner.id.githubId, owner.type, owner.id.login, owner.htmlUrl, owner.avatarUrl]
         );
 
         const githubOwner = OwnerCompanion.fromBackend(ownerResult.rows[0]);
@@ -221,7 +196,7 @@ class UserRepositoryImpl implements UserRepository {
             githubOwner.id.login,
             user.preferredCurrency,
             user.termsAcceptedVersion || null,
-          ],
+          ]
         );
 
         const insertedUser = this.getOneUser(userResult.rows, githubOwner);
@@ -259,15 +234,12 @@ class UserRepositoryImpl implements UserRepository {
                          LEFT JOIN github_owner go ON au.github_owner_id = go.github_id
                 WHERE au.email = $1
             `,
-      [email],
+      [email]
     );
     return this.getOptionalUser(result.rows);
   }
 
-  async findByThirdPartyId(
-    thirdPartyId: string,
-    provider: Provider,
-  ): Promise<BackendUser | null> {
+  async findByThirdPartyId(thirdPartyId: string, provider: Provider): Promise<BackendUser | null> {
     const result = await this.pool.query(
       `
                 SELECT au.id,
@@ -289,7 +261,7 @@ class UserRepositoryImpl implements UserRepository {
                 WHERE au.third_party_id = $1
                   AND au.provider = $2
             `,
-      [thirdPartyId, provider],
+      [thirdPartyId, provider]
     );
     return this.getOptionalUser(result.rows);
   }
@@ -315,22 +287,19 @@ class UserRepositoryImpl implements UserRepository {
                          LEFT JOIN github_owner go ON au.github_owner_id = go.github_id
                 WHERE au.github_owner_login = $1
             `,
-      [githubLogin],
+      [githubLogin]
     );
     return this.getOptionalUser(result.rows);
   }
 
-  async setPreferredCurrency(
-    userId: UserId,
-    currency: Currency,
-  ): Promise<void> {
+  async setPreferredCurrency(userId: UserId, currency: Currency): Promise<void> {
     const result = await this.pool.query(
       `
       UPDATE app_user
       SET preferred_currency = $1
       WHERE id = $2
     `,
-      [currency, userId],
+      [currency, userId]
     );
 
     if (result.rowCount === 0) {
@@ -346,7 +315,7 @@ class UserRepositoryImpl implements UserRepository {
           WHERE id = $2
           RETURNING *
         `,
-      [name, userId],
+      [name, userId]
     );
 
     if (result.rowCount === 0) {
@@ -354,17 +323,14 @@ class UserRepositoryImpl implements UserRepository {
     }
   }
 
-  async updateTermsAcceptedVersion(
-    userId: UserId,
-    termsVersion: string,
-  ): Promise<void> {
+  async updateTermsAcceptedVersion(userId: UserId, termsVersion: string): Promise<void> {
     const result = await this.pool.query(
       `
                 UPDATE app_user
                 SET terms_accepted_version = $1
                 WHERE id = $2
             `,
-      [termsVersion, userId],
+      [termsVersion, userId]
     );
 
     if (result.rowCount === 0) {
@@ -380,7 +346,7 @@ class UserRepositoryImpl implements UserRepository {
       SET hashed_password = $1
       WHERE id = $2
     `,
-      [hashedPassword, userId],
+      [hashedPassword, userId]
     );
 
     if (result.rowCount === 0) {

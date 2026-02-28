@@ -1,12 +1,6 @@
 import { ServerClient } from "postmark";
 import { config, logger } from "../config";
-import {
-  Company,
-  FullDeveloperProfile,
-  Owner,
-  Repository,
-  User,
-} from "@open-source-economy/api-types";
+import { Company, FullDeveloperProfile, Owner, Repository, User } from "@open-source-economy/api-types";
 import { promises as fs } from "fs";
 import * as path from "path";
 import { ensureNoEndingTrailingSlash } from "../utils";
@@ -52,25 +46,15 @@ export class MailService {
     });
   }
 
-  async sendCompanyAdminInvite(
-    toName: string | null,
-    toEmail: string,
-    company: Company,
-    token: string,
-  ) {
+  async sendCompanyAdminInvite(toName: string | null, toEmail: string, company: Company, token: string) {
     const subject = `Open Source Economy - Register as ${company.name} admin`;
 
     const setUpYourAccountLink = `${this.registerURL}?company_token=${token}`;
 
-    logger.info(
-      `Sending email to ${toEmail} with company invite link ${setUpYourAccountLink}`,
-    );
+    logger.info(`Sending email to ${toEmail} with company invite link ${setUpYourAccountLink}`);
 
     // Read the HTML file
-    const htmlFilePath = path.join(
-      __dirname,
-      "company-template/register-as-company-admin.html",
-    );
+    const htmlFilePath = path.join(__dirname, "company-template/register-as-company-admin.html");
     let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
     // Replace placeholders in the HTML with dynamic values
@@ -84,23 +68,23 @@ export class MailService {
     htmlContent = htmlContent
       .replace(
         "{{background}}",
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img.png`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img.png`
       )
       .replace(
         "{{background-mobile}}",
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img_mobile.jpg`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img_mobile.jpg`
       )
       .replace(
         "{{ose-logo}}",
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/cat_img.png`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/cat_img.png`
       )
       .replace(
         /{{checkmark-user-color}}/g,
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_checkmark.png`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_checkmark.png`
       )
       .replace(
         "{{lauriane-signature}}",
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/signature.png`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/signature.png`
       );
 
     // Send email with both text and HTML
@@ -113,28 +97,21 @@ export class MailService {
     user: Owner,
     owner: Owner,
     repository: Repository,
-    token: string,
+    token: string
   ): Promise<void> {
     const subject = `Open Source Economy - Register as ${owner.id.login}/${repository.id.name} admin`;
 
     const setUpYourAccountLink = `${this.registerURL}?repository_token=${token}`;
     const userLogin: string = user.id.login;
-    const userProfileUrl: string =
-      user.avatarUrl ?? `https://i.imghippo.com/files/lEXI9914lM.png`;
+    const userProfileUrl: string = user.avatarUrl ?? `https://i.imghippo.com/files/lEXI9914lM.png`;
     const repositoryName: string = repository.id.name;
     const repositoryUrl: string | null = repository.htmlUrl;
-    const repositoryAvatarUrl: string =
-      owner.avatarUrl ?? `https://i.imghippo.com/files/Jyuv9682tIk.png`;
+    const repositoryAvatarUrl: string = owner.avatarUrl ?? `https://i.imghippo.com/files/Jyuv9682tIk.png`;
 
-    logger.info(
-      `Sending email to ${toEmail} with repository invite link ${setUpYourAccountLink}`,
-    );
+    logger.info(`Sending email to ${toEmail} with repository invite link ${setUpYourAccountLink}`);
 
     // Read the HTML file
-    const htmlFilePath = path.join(
-      __dirname,
-      "register-template/register-as-maintainer-admin.html",
-    );
+    const htmlFilePath = path.join(__dirname, "register-template/register-as-maintainer-admin.html");
     let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
     // Replace placeholders in the HTML with dynamic values
@@ -151,27 +128,27 @@ export class MailService {
     htmlContent = htmlContent
       .replace(
         "{{background}}",
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img.png`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img.png`
       )
       .replace(
         "{{background-mobile}}",
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img_mobile.jpg`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/company-template/pink_main_img_mobile.jpg`
       )
       .replace(
         "{{ose-logo}}",
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/cat_img.png`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/cat_img.png`
       )
       .replace(
         "{{fragment}}",
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/register-template/fragment.png`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/register-template/fragment.png`
       )
       .replace(
         /{{checkmark-developer-color}}/g,
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/register-template/orange_checkmark.png`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/register-template/orange_checkmark.png`
       )
       .replace(
         "{{lauriane-signature}}",
-        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/signature.png`,
+        `${ensureNoEndingTrailingSlash(config.host)}/public/images/email-assets/common-images/signature.png`
       );
 
     // htmlContent = htmlContent
@@ -191,15 +168,9 @@ export class MailService {
     await this.sendMail(config.email.from, subject, message);
   }
 
-  async sendDeveloperOnboardingCompletionEmail(
-    fullProfile: FullDeveloperProfile,
-    user: User,
-  ) {
+  async sendDeveloperOnboardingCompletionEmail(fullProfile: FullDeveloperProfile, user: User) {
     // Read the HTML template file
-    const htmlFilePath = path.join(
-      __dirname,
-      "onboarding-template/developer-onboarding-completion.html",
-    );
+    const htmlFilePath = path.join(__dirname, "onboarding-template/developer-onboarding-completion.html");
     let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
     const timestamp = new Date().toLocaleString("en-US", {
@@ -216,8 +187,7 @@ export class MailService {
     // NOTE: The backend's internal User may carry extra data (e.g., ThirdPartyUser with providerData)
     // beyond the api-types User interface. We use `any` to access it during migration.
     const userData = (user as any).data;
-    const githubData =
-      userData && "providerData" in userData ? userData.providerData : null;
+    const githubData = userData && "providerData" in userData ? userData.providerData : null;
     const githubOwnerLogin: string | undefined = githubData?.owner?.id?.login;
     const githubSection = githubOwnerLogin
       ? `<div class="item-detail"><strong>GitHub:</strong> <a href="https://github.com/${githubOwnerLogin}">@${githubOwnerLogin}</a></div>`
@@ -233,15 +203,12 @@ export class MailService {
               // sourceIdentifier is now a plain string (e.g., "owner/repo", "owner", or a URL)
               const sourceIdentifier = projectItem.sourceIdentifier;
 
-              let name = sourceIdentifier || "Unknown";
+              const name = sourceIdentifier || "Unknown";
               let url = sourceIdentifier || "Unknown";
 
               // Try to detect format and build appropriate URLs
               if (sourceIdentifier) {
-                if (
-                  sourceIdentifier.includes("/") &&
-                  !sourceIdentifier.startsWith("http")
-                ) {
+                if (sourceIdentifier.includes("/") && !sourceIdentifier.startsWith("http")) {
                   // Looks like "owner/repo" format
                   url = `https://github.com/${sourceIdentifier}`;
                 } else if (!sourceIdentifier.startsWith("http")) {
@@ -284,13 +251,10 @@ export class MailService {
               // Get project names for this service
               const serviceProjectNames: string[] = [];
               for (const projectItemId of developerService.developerProjectItemIds) {
-                const projectEntry = fullProfile.projects.find(
-                  (p) => p.developerProjectItem.id === projectItemId,
-                );
+                const projectEntry = fullProfile.projects.find((p) => p.developerProjectItem.id === projectItemId);
                 if (projectEntry) {
                   // sourceIdentifier is now a plain string
-                  const sourceIdentifier =
-                    projectEntry.projectItem.sourceIdentifier;
+                  const sourceIdentifier = projectEntry.projectItem.sourceIdentifier;
                   serviceProjectNames.push(sourceIdentifier || "Unknown");
                 }
               }
@@ -325,19 +289,13 @@ export class MailService {
           // Build preferences display
           const preferences = [];
           if (fullProfile.settings!.servicesPreference) {
-            preferences.push(
-              `Services: ${fullProfile.settings!.servicesPreference}`,
-            );
+            preferences.push(`Services: ${fullProfile.settings!.servicesPreference}`);
           }
           if (fullProfile.settings!.royaltiesPreference) {
-            preferences.push(
-              `Common Pot: ${fullProfile.settings!.royaltiesPreference}`,
-            );
+            preferences.push(`Common Pot: ${fullProfile.settings!.royaltiesPreference}`);
           }
           if (fullProfile.settings!.communitySupporterPreference) {
-            preferences.push(
-              `Community Supporter: ${fullProfile.settings!.communitySupporterPreference}`,
-            );
+            preferences.push(`Community Supporter: ${fullProfile.settings!.communitySupporterPreference}`);
           }
           const incomeStreamsText =
             preferences.length > 0
@@ -348,13 +306,11 @@ export class MailService {
             fullProfile.settings!.hourlyWeeklyCommitment !== null
               ? `<div class="item-detail"><strong>Weekly Availability:</strong> ${fullProfile.settings!.hourlyWeeklyCommitment} hours</div>`
               : "";
-          const availabilityCommentText = fullProfile.settings!
-            .hourlyWeeklyCommitmentComment
+          const availabilityCommentText = fullProfile.settings!.hourlyWeeklyCommitmentComment
             ? `<div class="comment-box">${fullProfile.settings!.hourlyWeeklyCommitmentComment.replace(/\n/g, "<br>")}</div>`
             : "";
           const baseRateText =
-            fullProfile.settings!.hourlyRate !== undefined &&
-            fullProfile.settings!.hourlyRate !== null
+            fullProfile.settings!.hourlyRate !== undefined && fullProfile.settings!.hourlyRate !== null
               ? `<div class="item-detail"><strong>Base Hourly Rate:</strong> ${fullProfile.settings!.currency || "USD"} ${fullProfile.settings!.hourlyRate}/hr</div>`
               : "";
           const baseRateCommentText = fullProfile.settings!.hourlyRateComment
@@ -365,8 +321,7 @@ export class MailService {
             fullProfile.settings!.openToOtherOpportunity !== null
               ? `<div class="item-detail"><strong>Open to Other Opportunities:</strong> ${fullProfile.settings!.openToOtherOpportunity ? "Yes" : "No"}</div>`
               : "";
-          const opportunitiesCommentText = fullProfile.settings!
-            .openToOtherOpportunityComment
+          const opportunitiesCommentText = fullProfile.settings!.openToOtherOpportunityComment
             ? `<div class="comment-box">${fullProfile.settings!.openToOtherOpportunityComment.replace(/\n/g, "<br>")}</div>`
             : "";
 
@@ -387,14 +342,8 @@ export class MailService {
     // Replace placeholders in the HTML template
     htmlContent = htmlContent
       .replace("{{developerName}}", user.name || "Unknown")
-      .replace(
-        "{{developerEmail}}",
-        fullProfile.profileEntry?.profile.contactEmail || "Unknown",
-      )
-      .replace(
-        /{{developerEmail}}/g,
-        fullProfile.profileEntry?.profile.contactEmail || "Unknown",
-      )
+      .replace("{{developerEmail}}", fullProfile.profileEntry?.profile.contactEmail || "Unknown")
+      .replace(/{{developerEmail}}/g, fullProfile.profileEntry?.profile.contactEmail || "Unknown")
       .replace("{{githubSection}}", githubSection)
       .replace("{{projectCount}}", fullProfile.projects.length.toString())
       .replace("{{projectsSection}}", projectsSection)
@@ -402,35 +351,22 @@ export class MailService {
       .replace("{{serviceCount}}", fullProfile.services.length.toString())
       .replace("{{servicesSection}}", servicesSection)
       .replace("{{timestamp}}", timestamp)
-      .replace(
-        "{{dashboardLink}}",
-        `${config.frontEndUrl}/developer-onboarding`,
-      );
+      .replace("{{dashboardLink}}", `${config.frontEndUrl}/developer-onboarding`);
 
     const emailSubject = `🚀 New Developer Onboarding: ${user.name || "Unknown"}`;
 
-    await this.sendMail(
-      config.email.contactRecipient,
-      emailSubject,
-      htmlContent,
-    );
+    await this.sendMail(config.email.contactRecipient, emailSubject, htmlContent);
 
     logger.info(
       `Developer onboarding completion email sent for ${user.name} (${
         fullProfile.profileEntry?.profile.contactEmail || "Unknown"
-      })`,
+      })`
     );
   }
 
-  async sendDeveloperWelcomeEmail(
-    developerName: string,
-    developerEmail: string,
-  ) {
+  async sendDeveloperWelcomeEmail(developerName: string, developerEmail: string) {
     // Read the HTML template file
-    const htmlFilePath = path.join(
-      __dirname,
-      "onboarding-template/developer-confirmation-email.html",
-    );
+    const htmlFilePath = path.join(__dirname, "onboarding-template/developer-confirmation-email.html");
     let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
     // Replace placeholders in the HTML
@@ -456,9 +392,7 @@ export class MailService {
     subject: string;
     message: string;
   }) {
-    const reasonLabel =
-      CONTACT_REASON_LABELS[formData.contactReason as ContactReason] ||
-      formData.contactReason;
+    const reasonLabel = CONTACT_REASON_LABELS[formData.contactReason as ContactReason] || formData.contactReason;
 
     // Build the GitHub profile section
     const githubProfileSection = formData.githubProfile
@@ -488,7 +422,7 @@ export class MailService {
               </div>
               ${project.role ? `<div style="margin-top: 3px;"><strong>Role:</strong> ${project.role}</div>` : ""}
             </div>
-          `,
+          `
             )
             .join("")}
         </div>
@@ -508,10 +442,7 @@ export class MailService {
       : "";
 
     // Read the HTML template file
-    const htmlFilePath = path.join(
-      __dirname,
-      "contact-template/contact-form-email.html",
-    );
+    const htmlFilePath = path.join(__dirname, "contact-template/contact-form-email.html");
     let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
     // Get formatted timestamp
@@ -544,36 +475,21 @@ export class MailService {
 
     const emailSubject = `[${reasonLabel}] ${formData.subject} - From ${formData.name}`;
 
-    await this.sendMail(
-      config.email.contactRecipient,
-      emailSubject,
-      htmlContent,
-    );
+    await this.sendMail(config.email.contactRecipient, emailSubject, htmlContent);
 
-    logger.info(
-      `Contact form email sent from ${formData.email} regarding ${reasonLabel}`,
-    );
+    logger.info(`Contact form email sent from ${formData.email} regarding ${reasonLabel}`);
   }
 
-  async sendPasswordResetEmail(
-    toEmail: string,
-    token: string,
-    name: string | null,
-  ) {
+  async sendPasswordResetEmail(toEmail: string, token: string, name: string | null) {
     const subject = "Reset Your Password - Open Source Economy";
     const resetLink = `${config.frontEndUrl}/auth/reset-password?token=${token}`;
 
     logger.info(`Sending password reset email to ${toEmail}`);
 
-    const htmlFilePath = path.join(
-      __dirname,
-      "auth-template/password-reset.html",
-    );
+    const htmlFilePath = path.join(__dirname, "auth-template/password-reset.html");
     let htmlContent = await fs.readFile(htmlFilePath, "utf-8");
 
-    htmlContent = htmlContent
-      .replace("{{name}}", name || "")
-      .replace("{{resetLink}}", resetLink);
+    htmlContent = htmlContent.replace("{{name}}", name || "").replace("{{resetLink}}", resetLink);
 
     await this.sendMail(toEmail, subject, htmlContent);
   }

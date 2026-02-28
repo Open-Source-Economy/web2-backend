@@ -9,16 +9,12 @@ import type {
 } from "@open-source-economy/api-types";
 import { toISODateTimeString } from "../../../utils/date.utils";
 
-export function mapDeveloperProjectItemFromRow(
-  row: Record<string, any>,
-  prefix = "",
-): DeveloperProjectItem {
+export function mapDeveloperProjectItemFromRow(row: Record<string, any>, prefix = ""): DeveloperProjectItem {
   const id = row[`${prefix}id`];
   if (!id) throw new Error(`Missing ${prefix}id`);
 
   const developerProfileId = row[`${prefix}developer_profile_id`];
-  if (!developerProfileId)
-    throw new Error(`Missing ${prefix}developer_profile_id`);
+  if (!developerProfileId) throw new Error(`Missing ${prefix}developer_profile_id`);
 
   const projectItemId = row[`${prefix}project_item_id`];
   if (!projectItemId) throw new Error(`Missing ${prefix}project_item_id`);
@@ -36,8 +32,7 @@ export function mapDeveloperProjectItemFromRow(
     mergeRights: row[`${prefix}merge_rights`] as MergeRightsType[],
     comment: row[`${prefix}comment`] ?? undefined,
     customCategories: row[`${prefix}custom_categories`] ?? undefined,
-    predefinedCategories:
-      (row[`${prefix}predefined_categories`] as ProjectCategory[]) ?? undefined,
+    predefinedCategories: (row[`${prefix}predefined_categories`] as ProjectCategory[]) ?? undefined,
     createdAt: toISODateTimeString(new Date(createdAt)),
     updatedAt: toISODateTimeString(new Date(updatedAt)),
   };
@@ -55,15 +50,13 @@ export function mergeRolesAndRights(
   existingRoles: DeveloperRoleType[],
   existingMergeRights: MergeRightsType[],
   newRoles: DeveloperRoleType[],
-  newMergeRights: MergeRightsType[],
+  newMergeRights: MergeRightsType[]
 ): MergeRolesAndRightsResult {
   const existingRolesSet = new Set(existingRoles);
   const existingMergeRightsSet = new Set(existingMergeRights);
 
   const addedRoles = newRoles.filter((role) => !existingRolesSet.has(role));
-  const addedMergeRights = newMergeRights.filter(
-    (right) => !existingMergeRightsSet.has(right),
-  );
+  const addedMergeRights = newMergeRights.filter((right) => !existingMergeRightsSet.has(right));
 
   const hasChanges = addedRoles.length > 0 || addedMergeRights.length > 0;
 

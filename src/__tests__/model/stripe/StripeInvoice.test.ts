@@ -1,8 +1,4 @@
-import {
-  StripeCustomerId,
-  StripeInvoice,
-  StripeInvoiceId,
-} from "@open-source-economy/api-types";
+import { StripeCustomerId, StripeInvoice, StripeInvoiceId } from "@open-source-economy/api-types";
 import * as fs from "fs";
 import { requireCurrency } from "../../../utils/enum-utils";
 
@@ -13,9 +9,7 @@ function parseStripeInvoiceFromStripeApi(json: any): StripeInvoice | Error {
   }
   return {
     stripeId: json.id as StripeInvoiceId,
-    customerId: (typeof json.customer === "string"
-      ? json.customer
-      : json.customer?.id) as StripeCustomerId,
+    customerId: (typeof json.customer === "string" ? json.customer : json.customer?.id) as StripeCustomerId,
     paid: json.paid ?? false,
     accountCountry: json.account_country ?? "",
     currency: requireCurrency(json.currency, "test stripe invoice"),
@@ -31,13 +25,8 @@ function parseStripeInvoiceFromStripeApi(json: any): StripeInvoice | Error {
 
 describe("StripeInvoice", () => {
   it("fromStripeApi does not throw an error", () => {
-    const issueData = fs.readFileSync(
-      `src/__tests__/__data__/stripe/webhook/invoice-paid.json`,
-      "utf8",
-    );
-    const invoice = parseStripeInvoiceFromStripeApi(
-      JSON.parse(issueData).data.object,
-    );
+    const issueData = fs.readFileSync(`src/__tests__/__data__/stripe/webhook/invoice-paid.json`, "utf8");
+    const invoice = parseStripeInvoiceFromStripeApi(JSON.parse(issueData).data.object);
     if (invoice instanceof Error) {
       throw invoice;
     }

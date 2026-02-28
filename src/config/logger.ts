@@ -23,11 +23,7 @@ const filterDebug = winston.format((info) => {
 const formatWithObjects = winston.format((info) => {
   const splat = info[Symbol.for("splat")]; // Access the additional arguments
   if (splat && Array.isArray(splat)) {
-    info.message +=
-      " " +
-      splat
-        .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg))
-        .join(" ");
+    info.message += " " + splat.map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ");
   }
   return info;
 });
@@ -47,13 +43,9 @@ export const logger = winston.createLogger({
     filterDebug(),
     enumerateErrorFormat(),
     formatWithObjects(),
-    config.env === NodeEnv.Local
-      ? winston.format.colorize()
-      : winston.format.uncolorize(),
+    config.env === NodeEnv.Local ? winston.format.colorize() : winston.format.uncolorize(),
     winston.format.splat(),
-    winston.format.printf(
-      (info: TransformableInfo) => `${info.level}: ${info.message}`,
-    ),
+    winston.format.printf((info: TransformableInfo) => `${info.level}: ${info.message}`)
   ),
   transports: [
     new winston.transports.Console({

@@ -1,8 +1,5 @@
 import { Pool } from "pg";
-import {
-  StripeCustomer,
-  StripeCustomerId,
-} from "@open-source-economy/api-types";
+import { StripeCustomer, StripeCustomerId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { StripeCustomerCompanion } from "../helpers/companions";
 
@@ -75,7 +72,7 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
                 FROM stripe_customer
                 WHERE stripe_id = $1
             `,
-      [id],
+      [id]
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -88,7 +85,7 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
                 FROM stripe_customer
                 WHERE email = $1
             `,
-      [email],
+      [email]
     );
 
     return this.getOptionalCustomer(result.rows);
@@ -109,12 +106,7 @@ class StripeCustomerRepositoryImpl implements StripeCustomerRepository {
         VALUES ($1, $2, $3, $4)
         RETURNING *
       `,
-        [
-          customer.stripeId,
-          customer.currency || null,
-          customer.email || null,
-          customer.name || null,
-        ],
+        [customer.stripeId, customer.currency || null, customer.email || null, customer.name || null]
       );
 
       await client.query("COMMIT");

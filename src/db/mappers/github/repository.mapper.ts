@@ -1,10 +1,7 @@
 import type { Repository, RepositoryId } from "@open-source-economy/api-types";
 import { mapOwnerIdFromForeignKey } from "./owner.mapper";
 
-export function mapRepositoryIdFromPrimaryKey(
-  row: Record<string, any>,
-  prefix = "",
-): RepositoryId {
+export function mapRepositoryIdFromPrimaryKey(row: Record<string, any>, prefix = ""): RepositoryId {
   const ownerId = mapOwnerIdFromForeignKey(row, prefix);
   const name = row[`${prefix}github_name`];
   if (!name) throw new Error(`Missing ${prefix}github_name`);
@@ -13,10 +10,7 @@ export function mapRepositoryIdFromPrimaryKey(
   return { ownerId, name, githubId };
 }
 
-export function mapRepositoryIdFromForeignKey(
-  row: Record<string, any>,
-  prefix = "",
-): RepositoryId {
+export function mapRepositoryIdFromForeignKey(row: Record<string, any>, prefix = ""): RepositoryId {
   const ownerId = mapOwnerIdFromForeignKey(row, prefix);
   const name = row[`${prefix}github_repository_name`];
   if (!name) throw new Error(`Missing ${prefix}github_repository_name`);
@@ -25,10 +19,7 @@ export function mapRepositoryIdFromForeignKey(
   return { ownerId, name, githubId };
 }
 
-export function mapRepositoryFromRow(
-  row: Record<string, any>,
-  prefix = "",
-): Repository {
+export function mapRepositoryFromRow(row: Record<string, any>, prefix = ""): Repository {
   const id = mapRepositoryIdFromPrimaryKey(row, prefix);
 
   return {

@@ -14,22 +14,23 @@ Use a database transaction when an operation involves **multiple writes that mus
 async function createUserWithCompany(
   pool: Pool,
   userData: CreateUserData,
-  companyData: CreateCompanyData,
+  companyData: CreateCompanyData
 ): Promise<{ user: User; company: Company }> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    const userResult = await client.query(
-      "INSERT INTO app_user (name, email, role) VALUES ($1, $2, $3) RETURNING *",
-      [userData.name, userData.email, userData.role],
-    );
+    const userResult = await client.query("INSERT INTO app_user (name, email, role) VALUES ($1, $2, $3) RETURNING *", [
+      userData.name,
+      userData.email,
+      userData.role,
+    ]);
     const user = UserCompanion.fromRaw(userResult.rows[0]);
 
-    const companyResult = await client.query(
-      "INSERT INTO company (name, owner_id) VALUES ($1, $2) RETURNING *",
-      [companyData.name, user.id],
-    );
+    const companyResult = await client.query("INSERT INTO company (name, owner_id) VALUES ($1, $2) RETURNING *", [
+      companyData.name,
+      user.id,
+    ]);
     const company = CompanyCompanion.fromRaw(companyResult.rows[0]);
 
     await client.query("COMMIT");
@@ -55,9 +56,9 @@ try {
   await client.query("COMMIT");
 } catch (error) {
   await client.query("ROLLBACK");
-  throw error;         // Re-throw after rollback
+  throw error; // Re-throw after rollback
 } finally {
-  client.release();    // Always release the client
+  client.release(); // Always release the client
 }
 ```
 

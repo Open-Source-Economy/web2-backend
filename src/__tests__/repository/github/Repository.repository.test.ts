@@ -30,9 +30,7 @@ describe("RepositoryRepository", () => {
         try {
           await repositoryRepo.insertOrUpdate(repository);
           // If the insertion doesn't throw, fail the test
-          fail(
-            "Expected foreign key constraint violation, but no error was thrown.",
-          );
+          fail("Expected foreign key constraint violation, but no error was thrown.");
         } catch (error: any) {
           // Check if the error is related to foreign key constraint
           expect(error.message).toMatch(/violates foreign key constraint/);
@@ -49,10 +47,7 @@ describe("RepositoryRepository", () => {
         const repository = Fixture.repository(repositoryId);
         await repositoryRepo.insertOrUpdate(repository);
 
-        const updatedRepository = Fixture.repository(
-          repositoryId,
-          "updated-payload",
-        );
+        const updatedRepository = Fixture.repository(repositoryId, "updated-payload");
         const updated = await repositoryRepo.insertOrUpdate(updatedRepository);
 
         expect(updated).toEqual(updatedRepository);

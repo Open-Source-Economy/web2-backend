@@ -1,10 +1,5 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import {
-  LocalUser,
-  Provider,
-  ThirdPartyUser,
-  UserRole,
-} from "@open-source-economy/api-types";
+import { Provider, UserRole } from "@open-source-economy/api-types";
 import { Fixture } from "../../__helpers__/Fixture";
 import { getUserRepository } from "../../../db";
 import {
@@ -59,14 +54,11 @@ describe("UserRepository", () => {
     });
 
     it("should throw an error for non-Github providers", async () => {
-      const thirdPartyUser = Fixture.thirdPartyUser(
-        "1",
-        "invalid_provider" as Provider,
-      );
+      const thirdPartyUser = Fixture.thirdPartyUser("1", "invalid_provider" as Provider);
 
-      await expect(
-        repo.insert(Fixture.createUser(thirdPartyUser)),
-      ).rejects.toThrow("Invalid provider, was expecting Github");
+      await expect(repo.insert(Fixture.createUser(thirdPartyUser))).rejects.toThrow(
+        "Invalid provider, was expecting Github"
+      );
     });
   });
 
@@ -117,7 +109,7 @@ describe("UserRepository", () => {
       const user1 = Fixture.localUser();
       const user2 = Fixture.thirdPartyUser("1");
 
-      const created = await repo.insert(Fixture.createUser(user1));
+      const _created = await repo.insert(Fixture.createUser(user1));
       await repo.insert(Fixture.createUser(user2));
 
       const allUsers = await repo.getAll();
@@ -182,19 +174,13 @@ describe("UserRepository", () => {
 
       expect(created.role).toBe(UserRole.USER);
 
-      const foundByThirdPartyId = await repo.findByThirdPartyId(
-        "1" as ThirdPartyUserId,
-        thirdPartyUser.provider,
-      );
+      const foundByThirdPartyId = await repo.findByThirdPartyId("1" as ThirdPartyUserId, thirdPartyUser.provider);
       expect(foundByThirdPartyId).toEqual(created);
     });
 
     it("should return null if user not found by third-party ID", async () => {
       const nonExistentThirdPartyId = "nonexistentid" as ThirdPartyUserId;
-      const found = await repo.findByThirdPartyId(
-        nonExistentThirdPartyId,
-        Provider.Github,
-      );
+      const found = await repo.findByThirdPartyId(nonExistentThirdPartyId, Provider.Github);
 
       expect(found).toBeNull();
     });

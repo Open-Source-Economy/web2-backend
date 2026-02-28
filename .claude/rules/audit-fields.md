@@ -27,6 +27,7 @@ updated_by UUID REFERENCES app_user(id) ON DELETE SET NULL
 ### Why Always Nullable
 
 Audit FKs must be nullable because:
+
 - **System processes** have no user (e.g., scheduled sync, webhook handler)
 - **Pre-auth operations** happen before a user exists (e.g., registration flow)
 - **User deletion** should not cascade to audit history — use `ON DELETE SET NULL`
@@ -35,22 +36,22 @@ Audit FKs must be nullable because:
 // CORRECT — nullable audit FK
 await client.query(
   "INSERT INTO document (name, created_by) VALUES ($1, $2)",
-  [name, user?.id ?? null],  // null if no user context
+  [name, user?.id ?? null] // null if no user context
 );
 
 // WRONG — required audit FK
 await client.query(
   "INSERT INTO document (name, created_by) VALUES ($1, $2)",
-  [name, user.id],  // Fails for system processes
+  [name, user.id] // Fails for system processes
 );
 ```
 
 ### Regular FK vs Audit FK
 
-| Type | Nullability | ON DELETE | Purpose |
-|------|------------|-----------|---------|
-| **Regular FK** (owner_id) | `NOT NULL` | `RESTRICT` or `CASCADE` | Who owns this resource |
-| **Audit FK** (created_by) | Nullable | `SET NULL` | Who performed this action |
+| Type                      | Nullability | ON DELETE               | Purpose                   |
+| ------------------------- | ----------- | ----------------------- | ------------------------- |
+| **Regular FK** (owner_id) | `NOT NULL`  | `RESTRICT` or `CASCADE` | Who owns this resource    |
+| **Audit FK** (created_by) | Nullable    | `SET NULL`              | Who performed this action |
 
 ```sql
 -- Regular FK: resource ownership

@@ -1,4 +1,4 @@
-import { Project, Repository } from "@open-source-economy/api-types";
+import { Project } from "@open-source-economy/api-types";
 import { ValidationError, Validator } from "../Validator";
 import { OwnerCompanion, RepositoryCompanion } from "../github";
 
@@ -6,7 +6,7 @@ export namespace ProjectCompanion {
   export function fromBackend(
     row: any,
     owner_table_prefix: string,
-    repository_prefix: string,
+    repository_prefix: string
   ): Project | ValidationError {
     const validator = new Validator(row);
 
@@ -19,8 +19,7 @@ export namespace ProjectCompanion {
 
     return {
       owner,
-      repository:
-        repository instanceof ValidationError ? undefined : repository,
+      repository: repository instanceof ValidationError ? undefined : repository,
     } as Project;
   }
 }

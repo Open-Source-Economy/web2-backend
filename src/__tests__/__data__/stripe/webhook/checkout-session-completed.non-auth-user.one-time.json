@@ -28,8 +28,7 @@
       "created": 1736755593,
       "currency": "eur",
       "currency_conversion": null,
-      "custom_fields": [
-      ],
+      "custom_fields": [],
       "custom_text": {
         "after_submit": null,
         "shipping_address": null,
@@ -51,8 +50,7 @@
         "name": "Lauriane Mollier",
         "phone": null,
         "tax_exempt": "none",
-        "tax_ids": [
-        ]
+        "tax_ids": []
       },
       "customer_email": null,
       "expires_at": 1736841992,
@@ -65,15 +63,13 @@
           "description": null,
           "footer": null,
           "issuer": null,
-          "metadata": {
-          },
+          "metadata": {},
           "rendering_options": null
         }
       },
       "livemode": false,
       "locale": null,
-      "metadata": {
-      },
+      "metadata": {},
       "mode": "payment",
       "payment_intent": "pi_3QgigAP1IOinjlLp1dIVn0h9",
       "payment_link": null,
@@ -87,12 +83,7 @@
           "request_three_d_secure": "automatic"
         }
       },
-      "payment_method_types": [
-        "card",
-        "bancontact",
-        "eps",
-        "link"
-      ],
+      "payment_method_types": ["card", "bancontact", "eps", "link"],
       "payment_status": "paid",
       "phone_number_collection": {
         "enabled": false
@@ -103,8 +94,7 @@
       "shipping_address_collection": null,
       "shipping_cost": null,
       "shipping_details": null,
-      "shipping_options": [
-      ],
+      "shipping_options": [],
       "status": "complete",
       "submit_type": null,
       "subscription": null,

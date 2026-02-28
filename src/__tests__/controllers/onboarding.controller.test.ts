@@ -15,9 +15,7 @@ describe("Onboarding Controller", () => {
 
   describe("GET /api/v1/onboarding/service-categories", () => {
     it("should return service categories without authentication", async () => {
-      const response = await request(app).get(
-        "/api/v1/onboarding/service-categories",
-      );
+      const response = await request(app).get("/api/v1/onboarding/service-categories");
 
       // This endpoint requires auth, so it should return 401 without proper auth
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
@@ -32,9 +30,7 @@ describe("Onboarding Controller", () => {
         termsAccepted: false, // Invalid: must be true
       };
 
-      const response = await request(app)
-        .post("/api/v1/onboarding/profile")
-        .send(invalidProfile);
+      const response = await request(app).post("/api/v1/onboarding/profile").send(invalidProfile);
 
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED); // No auth
     });
@@ -49,9 +45,7 @@ describe("Onboarding Controller", () => {
         mergeRights: "invalid_merge_rights", // Invalid merge rights
       };
 
-      const response = await request(app)
-        .post("/api/v1/onboarding/projects")
-        .send(invalidProject);
+      const response = await request(app).post("/api/v1/onboarding/projects").send(invalidProject);
 
       expect(response.status).toBe(StatusCodes.UNAUTHORIZED); // No auth
     });

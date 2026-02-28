@@ -10,11 +10,7 @@ import { LegacyApiError } from "./errorHandler";
 export class ValidationError extends LegacyApiError {
   public details: Joi.ValidationErrorItem[];
 
-  constructor(
-    details: Joi.ValidationErrorItem[],
-    message: string = "Validation error",
-    stack = "",
-  ) {
+  constructor(details: Joi.ValidationErrorItem[], message: string = "Validation error", stack = "") {
     super(StatusCodes.BAD_REQUEST, message, true, stack);
     this.name = "ValidationError";
     this.details = details;
@@ -89,9 +85,7 @@ export const validateQuery = (schema: Joi.ObjectSchema<any>) => {
     if (error) {
       console.error("Query Joi Validation Error:", error);
 
-      next(
-        new ValidationError(error.details, "Invalid request query parameters."),
-      );
+      next(new ValidationError(error.details, "Invalid request query parameters."));
       return;
     }
 

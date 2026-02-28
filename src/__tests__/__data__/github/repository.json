@@ -91,18 +91,14 @@
   "allow_forking": true,
   "is_template": false,
   "web_commit_signoff_required": false,
-  "topics": [
-
-  ],
+  "topics": [],
   "visibility": "public",
   "forks": 0,
   "open_issues": 1,
   "watchers": 2,
   "default_branch": "main",
   "temp_clone_token": null,
-  "custom_properties": {
-
-  },
+  "custom_properties": {},
   "organization": {
     "login": "Open-Source-Economy",
     "id": 141809657,

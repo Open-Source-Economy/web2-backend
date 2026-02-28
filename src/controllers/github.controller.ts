@@ -6,53 +6,28 @@ import { githubSyncService } from "../services";
 
 export interface GitHubController {
   getOwner(
-    req: Request<
-      dto.GetOwnerParams,
-      dto.GetOwnerResponse,
-      {},
-      dto.GetOwnerQuery
-    >,
-    res: Response<dto.GetOwnerResponse>,
+    req: Request<dto.GetOwnerParams, dto.GetOwnerResponse, {}, dto.GetOwnerQuery>,
+    res: Response<dto.GetOwnerResponse>
   ): Promise<void>;
 
   getRepository(
-    req: Request<
-      dto.GetRepositoryParams,
-      dto.GetRepositoryResponse,
-      {},
-      dto.GetRepositoryQuery
-    >,
-    res: Response<dto.GetRepositoryResponse>,
+    req: Request<dto.GetRepositoryParams, dto.GetRepositoryResponse, {}, dto.GetRepositoryQuery>,
+    res: Response<dto.GetRepositoryResponse>
   ): Promise<void>;
 
   syncOwner(
-    req: Request<
-      dto.SyncOwnerParams,
-      dto.SyncOwnerResponse,
-      dto.SyncOwnerBody,
-      dto.SyncOwnerQuery
-    >,
-    res: Response<dto.SyncOwnerResponse>,
+    req: Request<dto.SyncOwnerParams, dto.SyncOwnerResponse, dto.SyncOwnerBody, dto.SyncOwnerQuery>,
+    res: Response<dto.SyncOwnerResponse>
   ): Promise<void>;
 
   syncRepository(
-    req: Request<
-      dto.SyncRepositoryParams,
-      dto.SyncRepositoryResponse,
-      dto.SyncRepositoryBody,
-      dto.SyncRepositoryQuery
-    >,
-    res: Response<dto.SyncRepositoryResponse>,
+    req: Request<dto.SyncRepositoryParams, dto.SyncRepositoryResponse, dto.SyncRepositoryBody, dto.SyncRepositoryQuery>,
+    res: Response<dto.SyncRepositoryResponse>
   ): Promise<void>;
 
   syncProject(
-    req: Request<
-      dto.SyncProjectParams,
-      dto.SyncProjectResponse,
-      dto.SyncProjectBody,
-      dto.SyncProjectQuery
-    >,
-    res: Response<dto.SyncProjectResponse>,
+    req: Request<dto.SyncProjectParams, dto.SyncProjectResponse, dto.SyncProjectBody, dto.SyncProjectQuery>,
+    res: Response<dto.SyncProjectResponse>
   ): Promise<void>;
 
   syncAll(
@@ -70,19 +45,14 @@ export interface GitHubController {
       syncedOwners: number;
       syncedRepositories: number;
       errors: number;
-    }>,
+    }>
   ): Promise<void>;
 }
 
 export const GitHubController: GitHubController = {
   async getOwner(
-    req: Request<
-      dto.GetOwnerParams,
-      dto.GetOwnerResponse,
-      {},
-      dto.GetOwnerQuery
-    >,
-    res: Response<dto.GetOwnerResponse>,
+    req: Request<dto.GetOwnerParams, dto.GetOwnerResponse, {}, dto.GetOwnerQuery>,
+    res: Response<dto.GetOwnerResponse>
   ) {
     const owner = await githubSyncService.syncOwner({
       login: req.params.owner,
@@ -92,30 +62,19 @@ export const GitHubController: GitHubController = {
   },
 
   async getRepository(
-    req: Request<
-      dto.GetRepositoryParams,
-      dto.GetRepositoryResponse,
-      {},
-      dto.GetRepositoryQuery
-    >,
-    res: Response<dto.GetRepositoryResponse>,
+    req: Request<dto.GetRepositoryParams, dto.GetRepositoryResponse, {}, dto.GetRepositoryQuery>,
+    res: Response<dto.GetRepositoryResponse>
   ) {
     const ownerId: OwnerId = { login: req.params.owner };
     const repositoryId: RepositoryId = { ownerId, name: req.params.repo };
-    const [owner, repository] =
-      await githubSyncService.syncRepository(repositoryId);
+    const [owner, repository] = await githubSyncService.syncRepository(repositoryId);
     const response: dto.GetRepositoryResponse = { owner, repository };
     res.status(StatusCodes.OK).send(response);
   },
 
   async syncOwner(
-    req: Request<
-      dto.SyncOwnerParams,
-      dto.SyncOwnerResponse,
-      dto.SyncOwnerBody,
-      dto.SyncOwnerQuery
-    >,
-    res: Response<dto.SyncOwnerResponse>,
+    req: Request<dto.SyncOwnerParams, dto.SyncOwnerResponse, dto.SyncOwnerBody, dto.SyncOwnerQuery>,
+    res: Response<dto.SyncOwnerResponse>
   ) {
     const ownerId: OwnerId = { login: req.params.owner };
     const owner = await githubSyncService.syncOwner(ownerId);
@@ -124,30 +83,19 @@ export const GitHubController: GitHubController = {
   },
 
   async syncRepository(
-    req: Request<
-      dto.SyncRepositoryParams,
-      dto.SyncRepositoryResponse,
-      dto.SyncRepositoryBody,
-      dto.SyncRepositoryQuery
-    >,
-    res: Response<dto.SyncRepositoryResponse>,
+    req: Request<dto.SyncRepositoryParams, dto.SyncRepositoryResponse, dto.SyncRepositoryBody, dto.SyncRepositoryQuery>,
+    res: Response<dto.SyncRepositoryResponse>
   ) {
     const ownerId: OwnerId = { login: req.params.owner };
     const repositoryId: RepositoryId = { ownerId, name: req.params.repo };
-    const [owner, repository] =
-      await githubSyncService.syncRepository(repositoryId);
+    const [owner, repository] = await githubSyncService.syncRepository(repositoryId);
     const response: dto.SyncRepositoryResponse = { owner, repository };
     res.status(StatusCodes.OK).send(response);
   },
 
   async syncProject(
-    req: Request<
-      dto.SyncProjectParams,
-      dto.SyncProjectResponse,
-      dto.SyncProjectBody,
-      dto.SyncProjectQuery
-    >,
-    res: Response<dto.SyncProjectResponse>,
+    req: Request<dto.SyncProjectParams, dto.SyncProjectResponse, dto.SyncProjectBody, dto.SyncProjectQuery>,
+    res: Response<dto.SyncProjectResponse>
   ) {
     let projectId: OwnerId | RepositoryId;
 
@@ -178,7 +126,7 @@ export const GitHubController: GitHubController = {
       syncedOwners: number;
       syncedRepositories: number;
       errors: number;
-    }>,
+    }>
   ) {
     const result = await githubSyncService.syncAllProjectItems();
     res.status(StatusCodes.OK).send(result);

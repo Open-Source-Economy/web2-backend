@@ -3,10 +3,12 @@
 ## Authentication Flow
 
 ### 1. GitHub OAuth Login
+
 Open in browser: `http://localhost:3001/api/v1/auth/github`
 This will redirect you to GitHub for authentication.
 
 ### 2. Check Authentication Status
+
 ```bash
 curl http://localhost:3001/api/v1/auth/status
 ```
@@ -18,6 +20,7 @@ After authentication, you can test these endpoints:
 ### Profile Management
 
 #### Create Developer Profile
+
 ```bash
 curl -X POST http://localhost:3001/api/v1/onboarding/profile \
   -H "Content-Type: application/json" \
@@ -26,6 +29,7 @@ curl -X POST http://localhost:3001/api/v1/onboarding/profile \
 ```
 
 #### Get Developer Profile
+
 ```bash
 curl http://localhost:3001/api/v1/onboarding/profile \
   -H "Cookie: [YOUR_SESSION_COOKIE]"
@@ -34,6 +38,7 @@ curl http://localhost:3001/api/v1/onboarding/profile \
 ### Developer Settings
 
 #### Set Developer Settings
+
 ```bash
 curl -X POST http://localhost:3001/api/v1/onboarding/settings \
   -H "Content-Type: application/json" \
@@ -50,18 +55,21 @@ curl -X POST http://localhost:3001/api/v1/onboarding/settings \
 ### GitHub Integration
 
 #### Get Your GitHub Organizations
+
 ```bash
 curl http://localhost:3001/api/v1/onboarding/github/organizations \
   -H "Cookie: [YOUR_SESSION_COOKIE]"
 ```
 
 #### Get Your GitHub Repositories
+
 ```bash
 curl http://localhost:3001/api/v1/onboarding/github/user/repositories \
   -H "Cookie: [YOUR_SESSION_COOKIE]"
 ```
 
 #### Get Organization Repositories
+
 ```bash
 curl http://localhost:3001/api/v1/onboarding/github/organizations/[ORG_NAME]/repositories \
   -H "Cookie: [YOUR_SESSION_COOKIE]"
@@ -70,6 +78,7 @@ curl http://localhost:3001/api/v1/onboarding/github/organizations/[ORG_NAME]/rep
 ### Repository Management
 
 #### Add a Repository
+
 ```bash
 curl -X POST http://localhost:3001/api/v1/onboarding/repositories \
   -H "Content-Type: application/json" \
@@ -93,6 +102,7 @@ curl -X POST http://localhost:3001/api/v1/onboarding/repositories \
 ```
 
 #### Get Your Repositories
+
 ```bash
 curl http://localhost:3001/api/v1/onboarding/repositories \
   -H "Cookie: [YOUR_SESSION_COOKIE]"
@@ -101,12 +111,14 @@ curl http://localhost:3001/api/v1/onboarding/repositories \
 ### Services
 
 #### Get Available Services
+
 ```bash
 curl http://localhost:3001/api/v1/onboarding/services \
   -H "Cookie: [YOUR_SESSION_COOKIE]"
 ```
 
 #### Add Developer Service
+
 ```bash
 curl -X POST http://localhost:3001/api/v1/onboarding/developer-services \
   -H "Content-Type: application/json" \
@@ -130,6 +142,7 @@ curl -X POST http://localhost:3001/api/v1/onboarding/complete \
 ## Testing Without Browser
 
 To get a session cookie programmatically, you would need to:
+
 1. Implement a test user creation endpoint (for development only)
 2. Or use a tool like Puppeteer to automate the GitHub OAuth flow
 3. Or manually copy the cookie from browser DevTools after logging in
@@ -145,6 +158,7 @@ To get a session cookie programmatically, you would need to:
 ## Test Data
 
 The services table is pre-populated with these categories:
+
 - Support (Bug Fixes, New Features, Code Maintenance)
 - Development (Technical Assistance, Deployment Guidance, Customer Support)
 - Operation (Incident Response, Proactive Monitoring, 24/7 Supervision)

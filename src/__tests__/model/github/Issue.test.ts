@@ -1,11 +1,5 @@
 import fs from "fs";
-import {
-  Issue,
-  ISODateTimeString,
-  IssueId,
-  OwnerId,
-  RepositoryId,
-} from "@open-source-economy/api-types";
+import { Issue, ISODateTimeString, IssueId, OwnerId, RepositoryId } from "@open-source-economy/api-types";
 
 // Local parsing helper (replaces the old static Issue.fromGithubApi method)
 function parseIssueFromGithubApi(repositoryId: RepositoryId, json: any): Issue {
@@ -25,10 +19,7 @@ function parseIssueFromGithubApi(repositoryId: RepositoryId, json: any): Issue {
 
 describe("Issue", () => {
   it("fromGithubApi does not throw an error", () => {
-    const data = fs.readFileSync(
-      `src/__tests__/__data__/github/issue.json`,
-      "utf8",
-    );
+    const data = fs.readFileSync(`src/__tests__/__data__/github/issue.json`, "utf8");
 
     const ownerId: OwnerId = {
       login: "Open-Source-Economy",

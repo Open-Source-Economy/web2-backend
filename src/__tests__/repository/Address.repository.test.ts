@@ -9,9 +9,7 @@ describe("AddressRepository", () => {
   let validUserId: UserId;
 
   beforeEach(async () => {
-    const validUser = await userRepo.insert(
-      Fixture.createUser(Fixture.localUser()),
-    );
+    const validUser = await userRepo.insert(Fixture.createUser(Fixture.localUser()));
     validUserId = validUser.id;
   });
 
@@ -44,14 +42,10 @@ describe("AddressRepository", () => {
         name: "Updated Company Name",
       } as CreateAddressBody;
 
-      const updated = await addressRepo.update(
-        Fixture.addressFromBody(created.id, updatedAddressBody),
-      );
+      const updated = await addressRepo.update(Fixture.addressFromBody(created.id, updatedAddressBody));
 
       expect(created.id).toEqual(updated.id);
-      expect(updated).toEqual(
-        Fixture.addressFromBody(created.id, updatedAddressBody),
-      );
+      expect(updated).toEqual(Fixture.addressFromBody(created.id, updatedAddressBody));
 
       const found = await addressRepo.getById(updated.id);
       expect(found).toEqual(updated);
@@ -121,11 +115,7 @@ describe("AddressRepository", () => {
       };
 
       const company = await companyRepo.create(companyBody);
-      await userCompanyRepo.insert(
-        validUserId,
-        company.id,
-        CompanyUserRole.ADMIN,
-      );
+      await userCompanyRepo.insert(validUserId, company.id, CompanyUserRole.ADMIN);
 
       // Fetch the address using the user ID
       const address = await addressRepo.getCompanyUserAddress(validUserId);
@@ -149,8 +139,8 @@ describe("AddressRepository", () => {
     });
 
     it("should return all company address", async () => {
-      const addressId1 = Fixture.uuid();
-      const addressId2 = Fixture.uuid();
+      const _addressId1 = Fixture.uuid();
+      const _addressId2 = Fixture.uuid();
 
       const address = {
         name: "Company Name",
@@ -162,12 +152,8 @@ describe("AddressRepository", () => {
       const alladdress = await addressRepo.getAll();
 
       expect(alladdress).toHaveLength(2);
-      expect(alladdress).toContainEqual(
-        Fixture.addressFromBody(address1.id, address),
-      );
-      expect(alladdress).toContainEqual(
-        Fixture.addressFromBody(address2.id, address),
-      );
+      expect(alladdress).toContainEqual(Fixture.addressFromBody(address1.id, address));
+      expect(alladdress).toContainEqual(Fixture.addressFromBody(address2.id, address));
     });
   });
 });

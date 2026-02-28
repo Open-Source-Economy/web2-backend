@@ -9,7 +9,7 @@ import { mapRepositoryIdFromForeignKey } from "../github/repository.mapper";
 
 export function mapRepositoryUserPermissionTokenFromRow(
   row: Record<string, any>,
-  prefix = "",
+  prefix = ""
 ): RepositoryUserPermissionToken {
   const id = row[`${prefix}id`];
   if (!id) throw new Error(`Missing ${prefix}id`);
@@ -27,9 +27,7 @@ export function mapRepositoryUserPermissionTokenFromRow(
     userGithubOwnerLogin: row[`${prefix}user_github_owner_login`],
     token,
     repositoryId: mapRepositoryIdFromForeignKey(row, prefix),
-    repositoryUserRole: row[
-      `${prefix}repository_user_role`
-    ] as RepositoryUserRole,
+    repositoryUserRole: row[`${prefix}repository_user_role`] as RepositoryUserRole,
     rate: row[`${prefix}rate`] != null ? Number(row[`${prefix}rate`]) : null,
     currency: (row[`${prefix}currency`] as Currency) ?? null,
     expiresAt: toISODateTimeString(new Date(expiresAt)),

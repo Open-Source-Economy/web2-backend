@@ -3,35 +3,19 @@ import { ValidationError, Validator } from "../Validator";
 import { OwnerIdCompanion } from "./Owner.companion";
 
 export namespace RepositoryIdCompanion {
-  export function fromBackendPrimaryKey(
-    row: any,
-    table_prefix: string = "",
-  ): RepositoryId | ValidationError {
-    return fromAny(
-      row,
-      `${table_prefix}github_name`,
-      `${table_prefix}github_id`,
-      table_prefix,
-    );
+  export function fromBackendPrimaryKey(row: any, table_prefix: string = ""): RepositoryId | ValidationError {
+    return fromAny(row, `${table_prefix}github_name`, `${table_prefix}github_id`, table_prefix);
   }
 
-  export function fromBackendForeignKey(
-    row: any,
-    table_prefix: string = "",
-  ): RepositoryId | ValidationError {
-    return fromAny(
-      row,
-      `${table_prefix}github_repository_name`,
-      `${table_prefix}github_repository_id`,
-      table_prefix,
-    );
+  export function fromBackendForeignKey(row: any, table_prefix: string = ""): RepositoryId | ValidationError {
+    return fromAny(row, `${table_prefix}github_repository_name`, `${table_prefix}github_repository_id`, table_prefix);
   }
 
   function fromAny(
     data: any,
     nameKey: string,
     idKey: string,
-    table_prefix: string = "",
+    table_prefix: string = ""
   ): RepositoryId | ValidationError {
     const ownerId = OwnerIdCompanion.fromBackendForeignKey(data, table_prefix);
     if (ownerId instanceof ValidationError) {
@@ -67,55 +51,28 @@ export namespace RepositoryCompanion {
    *
    * @returns A new `Repository` instance if validation succeeds, or a `ValidationError` otherwise.
    */
-  export function fromBackend(
-    json: any,
-    table_prefix: string = "",
-  ): Repository | ValidationError {
+  export function fromBackend(json: any, table_prefix: string = ""): Repository | ValidationError {
     const validator = new Validator(json);
 
-    const repositoryId = RepositoryIdCompanion.fromBackendPrimaryKey(
-      json,
-      table_prefix,
-    );
+    const repositoryId = RepositoryIdCompanion.fromBackendPrimaryKey(json, table_prefix);
     if (repositoryId instanceof ValidationError) {
       return repositoryId;
     }
 
     const htmlUrl = validator.requiredString(`${table_prefix}github_html_url`);
-    const description = validator.optionalString(
-      `${table_prefix}github_description`,
-    );
+    const description = validator.optionalString(`${table_prefix}github_description`);
     const homepage = validator.optionalString(`${table_prefix}github_homepage`);
     const language = validator.optionalString(`${table_prefix}github_language`);
-    const forksCount = validator.optionalNumber(
-      `${table_prefix}github_forks_count`,
-    );
-    const stargazersCount = validator.optionalNumber(
-      `${table_prefix}github_stargazers_count`,
-    );
-    const watchersCount = validator.optionalNumber(
-      `${table_prefix}github_watchers_count`,
-    );
-    const fullName = validator.optionalString(
-      `${table_prefix}github_full_name`,
-    );
+    const forksCount = validator.optionalNumber(`${table_prefix}github_forks_count`);
+    const stargazersCount = validator.optionalNumber(`${table_prefix}github_stargazers_count`);
+    const watchersCount = validator.optionalNumber(`${table_prefix}github_watchers_count`);
+    const fullName = validator.optionalString(`${table_prefix}github_full_name`);
     const fork = validator.optionalBoolean(`${table_prefix}github_fork`);
-    const topics = validator.optionalArray<string>(
-      `${table_prefix}github_topics`,
-      "string",
-    );
-    const openIssuesCount = validator.optionalNumber(
-      `${table_prefix}github_open_issues_count`,
-    );
-    const visibility = validator.optionalString(
-      `${table_prefix}github_visibility`,
-    );
-    const subscribersCount = validator.optionalNumber(
-      `${table_prefix}github_subscribers_count`,
-    );
-    const networkCount = validator.optionalNumber(
-      `${table_prefix}github_network_count`,
-    );
+    const topics = validator.optionalArray<string>(`${table_prefix}github_topics`, "string");
+    const openIssuesCount = validator.optionalNumber(`${table_prefix}github_open_issues_count`);
+    const visibility = validator.optionalString(`${table_prefix}github_visibility`);
+    const subscribersCount = validator.optionalNumber(`${table_prefix}github_subscribers_count`);
+    const networkCount = validator.optionalNumber(`${table_prefix}github_network_count`);
 
     const error = validator.getFirstError();
     if (error) {

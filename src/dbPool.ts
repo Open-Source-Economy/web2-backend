@@ -44,14 +44,8 @@ function getPool(): Pool {
   poolInstance.on("error", (err) => {
     // Log connection errors but don't crash the app
     // ECONNRESET errors are common in serverless environments and can be safely ignored
-    if (
-      (err as NodeJS.ErrnoException).code === "ECONNRESET" ||
-      (err as NodeJS.ErrnoException).code === "EPIPE"
-    ) {
-      logger.warn(
-        "Database connection reset (this is normal in serverless environments):",
-        err.message,
-      );
+    if ((err as NodeJS.ErrnoException).code === "ECONNRESET" || (err as NodeJS.ErrnoException).code === "EPIPE") {
+      logger.warn("Database connection reset (this is normal in serverless environments):", err.message);
     } else {
       logger.error("Unexpected database pool error:", err);
     }
@@ -61,10 +55,7 @@ function getPool(): Pool {
   poolInstance.on("connect", (client) => {
     client.on("error", (err) => {
       // Log client errors but don't crash the app
-      if (
-        (err as NodeJS.ErrnoException).code === "ECONNRESET" ||
-        (err as NodeJS.ErrnoException).code === "EPIPE"
-      ) {
+      if ((err as NodeJS.ErrnoException).code === "ECONNRESET" || (err as NodeJS.ErrnoException).code === "EPIPE") {
         logger.warn("Database client connection reset:", err.message);
       } else {
         logger.error("Database client error:", err);

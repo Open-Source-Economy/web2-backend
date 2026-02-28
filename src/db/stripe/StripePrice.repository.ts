@@ -17,7 +17,7 @@ export interface StripePriceRepository {
   createOrUpdate(price: StripePrice): Promise<StripePrice>;
   getById(id: StripePriceId): Promise<StripePrice | null>;
   getActiveCampaignPricesByProductId(
-    productId: StripeProductId,
+    productId: StripeProductId
   ): Promise<Record<Currency, [CampaignPriceType, StripePrice][]>>;
   getAll(): Promise<StripePrice[]>;
 }
@@ -69,13 +69,13 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
         FROM stripe_price
         WHERE stripe_id = $1
       `,
-      [id],
+      [id]
     );
     return this.getOptionalPrice(result.rows);
   }
 
   async getActiveCampaignPricesByProductId(
-    productId: StripeProductId,
+    productId: StripeProductId
   ): Promise<Record<Currency, [CampaignPriceType, StripePrice][]>> {
     const result = await this.pool.query(
       `
@@ -86,15 +86,15 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
             .map((type) => `'${type}'`)
             .join(", ")})
       `,
-      [productId],
+      [productId]
     );
 
     const priceList = this.getPriceList(result.rows);
 
-    const pricesByCurrency: Record<
+    const pricesByCurrency: Record<Currency, [CampaignPriceType, StripePrice][]> = {} as Record<
       Currency,
       [CampaignPriceType, StripePrice][]
-    > = {} as Record<Currency, [CampaignPriceType, StripePrice][]>;
+    >;
     // Group prices by currency
     for (const price of priceList) {
       if (!pricesByCurrency[price.currency]) {
@@ -146,14 +146,7 @@ class StripePriceRepositoryImpl implements StripePriceRepository {
         type = $6
       RETURNING stripe_id, product_id, unit_amount, currency, active, type
     `,
-        [
-          price.stripeId,
-          price.productId,
-          price.unitAmount,
-          price.currency,
-          price.active,
-          price.type,
-        ],
+        [price.stripeId, price.productId, price.unitAmount, price.currency, price.active, price.type]
       );
 
       return this.getOnePrice(result.rows);

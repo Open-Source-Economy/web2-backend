@@ -5,16 +5,12 @@ import { NodeEnv } from "./NodeEnv";
 import { logger } from "./logger";
 import { StatusCodes } from "http-status-codes";
 
-morgan.token(
-  "message",
-  (req: Request, res: Response) => res.locals.errorMessage || "",
-);
+morgan.token("message", (req: Request, res: Response) => res.locals.errorMessage || "");
 
-const getIpFormat = () =>
-  config.env === NodeEnv.Production ? ":remote-addr - " : "";
+const getIpFormat = () => (config.env === NodeEnv.Production ? ":remote-addr - " : "");
 
 const successResponseFormat = `${getIpFormat()}:method :url :status - :response-time ms`;
-const errorResponseFormat = `${getIpFormat()}:method :url :status - :response-time ms - message: :message`;
+const _errorResponseFormat = `${getIpFormat()}:method :url :status - :response-time ms - message: :message`;
 
 // Create custom morgan stream writers
 const successStream = {
@@ -24,7 +20,7 @@ const successStream = {
   },
 };
 
-const errorStream = {
+const _errorStream = {
   write: (message: string) => {
     const trimmedMessage = message.trim();
     logger.error(trimmedMessage);
@@ -32,7 +28,7 @@ const errorStream = {
 };
 
 // Stream for warnings (non-frontend 404s)
-const warningStream = {
+const _warningStream = {
   write: (message: string) => {
     const trimmedMessage = message.trim();
     logger.warn(trimmedMessage);
@@ -40,7 +36,7 @@ const warningStream = {
 };
 
 // Custom stream that routes to warning or error based on request
-const createConditionalErrorStream = () => ({
+const _createConditionalErrorStream = () => ({
   write: (message: string, req: Request, res: Response) => {
     const trimmedMessage = message.trim();
     // Check if it's a 404 and not from frontend
@@ -85,5 +81,5 @@ export const errorHandler = morgan(
   },
   {
     skip: (req: Request, res: Response) => res.statusCode < 400,
-  },
+  }
 );

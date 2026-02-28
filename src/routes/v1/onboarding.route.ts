@@ -1,14 +1,7 @@
 import { Router } from "express";
 import { OnboardingController } from "../../controllers/onboarding.controller";
-import {
-  authenticatedDeveloperProfileUser,
-  authenticatedUser,
-} from "../../middlewares";
-import {
-  validateBody,
-  validateParams,
-  validateQuery,
-} from "../../middlewares/validation";
+import { authenticatedDeveloperProfileUser, authenticatedUser } from "../../middlewares";
+import { validateBody, validateParams, validateQuery } from "../../middlewares/validation";
 import * as dto from "@open-source-economy/api-types";
 
 const router = Router();
@@ -22,7 +15,7 @@ router.post(
   validateBody(dto.createProfileEndpoint.body as any),
   validateQuery(dto.createProfileEndpoint.query as any),
   authenticatedUser, // Only user authentication needed to create profile
-  OnboardingController.createProfile,
+  OnboardingController.createProfile
 );
 
 // Route to get a developer's full profile
@@ -31,7 +24,7 @@ router.get(
   validateParams(dto.getDeveloperProfileEndpoint.pathParams as any),
   validateQuery(dto.getDeveloperProfileEndpoint.query as any),
   authenticatedUser, // Only user authentication needed to create profile
-  OnboardingController.getDeveloperProfile,
+  OnboardingController.getDeveloperProfile
 );
 
 // All subsequent routes require an authenticated developer profile
@@ -43,7 +36,7 @@ router.put(
   validateParams(dto.updateContactInfosEndpoint.pathParams as any),
   validateBody(dto.updateContactInfosEndpoint.body as any),
   validateQuery(dto.updateContactInfosEndpoint.query as any),
-  OnboardingController.updateContactInfos,
+  OnboardingController.updateContactInfos
 );
 
 // --- Settings management ---
@@ -54,7 +47,7 @@ router.put(
   validateParams(dto.setDeveloperPreferencesEndpoint.pathParams as any),
   validateBody(dto.setDeveloperPreferencesEndpoint.body as any),
   validateQuery(dto.setDeveloperPreferencesEndpoint.query as any),
-  OnboardingController.setDeveloperPreferences,
+  OnboardingController.setDeveloperPreferences
 );
 
 // Route to set developer service settings (e.g., hourly commitment, availability)
@@ -63,7 +56,7 @@ router.put(
   validateParams(dto.setDeveloperServiceSettingsEndpoint.pathParams as any),
   validateBody(dto.setDeveloperServiceSettingsEndpoint.body as any),
   validateQuery(dto.setDeveloperServiceSettingsEndpoint.query as any),
-  OnboardingController.setDeveloperServiceSettings,
+  OnboardingController.setDeveloperServiceSettings
 );
 
 // Route to get potential project items for the developer
@@ -71,7 +64,7 @@ router.get(
   "/projects/potential",
   validateParams(dto.getPotentialProjectItemsEndpoint.pathParams as any),
   validateQuery(dto.getPotentialProjectItemsEndpoint.query as any),
-  OnboardingController.getPotentialProjectsItems,
+  OnboardingController.getPotentialProjectsItems
 );
 
 // Route to add or update a developer's project item
@@ -81,7 +74,7 @@ router.post(
   validateParams(dto.upsertDeveloperProjectItemEndpoint.pathParams as any),
   validateBody(dto.upsertDeveloperProjectItemEndpoint.body as any),
   validateQuery(dto.upsertDeveloperProjectItemEndpoint.query as any),
-  OnboardingController.upsertProjectProjectItem,
+  OnboardingController.upsertProjectProjectItem
 );
 
 // Route to remove a developer's project item
@@ -89,7 +82,7 @@ router.delete(
   "/projects",
   validateParams(dto.removeDeveloperProjectItemEndpoint.pathParams as any),
   validateQuery(dto.removeDeveloperProjectItemEndpoint.query as any),
-  OnboardingController.removeProjectProjectItem as any,
+  OnboardingController.removeProjectProjectItem as any
 );
 
 // --- Service management ---
@@ -99,7 +92,7 @@ router.get(
   "/services/hierarchy",
   validateParams(dto.getServiceHierarchyEndpoint.pathParams as any),
   validateQuery(dto.getServiceHierarchyEndpoint.query as any),
-  OnboardingController.getServiceHierarchy,
+  OnboardingController.getServiceHierarchy
 );
 
 // Route to create a custom service
@@ -108,7 +101,7 @@ router.post(
   validateParams(dto.createCustomServiceEndpoint.pathParams as any),
   validateBody(dto.createCustomServiceEndpoint.body as any),
   validateQuery(dto.createCustomServiceEndpoint.query as any),
-  OnboardingController.createCustomService,
+  OnboardingController.createCustomService
 );
 
 // Route to add or update a developer's service offering
@@ -117,7 +110,7 @@ router.put(
   validateParams(dto.upsertDeveloperServiceEndpoint.pathParams as any),
   validateBody(dto.upsertDeveloperServiceEndpoint.body as any),
   validateQuery(dto.upsertDeveloperServiceEndpoint.query as any),
-  OnboardingController.upsertDeveloperService,
+  OnboardingController.upsertDeveloperService
 );
 
 router.post(
@@ -125,14 +118,14 @@ router.post(
   validateParams(dto.upsertDeveloperServicesEndpoint.pathParams as any),
   validateBody(dto.upsertDeveloperServicesEndpoint.body as any),
   validateQuery(dto.upsertDeveloperServicesEndpoint.query as any),
-  OnboardingController.upsertDeveloperServices, // TODO: improve type safety, if changed to "OnboardingController.upsertDeveloperService" no compile error
+  OnboardingController.upsertDeveloperServices // TODO: improve type safety, if changed to "OnboardingController.upsertDeveloperService" no compile error
 );
 
 router.delete(
   "/services",
   validateParams(dto.deleteDeveloperServiceEndpoint.pathParams as any),
   validateQuery(dto.deleteDeveloperServiceEndpoint.query as any),
-  OnboardingController.deleteDeveloperService as any,
+  OnboardingController.deleteDeveloperService as any
 );
 
 // --- Onboarding completion ---
@@ -143,7 +136,7 @@ router.post(
   validateParams(dto.completeOnboardingEndpoint.pathParams as any),
   validateBody(dto.completeOnboardingEndpoint.body as any),
   validateQuery(dto.completeOnboardingEndpoint.query as any),
-  OnboardingController.completeOnboarding,
+  OnboardingController.completeOnboarding
 );
 
 export default router;

@@ -1,9 +1,5 @@
 import fs from "fs";
-import {
-  OwnerId,
-  Repository,
-  RepositoryId,
-} from "@open-source-economy/api-types";
+import { OwnerId, Repository, RepositoryId } from "@open-source-economy/api-types";
 
 // Local parsing helper (replaces the old static Repository.fromGithubApi method)
 function parseRepositoryFromGithubApi(json: any): Repository {
@@ -32,10 +28,7 @@ function parseRepositoryFromGithubApi(json: any): Repository {
 
 describe("Repository", () => {
   it("fromGithubApi does not throw an error", () => {
-    const data = fs.readFileSync(
-      `src/__tests__/__data__/github/repository.json`,
-      "utf8",
-    );
+    const data = fs.readFileSync(`src/__tests__/__data__/github/repository.json`, "utf8");
     const json = JSON.parse(data);
     const object = parseRepositoryFromGithubApi(json);
 

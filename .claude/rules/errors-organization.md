@@ -26,12 +26,12 @@ src/errors/
 
 ## Naming Conventions
 
-| Thing | Convention | Example |
-|-------|-----------|---------|
-| File name | `kebab-case.error.ts` | `auth.error.ts`, `http-client.error.ts` |
-| Class name | `PascalCaseError` | `AuthError`, `HttpClientError` |
-| Error code enum | `PascalCaseErrorCode` | `AuthErrorCode`, `FundingErrorCode` |
-| Error code value | `DOMAIN_ERROR_NAME` | `AUTH_TOKEN_EXPIRED`, `FUNDING_INSUFFICIENT_CREDIT` |
+| Thing            | Convention            | Example                                             |
+| ---------------- | --------------------- | --------------------------------------------------- |
+| File name        | `kebab-case.error.ts` | `auth.error.ts`, `http-client.error.ts`             |
+| Class name       | `PascalCaseError`     | `AuthError`, `HttpClientError`                      |
+| Error code enum  | `PascalCaseErrorCode` | `AuthErrorCode`, `FundingErrorCode`                 |
+| Error code value | `DOMAIN_ERROR_NAME`   | `AUTH_TOKEN_EXPIRED`, `FUNDING_INSUFFICIENT_CREDIT` |
 
 ## Error Class Template
 
@@ -52,7 +52,7 @@ export class AuthError extends Error {
   constructor(
     public readonly code: AuthErrorCode,
     message: string,
-    public readonly statusCode: number = 401,
+    public readonly statusCode: number = 401
   ) {
     super(message);
   }
@@ -74,7 +74,7 @@ export class AuthError extends Error {
 
 ## Rules
 
-- **All** `class X extends Error` must be in `src/errors/`  — never scattered in services or controllers
+- **All** `class X extends Error` must be in `src/errors/` — never scattered in services or controllers
 - Always set `this.name` or `readonly name` in the constructor
 - Always provide **static factory methods** — never expose the constructor as the primary API
 - Use **native enums** for error codes — never string literal unions

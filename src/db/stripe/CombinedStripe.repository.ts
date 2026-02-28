@@ -12,10 +12,7 @@ import {
 } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
-import {
-  StripePriceCompanion,
-  StripeProductCompanion,
-} from "../helpers/companions";
+import { StripePriceCompanion, StripeProductCompanion } from "../helpers/companions";
 
 type ProjectId = OwnerId | RepositoryId;
 
@@ -25,20 +22,10 @@ export function getCombinedStripeRepository(): CombinedStripeRepository {
 
 export interface CombinedStripeRepository {
   getCampaignProductsWithPrices(
-    projectId: ProjectId,
-  ): Promise<
-    Record<
-      CampaignProductType,
-      Record<Currency, Record<CampaignPriceType, StripePrice>>
-    >
-  >;
+    projectId: ProjectId
+  ): Promise<Record<CampaignProductType, Record<Currency, Record<CampaignPriceType, StripePrice>>>>;
 
-  getPlanProductsWithPrices(): Promise<
-    Record<
-      PlanProductType,
-      Record<Currency, Record<PlanPriceType, StripePrice>>
-    >
-  >;
+  getPlanProductsWithPrices(): Promise<Record<PlanProductType, Record<Currency, Record<PlanPriceType, StripePrice>>>>;
 }
 
 export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
@@ -67,18 +54,14 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
   private async getProductsWithPrices(
     productTypes: string[],
     priceTypes: string[],
-    projectId?: ProjectId,
+    projectId?: ProjectId
   ): Promise<Record<string, Record<Currency, Record<string, StripePrice>>>> {
     const productTypesClause = `
-      AND stripe_product.type IN (${productTypes
-        .map((type) => `'${type}'`)
-        .join(", ")})
+      AND stripe_product.type IN (${productTypes.map((type) => `'${type}'`).join(", ")})
     `;
 
     const priceTypesClause = `
-      AND stripe_price.type IN (${priceTypes
-        .map((type) => `'${type}'`)
-        .join(", ")})
+      AND stripe_price.type IN (${priceTypes.map((type) => `'${type}'`).join(", ")})
     `;
 
     let whereClause = "";
@@ -88,9 +71,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     if (projectId) {
       if ("name" in projectId) {
         // It's a RepositoryId
-        logger.debug(
-          `Fetching products for repository ${projectId.ownerId.login}/${projectId.name}`,
-        );
+        logger.debug(`Fetching products for repository ${projectId.ownerId.login}/${projectId.name}`);
         whereClause = `WHERE stripe_product.github_owner_login = $1
         AND stripe_product.github_repository_name = $2`;
         params = [projectId.ownerId.login, projectId.name];
@@ -123,7 +104,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
             ${productTypesClause}
             ${priceTypesClause}
         `,
-      params,
+      params
     );
 
     logger.debug("Fetched products with prices", result.rows);
@@ -140,20 +121,14 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
     }
 
     // Process each product and its prices
-    const output: Record<
-      string,
-      Record<Currency, Record<string, StripePrice>>
-    > = {};
+    const output: Record<string, Record<Currency, Record<string, StripePrice>>> = {};
 
     for (const rows of productMap.values()) {
       const product = this.getProductFromRow(rows[0]);
       const productType = product.type;
 
       // Initialize prices by currency
-      const pricesByCurrency = {} as Record<
-        Currency,
-        Record<string, StripePrice>
-      >;
+      const pricesByCurrency = {} as Record<Currency, Record<string, StripePrice>>;
 
       for (const row of rows) {
         if (row.price_stripe_id) {
@@ -189,7 +164,7 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
   private validateResultCompleteness(
     output: Record<string, Record<Currency, Record<string, StripePrice>>>,
     expectedProductTypes: string[],
-    expectedPriceTypes: string[],
+    expectedPriceTypes: string[]
   ): void {
     // 1. Validate product types
     for (const productType of expectedProductTypes) {
@@ -213,12 +188,9 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
       // Check that the product has all currencies
       for (const currency of allCurrencies) {
         if (!productPrices[currency]) {
-          logger.error(
-            `Missing currency "${currency}" for product "${productType}"`,
-            output,
-          );
+          logger.error(`Missing currency "${currency}" for product "${productType}"`, output);
           throw new Error(
-            `Missing currency "${currency}" for product "${productType}". All products must support the same set of currencies.`,
+            `Missing currency "${currency}" for product "${productType}". All products must support the same set of currencies.`
           );
         }
 
@@ -228,11 +200,9 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
           if (!currencyPrices[priceType]) {
             logger.error(
               `Missing price type "${priceType}" for product "${productType}" in currency "${currency}"`,
-              output,
+              output
             );
-            throw new Error(
-              `Missing price type "${priceType}" for product "${productType}" in currency "${currency}"`,
-            );
+            throw new Error(`Missing price type "${priceType}" for product "${productType}" in currency "${currency}"`);
           }
         }
       }
@@ -240,39 +210,22 @@ export class CombinedStripeRepositoryImpl implements CombinedStripeRepository {
   }
 
   async getCampaignProductsWithPrices(
-    projectId: ProjectId,
-  ): Promise<
-    Record<
-      CampaignProductType,
-      Record<Currency, Record<CampaignPriceType, StripePrice>>
-    >
-  > {
+    projectId: ProjectId
+  ): Promise<Record<CampaignProductType, Record<Currency, Record<CampaignPriceType, StripePrice>>>> {
     const result = await this.getProductsWithPrices(
       Object.values(CampaignProductType),
       Object.values(CampaignPriceType),
-      projectId,
+      projectId
     );
 
-    return result as unknown as Record<
-      CampaignProductType,
-      Record<Currency, Record<CampaignPriceType, StripePrice>>
-    >;
+    return result as unknown as Record<CampaignProductType, Record<Currency, Record<CampaignPriceType, StripePrice>>>;
   }
 
   async getPlanProductsWithPrices(): Promise<
-    Record<
-      PlanProductType,
-      Record<Currency, Record<PlanPriceType, StripePrice>>
-    >
+    Record<PlanProductType, Record<Currency, Record<PlanPriceType, StripePrice>>>
   > {
-    const result = await this.getProductsWithPrices(
-      Object.values(PlanProductType),
-      Object.values(PlanPriceType),
-    );
+    const result = await this.getProductsWithPrices(Object.values(PlanProductType), Object.values(PlanPriceType));
 
-    return result as unknown as Record<
-      PlanProductType,
-      Record<Currency, Record<PlanPriceType, StripePrice>>
-    >;
+    return result as unknown as Record<PlanProductType, Record<Currency, Record<PlanPriceType, StripePrice>>>;
   }
 }

@@ -3,6 +3,7 @@
 ## When to Use
 
 Use this pattern when importing/syncing data from external sources into the database:
+
 - GitHub API sync (owners, repositories, issues)
 - Stripe webhook data (customers, invoices, prices)
 - Any batch data import
@@ -30,16 +31,16 @@ Every mapper receives a context that provides isolation and traceability:
 
 ```typescript
 interface SyncContext {
-  syncId: string;        // Unique ID for this sync run (for logging)
-  provider: string;      // "github", "stripe", etc.
-  timestamp: Date;       // When this sync started
+  syncId: string; // Unique ID for this sync run (for logging)
+  provider: string; // "github", "stripe", etc.
+  timestamp: Date; // When this sync started
 }
 
 // Extend for provider-specific context
 interface GitHubSyncContext extends SyncContext {
   provider: "github";
-  token: string;         // API token used for this sync
-  ownerId: OwnerId;      // Which owner we're syncing
+  token: string; // API token used for this sync
+  ownerId: OwnerId; // Which owner we're syncing
 }
 ```
 
@@ -90,7 +91,7 @@ async function syncData<TRaw, TDomain>(
   rawRecords: TRaw[],
   mapper: IDataMapper<TRaw, TDomain, SyncContext>,
   repository: { createOrUpdate(item: TDomain): Promise<TDomain> },
-  context: SyncContext,
+  context: SyncContext
 ): Promise<ProcessingOutcome<TDomain>> {
   const items: TDomain[] = [];
   const issues: ProcessingIssue[] = [];

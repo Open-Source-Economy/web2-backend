@@ -67,6 +67,7 @@ function createGitHubService(): IGitHubService {
 ```
 
 Rules:
+
 - **Log a warning** when mock mode is active — makes it obvious in logs
 - Mock and real implementations share the same **interface**
 - Mock implementations should return realistic data, not empty objects

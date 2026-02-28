@@ -45,7 +45,7 @@ export class RateLimiter {
   async executeBatch<T, R>(
     items: T[],
     operation: (item: T, index: number) => Promise<R>,
-    onProgress?: (current: number, total: number) => void,
+    onProgress?: (current: number, total: number) => void
   ): Promise<{
     results: R[];
     errors: Array<{ item: T; error: string }>;
@@ -68,19 +68,12 @@ export class RateLimiter {
           await this.wait();
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         errors.push({ item: items[i], error: errorMessage });
 
         // Check if error is rate limit related
-        if (
-          errorMessage.includes("rate limit") ||
-          errorMessage.includes("403") ||
-          errorMessage.includes("429")
-        ) {
-          logger.error(
-            `Rate limit detected at item ${i + 1}/${items.length}. Stopping batch operation.`,
-          );
+        if (errorMessage.includes("rate limit") || errorMessage.includes("403") || errorMessage.includes("429")) {
+          logger.error(`Rate limit detected at item ${i + 1}/${items.length}. Stopping batch operation.`);
           break; // Stop processing if we hit rate limit
         }
       }

@@ -134,24 +134,16 @@ export const SERVICE_CATEGORY_MAPPINGS: ServiceCategoryMapping[] = [
 /**
  * Get ServiceType enum from category name
  */
-export function getServiceTypeFromCategory(
-  categoryName: string,
-): ServiceType | null {
-  const mapping = SERVICE_CATEGORY_MAPPINGS.find(
-    (m) => m.categoryName === categoryName && !m.subCategory,
-  );
+export function getServiceTypeFromCategory(categoryName: string): ServiceType | null {
+  const mapping = SERVICE_CATEGORY_MAPPINGS.find((m) => m.categoryName === categoryName && !m.subCategory);
   return mapping?.mainCategory || null;
 }
 
 /**
  * Get sub-service enum from category name
  */
-export function getSubServiceTypeFromCategory(
-  categoryName: string,
-): AllSubServiceTypes | null {
-  const mapping = SERVICE_CATEGORY_MAPPINGS.find(
-    (m) => m.categoryName === categoryName && m.subCategory,
-  );
+export function getSubServiceTypeFromCategory(categoryName: string): AllSubServiceTypes | null {
+  const mapping = SERVICE_CATEGORY_MAPPINGS.find((m) => m.categoryName === categoryName && m.subCategory);
   return mapping?.subCategory || null;
 }
 
@@ -160,12 +152,10 @@ export function getSubServiceTypeFromCategory(
  */
 export function getCategoryNameFromServiceType(
   serviceType: ServiceType,
-  subServiceType?: AllSubServiceTypes,
+  subServiceType?: AllSubServiceTypes
 ): string | null {
   const mapping = SERVICE_CATEGORY_MAPPINGS.find(
-    (m) =>
-      m.mainCategory === serviceType &&
-      (subServiceType ? m.subCategory === subServiceType : !m.subCategory),
+    (m) => m.mainCategory === serviceType && (subServiceType ? m.subCategory === subServiceType : !m.subCategory)
   );
   return mapping?.categoryName || null;
 }
@@ -181,9 +171,7 @@ export function isValidServiceCategory(categoryName: string): boolean {
  * Get all main service categories
  */
 export function getMainServiceCategories(): string[] {
-  return SERVICE_CATEGORY_MAPPINGS.filter((m) => !m.subCategory).map(
-    (m) => m.categoryName,
-  );
+  return SERVICE_CATEGORY_MAPPINGS.filter((m) => !m.subCategory).map((m) => m.categoryName);
 }
 
 /**
@@ -193,7 +181,7 @@ export function getSubCategories(mainCategoryName: string): string[] {
   const serviceType = getServiceTypeFromCategory(mainCategoryName);
   if (!serviceType) return [];
 
-  return SERVICE_CATEGORY_MAPPINGS.filter(
-    (m) => m.mainCategory === serviceType && m.subCategory,
-  ).map((m) => m.categoryName);
+  return SERVICE_CATEGORY_MAPPINGS.filter((m) => m.mainCategory === serviceType && m.subCategory).map(
+    (m) => m.categoryName
+  );
 }

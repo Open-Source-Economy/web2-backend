@@ -7,23 +7,13 @@ import { ApiError } from "../errors";
 
 export interface UserController {
   getAvailableCredit(
-    req: Request<
-      dto.GetAvailableCreditsParams,
-      dto.GetAvailableCreditsResponse,
-      {},
-      dto.GetAvailableCreditsQuery
-    >,
-    res: Response<dto.GetAvailableCreditsResponse>,
+    req: Request<dto.GetAvailableCreditsParams, dto.GetAvailableCreditsResponse, {}, dto.GetAvailableCreditsQuery>,
+    res: Response<dto.GetAvailableCreditsResponse>
   ): Promise<void>;
 
   getPlan(
-    req: Request<
-      dto.GetPlansParams,
-      dto.GetUserPlanResponse,
-      {},
-      dto.GetUserPlanQuery
-    >,
-    res: Response<dto.GetUserPlanResponse>,
+    req: Request<dto.GetPlansParams, dto.GetUserPlanResponse, {}, dto.GetUserPlanQuery>,
+    res: Response<dto.GetUserPlanResponse>
   ): Promise<void>;
 
   setUserPreferredCurrency(
@@ -33,32 +23,22 @@ export interface UserController {
       dto.SetPreferredCurrencyBody,
       dto.SetPreferredCurrencyQuery
     >,
-    res: Response<dto.SetPreferredCurrencyResponse>,
+    res: Response<dto.SetPreferredCurrencyResponse>
   ): Promise<void>;
 }
 
 export const UserController: UserController = {
   async getAvailableCredit(
-    req: Request<
-      dto.GetAvailableCreditsParams,
-      dto.GetAvailableCreditsResponse,
-      {},
-      dto.GetAvailableCreditsQuery
-    >,
-    res: Response<dto.GetAvailableCreditsResponse>,
+    req: Request<dto.GetAvailableCreditsParams, dto.GetAvailableCreditsResponse, {}, dto.GetAvailableCreditsQuery>,
+    res: Response<dto.GetAvailableCreditsResponse>
   ) {
     if (!req.user) {
       throw ApiError.unauthorized("Unauthorized");
     }
     const userId: UserId = req.user.id;
-    const companyId = req.query.companyId
-      ? (req.query.companyId as CompanyId)
-      : undefined;
+    const companyId = req.query.companyId ? (req.query.companyId as CompanyId) : undefined;
 
-    const creditAmount = await planAndCreditsRepo.getAvailableCredit(
-      userId,
-      companyId,
-    );
+    const creditAmount = await planAndCreditsRepo.getAvailableCredit(userId, companyId);
     const response: dto.GetAvailableCreditsResponse = {
       creditAmount: creditAmount,
     };
@@ -67,21 +47,14 @@ export const UserController: UserController = {
   },
 
   async getPlan(
-    req: Request<
-      dto.GetPlansParams,
-      dto.GetUserPlanResponse,
-      {},
-      dto.GetUserPlanQuery
-    >,
-    res: Response<dto.GetUserPlanResponse>,
+    req: Request<dto.GetPlansParams, dto.GetUserPlanResponse, {}, dto.GetUserPlanQuery>,
+    res: Response<dto.GetUserPlanResponse>
   ) {
     if (!req.user) {
       throw ApiError.unauthorized("Unauthorized");
     }
     const userId: UserId = req.user.id;
-    const companyId = req.query.companyId
-      ? (req.query.companyId as CompanyId)
-      : undefined;
+    const companyId = req.query.companyId ? (req.query.companyId as CompanyId) : undefined;
 
     const types = await planAndCreditsRepo.getPlan(userId, companyId);
     const response: dto.GetUserPlanResponse = {
@@ -99,7 +72,7 @@ export const UserController: UserController = {
       dto.SetPreferredCurrencyBody,
       dto.SetPreferredCurrencyQuery
     >,
-    res: Response<dto.SetPreferredCurrencyResponse>,
+    res: Response<dto.SetPreferredCurrencyResponse>
   ) {
     if (!req.user) {
       throw ApiError.unauthorized("Unauthorized");

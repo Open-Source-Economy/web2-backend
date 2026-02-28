@@ -1,9 +1,5 @@
 import { Pool } from "pg";
-import {
-  StripeInvoiceId,
-  StripeInvoiceLine,
-  StripeInvoiceLineId,
-} from "@open-source-economy/api-types";
+import { StripeInvoiceId, StripeInvoiceLine, StripeInvoiceLineId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { StripeInvoiceLineCompanion } from "../helpers/companions";
 
@@ -74,7 +70,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
             FROM stripe_invoice_line
             WHERE stripe_id = $1
         `,
-      [id],
+      [id]
     );
 
     return this.getOptionalInvoiceLine(result.rows);
@@ -87,7 +83,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
             FROM stripe_invoice_line
             WHERE invoice_id = $1
         `,
-      [id],
+      [id]
     );
 
     return this.getInvoiceLineList(result.rows);
@@ -111,7 +107,7 @@ class StripeInvoiceLineRepositoryImpl implements StripeInvoiceLineRepository {
           invoiceLine.productId,
           invoiceLine.priceId,
           invoiceLine.quantity,
-        ],
+        ]
       );
 
       return this.getOneInvoiceLine(result.rows);

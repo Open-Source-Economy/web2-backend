@@ -39,21 +39,17 @@ export class Batcher {
     allItems: T[],
     operation: (item: T, index: number) => Promise<R>,
     options: BatchOptions,
-    context?: string,
+    context?: string
   ): Promise<BatchResult<T, R>> {
     const offset = options.offset || 0;
     const requestedBatchSize = options.batchSize;
     const maxBatchSize = options.maxBatchSize;
 
     // Apply batch size cap if specified
-    const effectiveBatchSize = maxBatchSize
-      ? Math.min(requestedBatchSize, maxBatchSize)
-      : requestedBatchSize;
+    const effectiveBatchSize = maxBatchSize ? Math.min(requestedBatchSize, maxBatchSize) : requestedBatchSize;
 
     if (maxBatchSize && requestedBatchSize > maxBatchSize) {
-      logger.warn(
-        `Requested batch size ${requestedBatchSize} exceeds maximum ${maxBatchSize}. Using ${maxBatchSize}.`,
-      );
+      logger.warn(`Requested batch size ${requestedBatchSize} exceeds maximum ${maxBatchSize}. Using ${maxBatchSize}.`);
     }
 
     // Calculate batch boundaries
@@ -64,13 +60,11 @@ export class Batcher {
 
     const contextStr = context ? ` ${context}` : "";
     logger.info(
-      `Processing batch${contextStr}: items ${offset + 1}-${endIndex} of ${totalItems} total (batch size: ${effectiveBatchSize})`,
+      `Processing batch${contextStr}: items ${offset + 1}-${endIndex} of ${totalItems} total (batch size: ${effectiveBatchSize})`
     );
 
     if (hasMore) {
-      logger.info(
-        `Remaining items: ${totalItems - endIndex}. Process next batch with offset=${endIndex}.`,
-      );
+      logger.info(`Remaining items: ${totalItems - endIndex}. Process next batch with offset=${endIndex}.`);
     }
 
     // Process each item in the batch
@@ -89,32 +83,22 @@ export class Batcher {
           await rateLimiter.wait();
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         errors.push({ item: batchItems[i], error: errorMessage });
-        logger.error(
-          `Error processing item ${offset + i + 1}${contextStr}:`,
-          error,
-        );
+        logger.error(`Error processing item ${offset + i + 1}${contextStr}:`, error);
 
         // Check if error is rate limit related
         if (
           rateLimiter &&
-          (errorMessage.includes("rate limit") ||
-            errorMessage.includes("403") ||
-            errorMessage.includes("429"))
+          (errorMessage.includes("rate limit") || errorMessage.includes("403") || errorMessage.includes("429"))
         ) {
-          logger.error(
-            `Rate limit detected at item ${offset + i + 1}${contextStr}. Stopping batch operation.`,
-          );
+          logger.error(`Rate limit detected at item ${offset + i + 1}${contextStr}. Stopping batch operation.`);
           break; // Stop processing if we hit rate limit
         }
       }
     }
 
-    logger.info(
-      `Completed batch${contextStr}: ${results.length} processed successfully, ${errors.length} errors`,
-    );
+    logger.info(`Completed batch${contextStr}: ${results.length} processed successfully, ${errors.length} errors`);
 
     return {
       results,

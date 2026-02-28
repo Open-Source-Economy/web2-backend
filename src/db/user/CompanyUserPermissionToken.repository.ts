@@ -23,22 +23,13 @@ export interface CreateCompanyUserPermissionTokenBody {
 }
 
 export interface CompanyUserPermissionTokenRepository {
-  create(
-    token: CreateCompanyUserPermissionTokenBody,
-  ): Promise<CompanyUserPermissionToken>;
+  create(token: CreateCompanyUserPermissionTokenBody): Promise<CompanyUserPermissionToken>;
 
-  update(
-    token: CompanyUserPermissionToken,
-  ): Promise<CompanyUserPermissionToken>;
+  update(token: CompanyUserPermissionToken): Promise<CompanyUserPermissionToken>;
 
-  getById(
-    id: CompanyUserPermissionTokenId,
-  ): Promise<CompanyUserPermissionToken | null>;
+  getById(id: CompanyUserPermissionTokenId): Promise<CompanyUserPermissionToken | null>;
 
-  getByUserEmail(
-    userEmail: string,
-    companyId: CompanyId,
-  ): Promise<CompanyUserPermissionToken[]>;
+  getByUserEmail(userEmail: string, companyId: CompanyId): Promise<CompanyUserPermissionToken[]>;
 
   getByToken(token: string): Promise<CompanyUserPermissionToken | null>;
 
@@ -49,9 +40,7 @@ export interface CompanyUserPermissionTokenRepository {
   use(token: string): Promise<void>;
 }
 
-class CompanyUserPermissionTokenRepositoryImpl
-  implements CompanyUserPermissionTokenRepository
-{
+class CompanyUserPermissionTokenRepositoryImpl implements CompanyUserPermissionTokenRepository {
   pool: Pool;
 
   constructor(pool: Pool) {
@@ -91,9 +80,7 @@ class CompanyUserPermissionTokenRepositoryImpl
     });
   }
 
-  async create(
-    token: CreateCompanyUserPermissionTokenBody,
-  ): Promise<CompanyUserPermissionToken> {
+  async create(token: CreateCompanyUserPermissionTokenBody): Promise<CompanyUserPermissionToken> {
     const client = await this.pool.connect();
 
     try {
@@ -111,7 +98,7 @@ class CompanyUserPermissionTokenRepositoryImpl
           token.companyUserRole,
           token.expiresAt,
           false, // Default value for hasBeenUsed
-        ],
+        ]
       );
 
       return this.getOneToken(result.rows);
@@ -120,9 +107,7 @@ class CompanyUserPermissionTokenRepositoryImpl
     }
   }
 
-  async update(
-    token: CompanyUserPermissionToken,
-  ): Promise<CompanyUserPermissionToken> {
+  async update(token: CompanyUserPermissionToken): Promise<CompanyUserPermissionToken> {
     const client = await this.pool.connect();
 
     try {
@@ -148,7 +133,7 @@ class CompanyUserPermissionTokenRepositoryImpl
           token.expiresAt,
           token.hasBeenUsed,
           token.id,
-        ],
+        ]
       );
 
       return this.getOneToken(result.rows);
@@ -157,25 +142,20 @@ class CompanyUserPermissionTokenRepositoryImpl
     }
   }
 
-  async getById(
-    id: CompanyUserPermissionTokenId,
-  ): Promise<CompanyUserPermissionToken | null> {
+  async getById(id: CompanyUserPermissionTokenId): Promise<CompanyUserPermissionToken | null> {
     const result = await this.pool.query(
       `
                 SELECT *
                 FROM company_user_permission_token
                 WHERE id = $1
             `,
-      [id],
+      [id]
     );
 
     return this.getOptionalToken(result.rows);
   }
 
-  async getByUserEmail(
-    userEmail: string,
-    companyId: CompanyId,
-  ): Promise<CompanyUserPermissionToken[]> {
+  async getByUserEmail(userEmail: string, companyId: CompanyId): Promise<CompanyUserPermissionToken[]> {
     const result = await this.pool.query(
       `
                 SELECT *
@@ -183,7 +163,7 @@ class CompanyUserPermissionTokenRepositoryImpl
                 WHERE user_email = $1
                   AND company_id = $2
             `,
-      [userEmail, companyId],
+      [userEmail, companyId]
     );
 
     return this.getTokenList(result.rows);
@@ -196,7 +176,7 @@ class CompanyUserPermissionTokenRepositoryImpl
                 FROM company_user_permission_token
                 WHERE token = $1
             `,
-      [token],
+      [token]
     );
 
     return this.getOptionalToken(result.rows);
@@ -218,7 +198,7 @@ class CompanyUserPermissionTokenRepositoryImpl
                 FROM company_user_permission_token
                 WHERE token = $1
             `,
-      [token],
+      [token]
     );
     logger.debug("Deleting permission token: ", token);
   }
@@ -234,7 +214,7 @@ class CompanyUserPermissionTokenRepositoryImpl
           WHERE token = $1
           RETURNING *
         `,
-        [token],
+        [token]
       );
 
       if (result.rows.length === 0) {

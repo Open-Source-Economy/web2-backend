@@ -6,12 +6,12 @@ The project uses **Winston** (`src/config/logger.ts`) and **Morgan** for HTTP re
 
 ## Log Levels
 
-| Level | When to Use | Example |
-|-------|-------------|---------|
-| `error` | Unexpected failures that need attention | DB connection lost, unhandled exception |
-| `warn` | Expected but notable issues | Rate limit approaching, deprecated API called, sync completed with errors |
-| `info` | Important business events | User registered, payment completed, sync started |
-| `debug` | Development-only details | Query parameters, request/response bodies |
+| Level   | When to Use                             | Example                                                                   |
+| ------- | --------------------------------------- | ------------------------------------------------------------------------- |
+| `error` | Unexpected failures that need attention | DB connection lost, unhandled exception                                   |
+| `warn`  | Expected but notable issues             | Rate limit approaching, deprecated API called, sync completed with errors |
+| `info`  | Important business events               | User registered, payment completed, sync started                          |
+| `debug` | Development-only details                | Query parameters, request/response bodies                                 |
 
 ```typescript
 // CORRECT — appropriate levels
@@ -39,6 +39,7 @@ logger.info("Stripe checkout created", { sessionId });
 ```
 
 Sensitive fields to never log:
+
 - Passwords, tokens, API keys, secrets
 - Full credit card numbers
 - Session IDs (log only first/last 4 chars if needed)

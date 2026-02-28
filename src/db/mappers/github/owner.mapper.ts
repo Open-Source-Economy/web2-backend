@@ -1,19 +1,13 @@
 import type { Owner, OwnerId, OwnerType } from "@open-source-economy/api-types";
 
-export function mapOwnerIdFromPrimaryKey(
-  row: Record<string, any>,
-  prefix = "",
-): OwnerId {
+export function mapOwnerIdFromPrimaryKey(row: Record<string, any>, prefix = ""): OwnerId {
   const login = row[`${prefix}github_login`];
   if (!login) throw new Error(`Missing ${prefix}github_login`);
   const githubId = row[`${prefix}github_id`] ?? undefined;
   return { login, githubId } as OwnerId;
 }
 
-export function mapOwnerIdFromForeignKey(
-  row: Record<string, any>,
-  prefix = "",
-): OwnerId {
+export function mapOwnerIdFromForeignKey(row: Record<string, any>, prefix = ""): OwnerId {
   const login = row[`${prefix}github_owner_login`];
   if (!login) throw new Error(`Missing ${prefix}github_owner_login`);
   const githubId = row[`${prefix}github_owner_id`] ?? undefined;

@@ -52,6 +52,7 @@ export class FundingError extends ApiError {
 ```
 
 Rules for domain errors:
+
 - All error classes live in `src/errors/` and are exported from `src/errors/index.ts`
 - Use **native enums** for error codes — never string literal unions
 - Always provide static factory methods — never expose the constructor directly
@@ -59,12 +60,12 @@ Rules for domain errors:
 
 ### Error Handling by Layer
 
-| Layer | Pattern |
-|-------|---------|
-| **ts-rest routers** | Throw `ApiError` — the `problemDetailsErrorHandler` middleware catches it |
-| **Services** | Throw `ApiError` for business rule violations |
-| **Repositories** | Return `null` for not-found, throw only for unexpected DB errors |
-| **Middleware** | Caught by the error handler chain: `problemDetailsErrorHandler` → `tsRestValidationErrorHandler` → `globalErrorHandler` |
+| Layer               | Pattern                                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **ts-rest routers** | Throw `ApiError` — the `problemDetailsErrorHandler` middleware catches it                                               |
+| **Services**        | Throw `ApiError` for business rule violations                                                                           |
+| **Repositories**    | Return `null` for not-found, throw only for unexpected DB errors                                                        |
+| **Middleware**      | Caught by the error handler chain: `problemDetailsErrorHandler` → `tsRestValidationErrorHandler` → `globalErrorHandler` |
 
 ### Status Codes
 
@@ -80,7 +81,11 @@ return { status: 204 as const, body: undefined };  // DELETE
 
 ```typescript
 // WRONG — silently swallowing
-try { await riskyOperation(); } catch (e) { /* ignore */ }
+try {
+  await riskyOperation();
+} catch (e) {
+  /* ignore */
+}
 
 // CORRECT — log and rethrow or handle explicitly
 try {

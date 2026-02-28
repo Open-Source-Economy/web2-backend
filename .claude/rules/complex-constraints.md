@@ -24,6 +24,7 @@ ALTER TABLE address ADD CONSTRAINT check_one_parent CHECK (
 ```
 
 Rules:
+
 - Document the constraint with a comment in the migration
 - Use a CHECK constraint to enforce exactly one FK is set
 - All FK columns in the group are nullable
@@ -45,6 +46,7 @@ WHERE is_primary = true;
 ```
 
 Rules:
+
 - Document the business rule in a comment above the index
 - Partial indexes are invisible to the schema — always document them in the migration
 

@@ -29,7 +29,7 @@ export class Paginator {
   static async fetchAllPages<T>(
     fetchPage: (page: number, perPage: number) => Promise<T[]>,
     options: PaginationOptions = {},
-    context?: string,
+    context?: string
   ): Promise<PaginationResult<T>> {
     const perPage = options.perPage || 100;
     const maxPages = options.maxPages;
@@ -41,16 +41,14 @@ export class Paginator {
 
     const contextStr = context ? ` for ${context}` : "";
     logger.info(
-      `Starting paginated fetch${contextStr} (perPage: ${perPage}, rateLimiting: ${rateLimiter ? "enabled" : "none"})`,
+      `Starting paginated fetch${contextStr} (perPage: ${perPage}, rateLimiting: ${rateLimiter ? "enabled" : "none"})`
     );
 
     while (hasMorePages) {
       try {
         // Check max pages limit if specified
         if (maxPages && page > maxPages) {
-          logger.warn(
-            `Reached maximum page limit (${maxPages}). Stopping pagination${contextStr}.`,
-          );
+          logger.warn(`Reached maximum page limit (${maxPages}). Stopping pagination${contextStr}.`);
           break;
         }
 
@@ -62,9 +60,7 @@ export class Paginator {
           break;
         }
 
-        logger.debug(
-          `Fetched page ${page}: ${items.length} items${contextStr}`,
-        );
+        logger.debug(`Fetched page ${page}: ${items.length} items${contextStr}`);
 
         allItems.push(...items);
 
@@ -84,9 +80,7 @@ export class Paginator {
       }
     }
 
-    logger.info(
-      `Successfully fetched ${allItems.length} total items${contextStr} across ${page} pages`,
-    );
+    logger.info(`Successfully fetched ${allItems.length} total items${contextStr} across ${page} pages`);
 
     return {
       allItems,

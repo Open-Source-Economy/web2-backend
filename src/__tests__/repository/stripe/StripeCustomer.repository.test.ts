@@ -25,9 +25,7 @@ describe("StripeCustomerRepository", () => {
   describe("getByStripeId", () => {
     it("should return null if no customer exists with the given ID", async () => {
       const nonExistentCustomerId = Fixture.stripeCustomerId();
-      const customer = await stripeCustomerRepo.getByStripeId(
-        nonExistentCustomerId,
-      );
+      const customer = await stripeCustomerRepo.getByStripeId(nonExistentCustomerId);
       expect(customer).toBeNull();
     });
   });
@@ -41,21 +39,17 @@ describe("StripeCustomerRepository", () => {
         "customer@example.com",
         "Customer Name",
         "987-654-3210",
-        ["fr-FR"],
+        ["fr-FR"]
       );
 
       await stripeCustomerRepo.insert(customer);
 
-      const fetchedCustomer = await stripeCustomerRepo.getByEmail(
-        "customer@example.com",
-      );
+      const fetchedCustomer = await stripeCustomerRepo.getByEmail("customer@example.com");
       expect(fetchedCustomer).toEqual(customer);
     });
 
     it("should return null if no customer exists with the given email", async () => {
-      const customer = await stripeCustomerRepo.getByEmail(
-        "nonexistent@example.com",
-      );
+      const customer = await stripeCustomerRepo.getByEmail("nonexistent@example.com");
       expect(customer).toBeNull();
     });
   });
@@ -71,7 +65,7 @@ describe("StripeCustomerRepository", () => {
         "customer1@example.com",
         "Customer One",
         undefined,
-        [],
+        []
       );
 
       const customer2 = Fixture.stripeCustomer(
@@ -80,7 +74,7 @@ describe("StripeCustomerRepository", () => {
         "customer2@example.com",
         "Customer Two",
         "111-222-3333",
-        ["en-AU"],
+        ["en-AU"]
       );
 
       await stripeCustomerRepo.insert(customer1);

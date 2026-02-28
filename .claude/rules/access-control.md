@@ -35,10 +35,7 @@ Create reusable helpers for feature-level access checks:
  * Check if user has access to a resource.
  * Returns ApiError if denied, null if allowed.
  */
-export function requireResourceAccess(
-  user: UserWithAuth,
-  resourceOwnerId: UserId,
-): ApiError | null {
+export function requireResourceAccess(user: UserWithAuth, resourceOwnerId: UserId): ApiError | null {
   if (user.role === UserRole.SuperAdmin) return null;
   if (user.id === resourceOwnerId) return null;
   return ApiError.forbidden("You do not have access to this resource");
@@ -50,10 +47,10 @@ export function requireResourceAccess(
 export function requireCompanyAccess(
   user: UserWithAuth,
   companyId: CompanyId,
-  requiredRole: CompanyRole,
+  requiredRole: CompanyRole
 ): ApiError | null {
   if (user.role === UserRole.SuperAdmin) return null;
-  const membership = user.companies?.find(c => c.companyId === companyId);
+  const membership = user.companies?.find((c) => c.companyId === companyId);
   if (!membership || membership.role < requiredRole) {
     return ApiError.forbidden("Insufficient company permissions");
   }

@@ -16,7 +16,7 @@ router.post(
   validateParams(dto.syncOwnerEndpoint.pathParams as any),
   validateBody(dto.syncOwnerEndpoint.body as any),
   validateQuery(dto.syncOwnerEndpoint.query as any),
-  GitHubController.syncOwner as any,
+  GitHubController.syncOwner as any
 );
 
 router.post(
@@ -24,7 +24,7 @@ router.post(
   validateParams(dto.syncRepositoryEndpoint.pathParams as any),
   validateBody(dto.syncRepositoryEndpoint.body as any),
   validateQuery(dto.syncRepositoryEndpoint.query as any),
-  GitHubController.syncRepository as any,
+  GitHubController.syncRepository as any
 );
 
 router.post(
@@ -32,7 +32,7 @@ router.post(
   validateParams(dto.syncProjectEndpoint.pathParams as any),
   validateBody(dto.syncProjectEndpoint.body as any),
   validateQuery(dto.syncProjectEndpoint.query as any),
-  GitHubController.syncProject as any,
+  GitHubController.syncProject as any
 );
 
 router.post(
@@ -40,7 +40,7 @@ router.post(
   validateParams(dto.syncProjectEndpoint.pathParams as any),
   validateBody(dto.syncProjectEndpoint.body as any),
   validateQuery(dto.syncProjectEndpoint.query as any),
-  GitHubController.syncProject as any,
+  GitHubController.syncProject as any
 );
 
 export default router;

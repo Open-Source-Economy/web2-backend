@@ -1,10 +1,5 @@
 import { Pool } from "pg";
-import {
-  UserId,
-  VerificationEntityType,
-  VerificationRecord,
-  VerificationStatus,
-} from "@open-source-economy/api-types";
+import { UserId, VerificationEntityType, VerificationRecord, VerificationStatus } from "@open-source-economy/api-types";
 import { VerificationRecordCompanion } from "../helpers/companions/onboarding/VerificationRecord.companion";
 
 export interface VerificationRecordRepository {
@@ -16,52 +11,42 @@ export interface VerificationRecordRepository {
     entityId: string,
     status: VerificationStatus,
     notes: string | undefined,
-    verifiedBy: UserId | undefined,
+    verifiedBy: UserId | undefined
   ): Promise<VerificationRecord>;
 
   /**
    * Get the most recent verification record for an entity
    */
-  findLatestByEntity(
-    entityType: VerificationEntityType,
-    entityId: string,
-  ): Promise<VerificationRecord | null>;
+  findLatestByEntity(entityType: VerificationEntityType, entityId: string): Promise<VerificationRecord | null>;
 
   /**
    * Get all verification records for an entity (full history)
    */
-  findAllByEntity(
-    entityType: VerificationEntityType,
-    entityId: string,
-  ): Promise<VerificationRecord[]>;
+  findAllByEntity(entityType: VerificationEntityType, entityId: string): Promise<VerificationRecord[]>;
 
   /**
    * Get all verification records for multiple entities at once
    * Useful for fetching verification status for a profile and all its projects
    */
-  findAllByEntities(
-    entities: Array<{ type: VerificationEntityType; id: string }>,
-  ): Promise<VerificationRecord[]>;
+  findAllByEntities(entities: Array<{ type: VerificationEntityType; id: string }>): Promise<VerificationRecord[]>;
 
   /**
    * Get the latest verification record for each entity
    * Returns a map of entityId -> VerificationRecord
    */
   findLatestByEntities(
-    entities: Array<{ type: VerificationEntityType; id: string }>,
+    entities: Array<{ type: VerificationEntityType; id: string }>
   ): Promise<Map<string, VerificationRecord>>;
 }
 
-export function createVerificationRecordRepository(
-  pool: Pool,
-): VerificationRecordRepository {
+export function createVerificationRecordRepository(pool: Pool): VerificationRecordRepository {
   return {
     async create(
       entityType: VerificationEntityType,
       entityId: string,
       status: VerificationStatus,
       notes: string | undefined,
-      verifiedBy: UserId | undefined,
+      verifiedBy: UserId | undefined
     ): Promise<VerificationRecord> {
       const query = `
         INSERT INTO verification_records (entity_type, entity_id, status, notes, verified_by)
@@ -69,13 +54,7 @@ export function createVerificationRecordRepository(
         RETURNING *
       `;
 
-      const values = [
-        entityType,
-        entityId,
-        status,
-        notes || null,
-        verifiedBy || null,
-      ];
+      const values = [entityType, entityId, status, notes || null, verifiedBy || null];
 
       const result = await pool.query(query, values);
       const record = VerificationRecordCompanion.fromBackend(result.rows[0]);
@@ -87,10 +66,7 @@ export function createVerificationRecordRepository(
       return record;
     },
 
-    async findLatestByEntity(
-      entityType: VerificationEntityType,
-      entityId: string,
-    ): Promise<VerificationRecord | null> {
+    async findLatestByEntity(entityType: VerificationEntityType, entityId: string): Promise<VerificationRecord | null> {
       const query = `
         SELECT *
         FROM verification_records
@@ -114,10 +90,7 @@ export function createVerificationRecordRepository(
       return record;
     },
 
-    async findAllByEntity(
-      entityType: VerificationEntityType,
-      entityId: string,
-    ): Promise<VerificationRecord[]> {
+    async findAllByEntity(entityType: VerificationEntityType, entityId: string): Promise<VerificationRecord[]> {
       const query = `
         SELECT *
         FROM verification_records
@@ -140,7 +113,7 @@ export function createVerificationRecordRepository(
     },
 
     async findAllByEntities(
-      entities: Array<{ type: VerificationEntityType; id: string }>,
+      entities: Array<{ type: VerificationEntityType; id: string }>
     ): Promise<VerificationRecord[]> {
       if (entities.length === 0) {
         return [];
@@ -148,10 +121,7 @@ export function createVerificationRecordRepository(
 
       // Build query with multiple entity conditions
       const conditions = entities
-        .map(
-          (_, index) =>
-            `(entity_type = $${index * 2 + 1} AND entity_id = $${index * 2 + 2})`,
-        )
+        .map((_, index) => `(entity_type = $${index * 2 + 1} AND entity_id = $${index * 2 + 2})`)
         .join(" OR ");
 
       const query = `
@@ -178,7 +148,7 @@ export function createVerificationRecordRepository(
     },
 
     async findLatestByEntities(
-      entities: Array<{ type: VerificationEntityType; id: string }>,
+      entities: Array<{ type: VerificationEntityType; id: string }>
     ): Promise<Map<string, VerificationRecord>> {
       if (entities.length === 0) {
         return new Map();
@@ -186,10 +156,7 @@ export function createVerificationRecordRepository(
 
       // Use DISTINCT ON to get only the latest record per entity
       const conditions = entities
-        .map(
-          (_, index) =>
-            `(entity_type = $${index * 2 + 1} AND entity_id = $${index * 2 + 2})`,
-        )
+        .map((_, index) => `(entity_type = $${index * 2 + 1} AND entity_id = $${index * 2 + 2})`)
         .join(" OR ");
 
       const query = `

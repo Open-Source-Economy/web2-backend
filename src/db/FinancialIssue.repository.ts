@@ -7,18 +7,14 @@ import {
   ManagedIssue,
   Owner,
   Repository,
-  User,
 } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { GitHubApi, githubService } from "../services";
 import { logger } from "../config";
 import { issueRepo, ownerRepo, repositoryRepo } from "./github";
-import { userRepo } from "./user";
 import { issueFundingRepo, managedIssueRepo } from "./index";
 
-export function getFinancialIssueRepository(
-  gitHubApi: GitHubApi = githubService,
-): FinancialIssueRepository {
+export function getFinancialIssueRepository(gitHubApi: GitHubApi = githubService): FinancialIssueRepository {
   return new FinancialIssueRepositoryImpl(pool, gitHubApi);
 }
 
@@ -39,10 +35,10 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
   }
 
   async get(issueId: IssueId): Promise<FinancialIssue> {
-    const githubRepoPromise: Promise<[Owner, Repository]> =
-      this.githubService.getOwnerAndRepository(issueId.repositoryId);
-    const githubIssuePromise: Promise<[Issue, Owner]> =
-      this.githubService.getIssue(issueId);
+    const githubRepoPromise: Promise<[Owner, Repository]> = this.githubService.getOwnerAndRepository(
+      issueId.repositoryId
+    );
+    const githubIssuePromise: Promise<[Issue, Owner]> = this.githubService.getIssue(issueId);
 
     Promise.all([githubRepoPromise, githubIssuePromise])
       .then(async ([repoResult, issueResult]) => {
@@ -86,7 +82,7 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       .catch((error) => {
         logger.error(
           `Issue owner ${JSON.stringify(issueId)} does not exist in the DB and go an error fetching GitHub data:`,
-          error,
+          error
         );
         return null;
       });
@@ -103,7 +99,7 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       .catch((error) => {
         logger.error(
           `Issue repository ${JSON.stringify(issueId)} does not exist in the DB and go an error fetching GitHub data:`,
-          error,
+          error
         );
         return null;
       });
@@ -120,7 +116,7 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       .catch((error) => {
         logger.error(
           `Issue ${JSON.stringify(issueId)} does not exist in the DB and go an error fetching GitHub data:`,
-          error,
+          error
         );
         return null;
       });
@@ -141,9 +137,7 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
         issueFundings: await issueFundings,
       } as FinancialIssue;
     } else {
-      throw new Error(
-        `Failed to fetch all required data for managed issue ${JSON.stringify(issueId)}`,
-      );
+      throw new Error(`Failed to fetch all required data for managed issue ${JSON.stringify(issueId)}`);
     }
   }
 
@@ -154,11 +148,11 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       allManagedIssues.map((m) => {
         if (!m.githubIssueId || !m.githubIssueId.githubId) {
           logger.error(
-            `ManagedIssue of github issue id: ${m.githubIssueId}, does not have a githubId field defined in the DB`,
+            `ManagedIssue of github issue id: ${m.githubIssueId}, does not have a githubId field defined in the DB`
           );
         }
         return [m.githubIssueId?.githubId, m];
-      }),
+      })
     );
 
     const issueFundings: Map<number, IssueFunding[]> = new Map();
@@ -169,7 +163,7 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
       if (!githubId) {
         // TODO: fix this mess with optional githubId
         logger.error(
-          `IssueFunding of github issue id: ${i.githubIssueId}, does not have a githubId field defined in the DB`,
+          `IssueFunding of github issue id: ${i.githubIssueId}, does not have a githubId field defined in the DB`
         );
         return; // Skip if githubId is undefined
       }
@@ -208,9 +202,7 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
     const financialIssues: FinancialIssue[] = [];
     for (const [githubId, issueId] of issueIds) {
       if (!githubId) {
-        logger.error(
-          `Issue with github id: ${issueId}, does not have an id field defined in the DB`,
-        );
+        logger.error(`Issue with github id: ${issueId}, does not have an id field defined in the DB`);
         continue; // Skip if githubId is undefined
       }
 
@@ -223,7 +215,7 @@ export class FinancialIssueRepositoryImpl implements FinancialIssueRepository {
 
       if (!owner || !repo || !issue) {
         logger.error(
-          `Financial issue with github id: ${githubId}, does not have a valid owner, repo, or issue in the DB`,
+          `Financial issue with github id: ${githubId}, does not have a valid owner, repo, or issue in the DB`
         );
         continue; // Use continue to skip to the next iteration
       }

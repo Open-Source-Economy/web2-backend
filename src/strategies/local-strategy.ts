@@ -49,10 +49,7 @@ passport.use(
           });
         } else {
           const storedPassword = getLocalUserPassword(user);
-          if (
-            !storedPassword ||
-            !encrypt.comparePassword(password, storedPassword)
-          ) {
+          if (!storedPassword || !encrypt.comparePassword(password, storedPassword)) {
             return done(null, false, {
               message: "Incorrect username or password.",
             });
@@ -63,8 +60,8 @@ passport.use(
       } catch (err) {
         return done(err);
       }
-    },
-  ),
+    }
+  )
 );
 
 passport.use(
@@ -85,10 +82,7 @@ passport.use(
             });
           } else {
             const storedPassword = getLocalUserPassword(user);
-            if (
-              !storedPassword ||
-              !encrypt.comparePassword(password, storedPassword)
-            ) {
+            if (!storedPassword || !encrypt.comparePassword(password, storedPassword)) {
               return done(null, false, {
                 message: "Incorrect username or password.",
               });
@@ -108,9 +102,7 @@ passport.use(
         const createUser: CreateUser = {
           name: req.body.name,
           data: localUserData as any,
-          role: superAdminEmails.includes(email.trim())
-            ? UserRole.SUPER_ADMIN
-            : UserRole.USER,
+          role: superAdminEmails.includes(email.trim()) ? UserRole.SUPER_ADMIN : UserRole.USER,
           termsAcceptedVersion: terms.version, // TODO: lolo - verify that it is correct
         };
         const savedUser = await repo.insert(createUser);
@@ -118,6 +110,6 @@ passport.use(
       } catch (err) {
         return done(err);
       }
-    },
-  ),
+    }
+  )
 );

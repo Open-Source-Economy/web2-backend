@@ -1,9 +1,5 @@
 import { Pool } from "pg";
-import {
-  CompanyId,
-  CompanyUserRole,
-  UserId,
-} from "@open-source-economy/api-types";
+import { CompanyId, CompanyUserRole, UserId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { logger } from "../../config";
 
@@ -12,11 +8,7 @@ export function getUserCompanyRepository(): UserCompanyRepository {
 }
 
 export interface UserCompanyRepository {
-  insert(
-    userId: UserId,
-    companyId: CompanyId,
-    role: CompanyUserRole,
-  ): Promise<[UserId, CompanyId, CompanyUserRole]>;
+  insert(userId: UserId, companyId: CompanyId, role: CompanyUserRole): Promise<[UserId, CompanyId, CompanyUserRole]>;
   delete(userId: UserId, companyId: CompanyId): Promise<void>;
   getByUserId(userId: UserId): Promise<[CompanyId, CompanyUserRole][]>;
   getByCompanyId(companyId: CompanyId): Promise<[UserId, CompanyUserRole][]>;
@@ -32,12 +24,10 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
   async insert(
     userId: UserId,
     companyId: CompanyId,
-    role: CompanyUserRole,
+    role: CompanyUserRole
   ): Promise<[UserId, CompanyId, CompanyUserRole]> {
     const client = await this.pool.connect();
-    logger.debug(
-      `Inserting user ${userId} to company ${companyId} with role ${role}...`,
-    );
+    logger.debug(`Inserting user ${userId} to company ${companyId} with role ${role}...`);
 
     try {
       const result = await client.query(
@@ -46,14 +36,10 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 VALUES ($1, $2, $3)
                 RETURNING *
                 `,
-        [userId, companyId, role],
+        [userId, companyId, role]
       );
 
-      return [
-        result.rows[0].user_id as UserId,
-        result.rows[0].company_id as CompanyId,
-        role,
-      ];
+      return [result.rows[0].user_id as UserId, result.rows[0].company_id as CompanyId, role];
     } catch (error) {
       throw error; // You might want to handle specific errors here
     } finally {
@@ -70,7 +56,7 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 DELETE FROM user_company
                 WHERE user_id = $1 AND company_id = $2
                 `,
-        [userId, companyId],
+        [userId, companyId]
       );
     } catch (error) {
       throw error; // Handle errors as needed
@@ -89,13 +75,10 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 FROM user_company
                 WHERE user_id = $1
                 `,
-        [userId],
+        [userId]
       );
 
-      return result.rows.map((row) => [
-        row.company_id as CompanyId,
-        row.role as CompanyUserRole,
-      ]);
+      return result.rows.map((row) => [row.company_id as CompanyId, row.role as CompanyUserRole]);
     } catch (error) {
       throw error; // Handle errors as needed
     } finally {
@@ -103,9 +86,7 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
     }
   }
 
-  async getByCompanyId(
-    companyId: CompanyId,
-  ): Promise<[UserId, CompanyUserRole][]> {
+  async getByCompanyId(companyId: CompanyId): Promise<[UserId, CompanyUserRole][]> {
     const client = await this.pool.connect();
 
     try {
@@ -115,13 +96,10 @@ class UserCompanyRepositoryImpl implements UserCompanyRepository {
                 FROM user_company
                 WHERE company_id = $1
                 `,
-        [companyId],
+        [companyId]
       );
 
-      return result.rows.map((row) => [
-        row.user_id as UserId,
-        row.role as CompanyUserRole,
-      ]);
+      return result.rows.map((row) => [row.user_id as UserId, row.role as CompanyUserRole]);
     } catch (error) {
       throw error; // Handle errors as needed
     } finally {

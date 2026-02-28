@@ -10,10 +10,7 @@ export interface NewsletterSubscription {
 }
 
 export namespace NewsletterSubscriptionCompanion {
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): NewsletterSubscription | ValidationError {
+  export function fromBackend(row: any, table_prefix: string = ""): NewsletterSubscription | ValidationError {
     const validator = new Validator(row);
     const email = validator.requiredString(`${table_prefix}email`);
     const createdAt = validator.optionalString(`${table_prefix}created_at`);

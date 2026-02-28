@@ -27,23 +27,13 @@ const developerProfileService = new DeveloperProfileService(pool);
 
 export interface ProjectController {
   getProject(
-    req: Request<
-      dto.GetProjectParams,
-      dto.GetProjectResponse,
-      {},
-      dto.GetProjectQuery
-    >,
-    res: Response<dto.GetProjectResponse>,
+    req: Request<dto.GetProjectParams, dto.GetProjectResponse, {}, dto.GetProjectQuery>,
+    res: Response<dto.GetProjectResponse>
   ): Promise<void>;
 
   getProjects(
-    req: Request<
-      dto.GetProjectsParams,
-      dto.GetProjectsResponse,
-      {},
-      dto.GetProjectsQuery
-    >,
-    res: Response<dto.GetProjectsResponse>,
+    req: Request<dto.GetProjectsParams, dto.GetProjectsResponse, {}, dto.GetProjectsQuery>,
+    res: Response<dto.GetProjectsResponse>
   ): Promise<void>;
 
   getAllFinancialIssues(
@@ -53,37 +43,22 @@ export interface ProjectController {
       {},
       dto.GetAllFinancialIssuesQuery
     >,
-    res: Response<dto.GetAllFinancialIssuesResponse>,
+    res: Response<dto.GetAllFinancialIssuesResponse>
   ): Promise<void>;
 
   getIssue(
-    req: Request<
-      dto.GetIssueParams,
-      dto.GetIssueResponse,
-      {},
-      dto.GetIssueQuery
-    >,
-    res: Response<dto.GetIssueResponse>,
+    req: Request<dto.GetIssueParams, dto.GetIssueResponse, {}, dto.GetIssueQuery>,
+    res: Response<dto.GetIssueResponse>
   ): Promise<void>;
 
   createProject(
-    req: Request<
-      dto.GetProjectParams,
-      dto.GetProjectResponse,
-      {},
-      dto.GetProjectQuery
-    >,
-    res: Response<dto.GetProjectResponse>,
+    req: Request<dto.GetProjectParams, dto.GetProjectResponse, {}, dto.GetProjectQuery>,
+    res: Response<dto.GetProjectResponse>
   ): Promise<void>;
 
   fundIssue(
-    req: Request<
-      dto.FundIssueParams,
-      dto.FundIssueResponse,
-      dto.FundIssueBody,
-      dto.FundIssueQuery
-    >,
-    res: Response<dto.FundIssueResponse>,
+    req: Request<dto.FundIssueParams, dto.FundIssueResponse, dto.FundIssueBody, dto.FundIssueQuery>,
+    res: Response<dto.FundIssueResponse>
   ): Promise<void>;
 
   requestIssueFunding(
@@ -93,7 +68,7 @@ export interface ProjectController {
       dto.RequestIssueFundingBody,
       dto.RequestIssueFundingQuery
     >,
-    res: Response<dto.RequestIssueFundingResponse>,
+    res: Response<dto.RequestIssueFundingResponse>
   ): Promise<void>;
 
   getProjectItemsWithDetails(
@@ -103,34 +78,22 @@ export interface ProjectController {
       {},
       dto.GetProjectItemsWithDetailsQuery
     >,
-    res: Response<dto.GetProjectItemsWithDetailsResponse>,
+    res: Response<dto.GetProjectItemsWithDetailsResponse>
   ): Promise<void>;
 
   getProjectDetails(
-    req: Request<
-      dto.GetProjectDetailsParams,
-      dto.GetProjectDetailsResponse,
-      {},
-      dto.GetProjectDetailsQuery
-    >,
-    res: Response<dto.GetProjectDetailsResponse>,
+    req: Request<dto.GetProjectDetailsParams, dto.GetProjectDetailsResponse, {}, dto.GetProjectDetailsQuery>,
+    res: Response<dto.GetProjectDetailsResponse>
   ): Promise<void>;
 }
 
 export const ProjectController: ProjectController = {
   async getProject(
-    req: Request<
-      dto.GetProjectParams,
-      dto.GetProjectResponse,
-      {},
-      dto.GetProjectQuery
-    >,
-    res: Response<dto.GetProjectResponse>,
+    req: Request<dto.GetProjectParams, dto.GetProjectResponse, {}, dto.GetProjectQuery>,
+    res: Response<dto.GetProjectResponse>
   ): Promise<void> {
     const ownerId: OwnerId = { login: req.params.owner };
-    const projectId: OwnerId | RepositoryId = req.params.repo
-      ? { ownerId, name: req.params.repo }
-      : ownerId;
+    const projectId: OwnerId | RepositoryId = req.params.repo ? { ownerId, name: req.params.repo } : ownerId;
     const project = await projectRepo.getById(projectId);
     if (project === null) {
       res.sendStatus(StatusCodes.NOT_FOUND);
@@ -141,13 +104,8 @@ export const ProjectController: ProjectController = {
   },
 
   async getProjects(
-    req: Request<
-      dto.GetProjectsParams,
-      dto.GetProjectsResponse,
-      {},
-      dto.GetProjectsQuery
-    >,
-    res: Response<dto.GetProjectsResponse>,
+    req: Request<dto.GetProjectsParams, dto.GetProjectsResponse, {}, dto.GetProjectsQuery>,
+    res: Response<dto.GetProjectsResponse>
   ): Promise<void> {
     const projects = await projectRepo.getAll();
     const response: dto.GetProjectsResponse = { projects: projects };
@@ -161,7 +119,7 @@ export const ProjectController: ProjectController = {
       {},
       dto.GetAllFinancialIssuesQuery
     >,
-    res: Response<dto.GetAllFinancialIssuesResponse>,
+    res: Response<dto.GetAllFinancialIssuesResponse>
   ) {
     const issues = await financialIssueRepo.getAll();
     const response: dto.GetAllFinancialIssuesResponse = { issues };
@@ -169,13 +127,8 @@ export const ProjectController: ProjectController = {
   },
 
   async getIssue(
-    req: Request<
-      dto.GetIssueParams,
-      dto.GetIssueResponse,
-      {},
-      dto.GetIssueQuery
-    >,
-    res: Response<dto.GetIssueResponse>,
+    req: Request<dto.GetIssueParams, dto.GetIssueResponse, {}, dto.GetIssueQuery>,
+    res: Response<dto.GetIssueResponse>
   ) {
     const ownerId: OwnerId = { login: req.params.owner };
     const repositoryId: RepositoryId = { ownerId, name: req.params.repo };
@@ -190,20 +143,12 @@ export const ProjectController: ProjectController = {
   },
 
   async createProject(
-    req: Request<
-      dto.GetProjectParams,
-      dto.GetProjectResponse,
-      {},
-      dto.GetProjectQuery
-    >,
-    res: Response<dto.GetProjectResponse>,
+    req: Request<dto.GetProjectParams, dto.GetProjectResponse, {}, dto.GetProjectQuery>,
+    res: Response<dto.GetProjectResponse>
   ): Promise<void> {
     const ownerId: OwnerId = { login: req.params.owner };
-    const projectId: OwnerId | RepositoryId = req.params.repo
-      ? { ownerId, name: req.params.repo }
-      : ownerId;
-    const [owner, repositoryOp] =
-      await githubSyncService.syncProject(projectId);
+    const projectId: OwnerId | RepositoryId = req.params.repo ? { ownerId, name: req.params.repo } : ownerId;
+    const [owner, repositoryOp] = await githubSyncService.syncProject(projectId);
     const project: dto.Project = {
       owner,
       repository: repositoryOp ?? undefined,
@@ -215,13 +160,8 @@ export const ProjectController: ProjectController = {
   },
 
   async fundIssue(
-    req: Request<
-      dto.FundIssueParams,
-      dto.FundIssueResponse,
-      dto.FundIssueBody,
-      dto.FundIssueQuery
-    >,
-    res: Response<dto.FundIssueResponse>,
+    req: Request<dto.FundIssueParams, dto.FundIssueResponse, dto.FundIssueBody, dto.FundIssueQuery>,
+    res: Response<dto.FundIssueResponse>
   ) {
     if (!req.user) {
       throw ApiError.unauthorized("Unauthorized");
@@ -236,20 +176,13 @@ export const ProjectController: ProjectController = {
       res.sendStatus(StatusCodes.NOT_FOUND);
       return;
     }
-    const companyId = req.body.companyId
-      ? (req.body.companyId as CompanyId)
-      : undefined;
+    const companyId = req.body.companyId ? (req.body.companyId as CompanyId) : undefined;
     const creditAmount = req.body.creditAmount;
     const managedIssue = await managedIssueRepo.getByIssueId(issue.id);
     if (managedIssue?.state === ManagedIssueState.REJECTED) {
-      throw ApiError.forbidden(
-        "Cannot fund an issue where funding was rejected before.",
-      );
+      throw ApiError.forbidden("Cannot fund an issue where funding was rejected before.");
     }
-    const availableCredit = await planAndCreditsRepo.getAvailableCredit(
-      req.user.id,
-      companyId,
-    );
+    const availableCredit = await planAndCreditsRepo.getAvailableCredit(req.user.id, companyId);
     if (creditAmount > availableCredit) {
       throw ApiError.paymentRequired("Not enough credits");
     }
@@ -272,7 +205,7 @@ export const ProjectController: ProjectController = {
       dto.RequestIssueFundingBody,
       dto.RequestIssueFundingQuery
     >,
-    res: Response<dto.RequestIssueFundingResponse>,
+    res: Response<dto.RequestIssueFundingResponse>
   ) {
     if (!req.user) {
       throw ApiError.unauthorized("Unauthorized");
@@ -303,9 +236,7 @@ export const ProjectController: ProjectController = {
     } else if (managedIssue.managerId !== req.user.id) {
       throw ApiError.forbidden("Someone else is already managing this issue");
     } else if (managedIssue.state !== ManagedIssueState.OPEN) {
-      throw ApiError.forbidden(
-        "This issue funding is already being REJECTED or SOLVED",
-      );
+      throw ApiError.forbidden("This issue funding is already being REJECTED or SOLVED");
     } else {
       managedIssue.requestedCreditAmount = req.body.creditAmount;
       await managedIssueRepo.update(managedIssue);
@@ -320,23 +251,13 @@ export const ProjectController: ProjectController = {
       {},
       dto.GetProjectItemsWithDetailsQuery
     >,
-    res: Response<dto.GetProjectItemsWithDetailsResponse>,
+    res: Response<dto.GetProjectItemsWithDetailsResponse>
   ): Promise<void> {
-    const {
-      repositories: repoQuery,
-      owners: ownersQuery,
-      urls: urlsQuery,
-    } = req.query;
+    const { repositories: repoQuery, owners: ownersQuery, urls: urlsQuery } = req.query;
 
     const [repositories, owners, urls, stats] = await Promise.all([
-      projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-        repoQuery,
-      ),
-      projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_OWNER,
-        ownersQuery,
-      ),
+      projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_REPOSITORY, repoQuery),
+      projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_OWNER, ownersQuery),
       projectItemRepo.getAllWithDetails(dto.ProjectItemType.URL, urlsQuery),
       projectItemRepo.getProjectItemsStats(),
     ]);
@@ -351,20 +272,12 @@ export const ProjectController: ProjectController = {
   },
 
   async getProjectDetails(
-    req: Request<
-      dto.GetProjectDetailsParams,
-      dto.GetProjectDetailsResponse,
-      {},
-      dto.GetProjectDetailsQuery
-    >,
-    res: Response<dto.GetProjectDetailsResponse>,
+    req: Request<dto.GetProjectDetailsParams, dto.GetProjectDetailsResponse, {}, dto.GetProjectDetailsQuery>,
+    res: Response<dto.GetProjectDetailsResponse>
   ): Promise<void> {
     // 1. Load the project (owner or repo) together with raw developer rows.
     const { owner, repo } = req.params;
-    const projectItemDetails = await projectItemRepo.getBySlugWithDetails(
-      owner,
-      repo,
-    );
+    const projectItemDetails = await projectItemRepo.getBySlugWithDetails(owner, repo);
 
     if (!projectItemDetails) {
       res.sendStatus(StatusCodes.NOT_FOUND);
@@ -375,28 +288,20 @@ export const ProjectController: ProjectController = {
     const targetItem = projectItemDetails.projectItem;
     const targetItemId = targetItem.id;
     // sourceIdentifier is now a string; parse owner/repo info from it
-    const parsedSourceId = targetItem.sourceIdentifier;
-    const ownerLoginLower =
-      projectItemDetails.owner?.id.login.toLowerCase() ?? undefined;
-    const repositoryNameLower =
-      projectItemDetails.repository?.id.name.toLowerCase() ?? undefined;
+    const _parsedSourceId = targetItem.sourceIdentifier;
+    const ownerLoginLower = projectItemDetails.owner?.id.login.toLowerCase() ?? undefined;
+    const repositoryNameLower = projectItemDetails.repository?.id.name.toLowerCase() ?? undefined;
 
     const isProjectRelevant = (projectItem: dto.ProjectItem): boolean => {
       if (projectItem.id === targetItemId) {
         return true;
       }
 
-      if (
-        ownerLoginLower &&
-        projectItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER
-      ) {
+      if (ownerLoginLower && projectItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER) {
         return projectItem.sourceIdentifier.toLowerCase() === ownerLoginLower;
       }
 
-      if (
-        ownerLoginLower &&
-        projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY
-      ) {
+      if (ownerLoginLower && projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY) {
         // sourceIdentifier for repos is typically "owner/name"
         const parts = projectItem.sourceIdentifier.split("/");
         if (parts.length >= 2 && parts[0].toLowerCase() === ownerLoginLower) {
@@ -415,21 +320,14 @@ export const ProjectController: ProjectController = {
 
     // 3. Hydrate developers with profile/settings/projects/services info.
     const dedupedDevelopers = Array.from(
-      new Map(
-        projectItemDetails.developers.map((developer) => [
-          developer.developerProfile.id,
-          developer,
-        ]),
-      ).values(),
+      new Map(projectItemDetails.developers.map((developer) => [developer.developerProfile.id, developer])).values()
     );
 
     const hydratedDevelopers = await Promise.all(
       dedupedDevelopers.map(async (developer) => ({
         developer,
-        fullProfile: await developerProfileService.buildFullDeveloperProfile(
-          developer.developerProfile,
-        ),
-      })),
+        fullProfile: await developerProfileService.buildFullDeveloperProfile(developer.developerProfile),
+      }))
     );
 
     const developersResponse: Record<string, dto.ProjectDeveloperProfile> = {};
@@ -437,8 +335,7 @@ export const ProjectController: ProjectController = {
     const serviceOfferingsMap = new Map<string, dto.ProjectServiceOffering[]>();
 
     for (const { developer, fullProfile } of hydratedDevelopers) {
-      const profileId =
-        fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
+      const profileId = fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
 
       const sortedProjects = [...fullProfile.projects].sort((a, b) => {
         const aRelevant = isProjectRelevant(a.projectItem);
@@ -451,12 +348,8 @@ export const ProjectController: ProjectController = {
             return aIsTarget === bIsTarget ? 0 : aIsTarget ? -1 : 1;
           }
 
-          const aIsRepository =
-            a.projectItem.projectItemType ===
-            dto.ProjectItemType.GITHUB_REPOSITORY;
-          const bIsRepository =
-            b.projectItem.projectItemType ===
-            dto.ProjectItemType.GITHUB_REPOSITORY;
+          const aIsRepository = a.projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY;
+          const bIsRepository = b.projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY;
           if (aIsRepository !== bIsRepository) {
             return aIsRepository ? -1 : 1;
           }
@@ -491,7 +384,7 @@ export const ProjectController: ProjectController = {
         }
 
         const isLinkedToProject = developerService.developerProjectItemIds.some(
-          (dpiId) => dpiId === relevantProjectItemId,
+          (dpiId) => dpiId === relevantProjectItemId
         );
         if (!isLinkedToProject) {
           continue;
@@ -501,14 +394,11 @@ export const ProjectController: ProjectController = {
         developerServices[serviceId] = developerService;
         servicesMap.set(serviceId, serviceEntry.service);
 
-        const developerProfileId =
-          fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
+        const developerProfileId = fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
 
         const offering: dto.ProjectServiceOffering = {};
         if (developerService.responseTimeHours) {
-          offering.responseTimeHours = [
-            [developerService.responseTimeHours, developerProfileId],
-          ];
+          offering.responseTimeHours = [[developerService.responseTimeHours, developerProfileId]];
         }
         const offerings = serviceOfferingsMap.get(serviceId);
         if (offerings) {
@@ -534,9 +424,7 @@ export const ProjectController: ProjectController = {
         repository: projectItemDetails.repository,
       },
       developers: developersResponse,
-      service: Array.from(servicesMap.values()).sort((a, b) =>
-        a.name.localeCompare(b.name),
-      ),
+      service: Array.from(servicesMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
       serviceOfferings: Object.fromEntries(serviceOfferingsMap.entries()),
     };
 

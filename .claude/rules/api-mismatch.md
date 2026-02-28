@@ -7,19 +7,23 @@ When the API contract (`@open-source-economy/api-types`) doesn't fit what the ba
 ## When to STOP and ASK
 
 ### Type Mismatches
+
 - Backend needs a field that doesn't exist in the API request/response type
 - A field type in the API doesn't match what the database stores (e.g., API says `string`, DB needs `number`)
 - API uses a flat structure but DB has a nested relationship (or vice versa)
 
 ### Missing Endpoints
+
 - You need a CRUD operation but no contract endpoint exists for it
 - The HTTP method or path doesn't match the intended semantics
 
 ### Validation Gaps
+
 - Backend has constraints (e.g., max length, required fields) that the API schema doesn't enforce
 - API allows values that the DB schema rejects
 
 ### Naming Inconsistency
+
 - API uses a different term than the domain model (e.g., API says `owner` but domain says `organization`)
 
 ## What NOT to Do

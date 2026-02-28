@@ -1,9 +1,5 @@
 import { Pool } from "pg";
-import {
-  Currency,
-  OwnerId,
-  RepositoryId,
-} from "@open-source-economy/api-types";
+import { Currency, OwnerId, RepositoryId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { parseCurrency } from "../../utils/enum-utils";
 
@@ -14,25 +10,18 @@ export function getStripeMiscellaneousRepository(): StripeMiscellaneousRepositor
 }
 
 export interface StripeMiscellaneousRepository {
-  getRaisedAmountPerCurrency(
-    projectId: ProjectId,
-  ): Promise<Record<Currency, number>>; // in cents in the currency of the price
+  getRaisedAmountPerCurrency(projectId: ProjectId): Promise<Record<Currency, number>>; // in cents in the currency of the price
 }
 
-class StripeMiscellaneousRepositoryImpl
-  implements StripeMiscellaneousRepository
-{
+class StripeMiscellaneousRepositoryImpl implements StripeMiscellaneousRepository {
   private pool: Pool;
 
   constructor(pool: Pool) {
     this.pool = pool;
   }
 
-  async getRaisedAmountPerCurrency(
-    projectId: ProjectId,
-  ): Promise<Record<Currency, number>> {
-    const ownerLogin =
-      "name" in projectId ? projectId.ownerId.login : projectId.login;
+  async getRaisedAmountPerCurrency(projectId: ProjectId): Promise<Record<Currency, number>> {
+    const ownerLogin = "name" in projectId ? projectId.ownerId.login : projectId.login;
     const repoName = "name" in projectId ? projectId.name : null;
 
     // Base query with owner condition
@@ -76,7 +65,7 @@ class StripeMiscellaneousRepositoryImpl
         acc[currency] = 0;
         return acc;
       },
-      {} as Record<Currency, number>,
+      {} as Record<Currency, number>
     );
 
     result.rows.forEach((row) => {

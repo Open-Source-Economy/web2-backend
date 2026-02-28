@@ -1,18 +1,9 @@
-import type {
-  ProjectItem,
-  ProjectItemId,
-  ProjectItemType,
-  ProjectCategory,
-  ISODateTimeString,
-} from "@open-source-economy/api-types";
+import type { ProjectItem, ProjectItemId, ProjectItemType, ProjectCategory } from "@open-source-economy/api-types";
 import { toISODateTimeString } from "../../../utils/date.utils";
 import { mapOwnerIdFromForeignKey } from "../github/owner.mapper";
 import { mapRepositoryIdFromForeignKey } from "../github/repository.mapper";
 
-export function mapProjectItemFromRow(
-  row: Record<string, any>,
-  prefix = "",
-): ProjectItem {
+export function mapProjectItemFromRow(row: Record<string, any>, prefix = ""): ProjectItem {
   const id = row[`${prefix}id`];
   if (!id) throw new Error(`Missing ${prefix}id`);
 

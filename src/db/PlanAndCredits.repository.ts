@@ -1,11 +1,5 @@
 import { Pool } from "pg";
-import {
-  CompanyId,
-  PlanPriceType,
-  PlanProductType,
-  ProductType,
-  UserId,
-} from "@open-source-economy/api-types";
+import { CompanyId, PlanPriceType, PlanProductType, ProductType, UserId } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { getManualInvoiceRepository } from "./ManualInvoice.repository";
 import { logger } from "../config";
@@ -42,10 +36,7 @@ export interface PlanAndCreditsRepository {
    */
   getAvailableCredit(userId: UserId, companyId?: CompanyId): Promise<number>;
 
-  getPlan(
-    userId: UserId,
-    companyId?: CompanyId,
-  ): Promise<[PlanProductType, PlanPriceType] | null>;
+  getPlan(userId: UserId, companyId?: CompanyId): Promise<[PlanProductType, PlanPriceType] | null>;
 }
 
 class CreditRepositoryImpl implements PlanAndCreditsRepository {
@@ -57,17 +48,12 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
     this.pool = pool;
   }
 
-  async getAvailableCredit(
-    userId: UserId,
-    companyId?: CompanyId,
-  ): Promise<number> {
-    logger.debug(
-      `Getting available credit for user ${userId} and company ${companyId}...`,
-    );
+  async getAvailableCredit(userId: UserId, companyId?: CompanyId): Promise<number> {
+    logger.debug(`Getting available credit for user ${userId} and company ${companyId}...`);
     let totalCreditsPaid: number = 0;
 
     // Calculate total Credit from manual invoices
-    const id = companyId ?? userId;
+    const _id = companyId ?? userId;
     const manualInvoices = companyId
       ? await this.manualInvoiceRepo.getAllInvoicePaidByCompany(companyId)
       : await this.manualInvoiceRepo.getAllInvoicePaidByUser(userId);
@@ -94,11 +80,11 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
 
     if (totalFunding < 0) {
       logger.error(
-        `The amount dow amount (${totalFunding}) is negative for userId ${userId}, companyId ${companyId ? companyId : ""}`,
+        `The amount dow amount (${totalFunding}) is negative for userId ${userId}, companyId ${companyId ? companyId : ""}`
       );
     } else if (availableCredits < 0) {
       logger.error(
-        `The total Credit paid (${totalCreditsPaid}) is less than the total funding (${totalFunding}) for userId ${userId}, companyId ${companyId ? companyId : ""}`,
+        `The total Credit paid (${totalCreditsPaid}) is less than the total funding (${totalFunding}) for userId ${userId}, companyId ${companyId ? companyId : ""}`
       );
     }
 
@@ -111,10 +97,7 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
    * @param companyId - Optional company ID if checking company plan
    * @returns The plan product type or null if no plan exists
    */
-  async getPlan(
-    userId: UserId,
-    companyId?: CompanyId,
-  ): Promise<[PlanProductType, PlanPriceType] | null> {
+  async getPlan(userId: UserId, companyId?: CompanyId): Promise<[PlanProductType, PlanPriceType] | null> {
     // TODO: hack solution, refactor to use Stripe API subscription
     try {
       // Get all plan product types from the enum
@@ -172,23 +155,16 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
 
       // Check if it's a valid plan product type
       if (
-        Object.values(PlanProductType).includes(
-          productType as PlanProductType,
-        ) &&
+        Object.values(PlanProductType).includes(productType as PlanProductType) &&
         Object.values(PlanPriceType).includes(priceType as PlanPriceType)
       ) {
         return [productType as PlanProductType, priceType as PlanPriceType];
       } else {
-        logger.error(
-          `Invalid plan product type ${productType} or price type ${priceType} from last invoice`,
-        );
+        logger.error(`Invalid plan product type ${productType} or price type ${priceType} from last invoice`);
         return null;
       }
     } catch (error) {
-      logger.error(
-        "Error retrieving plan product type from last invoice",
-        error,
-      );
+      logger.error("Error retrieving plan product type from last invoice", error);
       throw new Error("Failed to retrieve plan product type from last invoice");
     }
   }
@@ -206,9 +182,7 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
     END`;
   }
 
-  private async getAllStripeInvoicePaidByCompany(
-    companyId: CompanyId,
-  ): Promise<number> {
+  private async getAllStripeInvoicePaidByCompany(companyId: CompanyId): Promise<number> {
     const selectClause = `SELECT SUM(${this.creditCalcCase}) AS total_credit_paid`;
     const fromClause = `FROM stripe_invoice_line sl
                       JOIN stripe_product sp ON sl.product_id = sp.stripe_id
@@ -261,9 +235,7 @@ class CreditRepositoryImpl implements PlanAndCreditsRepository {
   }
 
   // result is in credit
-  private async getIssueFundingFromCompany(
-    companyId: CompanyId,
-  ): Promise<number> {
+  private async getIssueFundingFromCompany(companyId: CompanyId): Promise<number> {
     const selectClause = `SELECT SUM(if.credit_amount) AS total_funding`;
     const issueJoinClause = `LEFT JOIN managed_issue mi ON if.github_issue_id = mi.github_issue_id`;
     const rejectionCondition = `AND (mi.state != 'rejected' OR mi.state is NULL)`;

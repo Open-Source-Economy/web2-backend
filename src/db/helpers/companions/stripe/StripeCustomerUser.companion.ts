@@ -11,14 +11,9 @@ export interface StripeCustomerUser {
 }
 
 export namespace StripeCustomerUserCompanion {
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): StripeCustomerUser | ValidationError {
+  export function fromBackend(row: any, table_prefix: string = ""): StripeCustomerUser | ValidationError {
     const validator = new Validator(row);
-    const stripeCustomerId = validator.requiredString(
-      `${table_prefix}stripe_customer_id`,
-    );
+    const stripeCustomerId = validator.requiredString(`${table_prefix}stripe_customer_id`);
     const userId = validator.requiredString(`${table_prefix}user_id`);
 
     const error = validator.getFirstError();

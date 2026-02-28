@@ -28,9 +28,7 @@ export class Validator {
   requiredString(key: string): string {
     const value = this.data[key];
     if (value === undefined || value === null) {
-      this.errors.push(
-        new ValidationError(`Missing required string field: ${key}`, this.data),
-      );
+      this.errors.push(new ValidationError(`Missing required string field: ${key}`, this.data));
       return "" as any;
     }
     return String(value);
@@ -47,16 +45,12 @@ export class Validator {
   requiredNumber(key: string): number {
     const value = this.data[key];
     if (value === undefined || value === null) {
-      this.errors.push(
-        new ValidationError(`Missing required number field: ${key}`, this.data),
-      );
+      this.errors.push(new ValidationError(`Missing required number field: ${key}`, this.data));
       return 0 as any;
     }
     const num = Number(value);
     if (isNaN(num)) {
-      this.errors.push(
-        new ValidationError(`Field ${key} is not a valid number`, this.data),
-      );
+      this.errors.push(new ValidationError(`Field ${key} is not a valid number`, this.data));
       return 0 as any;
     }
     return num;
@@ -89,12 +83,7 @@ export class Validator {
   requiredBoolean(key: string): boolean {
     const value = this.data[key];
     if (value === undefined || value === null) {
-      this.errors.push(
-        new ValidationError(
-          `Missing required boolean field: ${key}`,
-          this.data,
-        ),
-      );
+      this.errors.push(new ValidationError(`Missing required boolean field: ${key}`, this.data));
       return false as any;
     }
     return Boolean(value);
@@ -111,18 +100,11 @@ export class Validator {
   requiredEnum<T>(key: string, validValues: T[]): T {
     const value = this.data[key];
     if (value === undefined || value === null) {
-      this.errors.push(
-        new ValidationError(`Missing required enum field: ${key}`, this.data),
-      );
+      this.errors.push(new ValidationError(`Missing required enum field: ${key}`, this.data));
       return undefined as any;
     }
     if (!validValues.includes(value as T)) {
-      this.errors.push(
-        new ValidationError(
-          `Invalid enum value for field ${key}: ${value}`,
-          this.data,
-        ),
-      );
+      this.errors.push(new ValidationError(`Invalid enum value for field ${key}: ${value}`, this.data));
       return undefined as any;
     }
     return value as T;
@@ -142,9 +124,7 @@ export class Validator {
   requiredDate(key: string): any {
     const value = this.data[key];
     if (value === undefined || value === null) {
-      this.errors.push(
-        new ValidationError(`Missing required date field: ${key}`, this.data),
-      );
+      this.errors.push(new ValidationError(`Missing required date field: ${key}`, this.data));
       return undefined as any;
     }
     if (value instanceof Date) {
@@ -167,12 +147,7 @@ export class Validator {
   requiredArrayOfEnums<T>(key: string, validValues: T[]): T[] {
     const value = this.data[key];
     if (value === undefined || value === null || !Array.isArray(value)) {
-      this.errors.push(
-        new ValidationError(
-          `Missing required array of enums field: ${key}`,
-          this.data,
-        ),
-      );
+      this.errors.push(new ValidationError(`Missing required array of enums field: ${key}`, this.data));
       return [] as any;
     }
     return value.filter((v: any) => validValues.includes(v as T)) as T[];

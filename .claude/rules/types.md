@@ -32,6 +32,7 @@ const id = { login: "torvalds", name: "linux", number: 42 };
 ## Explicit Type Annotations
 
 **Required** for:
+
 - Function return types when non-trivial (unions, nullable, complex objects)
 - Variables holding union types or `null`
 - Destructured objects from external sources (DB rows, API responses)
@@ -46,6 +47,7 @@ const count = items.length;
 ```
 
 **Not required** for:
+
 - Simple literal assignments (`const x = 5`)
 - Single-type returns obvious from the code
 - Loop variables, map/filter callbacks

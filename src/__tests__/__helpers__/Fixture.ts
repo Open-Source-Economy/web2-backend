@@ -14,7 +14,6 @@ import {
   IssueFunding,
   IssueFundingId,
   IssueId,
-  LocalUser,
   ManagedIssue,
   ManagedIssueId,
   ManagedIssueState,
@@ -120,7 +119,7 @@ export const Fixture = {
   thirdPartyUser(
     id: string,
     provider: Provider = Provider.Github,
-    email: string = "lauriane@gmail.com",
+    email: string = "lauriane@gmail.com"
   ): ThirdPartyUser {
     return {
       provider,
@@ -158,10 +157,7 @@ export const Fixture = {
     return { ownerId, name: `repo-${id}`, githubId: id } as RepositoryId;
   },
 
-  repository(
-    repositoryId: RepositoryId,
-    payload: string = "payload",
-  ): Repository {
+  repository(repositoryId: RepositoryId, payload: string = "payload"): Repository {
     return {
       id: repositoryId,
       htmlUrl: "https://example.com",
@@ -252,7 +248,7 @@ export const Fixture = {
   stripeProduct(
     productId: StripeProductId,
     projectId: string | null,
-    productType: ProductType = ProductType.CREDIT,
+    productType: ProductType = ProductType.CREDIT
   ): StripeProduct {
     return {
       stripeId: productId,
@@ -271,7 +267,7 @@ export const Fixture = {
     productId: StripeProductId,
     unitAmount: number = 200,
     currency: Currency = Currency.USD,
-    priceType: PriceType = PriceType.MONTHLY,
+    priceType: PriceType = PriceType.MONTHLY
   ): StripePrice {
     return {
       stripeId,
@@ -294,7 +290,7 @@ export const Fixture = {
     email: string = "default@example.com",
     name: string = "Default Name",
     phone?: string,
-    preferredLocales: string[] = [],
+    _preferredLocales: string[] = []
   ): StripeCustomer {
     return {
       stripeId,
@@ -315,7 +311,7 @@ export const Fixture = {
     lines: StripeInvoiceLine[],
     currency: Currency = Currency.USD,
     total: number = 1000,
-    invoiceNumber: string | null = "123",
+    invoiceNumber: string | null = "123"
   ): StripeInvoice {
     return {
       stripeId: invoiceId,
@@ -343,7 +339,7 @@ export const Fixture = {
     customerId: StripeCustomerId,
     productId: StripeProductId,
     priceId: StripePriceId,
-    quantity: number = 100,
+    quantity: number = 100
   ): StripeInvoiceLine {
     return {
       stripeId,
@@ -364,7 +360,7 @@ export const Fixture = {
     companyId?: CompanyId,
     userId?: UserId,
     paid: boolean = true,
-    creditAmount: number = 100.0,
+    creditAmount: number = 100.0
   ): CreateManualInvoiceBody {
     return {
       number: 1,
@@ -374,10 +370,7 @@ export const Fixture = {
       creditAmount: creditAmount,
     };
   },
-  manualInvoiceFromBody(
-    id: ManualInvoiceId,
-    dto: CreateManualInvoiceBody,
-  ): ManualInvoice {
+  manualInvoiceFromBody(id: ManualInvoiceId, dto: CreateManualInvoiceBody): ManualInvoice {
     return {
       id,
       number: dto.number,
@@ -393,10 +386,7 @@ export const Fixture = {
     return id as IssueFundingId;
   },
 
-  issueFundingFromBody(
-    issueFundingId: IssueFundingId,
-    dto: RequestIssueFundingBody,
-  ): IssueFunding {
+  issueFundingFromBody(issueFundingId: IssueFundingId, dto: RequestIssueFundingBody): IssueFunding {
     return {
       id: issueFundingId,
       githubIssueId: {} as IssueId,
@@ -411,7 +401,7 @@ export const Fixture = {
   createManagedIssueBody(
     githubIssueId: IssueId,
     managerId: UserId,
-    requestedCreditAmount: number = 5000,
+    requestedCreditAmount: number = 5000
   ): CreateManagedIssueBody {
     return {
       githubIssueId,
@@ -421,10 +411,7 @@ export const Fixture = {
       state: ManagedIssueState.OPEN,
     };
   },
-  managedIssueFromBody(
-    managedIssueId: ManagedIssueId,
-    dto: CreateManagedIssueBody,
-  ): ManagedIssue {
+  managedIssueFromBody(managedIssueId: ManagedIssueId, dto: CreateManagedIssueBody): ManagedIssue {
     return {
       id: managedIssueId,
       githubIssueId: dto.githubIssueId,
@@ -438,7 +425,7 @@ export const Fixture = {
   createUserCompanyPermissionTokenBody(
     userEmail: string,
     companyId: CompanyId,
-    expiresAt: Date = new Date(Date.now() + 1000 * 60 * 60 * 24), // Default to 1 day in the future
+    expiresAt: Date = new Date(Date.now() + 1000 * 60 * 60 * 24) // Default to 1 day in the future
   ): CreateCompanyUserPermissionTokenBody {
     return {
       userName: "lauriane",
@@ -452,7 +439,7 @@ export const Fixture = {
 
   userCompanyPermissionTokenFromBody(
     tokenId: CompanyUserPermissionTokenId,
-    dto: CreateCompanyUserPermissionTokenBody,
+    dto: CreateCompanyUserPermissionTokenBody
   ): CompanyUserPermissionToken {
     return {
       id: tokenId,
@@ -469,7 +456,7 @@ export const Fixture = {
   createRepositoryUserPermissionTokenBody(
     repositoryId: RepositoryId,
     userGithubOwnerLogin: string = `lauriane ${Fixture.uuid()}`,
-    expiresAt: Date = new Date(Date.now() + 1000 * 60 * 60 * 24), // Default to 1 day in the future
+    expiresAt: Date = new Date(Date.now() + 1000 * 60 * 60 * 24) // Default to 1 day in the future
   ): CreateRepositoryUserPermissionTokenDto {
     return {
       userName: "lauriane",
@@ -486,7 +473,7 @@ export const Fixture = {
 
   repositoryUserPermissionTokenFromBody(
     tokenId: RepositoryUserPermissionTokenId,
-    dto: CreateRepositoryUserPermissionTokenDto,
+    dto: CreateRepositoryUserPermissionTokenDto
   ): RepositoryUserPermissionToken {
     return {
       id: tokenId,
@@ -508,7 +495,7 @@ export const Fixture = {
     repositoryId: RepositoryId,
     repositoryUserRole: RepositoryUserRole = RepositoryUserRole.READ,
     rate: number = 1.0,
-    currency: Currency = Currency.USD,
+    currency: Currency = Currency.USD
   ): UserRepository {
     return {
       userId,

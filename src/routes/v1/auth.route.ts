@@ -6,30 +6,18 @@ const router = Router();
 
 router.get("/status", AuthController.status);
 
-router.post(
-  "/register",
-  passport.authenticate("local-register"),
-  AuthController.register,
-);
+router.post("/register", passport.authenticate("local-register"), AuthController.register);
 
 router.post(
   "/register-as-company",
   AuthController.verifyCompanyToken,
   passport.authenticate("local-register"),
-  AuthController.registerAsCompany,
+  AuthController.registerAsCompany
 );
 
-router.post(
-  "/register-as-maintainer",
-  AuthController.verifyRepositoryToken,
-  passport.authenticate("github"),
-);
+router.post("/register-as-maintainer", AuthController.verifyRepositoryToken, passport.authenticate("github"));
 
-router.post(
-  "/login",
-  passport.authenticate("local-login"),
-  AuthController.login,
-);
+router.post("/login", passport.authenticate("local-login"), AuthController.login);
 
 router.get("/github", (req, res, next) => {
   if (req.query.redirect) {
@@ -39,23 +27,13 @@ router.get("/github", (req, res, next) => {
   passport.authenticate("github")(req, res, next);
 });
 
-router.get(
-  "/redirect/github",
-  passport.authenticate("github"),
-  AuthController.registerForRepository,
-);
+router.get("/redirect/github", passport.authenticate("github"), AuthController.registerForRepository);
 
 router.post("/logout", AuthController.logout);
 
-router.get(
-  "/company-user-invite-info",
-  AuthController.getCompanyUserInviteInfo,
-);
+router.get("/company-user-invite-info", AuthController.getCompanyUserInviteInfo);
 
-router.get(
-  "/repository-user-invite-info",
-  AuthController.getRepositoryUserInviteInfo,
-);
+router.get("/repository-user-invite-info", AuthController.getRepositoryUserInviteInfo);
 
 router.get("/check-email", AuthController.checkEmail);
 

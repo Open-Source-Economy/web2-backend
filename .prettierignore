@@ -1,0 +1,5 @@
+dist
+node_modules
+# Email templates with non-standard HTML structure
+src/services/company-template/
+src/services/register-template/

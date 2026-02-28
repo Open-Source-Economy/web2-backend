@@ -28,7 +28,7 @@ export interface DeveloperSettingsRepository {
     developerProfileId: DeveloperProfileId,
     royaltiesPreference?: PreferenceType | null,
     servicesPreference?: PreferenceType | null,
-    communitySupporterPreference?: PreferenceType | null,
+    communitySupporterPreference?: PreferenceType | null
   ): Promise<DeveloperSettings>;
 
   /**
@@ -58,7 +58,7 @@ export interface DeveloperSettingsRepository {
     openToOtherOpportunityComment: string | null,
     hourlyRate: number,
     hourlyRateComment: string | null,
-    currency: Currency,
+    currency: Currency
   ): Promise<DeveloperSettings>;
 
   /**
@@ -71,9 +71,7 @@ export interface DeveloperSettingsRepository {
    */
   updatePartial(
     developerProfileId: DeveloperProfileId,
-    updates: Partial<
-      dto.SetDeveloperPreferencesBody & dto.SetDeveloperServiceSettingsBody
-    >,
+    updates: Partial<dto.SetDeveloperPreferencesBody & dto.SetDeveloperServiceSettingsBody>
   ): Promise<DeveloperSettings>;
 
   /**
@@ -81,9 +79,7 @@ export interface DeveloperSettingsRepository {
    * @param developerProfileId The ID of the developer's profile.
    * @returns A Promise that resolves to the DeveloperSettings or null if not found.
    */
-  findByProfileId(
-    developerProfileId: DeveloperProfileId,
-  ): Promise<DeveloperSettings | null>;
+  findByProfileId(developerProfileId: DeveloperProfileId): Promise<DeveloperSettings | null>;
 
   /**
    * Inserts new developer settings or updates existing ones if a conflict on developer_profile_id occurs.
@@ -111,14 +107,11 @@ export interface DeveloperSettingsRepository {
     openToOtherOpportunityComment: string | null,
     hourlyRate: number,
     hourlyRateComment: string | null,
-    currency: Currency,
+    currency: Currency
   ): Promise<DeveloperSettings>;
 }
 
-class DeveloperSettingsRepositoryImpl
-  extends BaseRepository<DeveloperSettings>
-  implements DeveloperSettingsRepository
-{
+class DeveloperSettingsRepositoryImpl extends BaseRepository<DeveloperSettings> implements DeveloperSettingsRepository {
   constructor(dbPool: Pool) {
     super(dbPool, DeveloperSettingsCompanion);
   }
@@ -147,7 +140,7 @@ class DeveloperSettingsRepositoryImpl
     developerProfileId: DeveloperProfileId,
     royaltiesPreference?: PreferenceType | null,
     servicesPreference?: PreferenceType | null,
-    communitySupporterPreference?: PreferenceType | null,
+    communitySupporterPreference?: PreferenceType | null
   ): Promise<DeveloperSettings> {
     const query = `
       INSERT INTO developer_settings (
@@ -181,7 +174,7 @@ class DeveloperSettingsRepositoryImpl
     openToOtherOpportunityComment: string | null,
     hourlyRate: number,
     hourlyRateComment: string | null,
-    currency: Currency,
+    currency: Currency
   ): Promise<DeveloperSettings> {
     const query = `
       UPDATE developer_settings
@@ -217,9 +210,7 @@ class DeveloperSettingsRepositoryImpl
 
     const result = await this.pool.query(query, values);
     if (result.rows.length === 0) {
-      throw new Error(
-        `DeveloperSettings not found for profile ${developerProfileId}`,
-      );
+      throw new Error(`DeveloperSettings not found for profile ${developerProfileId}`);
     }
     return this.getOne(result.rows);
   }
@@ -237,7 +228,7 @@ class DeveloperSettingsRepositoryImpl
       hourlyRate?: number;
       hourlyRateComment?: string | null;
       currency?: Currency;
-    },
+    }
   ): Promise<DeveloperSettings> {
     const setParts: string[] = [];
     const values: any[] = [developerProfileId]; // $1 for WHERE clause
@@ -309,16 +300,12 @@ class DeveloperSettingsRepositoryImpl
 
     const result = await this.pool.query(query, values);
     if (result.rows.length === 0) {
-      throw new Error(
-        `DeveloperSettings not found for profile ${developerProfileId}`,
-      );
+      throw new Error(`DeveloperSettings not found for profile ${developerProfileId}`);
     }
     return this.getOne(result.rows);
   }
 
-  async findByProfileId(
-    developerProfileId: DeveloperProfileId,
-  ): Promise<DeveloperSettings | null> {
+  async findByProfileId(developerProfileId: DeveloperProfileId): Promise<DeveloperSettings | null> {
     const query = `
       SELECT ${DeveloperSettingsRepositoryImpl.SELECT_COLUMNS}
       FROM developer_settings
@@ -340,7 +327,7 @@ class DeveloperSettingsRepositoryImpl
     openToOtherOpportunityComment: string | null,
     hourlyRate: number,
     hourlyRateComment: string | null,
-    currency: Currency,
+    currency: Currency
   ): Promise<DeveloperSettings> {
     const query = `
       INSERT INTO developer_settings (

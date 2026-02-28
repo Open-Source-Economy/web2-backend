@@ -1,27 +1,15 @@
 import { Pool } from "pg";
-import {
-  CompanyId,
-  StripeInvoice,
-  StripeInvoiceId,
-  StripeInvoiceLine,
-  UserId,
-} from "@open-source-economy/api-types";
+import { CompanyId, StripeInvoice, StripeInvoiceId, StripeInvoiceLine, UserId } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { StripeInvoiceCompanion } from "../helpers/companions";
-import {
-  getStripeInvoiceLineRepository,
-  StripeInvoiceLineRepository,
-} from "./StripeInvoiceLine.repository";
+import { getStripeInvoiceLineRepository, StripeInvoiceLineRepository } from "./StripeInvoiceLine.repository";
 
 export function getStripeInvoiceRepository(): StripeInvoiceRepository {
   return new StripeInvoiceRepositoryImpl(pool);
 }
 
 export interface StripeInvoiceRepository {
-  insert(
-    invoice: StripeInvoice,
-    lines: StripeInvoiceLine[],
-  ): Promise<StripeInvoice>;
+  insert(invoice: StripeInvoice, lines: StripeInvoiceLine[]): Promise<StripeInvoice>;
   getById(id: StripeInvoiceId): Promise<StripeInvoice | null>;
   getAllInvoicePaidByCompany(id: CompanyId): Promise<any[]>;
   getAllInvoicePaidByUser(id: UserId): Promise<any[]>;
@@ -66,16 +54,13 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                 FROM stripe_invoice
                 WHERE stripe_id = $1
             `,
-      [id],
+      [id]
     );
 
     return this.getOptionalInvoice(result.rows);
   }
 
-  async insert(
-    invoice: StripeInvoice,
-    lines: StripeInvoiceLine[],
-  ): Promise<StripeInvoice> {
+  async insert(invoice: StripeInvoice, lines: StripeInvoiceLine[]): Promise<StripeInvoice> {
     const client = await this.pool.connect();
 
     try {
@@ -125,7 +110,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
           invoice.hostedInvoiceUrl,
           invoice.invoicePdf,
           invoice.number,
-        ],
+        ]
       );
 
       // Insert associated invoice lines
@@ -142,14 +127,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                         )
                         VALUES ($1, $2, $3, $4, $5, $6)
                     `,
-          [
-            line.stripeId,
-            line.invoiceId,
-            line.customerId,
-            line.productId,
-            line.priceId,
-            line.quantity,
-          ],
+          [line.stripeId, line.invoiceId, line.customerId, line.productId, line.priceId, line.quantity]
         );
       }
 
@@ -175,7 +153,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                         )
                     ) AND paid = TRUE
                 `,
-      [id],
+      [id]
     );
 
     return result.rows;
@@ -190,7 +168,7 @@ class StripeInvoiceRepositoryImpl implements StripeInvoiceRepository {
                         SELECT stripe_customer_id FROM stripe_customer_user WHERE user_id = $1
                     ) AND paid = TRUE
                 `,
-      [id],
+      [id]
     );
 
     return result.rows;

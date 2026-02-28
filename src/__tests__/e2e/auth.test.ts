@@ -5,7 +5,7 @@ import { setupTestDB } from "../__helpers__/jest.setup";
 import { logger } from "../../config";
 
 describe("/api/v1/auth", () => {
-  let app: Express = createApp();
+  const app: Express = createApp();
 
   setupTestDB();
 
@@ -13,13 +13,11 @@ describe("/api/v1/auth", () => {
     const email = "lauriane@gmail.com";
     const password = "password";
 
-    const registerResponse = await request(app)
-      .post("/api/v1/auth/register")
-      .send({
-        name: "Lauriane",
-        email: email,
-        password: password,
-      });
+    const registerResponse = await request(app).post("/api/v1/auth/register").send({
+      name: "Lauriane",
+      email: email,
+      password: password,
+    });
 
     expect(registerResponse.status).toBe(201);
 
@@ -65,9 +63,7 @@ describe("/api/v1/auth", () => {
 
     // should be logged in
 
-    const response = await request(app)
-      .get("/api/v1/auth/status")
-      .set("Cookie", loginResponse.headers["set-cookie"]);
+    const response = await request(app).get("/api/v1/auth/status").set("Cookie", loginResponse.headers["set-cookie"]);
 
     // logger.info("Response Body:", response.body);
     // logger.info("Response Status:", response.status);
@@ -112,9 +108,7 @@ describe("/api/v1/auth", () => {
 
       // should NOT be logged in
 
-      const response = await request(app)
-        .get("/api/v1/auth/status")
-        .set("Cookie", loginResponse.headers["set-cookie"]);
+      const response = await request(app).get("/api/v1/auth/status").set("Cookie", loginResponse.headers["set-cookie"]);
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toHaveProperty("success.user", null);

@@ -120,7 +120,7 @@ class OwnerRepositoryImpl implements OwnerRepository {
           owner.blog,
           owner.location,
           owner.email,
-        ],
+        ]
       );
 
       return this.getOneOwner(result.rows);

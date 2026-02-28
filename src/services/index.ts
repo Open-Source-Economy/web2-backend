@@ -17,5 +17,5 @@ export const githubSyncService: GithubSyncService = getGithubSyncService(
   ownerRepo,
   repositoryRepo,
   projectRepo,
-  projectItemRepo,
+  projectItemRepo
 );

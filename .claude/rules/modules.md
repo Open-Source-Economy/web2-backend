@@ -48,6 +48,7 @@ export class GitHubService implements IGitHubService {
 ```
 
 Rules:
+
 - **Always export the interface** — tests mock against it
 - Interface and implementation live in the **same file**
 - Only create a separate interface file when there are multiple real implementations (mocks don't count)
@@ -85,6 +86,7 @@ export { UserCompanyRepository } from "./UserCompany.repository";
 ```
 
 Rules:
+
 - Export only what consumers need — keep internal helpers private
 - Don't re-export from other modules for "convenience" — import from the source
 

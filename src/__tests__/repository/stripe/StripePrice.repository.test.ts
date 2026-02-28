@@ -82,16 +82,8 @@ describe("StripePriceRepository", () => {
   describe("getAll", () => {
     it("should return all prices", async () => {
       // Create a few prices first
-      const price1 = Fixture.stripePrice(
-        Fixture.stripePriceId(),
-        validProductId,
-        1000,
-      );
-      const price2 = Fixture.stripePrice(
-        Fixture.stripePriceId(),
-        validProductId,
-        2000,
-      );
+      const price1 = Fixture.stripePrice(Fixture.stripePriceId(), validProductId, 1000);
+      const price2 = Fixture.stripePrice(Fixture.stripePriceId(), validProductId, 2000);
 
       await stripePriceRepo.createOrUpdate(price1);
       await stripePriceRepo.createOrUpdate(price2);

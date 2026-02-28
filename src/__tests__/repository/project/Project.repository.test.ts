@@ -53,9 +53,7 @@ describe("ProjectRepository", () => {
 
         try {
           await projectRepo.createOrUpdate(project);
-          fail(
-            "Expected foreign key constraint violation, but no error was thrown.",
-          );
+          fail("Expected foreign key constraint violation, but no error was thrown.");
         } catch (error: any) {
           expect(error.message).toMatch(/violates foreign key constraint/);
         }
@@ -70,9 +68,7 @@ describe("ProjectRepository", () => {
 
         try {
           await projectRepo.createOrUpdate(project);
-          fail(
-            "Expected foreign key constraint violation, but no error was thrown.",
-          );
+          fail("Expected foreign key constraint violation, but no error was thrown.");
         } catch (error: any) {
           expect(error.message).toMatch(/violates foreign key constraint/);
         }

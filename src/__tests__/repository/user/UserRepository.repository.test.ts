@@ -1,16 +1,7 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import {
-  ownerRepo,
-  repositoryRepo,
-  userRepo,
-  userRepositoryRepo,
-} from "../../../db";
+import { ownerRepo, repositoryRepo, userRepo, userRepositoryRepo } from "../../../db";
 import { Fixture } from "../../__helpers__/Fixture";
-import {
-  Currency,
-  RepositoryUserRole,
-  UserId,
-} from "@open-source-economy/api-types";
+import { Currency, RepositoryUserRole, UserId } from "@open-source-economy/api-types";
 
 describe("UserRepositoryRepository", () => {
   setupTestDB();
@@ -19,9 +10,7 @@ describe("UserRepositoryRepository", () => {
   const repositoryId = Fixture.repositoryId(ownerId);
 
   beforeEach(async () => {
-    const validUser = await userRepo.insert(
-      Fixture.createUser(Fixture.localUser()),
-    );
+    const validUser = await userRepo.insert(Fixture.createUser(Fixture.localUser()));
     userId = validUser.id;
 
     await ownerRepo.insertOrUpdate(Fixture.owner(ownerId));
@@ -109,8 +98,8 @@ describe("UserRepositoryRepository", () => {
     const invalidUserId = Fixture.userId();
     const newCurrency = Currency.USD;
 
-    await expect(
-      userRepo.setPreferredCurrency(invalidUserId, newCurrency),
-    ).rejects.toThrowError(`User with id ${invalidUserId} not found`);
+    await expect(userRepo.setPreferredCurrency(invalidUserId, newCurrency)).rejects.toThrowError(
+      `User with id ${invalidUserId} not found`
+    );
   });
 });

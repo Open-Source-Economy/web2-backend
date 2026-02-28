@@ -1,9 +1,4 @@
-import {
-  stripeCustomerRepo,
-  stripeCustomerUserRepo,
-  stripePriceRepo,
-  userCompanyRepo,
-} from "../../db/";
+import { stripeCustomerRepo, stripeCustomerUserRepo, stripePriceRepo, userCompanyRepo } from "../../db/";
 import Stripe from "stripe";
 import {
   CompanyId,
@@ -13,7 +8,6 @@ import {
   StripeCustomerId,
   StripePrice,
 } from "@open-source-economy/api-types";
-import { StatusCodes } from "http-status-codes";
 import { stripe } from "./index";
 import { logger } from "../../config";
 import { ApiError } from "../../errors";
@@ -26,15 +20,12 @@ interface StripeCustomerUser {
 }
 
 export interface StripeHelper {
-  getOrCreateStripeCustomerUser(
-    user: Express.User,
-    countryCode: string | null,
-  ): Promise<StripeCustomerUser | ApiError>;
+  getOrCreateStripeCustomerUser(user: Express.User, countryCode: string | null): Promise<StripeCustomerUser | ApiError>;
 
   createAndStoreStripePrices(
     product: Stripe.Product,
     prices: Record<Currency, number>,
-    options?: Stripe.PriceCreateParams.Recurring,
+    options?: Stripe.PriceCreateParams.Recurring
   ): Promise<void>;
 }
 
@@ -43,7 +34,7 @@ export const StripeHelper: StripeHelper = {
   // Subscriptions with multiple products: https://docs.stripe.com/billing/subscriptions/multiple-products
   async getOrCreateStripeCustomerUser(
     user: Express.User,
-    countryCode: string | null,
+    countryCode: string | null
   ): Promise<StripeCustomerUser | ApiError> {
     const exiting = await stripeCustomerUserRepo.getByUserId(user.id);
 
@@ -51,13 +42,12 @@ export const StripeHelper: StripeHelper = {
       logger.debug("Stripe customer already exists", exiting);
       return exiting;
     } else {
-      const companies: [CompanyId, CompanyUserRole][] =
-        await userCompanyRepo.getByUserId(user.id);
+      const companies: [CompanyId, CompanyUserRole][] = await userCompanyRepo.getByUserId(user.id);
       if (companies.length > 1) {
         return ApiError.internal("Multiple companies not supported");
       }
 
-      let stripeAddress: Stripe.Emptyable<Stripe.AddressParam> = {
+      const stripeAddress: Stripe.Emptyable<Stripe.AddressParam> = {
         country: countryCode ?? undefined,
       };
 
@@ -69,8 +59,7 @@ export const StripeHelper: StripeHelper = {
 
       logger.debug("Creating Stripe customer", customerCreateParams);
 
-      const customer: Stripe.Customer =
-        await stripe.customers.create(customerCreateParams);
+      const customer: Stripe.Customer = await stripe.customers.create(customerCreateParams);
       const stripeCustomer: StripeCustomer = {
         stripeId: customer.id as StripeCustomerId,
         currency: undefined,
@@ -92,31 +81,29 @@ export const StripeHelper: StripeHelper = {
   async createAndStoreStripePrices(
     product: Stripe.Product,
     prices: Record<Currency, number>,
-    options?: Stripe.PriceCreateParams.Recurring,
+    options?: Stripe.PriceCreateParams.Recurring
   ): Promise<void> {
-    const creationPromises = Object.entries(prices).map(
-      async ([currency, price]) => {
-        const priceParams: Stripe.PriceCreateParams = {
-          currency: currency.toLowerCase(),
-          unit_amount: price,
-          product: product.id,
-          recurring: options,
-        };
+    const creationPromises = Object.entries(prices).map(async ([currency, price]) => {
+      const priceParams: Stripe.PriceCreateParams = {
+        currency: currency.toLowerCase(),
+        unit_amount: price,
+        product: product.id,
+        recurring: options,
+      };
 
-        const priceResponse = await stripe.prices.create(priceParams);
-        const stripePrice: StripePrice = {
-          id: priceResponse.id as any,
-          stripeProductId: product.id as any,
-          currency: requireCurrency(currency, "stripe price creation"),
-          unitAmount: priceResponse.unit_amount ?? 0,
-          recurring: priceResponse.recurring ? true : false,
-          interval: priceResponse.recurring?.interval ?? null,
-          active: priceResponse.active,
-        } as any;
+      const priceResponse = await stripe.prices.create(priceParams);
+      const stripePrice: StripePrice = {
+        id: priceResponse.id as any,
+        stripeProductId: product.id as any,
+        currency: requireCurrency(currency, "stripe price creation"),
+        unitAmount: priceResponse.unit_amount ?? 0,
+        recurring: priceResponse.recurring ? true : false,
+        interval: priceResponse.recurring?.interval ?? null,
+        active: priceResponse.active,
+      } as any;
 
-        await stripePriceRepo.createOrUpdate(stripePrice);
-      },
-    );
+      await stripePriceRepo.createOrUpdate(stripePrice);
+    });
 
     try {
       await Promise.all(creationPromises);

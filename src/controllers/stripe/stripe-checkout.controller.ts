@@ -10,13 +10,8 @@ import { ApiError } from "../../errors";
 
 export interface StripeCheckoutController {
   checkout(
-    req: Request<
-      dto.CheckoutParams,
-      dto.CheckoutResponse,
-      dto.CheckoutBody,
-      dto.CheckoutQuery
-    >,
-    res: Response<dto.CheckoutResponse>,
+    req: Request<dto.CheckoutParams, dto.CheckoutResponse, dto.CheckoutBody, dto.CheckoutQuery>,
+    res: Response<dto.CheckoutResponse>
   ): Promise<void>;
 }
 
@@ -30,22 +25,13 @@ export const StripeCheckoutController: StripeCheckoutController = {
    * @param res
    */
   async checkout(
-    req: Request<
-      dto.CheckoutParams,
-      dto.CheckoutResponse,
-      dto.CheckoutBody,
-      dto.CheckoutQuery
-    >,
-    res: Response<dto.CheckoutResponse>,
+    req: Request<dto.CheckoutParams, dto.CheckoutResponse, dto.CheckoutBody, dto.CheckoutQuery>,
+    res: Response<dto.CheckoutResponse>
   ) {
     let customer: any = null;
     if (req.user) {
       logger.debug("Checkout request received", req.body);
-      const stripeCustomerUser =
-        await StripeHelper.getOrCreateStripeCustomerUser(
-          req.user,
-          req.body.countryCode,
-        );
+      const stripeCustomerUser = await StripeHelper.getOrCreateStripeCustomerUser(req.user, req.body.countryCode);
       if (stripeCustomerUser instanceof ApiError) {
         throw stripeCustomerUser;
       } else {
@@ -61,15 +47,10 @@ export const StripeCheckoutController: StripeCheckoutController = {
 
     const params: Stripe.Checkout.SessionCreateParams = {
       mode: req.body.mode,
-      invoice_creation:
-        req.body.mode === `payment` ? { enabled: true } : undefined,
+      invoice_creation: req.body.mode === `payment` ? { enabled: true } : undefined,
       line_items: items,
       customer: customer?.stripeCustomerId,
-      customer_email: customer
-        ? undefined
-        : req.user
-          ? ((req.user as any)?.email ?? undefined)
-          : undefined,
+      customer_email: customer ? undefined : req.user ? ((req.user as any)?.email ?? undefined) : undefined,
       allow_promotion_codes: true,
       metadata: req.body.metadata,
       // {CHECKOUT_SESSION_ID} is a string literal; do not change it!

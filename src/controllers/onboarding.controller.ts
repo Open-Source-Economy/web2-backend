@@ -15,15 +15,8 @@ import {
 } from "../db";
 import { pool } from "../dbPool";
 import { terms } from "../config";
-import {
-  checkAuthenticatedDeveloperProfile,
-  checkAuthenticatedUser,
-} from "../middlewares";
-import {
-  DeveloperProfileService,
-  githubSyncService,
-  mailService,
-} from "../services";
+import { checkAuthenticatedDeveloperProfile, checkAuthenticatedUser } from "../middlewares";
+import { DeveloperProfileService, githubSyncService, mailService } from "../services";
 import { ApiError } from "../errors";
 
 const developerProfileRepo = getDeveloperProfileRepository();
@@ -38,13 +31,8 @@ const developerProfileService = new DeveloperProfileService(pool);
 export interface OnboardingController {
   // Profile management
   createProfile(
-    req: Request<
-      dto.CreateProfileParams,
-      dto.CreateProfileResponse,
-      dto.CreateProfileBody,
-      dto.CreateProfileQuery
-    >,
-    res: Response<dto.CreateProfileResponse>,
+    req: Request<dto.CreateProfileParams, dto.CreateProfileResponse, dto.CreateProfileBody, dto.CreateProfileQuery>,
+    res: Response<dto.CreateProfileResponse>
   ): Promise<void>;
 
   updateContactInfos(
@@ -54,17 +42,12 @@ export interface OnboardingController {
       dto.UpdateContactInfosBody,
       dto.UpdateContactInfosQuery
     >,
-    res: Response<dto.UpdateContactInfosResponse>,
+    res: Response<dto.UpdateContactInfosResponse>
   ): Promise<void>;
 
   getDeveloperProfile(
-    req: Request<
-      dto.GetDeveloperProfileParams,
-      dto.GetDeveloperProfileResponse,
-      {},
-      dto.GetDeveloperProfileQuery
-    >,
-    res: Response<dto.GetDeveloperProfileResponse>,
+    req: Request<dto.GetDeveloperProfileParams, dto.GetDeveloperProfileResponse, {}, dto.GetDeveloperProfileQuery>,
+    res: Response<dto.GetDeveloperProfileResponse>
   ): Promise<void>;
 
   // Settings management
@@ -75,7 +58,7 @@ export interface OnboardingController {
       dto.SetDeveloperPreferencesBody,
       dto.SetDeveloperPreferencesQuery
     >,
-    res: Response<dto.SetDeveloperPreferencesResponse>,
+    res: Response<dto.SetDeveloperPreferencesResponse>
   ): Promise<void>;
 
   setDeveloperServiceSettings(
@@ -85,7 +68,7 @@ export interface OnboardingController {
       dto.SetDeveloperServiceSettingsBody,
       dto.SetDeveloperServiceSettingsQuery
     >,
-    res: Response<dto.SetDeveloperServiceSettingsResponse>,
+    res: Response<dto.SetDeveloperServiceSettingsResponse>
   ): Promise<void>;
 
   getPotentialProjectsItems(
@@ -95,7 +78,7 @@ export interface OnboardingController {
       {},
       dto.GetPotentialProjectItemsQuery
     >,
-    res: Response<dto.GetPotentialProjectItemsResponse>,
+    res: Response<dto.GetPotentialProjectItemsResponse>
   ): Promise<void>;
 
   upsertProjectProjectItem(
@@ -105,28 +88,18 @@ export interface OnboardingController {
       dto.UpsertDeveloperProjectItemBody,
       dto.UpsertDeveloperProjectItemQuery
     >,
-    res: Response<dto.UpsertDeveloperProjectItemResponse>,
+    res: Response<dto.UpsertDeveloperProjectItemResponse>
   ): Promise<void>;
 
   removeProjectProjectItem(
-    req: Request<
-      dto.RemoveDeveloperProjectItemParams,
-      any,
-      {},
-      dto.RemoveDeveloperProjectItemQuery
-    >,
-    res: Response<any>,
+    req: Request<dto.RemoveDeveloperProjectItemParams, any, {}, dto.RemoveDeveloperProjectItemQuery>,
+    res: Response<any>
   ): Promise<void>;
 
   // Service management
   getServiceHierarchy(
-    req: Request<
-      dto.GetServiceHierarchyParams,
-      dto.GetServiceHierarchyResponse,
-      {},
-      dto.GetServiceHierarchyQuery
-    >,
-    res: Response<dto.GetServiceHierarchyResponse>,
+    req: Request<dto.GetServiceHierarchyParams, dto.GetServiceHierarchyResponse, {}, dto.GetServiceHierarchyQuery>,
+    res: Response<dto.GetServiceHierarchyResponse>
   ): Promise<void>;
 
   createCustomService(
@@ -136,7 +109,7 @@ export interface OnboardingController {
       dto.CreateCustomServiceBody,
       dto.CreateCustomServiceQuery
     >,
-    res: Response<dto.CreateCustomServiceResponse>,
+    res: Response<dto.CreateCustomServiceResponse>
   ): Promise<void>;
 
   /**
@@ -151,7 +124,7 @@ export interface OnboardingController {
       dto.UpsertDeveloperServiceBody,
       dto.UpsertDeveloperServiceQuery
     >,
-    res: Response<dto.UpsertDeveloperServiceResponse>,
+    res: Response<dto.UpsertDeveloperServiceResponse>
   ): Promise<void>;
 
   /**
@@ -166,7 +139,7 @@ export interface OnboardingController {
       dto.UpsertDeveloperServicesBody,
       dto.UpsertDeveloperServicesQuery
     >,
-    res: Response<dto.UpsertDeveloperServicesResponse>,
+    res: Response<dto.UpsertDeveloperServicesResponse>
   ): Promise<void>;
 
   deleteDeveloperService(
@@ -176,7 +149,7 @@ export interface OnboardingController {
       {},
       dto.DeleteDeveloperServiceQuery
     >,
-    res: Response<dto.UpsertDeveloperServiceResponse>,
+    res: Response<dto.UpsertDeveloperServiceResponse>
   ): Promise<void>;
 
   // Onboarding completion
@@ -187,7 +160,7 @@ export interface OnboardingController {
       dto.CompleteOnboardingBody,
       dto.CompleteOnboardingQuery
     >,
-    res: Response<dto.CompleteOnboardingResponse>,
+    res: Response<dto.CompleteOnboardingResponse>
   ): Promise<void>;
 }
 
@@ -210,9 +183,7 @@ export const OnboardingController: OnboardingController = {
         const response: dto.CreateProfileResponse = {};
         res.status(StatusCodes.CREATED).send(response);
       } else {
-        throw ApiError.badRequest(
-          "You must agree to the terms and conditions to create a profile.",
-        );
+        throw ApiError.badRequest("You must agree to the terms and conditions to create a profile.");
       }
     }
   },
@@ -241,10 +212,7 @@ export const OnboardingController: OnboardingController = {
       };
       res.status(StatusCodes.OK).send(response);
     } else {
-      const profile = await developerProfileService.buildFullDeveloperProfile(
-        existingProfile,
-        user,
-      );
+      const profile = await developerProfileService.buildFullDeveloperProfile(existingProfile, user);
 
       const response: dto.GetDeveloperProfileResponse = {
         profile,
@@ -258,9 +226,7 @@ export const OnboardingController: OnboardingController = {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
     const body: dto.SetDeveloperPreferencesBody = req.body;
 
-    const existingSettings = await developerSettingsRepo.findByProfileId(
-      developerProfile.id,
-    );
+    const existingSettings = await developerSettingsRepo.findByProfileId(developerProfile.id);
 
     if (existingSettings) {
       await developerSettingsRepo.updatePartial(developerProfile.id, body);
@@ -269,7 +235,7 @@ export const OnboardingController: OnboardingController = {
         developerProfile.id,
         body.royaltiesPreference ?? null,
         body.servicesPreference ?? null,
-        body.communitySupporterPreference ?? null,
+        body.communitySupporterPreference ?? null
       );
     }
 
@@ -281,9 +247,7 @@ export const OnboardingController: OnboardingController = {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
     const body: dto.SetDeveloperServiceSettingsBody = req.body;
 
-    const existingSettings = await developerSettingsRepo.findByProfileId(
-      developerProfile.id,
-    );
+    const existingSettings = await developerSettingsRepo.findByProfileId(developerProfile.id);
 
     if (!existingSettings) {
       await developerSettingsRepo.create(developerProfile.id);
@@ -302,7 +266,7 @@ export const OnboardingController: OnboardingController = {
       {},
       dto.GetPotentialProjectItemsQuery
     >,
-    res: Response<dto.GetPotentialProjectItemsResponse>,
+    res: Response<dto.GetPotentialProjectItemsResponse>
   ): Promise<void> {
     const response: dto.GetPotentialProjectItemsResponse = {};
     res.status(StatusCodes.CREATED).send(response);
@@ -315,7 +279,7 @@ export const OnboardingController: OnboardingController = {
       dto.UpsertDeveloperProjectItemBody,
       dto.UpsertDeveloperProjectItemQuery
     >,
-    res: Response<dto.UpsertDeveloperProjectItemResponse>,
+    res: Response<dto.UpsertDeveloperProjectItemResponse>
   ): Promise<void> {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
 
@@ -337,10 +301,7 @@ export const OnboardingController: OnboardingController = {
     }> = [];
 
     body.projectItems.forEach((projectItemData, index) => {
-      if (
-        projectItemData.projectItemType ===
-        dto.ProjectItemType.GITHUB_REPOSITORY
-      ) {
+      if (projectItemData.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY) {
         const [owner, repo] = projectItemData.sourceIdentifier.split("/");
         repositoryItems.push({
           index,
@@ -349,9 +310,7 @@ export const OnboardingController: OnboardingController = {
             name: repo,
           } as dto.RepositoryId,
         });
-      } else if (
-        projectItemData.projectItemType === dto.ProjectItemType.GITHUB_OWNER
-      ) {
+      } else if (projectItemData.projectItemType === dto.ProjectItemType.GITHUB_OWNER) {
         ownerItems.push({
           index,
           ownerId: { login: projectItemData.sourceIdentifier } as dto.OwnerId,
@@ -371,8 +330,7 @@ export const OnboardingController: OnboardingController = {
     }> = [];
     if (repositoryItems.length > 0) {
       const repositoryIds = repositoryItems.map((item) => item.repositoryId);
-      const syncedRepositories =
-        await githubSyncService.syncRepositories(repositoryIds);
+      const syncedRepositories = await githubSyncService.syncRepositories(repositoryIds);
       repositoryItems.forEach((item, i) => {
         const [_, repository] = syncedRepositories[i];
         repositoryResults.push({
@@ -400,9 +358,7 @@ export const OnboardingController: OnboardingController = {
     }
 
     // Combine all resolved identifiers in the original order
-    const resolvedSourceIdentifiers: string[] = new Array(
-      body.projectItems.length,
-    );
+    const resolvedSourceIdentifiers: string[] = new Array(body.projectItems.length);
     repositoryResults.forEach((result) => {
       resolvedSourceIdentifiers[result.index] = result.sourceIdentifier;
     });
@@ -419,10 +375,7 @@ export const OnboardingController: OnboardingController = {
       const projectItemData = body.projectItems[i];
       const resolvedId = resolvedSourceIdentifiers[i];
 
-      let projectItem = await projectItemRepo.getBySourceIdentifier(
-        projectItemData.projectItemType,
-        resolvedId,
-      );
+      let projectItem = await projectItemRepo.getBySourceIdentifier(projectItemData.projectItemType, resolvedId);
 
       if (projectItem) {
         console.log("Project item already exists:", projectItem.id);
@@ -448,12 +401,11 @@ export const OnboardingController: OnboardingController = {
         const projectItem = projectItems[i];
         const projectItemData = body.projectItems[i];
 
-        const existing: dto.DeveloperProjectItem | null =
-          await developerProjectItemRepo.findByProfileAndProjectItem(
-            developerProfile.id,
-            projectItem.id,
-            client, // Pass client for transaction
-          );
+        const existing: dto.DeveloperProjectItem | null = await developerProjectItemRepo.findByProfileAndProjectItem(
+          developerProfile.id,
+          projectItem.id,
+          client // Pass client for transaction
+        );
 
         let developerProjectItem: dto.DeveloperProjectItem;
         if (existing) {
@@ -464,7 +416,7 @@ export const OnboardingController: OnboardingController = {
             projectItemData.comments,
             projectItemData.customCategories,
             projectItemData.predefinedCategories,
-            client, // Pass client for transaction
+            client // Pass client for transaction
           );
         } else {
           developerProjectItem = await developerProjectItemRepo.create(
@@ -475,7 +427,7 @@ export const OnboardingController: OnboardingController = {
             projectItemData.comments,
             projectItemData.customCategories,
             projectItemData.predefinedCategories,
-            client, // Pass client for transaction
+            client // Pass client for transaction
           );
         }
 
@@ -504,15 +456,13 @@ export const OnboardingController: OnboardingController = {
   async removeProjectProjectItem(req, res) {
     const _ = checkAuthenticatedDeveloperProfile(req);
 
-    await developerProjectItemRepo.delete(
-      (req.params as any).developerProjectItemId,
-    );
+    await developerProjectItemRepo.delete((req.params as any).developerProjectItemId);
 
     res.status(StatusCodes.OK).send({});
   },
 
   async getServiceHierarchy(req, res) {
-    const developerProfile = checkAuthenticatedDeveloperProfile(req);
+    const _developerProfile = checkAuthenticatedDeveloperProfile(req);
 
     const items = await servicesRepo.getHierarchy();
     const response: dto.GetServiceHierarchyResponse = {
@@ -524,12 +474,12 @@ export const OnboardingController: OnboardingController = {
   async createCustomService(req, res) {
     const body: dto.CreateCustomServiceBody = req.body;
 
-    const service = await servicesRepo.create(
+    const _service = await servicesRepo.create(
       ServiceType.CUSTOM,
       body.name,
       body.description,
       true,
-      body.hasResponseTime || false,
+      body.hasResponseTime || false
     );
 
     const response: dto.CreateCustomServiceResponse = {};
@@ -540,10 +490,7 @@ export const OnboardingController: OnboardingController = {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
     const body: dto.UpsertDeveloperServiceBody = req.body;
 
-    const upsertedService = await Helper.upsertDeveloperService(
-      developerProfile,
-      body,
-    );
+    const upsertedService = await Helper.upsertDeveloperService(developerProfile, body);
 
     const response: dto.UpsertDeveloperServiceResponse = {
       developerService: upsertedService,
@@ -560,17 +507,14 @@ export const OnboardingController: OnboardingController = {
       dto.UpsertDeveloperServicesBody,
       dto.UpsertDeveloperServicesQuery
     >,
-    res: Response<dto.UpsertDeveloperServicesResponse>,
+    res: Response<dto.UpsertDeveloperServicesResponse>
   ): Promise<void> {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
     const body: dto.UpsertDeveloperServicesBody = req.body;
 
     const upsertedServices: dto.DeveloperService[] = [];
     for (const service of body.upsertDeveloperServices) {
-      const upsertedService = await Helper.upsertDeveloperService(
-        developerProfile,
-        service,
-      );
+      const upsertedService = await Helper.upsertDeveloperService(developerProfile, service);
       upsertedServices.push(upsertedService);
     }
 
@@ -595,28 +539,20 @@ export const OnboardingController: OnboardingController = {
     const developerProfile = checkAuthenticatedDeveloperProfile(req);
     const user = checkAuthenticatedUser(req);
 
-    const settings = await developerSettingsRepo.findByProfileId(
-      developerProfile.id,
-    );
+    const settings = await developerSettingsRepo.findByProfileId(developerProfile.id);
     if (!settings) {
       throw ApiError.badRequest("Developer settings not configured");
     }
 
     // Build FullDeveloperProfile using shared service
-    const fullProfile = await developerProfileService.buildFullDeveloperProfile(
-      developerProfile,
-      user,
-    );
+    const fullProfile = await developerProfileService.buildFullDeveloperProfile(developerProfile, user);
 
     // Mark onboarding as completed
     await developerProfileRepo.markCompleted(developerProfile.id);
 
     // Send admin notification email
     try {
-      await mailService.sendDeveloperOnboardingCompletionEmail(
-        fullProfile,
-        user,
-      );
+      await mailService.sendDeveloperOnboardingCompletionEmail(fullProfile, user);
     } catch (emailError) {
       // Log the error but don't fail the onboarding completion
       console.error("Failed to send onboarding completion email:", emailError);
@@ -624,10 +560,7 @@ export const OnboardingController: OnboardingController = {
 
     // Send welcome email to the developer
     try {
-      await mailService.sendDeveloperWelcomeEmail(
-        user.name || "there",
-        developerProfile.contactEmail,
-      );
+      await mailService.sendDeveloperWelcomeEmail(user.name || "there", developerProfile.contactEmail);
     } catch (emailError) {
       // Log the error but don't fail the onboarding completion
       console.error("Failed to send welcome email to developer:", emailError);
@@ -641,14 +574,10 @@ export const OnboardingController: OnboardingController = {
 const Helper = {
   async upsertDeveloperService(
     developerProfile: dto.DeveloperProfile,
-    body: dto.UpsertDeveloperServiceBody,
+    body: dto.UpsertDeveloperServiceBody
   ): Promise<dto.DeveloperService> {
     // Retrieve existing service offering by profile and service ID
-    const existingOffering =
-      await developerServiceRepo.getByProfileAndServiceId(
-        developerProfile.id,
-        body.serviceId,
-      );
+    const existingOffering = await developerServiceRepo.getByProfileAndServiceId(developerProfile.id, body.serviceId);
 
     const developerServiceBody: DeveloperServiceBody = {
       developerProjectItemIds: body.developerProjectItemIds,
@@ -661,10 +590,7 @@ const Helper = {
 
     if (existingOffering) {
       // Update existing service offering and its project item links
-      upsertedService = await developerServiceRepo.update(
-        existingOffering.id,
-        developerServiceBody,
-      );
+      upsertedService = await developerServiceRepo.update(existingOffering.id, developerServiceBody);
     } else {
       // Create new service offering and its project item links
       upsertedService = await developerServiceRepo.create(developerProfile.id, {

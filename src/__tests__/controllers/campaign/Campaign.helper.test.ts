@@ -1,11 +1,6 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
 import { Fixture } from "../../__helpers__/Fixture";
-import {
-  getStripePriceRepository,
-  getStripeProductRepository,
-  ownerRepo,
-  repositoryRepo,
-} from "../../../db";
+import { getStripePriceRepository, getStripeProductRepository, ownerRepo, repositoryRepo } from "../../../db";
 
 import {
   CampaignPriceType,
@@ -29,36 +24,26 @@ function toProjectIdString(id: any): string {
   return String(id);
 }
 
-const currencyPriceConfigs: Record<
-  Currency,
-  [number, Record<ProductType, Record<CampaignPriceType, string>>][]
-> = Object.fromEntries(
-  Object.entries({
-    [Currency.USD]: [500, 1000],
-    [Currency.EUR]: [800, 1600],
-    [Currency.GBP]: [700, 1400],
-    [Currency.CHF]: [700, 1400],
-  }).map(([currency, amounts]) => [
-    currency as Currency,
-    amounts.map((amount) => [
-      amount,
-      Object.fromEntries(
-        Object.values(ProductType).map((productType) => [
-          productType,
-          Object.fromEntries(
-            Object.values(CampaignPriceType).map((priceType) => [
-              priceType,
-              "label",
-            ]),
-          ),
-        ]),
-      ),
-    ]) as [number, Record<ProductType, Record<CampaignPriceType, string>>][],
-  ]),
-) as Record<
-  Currency,
-  [number, Record<ProductType, Record<CampaignPriceType, string>>][]
->;
+const currencyPriceConfigs: Record<Currency, [number, Record<ProductType, Record<CampaignPriceType, string>>][]> =
+  Object.fromEntries(
+    Object.entries({
+      [Currency.USD]: [500, 1000],
+      [Currency.EUR]: [800, 1600],
+      [Currency.GBP]: [700, 1400],
+      [Currency.CHF]: [700, 1400],
+    }).map(([currency, amounts]) => [
+      currency as Currency,
+      amounts.map((amount) => [
+        amount,
+        Object.fromEntries(
+          Object.values(ProductType).map((productType) => [
+            productType,
+            Object.fromEntries(Object.values(CampaignPriceType).map((priceType) => [priceType, "label"])),
+          ])
+        ),
+      ]) as [number, Record<ProductType, Record<CampaignPriceType, string>>][],
+    ])
+  ) as Record<Currency, [number, Record<ProductType, Record<CampaignPriceType, string>>][]>;
 
 describe("CampaignHelper.getPrices", () => {
   setupTestDB();
@@ -79,7 +64,7 @@ describe("CampaignHelper.getPrices", () => {
     const product = Fixture.stripeProduct(
       "product-1" as StripeProductId,
       toProjectIdString(repositoryId),
-      campaignProductType as unknown as ProductType,
+      campaignProductType as unknown as ProductType
     );
 
     await productRepo.insert(product);
@@ -90,14 +75,14 @@ describe("CampaignHelper.getPrices", () => {
         product.stripeId,
         100,
         currency as Currency,
-        PriceType.MONTHLY,
+        PriceType.MONTHLY
       );
       const price2 = Fixture.stripePrice(
         Fixture.stripePriceId(),
         product.stripeId,
         250,
         currency as Currency,
-        PriceType.ONE_TIME,
+        PriceType.ONE_TIME
       );
 
       await priceRepo.createOrUpdate(price1);
@@ -105,7 +90,7 @@ describe("CampaignHelper.getPrices", () => {
     }
 
     try {
-      const prices: Record<
+      const _prices: Record<
         CampaignPriceType,
         Record<Currency, Record<CampaignProductType, Price[]>>
       > = await CampaignHelper.getPrices(repositoryId, currencyPriceConfigs);
@@ -124,7 +109,7 @@ describe("CampaignHelper.getPrices", () => {
       const product = Fixture.stripeProduct(
         Fixture.stripeProductId(),
         toProjectIdString(repositoryId),
-        campaignProductType as unknown as ProductType,
+        campaignProductType as unknown as ProductType
       );
 
       await productRepo.insert(product);
@@ -135,7 +120,7 @@ describe("CampaignHelper.getPrices", () => {
           product.stripeId,
           100,
           currency as Currency,
-          PriceType.MONTHLY,
+          PriceType.MONTHLY
         );
 
         await priceRepo.createOrUpdate(price1);
@@ -143,7 +128,7 @@ describe("CampaignHelper.getPrices", () => {
     }
 
     try {
-      const prices: Record<
+      const _prices: Record<
         CampaignPriceType,
         Record<Currency, Record<CampaignProductType, Price[]>>
       > = await CampaignHelper.getPrices(repositoryId, currencyPriceConfigs);
@@ -162,7 +147,7 @@ describe("CampaignHelper.getPrices", () => {
       const product = Fixture.stripeProduct(
         Fixture.stripeProductId(),
         toProjectIdString(repositoryId),
-        campaignProductType as unknown as ProductType,
+        campaignProductType as unknown as ProductType
       );
 
       await productRepo.insert(product);
@@ -173,14 +158,14 @@ describe("CampaignHelper.getPrices", () => {
           product.stripeId,
           100,
           currency as Currency,
-          PriceType.MONTHLY,
+          PriceType.MONTHLY
         );
         const price2 = Fixture.stripePrice(
           Fixture.stripePriceId(),
           product.stripeId,
           250,
           currency as Currency,
-          PriceType.ONE_TIME,
+          PriceType.ONE_TIME
         );
 
         await priceRepo.createOrUpdate(price1);
@@ -193,25 +178,17 @@ describe("CampaignHelper.getPrices", () => {
       Record<Currency, Record<CampaignProductType, Price[]>>
     > = await CampaignHelper.getPrices(repositoryId, currencyPriceConfigs);
 
-    expect(
-      prices[CampaignPriceType.MONTHLY][Currency.USD][
-        CampaignProductType.CREDIT
-      ],
-    ).toEqual(
+    expect(prices[CampaignPriceType.MONTHLY][Currency.USD][CampaignProductType.CREDIT]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ totalAmount: 500, quantity: 5 }),
         expect.objectContaining({ totalAmount: 1000, quantity: 10 }),
-      ]),
+      ])
     );
 
     Object.values(Currency).forEach((currency) => {
       Object.values(CampaignProductType).forEach((campaignProductType) => {
-        expect(
-          prices[CampaignPriceType.MONTHLY][currency][campaignProductType],
-        ).toHaveLength(2);
-        expect(
-          prices[CampaignPriceType.ONE_TIME][currency][campaignProductType],
-        ).toHaveLength(2);
+        expect(prices[CampaignPriceType.MONTHLY][currency][campaignProductType]).toHaveLength(2);
+        expect(prices[CampaignPriceType.ONE_TIME][currency][campaignProductType]).toHaveLength(2);
       });
     });
   });

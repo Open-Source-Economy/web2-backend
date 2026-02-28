@@ -57,9 +57,7 @@ export const HealthController: HealthController = {
     // Check database connectivity
     try {
       const dbStart = Date.now();
-      const result = await pool.query(
-        "SELECT NOW() as server_time, version() as version",
-      );
+      const result = await pool.query("SELECT NOW() as server_time, version() as version");
       const dbLatency = Date.now() - dbStart;
 
       healthCheck.dependencies.database = {
@@ -110,12 +108,7 @@ export const HealthController: HealthController = {
     healthCheck.status = overallStatus;
 
     // Return appropriate HTTP status
-    const httpStatus =
-      overallStatus === "healthy"
-        ? 200
-        : overallStatus === "degraded"
-          ? 200
-          : 503;
+    const httpStatus = overallStatus === "healthy" ? 200 : overallStatus === "degraded" ? 200 : 503;
 
     res.status(httpStatus).json(healthCheck);
   },

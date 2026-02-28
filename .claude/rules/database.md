@@ -60,15 +60,15 @@ const user = { role: UserRole.User, ... };
 
 Define a clear policy per table:
 
-| Table | Policy | Rationale |
-|-------|--------|-----------|
-| `app_user` | Soft-delete | User data retention, audit trail |
-| `company`, `address` | Soft-delete | Legal/billing requirements |
-| `developer_profile` | Soft-delete | Linked to user data |
-| `github_owner`, `github_repository`, `github_issue` | Hard-delete OK | Re-synced from GitHub |
-| `newsletter_subscription` | Hard-delete OK | No audit requirement |
-| `stripe_*` tables | Soft-delete | Financial audit trail |
-| `issue_funding`, `managed_issue` | Soft-delete | Financial records |
+| Table                                               | Policy         | Rationale                        |
+| --------------------------------------------------- | -------------- | -------------------------------- |
+| `app_user`                                          | Soft-delete    | User data retention, audit trail |
+| `company`, `address`                                | Soft-delete    | Legal/billing requirements       |
+| `developer_profile`                                 | Soft-delete    | Linked to user data              |
+| `github_owner`, `github_repository`, `github_issue` | Hard-delete OK | Re-synced from GitHub            |
+| `newsletter_subscription`                           | Hard-delete OK | No audit requirement             |
+| `stripe_*` tables                                   | Soft-delete    | Financial audit trail            |
+| `issue_funding`, `managed_issue`                    | Soft-delete    | Financial records                |
 
 ### Implementing Soft-Delete
 
@@ -96,10 +96,7 @@ class UserRepositoryImpl implements UserRepository {
   constructor(private pool: Pool) {}
 
   async getById(id: UserId): Promise<User | null> {
-    const result = await this.pool.query(
-      "SELECT * FROM app_user WHERE id = $1 AND deleted_at IS NULL",
-      [id]
-    );
+    const result = await this.pool.query("SELECT * FROM app_user WHERE id = $1 AND deleted_at IS NULL", [id]);
     if (result.rows.length === 0) return null;
     return UserCompanion.fromRaw(result.rows[0]);
   }
@@ -125,6 +122,7 @@ export namespace UserCompanion {
 ```
 
 Rules:
+
 - Never map DB rows inline — always use a companion
 - Validate all fields, even from trusted sources
 - Return `ValidationError` for malformed rows, don't throw

@@ -5,9 +5,7 @@ import { Currency } from "@open-source-economy/api-types";
  * @param base$Rates USD to other currencies. Ex: 1 USD = 0.8 GBP will be [Currency.GBP]: 80,
  *
  */
-export function getCurrencyAPI(
-  base$Rates?: Record<Currency, number>,
-): CurrencyApi {
+export function getCurrencyAPI(base$Rates?: Record<Currency, number>): CurrencyApi {
   if (!base$Rates) {
     base$Rates = {
       [Currency.USD]: 1,
@@ -31,11 +29,7 @@ export interface CurrencyApi {
    * // Convert $50.00 USD to GBP
    * convertPrice(5000, Currency.USD, Currency.GBP) // returns 4000 (£40.00)
    */
-  convertPrice(
-    amount: number,
-    fromCurrency: Currency,
-    toCurrency: Currency,
-  ): number;
+  convertPrice(amount: number, fromCurrency: Currency, toCurrency: Currency): number;
 
   /**
    * Get converted prices for all currencies
@@ -57,23 +51,18 @@ class CurrencyApiImpl implements CurrencyApi {
       (acc, fromCurrency) => {
         acc[fromCurrency] = Object.values(Currency).reduce(
           (rates, toCurrency) => {
-            rates[toCurrency] =
-              this.base$Rates[toCurrency] / this.base$Rates[fromCurrency];
+            rates[toCurrency] = this.base$Rates[toCurrency] / this.base$Rates[fromCurrency];
             return rates;
           },
-          {} as Record<Currency, number>,
+          {} as Record<Currency, number>
         );
         return acc;
       },
-      {} as Record<Currency, Record<Currency, number>>,
+      {} as Record<Currency, Record<Currency, number>>
     );
   }
 
-  convertPrice(
-    amount: number,
-    fromCurrency: Currency,
-    toCurrency: Currency,
-  ): number {
+  convertPrice(amount: number, fromCurrency: Currency, toCurrency: Currency): number {
     if (amount < 0) {
       throw new Error("Currency amount must be positive");
     }

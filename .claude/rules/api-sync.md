@@ -27,13 +27,13 @@ npm run build
 
 Common errors after an API update:
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `has no exported member 'X'` | Type was renamed or removed | Update import to new name |
-| `Property 'X' does not exist` | Field renamed in contract | Update field references |
-| `Type 'X' is not assignable to 'Y'` | Type changed shape | Update mapper/companion |
-| `Argument of type 'X' is not assignable` | Enum value changed | Update enum mapping |
-| Contract route mismatch | Endpoint path or method changed | Update router to match new contract |
+| Error                                    | Cause                           | Fix                                 |
+| ---------------------------------------- | ------------------------------- | ----------------------------------- |
+| `has no exported member 'X'`             | Type was renamed or removed     | Update import to new name           |
+| `Property 'X' does not exist`            | Field renamed in contract       | Update field references             |
+| `Type 'X' is not assignable to 'Y'`      | Type changed shape              | Update mapper/companion             |
+| `Argument of type 'X' is not assignable` | Enum value changed              | Update enum mapping                 |
+| Contract route mismatch                  | Endpoint path or method changed | Update router to match new contract |
 
 ### 4. Update Affected Code
 

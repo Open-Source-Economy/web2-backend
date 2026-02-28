@@ -2,10 +2,7 @@ import { Address, AddressId } from "@open-source-economy/api-types";
 import { ValidationError, Validator } from "./Validator";
 
 export namespace AddressCompanion {
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): Address | ValidationError {
+  export function fromBackend(row: any, table_prefix: string = ""): Address | ValidationError {
     const validator = new Validator(row);
     const id = validator.requiredString(`${table_prefix}id`);
     const name = validator.optionalString(`${table_prefix}name`);

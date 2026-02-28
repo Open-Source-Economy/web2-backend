@@ -1,14 +1,7 @@
-import type {
-  DeveloperProfile,
-  DeveloperProfileId,
-  UserId,
-} from "@open-source-economy/api-types";
+import type { DeveloperProfile, DeveloperProfileId, UserId } from "@open-source-economy/api-types";
 import { toISODateTimeString } from "../../../utils/date.utils";
 
-export function mapDeveloperProfileFromRow(
-  row: Record<string, any>,
-  prefix = "",
-): DeveloperProfile {
+export function mapDeveloperProfileFromRow(row: Record<string, any>, prefix = ""): DeveloperProfile {
   const id = row[`${prefix}id`];
   if (!id) throw new Error(`Missing ${prefix}id`);
 

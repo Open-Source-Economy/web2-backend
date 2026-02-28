@@ -1,20 +1,12 @@
-import {
-  GithubData,
-  Owner,
-  Provider,
-  ThirdPartyUser,
-} from "@open-source-economy/api-types";
+import { GithubData, Owner, Provider, ThirdPartyUser } from "@open-source-economy/api-types";
 import { ValidationError, Validator } from "../Validator";
 import { OwnerCompanion } from "../github";
 
 export namespace ThirdPartyUserCompanion {
   export function fromJson(json: any): ThirdPartyUser | ValidationError {
     const validator = new Validator(json);
-    const provider = validator.requiredEnum(
-      "provider",
-      Object.values(Provider) as Provider[],
-    );
-    const id = validator.requiredString("id");
+    const provider = validator.requiredEnum("provider", Object.values(Provider) as Provider[]);
+    const _id = validator.requiredString("id");
     validator.optionalObject("_json");
 
     const error = validator.getFirstError();
@@ -36,16 +28,10 @@ export namespace ThirdPartyUserCompanion {
     } as ThirdPartyUser;
   }
 
-  export function fromRaw(
-    row: any,
-    owner: Owner | null = null,
-  ): ThirdPartyUser | ValidationError {
+  export function fromRaw(row: any, owner: Owner | null = null): ThirdPartyUser | ValidationError {
     const validator = new Validator(row);
-    const provider = validator.requiredEnum(
-      "provider",
-      Object.values(Provider) as Provider[],
-    );
-    const thirdPartyId = validator.requiredString("third_party_id");
+    const provider = validator.requiredEnum("provider", Object.values(Provider) as Provider[]);
+    const _thirdPartyId = validator.requiredString("third_party_id");
     const email = validator.optionalString("email");
 
     const error = validator.getFirstError();

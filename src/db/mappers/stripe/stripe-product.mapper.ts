@@ -1,15 +1,8 @@
-import type {
-  StripeProduct,
-  StripeProductId,
-  ProductType,
-} from "@open-source-economy/api-types";
+import type { StripeProduct, StripeProductId, ProductType } from "@open-source-economy/api-types";
 import { mapOwnerIdFromForeignKey } from "../github/owner.mapper";
 import { mapRepositoryIdFromForeignKey } from "../github/repository.mapper";
 
-export function mapStripeProductFromRow(
-  row: Record<string, any>,
-  prefix = "",
-): StripeProduct {
+export function mapStripeProductFromRow(row: Record<string, any>, prefix = ""): StripeProduct {
   const stripeId = row[`${prefix}stripe_id`];
   if (!stripeId) throw new Error(`Missing ${prefix}stripe_id`);
 

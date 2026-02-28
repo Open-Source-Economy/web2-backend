@@ -22,12 +22,12 @@ router.get("/repos/:owner/:repo/issues/:number", ProjectController.getIssue);
 router.post(
   "/repos/:owner/:repo/issues/:number/funding",
   authenticatedUser, // TODO: security: make sure the user belongs to the company that is funding the issue
-  ProjectController.fundIssue,
+  ProjectController.fundIssue
 );
 router.post(
   "/repos/:owner/:repo/issues/:number/funding/requests",
   authenticatedUser, // TODO: security: make sure the user belongs to the company that is funding the issue
-  ProjectController.requestIssueFunding,
+  ProjectController.requestIssueFunding
 );
 
 export default router;

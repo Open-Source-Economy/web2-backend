@@ -3,6 +3,7 @@
 ## When to Write a Spec
 
 Write a spec before implementing any feature that involves:
+
 - Multiple modules or services interacting
 - External API integrations
 - Multi-step operations that can partially fail
@@ -28,6 +29,7 @@ Start with a diagram and data flow:
 ```
 
 Include:
+
 - Step-by-step data flow (numbered arrows)
 - Interface types table (which interfaces exist at each boundary)
 - Key type definitions
@@ -40,17 +42,21 @@ For each component, document:
 ### ComponentName
 
 **Role:**
+
 - Responsibilities (what it DOES)
 - Boundaries (what it does NOT do)
 
 **Interface:**
+
 - Method signatures with types
 
 **Behavior:**
+
 - Step-by-step logic
 - Edge cases
 
 **Error Codes:**
+
 - Which errors this component can produce
 - How they map to HTTP status codes
 ```
@@ -62,11 +68,11 @@ For multi-step operations, document compensation logic:
 ```markdown
 ### Failure Scenarios
 
-| Step | Failure | Compensation |
-|------|---------|-------------|
-| 1. Create user | DB error | Abort, no cleanup needed |
-| 2. Create Stripe customer | Stripe error | Delete user from DB |
-| 3. Send welcome email | Postmark error | Log warning, don't roll back |
+| Step                      | Failure        | Compensation                 |
+| ------------------------- | -------------- | ---------------------------- |
+| 1. Create user            | DB error       | Abort, no cleanup needed     |
+| 2. Create Stripe customer | Stripe error   | Delete user from DB          |
+| 3. Send welcome email     | Postmark error | Log warning, don't roll back |
 ```
 
 ### 4. Testability Checklist
@@ -108,6 +114,7 @@ PaymentEvent    →  CheckoutCompleted      →  StripeCheckoutSession
 ### Failure Handling
 
 For operations that span multiple systems:
+
 - Document rollback for each step
 - Use compensation (undo previous steps) rather than distributed transactions
 - Log warnings for non-critical failures (e.g., email failed) instead of rolling back

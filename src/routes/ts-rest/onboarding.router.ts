@@ -15,11 +15,7 @@ import { pool } from "../../dbPool";
 import { terms } from "../../config";
 import { requireAuth, getAuthUser } from "../../middlewares/auth/ts-rest-auth";
 import { ApiError } from "../../errors";
-import {
-  DeveloperProfileService,
-  githubSyncService,
-  mailService,
-} from "../../services";
+import { DeveloperProfileService, githubSyncService, mailService } from "../../services";
 import * as dto from "@open-source-economy/api-types";
 
 const servicesRepo = getServiceRepository();
@@ -30,15 +26,11 @@ const developerProfileService = new DeveloperProfileService(pool);
  * Helper to get the authenticated developer profile from the user.
  * Throws if user has no developer profile.
  */
-async function getAuthDeveloperProfile(
-  req: any,
-): Promise<dto.DeveloperProfile> {
+async function getAuthDeveloperProfile(req: any): Promise<dto.DeveloperProfile> {
   const user = getAuthUser(req);
   const profile = await developerProfileRepo.getByUserId(user.id as any);
   if (!profile) {
-    throw ApiError.forbidden(
-      "Developer profile not found. Please create a profile first.",
-    );
+    throw ApiError.forbidden("Developer profile not found. Please create a profile first.");
   }
   return profile;
 }
@@ -48,9 +40,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
     middleware: [requireAuth],
     handler: async ({ body, req }) => {
       const user = getAuthUser(req);
-      const existingProfile = await developerProfileRepo.getByUserId(
-        user.id as any,
-      );
+      const existingProfile = await developerProfileRepo.getByUserId(user.id as any);
 
       if (existingProfile) {
         return { status: 201 as const, body: {} };
@@ -58,16 +48,11 @@ export const onboardingRouter = s.router(contract.onboarding, {
 
       if (body.agreedToTerms) {
         await userRepository.updateName(user.id as any, body.name);
-        await userRepository.updateTermsAcceptedVersion(
-          user.id as any,
-          terms.version,
-        );
+        await userRepository.updateTermsAcceptedVersion(user.id as any, terms.version);
         await developerProfileRepo.create(user.id as any, body.email);
         return { status: 201 as const, body: {} };
       } else {
-        throw ApiError.badRequest(
-          "You must agree to the terms and conditions to create a profile.",
-        );
+        throw ApiError.badRequest("You must agree to the terms and conditions to create a profile.");
       }
     },
   },
@@ -76,9 +61,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
     middleware: [requireAuth],
     handler: async ({ req }) => {
       const user = getAuthUser(req);
-      const existingProfile = await developerProfileRepo.getByUserId(
-        user.id as any,
-      );
+      const existingProfile = await developerProfileRepo.getByUserId(user.id as any);
 
       if (!existingProfile) {
         return {
@@ -87,10 +70,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
         };
       }
 
-      const profile = await developerProfileService.buildFullDeveloperProfile(
-        existingProfile,
-        req.user as any,
-      );
+      const profile = await developerProfileService.buildFullDeveloperProfile(existingProfile, req.user as any);
 
       return {
         status: 200 as const,
@@ -116,21 +96,16 @@ export const onboardingRouter = s.router(contract.onboarding, {
     handler: async ({ body, req }) => {
       const developerProfile = await getAuthDeveloperProfile(req);
 
-      const existingSettings = await developerSettingsRepo.findByProfileId(
-        developerProfile.id,
-      );
+      const existingSettings = await developerSettingsRepo.findByProfileId(developerProfile.id);
 
       if (existingSettings) {
-        await developerSettingsRepo.updatePartial(
-          developerProfile.id,
-          body as any,
-        );
+        await developerSettingsRepo.updatePartial(developerProfile.id, body as any);
       } else {
         await developerSettingsRepo.create(
           developerProfile.id,
           (body as any).royaltiesPreference ?? null,
           (body as any).servicesPreference ?? null,
-          (body as any).communitySupporterPreference ?? null,
+          (body as any).communitySupporterPreference ?? null
         );
       }
 
@@ -143,18 +118,13 @@ export const onboardingRouter = s.router(contract.onboarding, {
     handler: async ({ body, req }) => {
       const developerProfile = await getAuthDeveloperProfile(req);
 
-      const existingSettings = await developerSettingsRepo.findByProfileId(
-        developerProfile.id,
-      );
+      const existingSettings = await developerSettingsRepo.findByProfileId(developerProfile.id);
 
       if (!existingSettings) {
         await developerSettingsRepo.create(developerProfile.id);
       }
 
-      await developerSettingsRepo.updatePartial(
-        developerProfile.id,
-        body as any,
-      );
+      await developerSettingsRepo.updatePartial(developerProfile.id, body as any);
 
       return { status: 200 as const, body: {} };
     },
@@ -184,37 +154,30 @@ export const onboardingRouter = s.router(contract.onboarding, {
         sourceIdentifier: string;
       }> = [];
 
-      (body as any).projectItems.forEach(
-        (projectItemData: any, index: number) => {
-          if (
-            projectItemData.projectItemType ===
-            dto.ProjectItemType.GITHUB_REPOSITORY
-          ) {
-            const [owner, repo] = projectItemData.sourceIdentifier.split("/");
-            repositoryItems.push({
-              index,
-              repositoryId: {
-                ownerId: { login: owner },
-                name: repo,
-              } as dto.RepositoryId,
-            });
-          } else if (
-            projectItemData.projectItemType === dto.ProjectItemType.GITHUB_OWNER
-          ) {
-            ownerItems.push({
-              index,
-              ownerId: {
-                login: projectItemData.sourceIdentifier,
-              } as dto.OwnerId,
-            });
-          } else {
-            urlItems.push({
-              index,
-              sourceIdentifier: projectItemData.sourceIdentifier,
-            });
-          }
-        },
-      );
+      (body as any).projectItems.forEach((projectItemData: any, index: number) => {
+        if (projectItemData.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY) {
+          const [owner, repo] = projectItemData.sourceIdentifier.split("/");
+          repositoryItems.push({
+            index,
+            repositoryId: {
+              ownerId: { login: owner },
+              name: repo,
+            } as dto.RepositoryId,
+          });
+        } else if (projectItemData.projectItemType === dto.ProjectItemType.GITHUB_OWNER) {
+          ownerItems.push({
+            index,
+            ownerId: {
+              login: projectItemData.sourceIdentifier,
+            } as dto.OwnerId,
+          });
+        } else {
+          urlItems.push({
+            index,
+            sourceIdentifier: projectItemData.sourceIdentifier,
+          });
+        }
+      });
 
       // Sync all repositories in bulk
       const repositoryResults: Array<{
@@ -223,8 +186,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
       }> = [];
       if (repositoryItems.length > 0) {
         const repositoryIds = repositoryItems.map((item) => item.repositoryId);
-        const syncedRepositories =
-          await githubSyncService.syncRepositories(repositoryIds);
+        const syncedRepositories = await githubSyncService.syncRepositories(repositoryIds);
         repositoryItems.forEach((item, i) => {
           const [_, repository] = syncedRepositories[i];
           repositoryResults.push({
@@ -252,9 +214,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
       }
 
       // Combine all resolved identifiers in the original order
-      const resolvedSourceIdentifiers: string[] = new Array(
-        (body as any).projectItems.length,
-      );
+      const resolvedSourceIdentifiers: string[] = new Array((body as any).projectItems.length);
       repositoryResults.forEach((result) => {
         resolvedSourceIdentifiers[result.index] = result.sourceIdentifier;
       });
@@ -271,10 +231,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
         const projectItemData = (body as any).projectItems[i];
         const resolvedId = resolvedSourceIdentifiers[i];
 
-        let projectItem = await projectItemRepo.getBySourceIdentifier(
-          projectItemData.projectItemType,
-          resolvedId,
-        );
+        let projectItem = await projectItemRepo.getBySourceIdentifier(projectItemData.projectItemType, resolvedId);
 
         if (!projectItem) {
           const params: CreateProjectItemParams = {
@@ -298,12 +255,11 @@ export const onboardingRouter = s.router(contract.onboarding, {
           const projectItem = projectItems[i];
           const projectItemData = (body as any).projectItems[i];
 
-          const existing =
-            await developerProjectItemRepo.findByProfileAndProjectItem(
-              developerProfile.id,
-              projectItem.id,
-              client,
-            );
+          const existing = await developerProjectItemRepo.findByProfileAndProjectItem(
+            developerProfile.id,
+            projectItem.id,
+            client
+          );
 
           let developerProjectItem: dto.DeveloperProjectItem;
           if (existing) {
@@ -314,7 +270,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
               projectItemData.comments,
               projectItemData.customCategories,
               projectItemData.predefinedCategories,
-              client,
+              client
             );
           } else {
             developerProjectItem = await developerProjectItemRepo.create(
@@ -325,7 +281,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
               projectItemData.comments,
               projectItemData.customCategories,
               projectItemData.predefinedCategories,
-              client,
+              client
             );
           }
 
@@ -351,9 +307,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
     middleware: [requireAuth],
     handler: async ({ params, req }) => {
       await getAuthDeveloperProfile(req);
-      await developerProjectItemRepo.delete(
-        params.developerProjectItemId as dto.DeveloperProjectItemId,
-      );
+      await developerProjectItemRepo.delete(params.developerProjectItemId as dto.DeveloperProjectItemId);
       return { status: 204 as const, body: undefined as any };
     },
   },
@@ -379,7 +333,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
         body.name,
         body.description,
         true,
-        (body as any).hasResponseTime || false,
+        (body as any).hasResponseTime || false
       );
       return { status: 201 as const, body: {} };
     },
@@ -390,10 +344,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
     handler: async ({ body, req }) => {
       const developerProfile = await getAuthDeveloperProfile(req);
 
-      const upsertedService = await upsertDeveloperServiceHelper(
-        developerProfile,
-        body as any,
-      );
+      const upsertedService = await upsertDeveloperServiceHelper(developerProfile, body as any);
 
       return {
         status: 200 as const,
@@ -409,10 +360,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
 
       const upsertedServices: dto.DeveloperService[] = [];
       for (const service of (body as any).upsertDeveloperServices) {
-        const upsertedService = await upsertDeveloperServiceHelper(
-          developerProfile,
-          service,
-        );
+        const upsertedService = await upsertDeveloperServiceHelper(developerProfile, service);
         upsertedServices.push(upsertedService);
       }
 
@@ -427,9 +375,7 @@ export const onboardingRouter = s.router(contract.onboarding, {
     middleware: [requireAuth],
     handler: async ({ params, req }) => {
       await getAuthDeveloperProfile(req);
-      await developerServiceRepo.delete(
-        params.developerServiceId as dto.DeveloperServiceId,
-      );
+      await developerServiceRepo.delete(params.developerServiceId as dto.DeveloperServiceId);
       return { status: 204 as const, body: undefined as any };
     },
   },
@@ -438,42 +384,27 @@ export const onboardingRouter = s.router(contract.onboarding, {
     middleware: [requireAuth],
     handler: async ({ req }) => {
       const developerProfile = await getAuthDeveloperProfile(req);
-      const user = getAuthUser(req);
+      const _user = getAuthUser(req);
 
-      const settings = await developerSettingsRepo.findByProfileId(
-        developerProfile.id,
-      );
+      const settings = await developerSettingsRepo.findByProfileId(developerProfile.id);
       if (!settings) {
         throw ApiError.badRequest("Developer settings not configured");
       }
 
-      const fullProfile =
-        await developerProfileService.buildFullDeveloperProfile(
-          developerProfile,
-          req.user as any,
-        );
+      const fullProfile = await developerProfileService.buildFullDeveloperProfile(developerProfile, req.user as any);
 
       await developerProfileRepo.markCompleted(developerProfile.id);
 
       // Send admin notification email (fire and forget)
       try {
-        await mailService.sendDeveloperOnboardingCompletionEmail(
-          fullProfile,
-          req.user as any,
-        );
+        await mailService.sendDeveloperOnboardingCompletionEmail(fullProfile, req.user as any);
       } catch (emailError) {
-        console.error(
-          "Failed to send onboarding completion email:",
-          emailError,
-        );
+        console.error("Failed to send onboarding completion email:", emailError);
       }
 
       // Send welcome email to the developer (fire and forget)
       try {
-        await mailService.sendDeveloperWelcomeEmail(
-          (req.user as any).name || "there",
-          developerProfile.contactEmail,
-        );
+        await mailService.sendDeveloperWelcomeEmail((req.user as any).name || "there", developerProfile.contactEmail);
       } catch (emailError) {
         console.error("Failed to send welcome email to developer:", emailError);
       }
@@ -488,12 +419,9 @@ export const onboardingRouter = s.router(contract.onboarding, {
  */
 async function upsertDeveloperServiceHelper(
   developerProfile: dto.DeveloperProfile,
-  body: dto.UpsertDeveloperServiceBody,
+  body: dto.UpsertDeveloperServiceBody
 ): Promise<dto.DeveloperService> {
-  const existingOffering = await developerServiceRepo.getByProfileAndServiceId(
-    developerProfile.id,
-    body.serviceId,
-  );
+  const existingOffering = await developerServiceRepo.getByProfileAndServiceId(developerProfile.id, body.serviceId);
 
   const developerServiceBody: DeveloperServiceBody = {
     developerProjectItemIds: body.developerProjectItemIds,
@@ -503,10 +431,7 @@ async function upsertDeveloperServiceHelper(
   };
 
   if (existingOffering) {
-    return await developerServiceRepo.update(
-      existingOffering.id,
-      developerServiceBody,
-    );
+    return await developerServiceRepo.update(existingOffering.id, developerServiceBody);
   } else {
     return await developerServiceRepo.create(developerProfile.id, {
       serviceId: body.serviceId,

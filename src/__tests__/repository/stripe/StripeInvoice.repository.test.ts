@@ -1,16 +1,7 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import {
-  Currency,
-  StripeInvoiceLine,
-  StripePriceId,
-} from "@open-source-economy/api-types";
+import { Currency, StripeInvoiceLine, StripePriceId } from "@open-source-economy/api-types";
 import { Fixture } from "../../__helpers__/Fixture";
-import {
-  stripeCustomerRepo,
-  stripeInvoiceRepo,
-  stripePriceRepo,
-  stripeProductRepo,
-} from "../../../db";
+import { stripeCustomerRepo, stripeInvoiceRepo, stripePriceRepo, stripeProductRepo } from "../../../db";
 
 describe("StripeInvoiceRepository", () => {
   setupTestDB();
@@ -27,28 +18,14 @@ describe("StripeInvoiceRepository", () => {
   beforeEach(async () => {
     await stripeCustomerRepo.insert(stripeCustomer);
     await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
-    await stripePriceRepo.createOrUpdate(
-      Fixture.stripePrice(priceId, productId),
-    );
+    await stripePriceRepo.createOrUpdate(Fixture.stripePrice(priceId, productId));
   });
 
   describe("create", () => {
     it("should insert an invoice with lines and number", async () => {
       const lines = [
-        Fixture.stripeInvoiceLine(
-          stripeInvoiceLineId1,
-          invoiceId,
-          customerId,
-          productId,
-          priceId,
-        ),
-        Fixture.stripeInvoiceLine(
-          stripeInvoiceLineId2,
-          invoiceId,
-          customerId,
-          productId,
-          priceId,
-        ),
+        Fixture.stripeInvoiceLine(stripeInvoiceLineId1, invoiceId, customerId, productId, priceId),
+        Fixture.stripeInvoiceLine(stripeInvoiceLineId2, invoiceId, customerId, productId, priceId),
       ];
 
       const invoice = Fixture.stripeInvoice(invoiceId, customerId, lines);
@@ -61,30 +38,11 @@ describe("StripeInvoiceRepository", () => {
 
     it("should insert an invoice with null number", async () => {
       const lines = [
-        Fixture.stripeInvoiceLine(
-          stripeInvoiceLineId1,
-          invoiceId,
-          customerId,
-          productId,
-          priceId,
-        ),
-        Fixture.stripeInvoiceLine(
-          stripeInvoiceLineId2,
-          invoiceId,
-          customerId,
-          productId,
-          priceId,
-        ),
+        Fixture.stripeInvoiceLine(stripeInvoiceLineId1, invoiceId, customerId, productId, priceId),
+        Fixture.stripeInvoiceLine(stripeInvoiceLineId2, invoiceId, customerId, productId, priceId),
       ];
 
-      const invoice = Fixture.stripeInvoice(
-        invoiceId,
-        customerId,
-        lines,
-        Currency.USD,
-        10,
-        null,
-      );
+      const invoice = Fixture.stripeInvoice(invoiceId, customerId, lines, Currency.USD, 10, null);
       const created = await stripeInvoiceRepo.insert(invoice, lines);
       expect(created).toEqual(invoice);
 
@@ -94,13 +52,7 @@ describe("StripeInvoiceRepository", () => {
 
     it("should rollback transaction if inserting lines fails", async () => {
       const lines = [
-        Fixture.stripeInvoiceLine(
-          stripeInvoiceLineId1,
-          invoiceId,
-          customerId,
-          productId,
-          priceId,
-        ),
+        Fixture.stripeInvoiceLine(stripeInvoiceLineId1, invoiceId, customerId, productId, priceId),
         // @ts-ignore
         {
           stripeId: stripeInvoiceLineId2,
@@ -113,9 +65,7 @@ describe("StripeInvoiceRepository", () => {
       ];
 
       const invoice = Fixture.stripeInvoice(invoiceId, customerId, lines);
-      await expect(stripeInvoiceRepo.insert(invoice, lines)).rejects.toThrow(
-        Error,
-      );
+      await expect(stripeInvoiceRepo.insert(invoice, lines)).rejects.toThrow(Error);
 
       const found = await stripeInvoiceRepo.getById(invoiceId);
       expect(found).toBeNull();

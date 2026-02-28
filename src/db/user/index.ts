@@ -4,15 +4,12 @@ import { getRepositoryUserPermissionTokenRepository } from "./RepositoryUserPerm
 import { getUserRepositoryRepository } from "./UserRepository.repository";
 import { getUserRepository } from "./User.repository";
 import { getCompanyRepository } from "../Company.repository";
-import { getPasswordResetTokenRepository } from "./PasswordResetToken.repository";
 
 export const userRepo = getUserRepository();
 
 export const companyRepo = getCompanyRepository();
 export const userCompanyRepository = getUserCompanyRepository();
-export const companyUserPermissionTokenRepo =
-  getCompanyUserPermissionTokenRepository();
+export const companyUserPermissionTokenRepo = getCompanyUserPermissionTokenRepository();
 export const userCompanyRepo = getUserCompanyRepository();
-export const repositoryUserPermissionTokenRepo =
-  getRepositoryUserPermissionTokenRepository();
+export const repositoryUserPermissionTokenRepo = getRepositoryUserPermissionTokenRepository();
 export const userRepositoryRepo = getUserRepositoryRepository();

@@ -10,9 +10,7 @@ export function authenticatedUser(req: any, res: any, next: any): void {
   res.sendStatus(StatusCodes.UNAUTHORIZED);
 }
 
-export const checkAuthenticatedUser = (
-  req: Request<any, any, any, any>,
-): User => {
+export const checkAuthenticatedUser = (req: Request<any, any, any, any>): User => {
   if (!req.user) {
     throw ApiError.unauthorized("Authentication required");
   }

@@ -1,8 +1,5 @@
 import { setupTestDB } from "../../__helpers__/jest.setup";
-import {
-  CompanyId,
-  CompanyUserPermissionTokenId,
-} from "@open-source-economy/api-types";
+import { CompanyId, CompanyUserPermissionTokenId } from "@open-source-economy/api-types";
 import { companyRepo, companyUserPermissionTokenRepo } from "../../../db";
 import { Fixture } from "../../__helpers__/Fixture";
 
@@ -19,16 +16,11 @@ describe("CompanyUserPermissionTokenRepository", () => {
 
   describe("create", () => {
     it("should create a new token record", async () => {
-      const tokenBody = Fixture.createUserCompanyPermissionTokenBody(
-        "test@example.com",
-        companyId,
-      );
+      const tokenBody = Fixture.createUserCompanyPermissionTokenBody("test@example.com", companyId);
 
       const created = await tokenRepo.create(tokenBody);
 
-      expect(created).toEqual(
-        Fixture.userCompanyPermissionTokenFromBody(created.id, tokenBody),
-      );
+      expect(created).toEqual(Fixture.userCompanyPermissionTokenFromBody(created.id, tokenBody));
       expect(created.hasBeenUsed).toEqual(false);
 
       const found = await tokenRepo.getById(created.id);
@@ -40,17 +32,12 @@ describe("CompanyUserPermissionTokenRepository", () => {
 
   describe("update", () => {
     it("should update an existing token record, including hasBeenUsed", async () => {
-      const tokenBody = Fixture.createUserCompanyPermissionTokenBody(
-        "test@example.com",
-        companyId,
-      );
+      const tokenBody = Fixture.createUserCompanyPermissionTokenBody("test@example.com", companyId);
 
       const created = await tokenRepo.create(tokenBody);
-      expect(created).toEqual(
-        Fixture.userCompanyPermissionTokenFromBody(created.id, tokenBody),
-      );
+      expect(created).toEqual(Fixture.userCompanyPermissionTokenFromBody(created.id, tokenBody));
 
-      const updatedTokenBody = {
+      const _updatedTokenBody = {
         ...tokenBody,
         userEmail: "updated@example.com",
       };
@@ -81,17 +68,11 @@ describe("CompanyUserPermissionTokenRepository", () => {
 
   describe("getByUserEmail", () => {
     it("should return tokens for a specific user email", async () => {
-      const tokenBody = Fixture.createUserCompanyPermissionTokenBody(
-        "test@example.com",
-        companyId,
-      );
+      const tokenBody = Fixture.createUserCompanyPermissionTokenBody("test@example.com", companyId);
 
       await tokenRepo.create(tokenBody);
 
-      const found = await tokenRepo.getByUserEmail(
-        "test@example.com",
-        companyId,
-      );
+      const found = await tokenRepo.getByUserEmail("test@example.com", companyId);
       expect(found.length).toBeGreaterThan(0);
       expect(found[0].userEmail).toEqual("test@example.com");
       expect(found[0].hasBeenUsed).toEqual(false);
@@ -102,10 +83,7 @@ describe("CompanyUserPermissionTokenRepository", () => {
 
   describe("getByToken", () => {
     it("should return token", async () => {
-      const tokenBody = Fixture.createUserCompanyPermissionTokenBody(
-        "test@example.com",
-        companyId,
-      );
+      const tokenBody = Fixture.createUserCompanyPermissionTokenBody("test@example.com", companyId);
 
       const created = await tokenRepo.create(tokenBody);
 
@@ -119,10 +97,7 @@ describe("CompanyUserPermissionTokenRepository", () => {
 
   describe("delete", () => {
     it("should delete a token", async () => {
-      const tokenBody = Fixture.createUserCompanyPermissionTokenBody(
-        "test@example.com",
-        companyId,
-      );
+      const tokenBody = Fixture.createUserCompanyPermissionTokenBody("test@example.com", companyId);
 
       const created = await tokenRepo.create(tokenBody);
 
@@ -138,10 +113,7 @@ describe("CompanyUserPermissionTokenRepository", () => {
 
   describe("setHasBeenUsed", () => {
     it("should mark a token as used", async () => {
-      const tokenBody = Fixture.createUserCompanyPermissionTokenBody(
-        "test@example.com",
-        companyId,
-      );
+      const tokenBody = Fixture.createUserCompanyPermissionTokenBody("test@example.com", companyId);
 
       const created = await tokenRepo.create(tokenBody);
       expect(created.hasBeenUsed).toEqual(false);

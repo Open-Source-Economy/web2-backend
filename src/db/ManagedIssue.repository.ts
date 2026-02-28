@@ -114,7 +114,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
           managedIssue.managerId,
           managedIssue.contributorVisibility,
           managedIssue.state,
-        ],
+        ]
       );
 
       return this.getOneManagedIssue(result.rows);
@@ -165,7 +165,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
           managedIssue.contributorVisibility,
           managedIssue.state,
           managedIssue.id,
-        ],
+        ]
       );
 
       return this.getOneManagedIssue(result.rows);
@@ -181,7 +181,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
                 FROM managed_issue
                 WHERE id = $1
             `,
-      [id],
+      [id]
     );
 
     return this.getOptionalManagedIssue(result.rows);
@@ -196,11 +196,7 @@ class ManagedIssueRepositoryImpl implements ManagedIssueRepository {
                   AND github_repository_name = $2
                   AND github_issue_number = $3
             `,
-      [
-        issueId.repositoryId.ownerId.login,
-        issueId.repositoryId.name,
-        issueId.number,
-      ],
+      [issueId.repositoryId.ownerId.login, issueId.repositoryId.name, issueId.number]
     );
 
     return this.getOptionalManagedIssue(result.rows);

@@ -1,13 +1,4 @@
-import {
-  Currency,
-  GithubData,
-  LocalUser,
-  Provider,
-  ThirdPartyUser,
-  User,
-  UserId,
-  UserRole,
-} from "@open-source-economy/api-types";
+import { Currency, LocalUser, ThirdPartyUser, User, UserRole } from "@open-source-economy/api-types";
 
 /**
  * Backend-specific extension of LocalUser that includes the hashed password.
@@ -30,18 +21,14 @@ export interface BackendUser extends User {
 /**
  * Type guard to check if user data is a BackendLocalUser (has password).
  */
-export function isBackendLocalUser(
-  data: BackendLocalUser | ThirdPartyUser,
-): data is BackendLocalUser {
+export function isBackendLocalUser(data: BackendLocalUser | ThirdPartyUser): data is BackendLocalUser {
   return "password" in data && !("provider" in data);
 }
 
 /**
  * Type guard to check if user data is a ThirdPartyUser (has provider).
  */
-export function isThirdPartyUser(
-  data: BackendLocalUser | ThirdPartyUser,
-): data is ThirdPartyUser {
+export function isThirdPartyUser(data: BackendLocalUser | ThirdPartyUser): data is ThirdPartyUser {
   return "provider" in data;
 }
 

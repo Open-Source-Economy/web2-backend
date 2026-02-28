@@ -1,24 +1,12 @@
-import {
-  OwnerId,
-  ProductType,
-  RepositoryId,
-  StripeProduct,
-  StripeProductId,
-} from "@open-source-economy/api-types";
+import { OwnerId, ProductType, RepositoryId, StripeProduct, StripeProductId } from "@open-source-economy/api-types";
 import { ValidationError, Validator } from "../Validator";
 import { OwnerIdCompanion, RepositoryIdCompanion } from "../github";
 
 export namespace StripeProductCompanion {
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): StripeProduct | ValidationError {
+  export function fromBackend(row: any, table_prefix: string = ""): StripeProduct | ValidationError {
     const validator = new Validator(row);
     const stripeId = validator.requiredString(`${table_prefix}stripe_id`);
-    const type = validator.requiredEnum(
-      `${table_prefix}type`,
-      Object.values(ProductType) as ProductType[],
-    );
+    const type = validator.requiredEnum(`${table_prefix}type`, Object.values(ProductType) as ProductType[]);
 
     const error = validator.getFirstError();
     if (error) {
@@ -27,10 +15,7 @@ export namespace StripeProductCompanion {
 
     let projectId: OwnerId | RepositoryId | null | ValidationError = null;
     if (row[`${table_prefix}github_repository_name`]) {
-      projectId = RepositoryIdCompanion.fromBackendForeignKey(
-        row,
-        table_prefix,
-      );
+      projectId = RepositoryIdCompanion.fromBackendForeignKey(row, table_prefix);
     } else {
       projectId = OwnerIdCompanion.fromBackendForeignKey(row, table_prefix);
     }

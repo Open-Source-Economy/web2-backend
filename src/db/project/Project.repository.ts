@@ -68,11 +68,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
     } else if (rows.length > 1) {
       throw new Error("Multiple projects found");
     } else {
-      const project = ProjectCompanion.fromBackend(
-        rows[0],
-        this.ownerTablePrefix,
-        this.repositoryTablePrefix,
-      );
+      const project = ProjectCompanion.fromBackend(rows[0], this.ownerTablePrefix, this.repositoryTablePrefix);
       if (project instanceof ValidationError) {
         throw project;
       }
@@ -82,11 +78,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
 
   private getProjectList(rows: any[]): Project[] {
     return rows.map((r) => {
-      const project = ProjectCompanion.fromBackend(
-        r,
-        this.ownerTablePrefix,
-        this.repositoryTablePrefix,
-      );
+      const project = ProjectCompanion.fromBackend(r, this.ownerTablePrefix, this.repositoryTablePrefix);
       if (project instanceof ValidationError) {
         throw project;
       }
@@ -94,11 +86,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
     });
   }
 
-  async getPrefixedColumns(
-    table: string,
-    alias: string,
-    prefix: string,
-  ): Promise<string> {
+  async getPrefixedColumns(table: string, alias: string, prefix: string): Promise<string> {
     const res = await this.pool.query(
       `
                 SELECT column_name
@@ -106,14 +94,10 @@ class ProjectRepositoryImpl implements ProjectRepository {
                 WHERE table_name = $1
                 ORDER BY ordinal_position
             `,
-      [table],
+      [table]
     );
 
-    return res.rows
-      .map(
-        (row) => `${alias}.${row.column_name} AS ${prefix}_${row.column_name}`,
-      )
-      .join(",\n");
+    return res.rows.map((row) => `${alias}.${row.column_name} AS ${prefix}_${row.column_name}`).join(",\n");
   }
 
   async getAll(): Promise<Project[]> {
@@ -203,12 +187,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
                 RETURNING *;
             `;
 
-      await client.query(query, [
-        params.ownerId,
-        params.ownerLogin,
-        params.repoId,
-        params.repoName,
-      ]);
+      await client.query(query, [params.ownerId, params.ownerLogin, params.repoId, params.repoName]);
 
       // Fetch and return the full project
       return (await this.getById(projectId)) as Project;

@@ -14,9 +14,7 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (id, done) => {
   try {
     const userId: UserId =
-      typeof id === "object" && id !== null && "uuid" in (id as any)
-        ? ((id as any).uuid as UserId)
-        : (id as UserId);
+      typeof id === "object" && id !== null && "uuid" in (id as any) ? ((id as any).uuid as UserId) : (id as UserId);
     const user: User | null = await userRepository.getById(userId);
     user ? done(null, user) : done(new Error("User Not Found"));
   } catch (err) {

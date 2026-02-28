@@ -50,10 +50,7 @@ export interface ProjectItemRepository {
    * @param categories - Array of ProjectCategory to assign to the project item.
    * @returns A Promise that resolves to the updated ProjectItem.
    */
-  updateCategories(
-    id: ProjectItemId,
-    categories: ProjectCategory[],
-  ): Promise<ProjectItem>;
+  updateCategories(id: ProjectItemId, categories: ProjectCategory[]): Promise<ProjectItem>;
 
   /**
    * Deletes a project item by its unique ProjectItemId.
@@ -85,9 +82,7 @@ export interface ProjectItemRepository {
    * @param repositoryId - The RepositoryId object of the GitHub repository.
    * @returns A promise that resolves to the ProjectItem if found, otherwise null.
    */
-  getByGithubRepository(
-    repositoryId: RepositoryId,
-  ): Promise<ProjectItem | null>;
+  getByGithubRepository(repositoryId: RepositoryId): Promise<ProjectItem | null>;
 
   /**
    * Retrieves all project items of type GITHUB_OWNER for a given GitHub owner ID.
@@ -114,7 +109,7 @@ export interface ProjectItemRepository {
    */
   getBySourceIdentifier(
     projectItemType: ProjectItemType,
-    sourceIdentifier: SourceIdentifier,
+    sourceIdentifier: SourceIdentifier
   ): Promise<ProjectItem | null>;
 
   /**
@@ -134,7 +129,7 @@ export interface ProjectItemRepository {
    */
   getAllWithDetails(
     projectItemType: ProjectItemType,
-    queryParams?: dto.ProjectItemQueryParams,
+    queryParams?: dto.ProjectItemQueryParams
   ): Promise<ProjectItemWithDetails[]>;
 
   /**
@@ -143,9 +138,7 @@ export interface ProjectItemRepository {
    * @param projectItemId - The unique identifier of the project item.
    * @returns A promise that resolves to the hydrated project item with details if found, otherwise null.
    */
-  getByIdWithDetails(
-    projectItemId: ProjectItemId,
-  ): Promise<ProjectItemWithDetails | null>;
+  getByIdWithDetails(projectItemId: ProjectItemId): Promise<ProjectItemWithDetails | null>;
 
   /**
    * Retrieves a project item by GitHub slug (owner/repo or owner) with associated details.
@@ -154,10 +147,7 @@ export interface ProjectItemRepository {
    * @param repositoryName - Optional repository name when targeting a repository.
    * @returns A promise that resolves to the hydrated project item with details if found, otherwise null.
    */
-  getBySlugWithDetails(
-    ownerLogin: string,
-    repositoryName?: string,
-  ): Promise<ProjectItemWithDetails | null>;
+  getBySlugWithDetails(ownerLogin: string, repositoryName?: string): Promise<ProjectItemWithDetails | null>;
 
   getProjectItemsStats(): Promise<ProjectItemsStats>;
 
@@ -167,15 +157,10 @@ export interface ProjectItemRepository {
    * @param organizationOwnerId - The OwnerId of the GitHub organization
    * @returns A promise that resolves to an array of ProjectItem objects representing repositories
    */
-  getRepositoriesByOrganization(
-    organizationOwnerId: OwnerId,
-  ): Promise<ProjectItem[]>;
+  getRepositoriesByOrganization(organizationOwnerId: OwnerId): Promise<ProjectItem[]>;
 }
 
-class ProjectItemRepositoryImpl
-  extends BaseRepository<ProjectItem>
-  implements ProjectItemRepository
-{
+class ProjectItemRepositoryImpl extends BaseRepository<ProjectItem> implements ProjectItemRepository {
   private static readonly PREFIX = {
     projectItem: "pi_",
     owner: "",
@@ -224,10 +209,7 @@ class ProjectItemRepositoryImpl
           itemDetails.githubRepositoryId = repo.githubId || null;
           itemDetails.githubRepositoryName = repo.name || null;
         } else {
-          console.debug(
-            "Condition for Repository NOT met. SourceIdentifier:",
-            params.sourceIdentifier,
-          );
+          console.debug("Condition for Repository NOT met. SourceIdentifier:", params.sourceIdentifier);
         }
         break;
       case ProjectItemType.GITHUB_OWNER:
@@ -238,10 +220,7 @@ class ProjectItemRepositoryImpl
           itemDetails.githubOwnerId = owner.githubId || null;
           itemDetails.githubOwnerLogin = owner.login || null;
         } else {
-          console.debug(
-            "Condition for Owner NOT met. SourceIdentifier:",
-            params.sourceIdentifier,
-          );
+          console.debug("Condition for Owner NOT met. SourceIdentifier:", params.sourceIdentifier);
         }
         break;
       case ProjectItemType.URL:
@@ -250,10 +229,7 @@ class ProjectItemRepositoryImpl
           console.debug("Condition for URL met.");
           itemDetails.urlValue = params.sourceIdentifier;
         } else {
-          console.debug(
-            "Condition for URL NOT met. SourceIdentifier:",
-            params.sourceIdentifier,
-          );
+          console.debug("Condition for URL NOT met. SourceIdentifier:", params.sourceIdentifier);
         }
         break;
     }
@@ -285,10 +261,7 @@ class ProjectItemRepositoryImpl
     return this.getOne(result.rows);
   }
 
-  async updateCategories(
-    id: ProjectItemId,
-    categories: ProjectCategory[],
-  ): Promise<ProjectItem> {
+  async updateCategories(id: ProjectItemId, categories: ProjectCategory[]): Promise<ProjectItem> {
     const query = `
       UPDATE project_item
       SET categories = $2, updated_at = now()
@@ -311,31 +284,27 @@ class ProjectItemRepositoryImpl
   async getById(id: ProjectItemId): Promise<ProjectItem | null> {
     const result = await this.pool.query(
       `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS} FROM project_item WHERE id = $1`,
-      [id],
+      [id]
     );
     return this.getOptional(result.rows);
   }
 
-  async getByProjectId(
-    projectItemId: ProjectItemId,
-  ): Promise<ProjectItem | null> {
+  async getByProjectId(projectItemId: ProjectItemId): Promise<ProjectItem | null> {
     // Changed type to ProjectItemId
     const result = await this.pool.query(
       `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
        FROM project_item WHERE id = $1 ORDER BY created_at DESC`,
-      [projectItemId], // Access uuid property
+      [projectItemId] // Access uuid property
     );
     return this.getOptional(result.rows);
   }
 
-  async getByGithubRepository(
-    repositoryId: RepositoryId,
-  ): Promise<ProjectItem | null> {
+  async getByGithubRepository(repositoryId: RepositoryId): Promise<ProjectItem | null> {
     const result = await this.pool.query(
       `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
        FROM project_item
        WHERE github_owner_id = $1 AND github_repository_id = $2`,
-      [repositoryId.ownerId.githubId, repositoryId.githubId],
+      [repositoryId.ownerId.githubId, repositoryId.githubId]
     );
     return this.getOptional(result.rows);
   }
@@ -348,7 +317,7 @@ class ProjectItemRepositoryImpl
        AND project_item_type = $2
        AND github_repository_id IS NULL
        ORDER BY created_at DESC`,
-      [ownerId.githubId, ProjectItemType.GITHUB_OWNER],
+      [ownerId.githubId, ProjectItemType.GITHUB_OWNER]
     );
     return this.getList(result.rows);
   }
@@ -357,7 +326,7 @@ class ProjectItemRepositoryImpl
     const result = await this.pool.query(
       `SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS}
        FROM project_item WHERE project_item_type = $1 AND url = $2`,
-      [ProjectItemType.URL, url],
+      [ProjectItemType.URL, url]
     );
     return this.getOptional(result.rows);
   }
@@ -371,49 +340,36 @@ class ProjectItemRepositoryImpl
    */
   async getBySourceIdentifier(
     projectItemType: ProjectItemType,
-    sourceIdentifier: SourceIdentifier,
+    sourceIdentifier: SourceIdentifier
   ): Promise<ProjectItem | null> {
     switch (projectItemType) {
       case ProjectItemType.GITHUB_REPOSITORY:
-        if (
-          typeof sourceIdentifier !== "object" ||
-          !("name" in sourceIdentifier) ||
-          !("ownerId" in sourceIdentifier)
-        ) {
+        if (typeof sourceIdentifier !== "object" || !("name" in sourceIdentifier) || !("ownerId" in sourceIdentifier)) {
           throw new Error(
-            `getBySourceIdentifier: sourceIdentifier must be a RepositoryId object for GITHUB_REPOSITORY type. Received type: ${typeof sourceIdentifier}, with value: ${JSON.stringify(sourceIdentifier)}`,
+            `getBySourceIdentifier: sourceIdentifier must be a RepositoryId object for GITHUB_REPOSITORY type. Received type: ${typeof sourceIdentifier}, with value: ${JSON.stringify(sourceIdentifier)}`
           );
         }
-        return await this.getByGithubRepository(
-          sourceIdentifier as RepositoryId,
-        );
+        return await this.getByGithubRepository(sourceIdentifier as RepositoryId);
 
       case ProjectItemType.GITHUB_OWNER:
-        if (
-          typeof sourceIdentifier !== "object" ||
-          !("login" in sourceIdentifier)
-        ) {
+        if (typeof sourceIdentifier !== "object" || !("login" in sourceIdentifier)) {
           throw new Error(
-            `getBySourceIdentifier: sourceIdentifier must be an OwnerId object for GITHUB_OWNER type. Received type: ${typeof sourceIdentifier}, with value: ${JSON.stringify(sourceIdentifier)}`,
+            `getBySourceIdentifier: sourceIdentifier must be an OwnerId object for GITHUB_OWNER type. Received type: ${typeof sourceIdentifier}, with value: ${JSON.stringify(sourceIdentifier)}`
           );
         }
-        const ownerItems = await this.getByGithubOwner(
-          sourceIdentifier as OwnerId,
-        );
+        const ownerItems = await this.getByGithubOwner(sourceIdentifier as OwnerId);
         return ownerItems.length > 0 ? ownerItems[0] : null;
 
       case ProjectItemType.URL:
         if (typeof sourceIdentifier !== "string") {
           throw new Error(
-            `getBySourceIdentifier: sourceIdentifier must be a string (URL) for URL type. Received type: ${typeof sourceIdentifier}, with value: ${JSON.stringify(sourceIdentifier)}`,
+            `getBySourceIdentifier: sourceIdentifier must be a string (URL) for URL type. Received type: ${typeof sourceIdentifier}, with value: ${JSON.stringify(sourceIdentifier)}`
           );
         }
         return await this.getByUrl(sourceIdentifier);
 
       default:
-        throw new Error(
-          `getBySourceIdentifier: Unsupported project item type for retrieval: ${projectItemType}.`,
-        );
+        throw new Error(`getBySourceIdentifier: Unsupported project item type for retrieval: ${projectItemType}.`);
     }
   }
 
@@ -441,10 +397,7 @@ class ProjectItemRepositoryImpl
    * Retrieves all project items with their associated Owner, Repository (if exists),
    * and a list of developers with their profiles, project items associations, and owner info.
    */
-  private static buildProjectItemsWithDetailsQuery(
-    limitedProjectItemsSubquery: string,
-    orderBy: string,
-  ): string {
+  private static buildProjectItemsWithDetailsQuery(limitedProjectItemsSubquery: string, orderBy: string): string {
     const PREFIX = ProjectItemRepositoryImpl.PREFIX;
 
     return `
@@ -577,17 +530,14 @@ class ProjectItemRepositoryImpl
   private hydrateProjectItemsFromRows(rows: any[]): ProjectItemWithDetails[] {
     const PREFIX = ProjectItemRepositoryImpl.PREFIX;
     const projectItemsMap = new Map<string, ProjectItemWithDetails>();
-    let skippedDevelopersCount = 0;
-    let processedDevelopersCount = 0;
+    let _skippedDevelopersCount = 0;
+    let _processedDevelopersCount = 0;
 
     for (const row of rows) {
       const projectItemId = row[`${PREFIX.projectItem}id`];
 
       if (!projectItemsMap.has(projectItemId)) {
-        const projectItem = ProjectItemCompanion.fromBackend(
-          row,
-          PREFIX.projectItem,
-        );
+        const projectItem = ProjectItemCompanion.fromBackend(row, PREFIX.projectItem);
         if (projectItem instanceof Error) {
           throw projectItem;
         }
@@ -603,10 +553,7 @@ class ProjectItemRepositoryImpl
 
         let repository: Repository | null = null;
         if (row[`${PREFIX.repository}github_id`]) {
-          const repoResult = RepositoryCompanion.fromBackend(
-            row,
-            PREFIX.repository,
-          );
+          const repoResult = RepositoryCompanion.fromBackend(row, PREFIX.repository);
           if (repoResult instanceof Error) {
             throw repoResult;
           }
@@ -625,7 +572,7 @@ class ProjectItemRepositoryImpl
         const projectItemDetails = projectItemsMap.get(projectItemId)!;
 
         if (!row[`${PREFIX.developerOwner}github_id`]) {
-          skippedDevelopersCount++;
+          _skippedDevelopersCount++;
           console.warn(`Skipping developer without GitHub owner:`, {
             developerProfileId: row[`${PREFIX.developerProfile}id`],
             userId: row[`${PREFIX.developerProfile}user_id`],
@@ -634,62 +581,47 @@ class ProjectItemRepositoryImpl
             projectItemType: row[`${PREFIX.projectItem}project_item_type`],
             reason: "No GitHub owner linked to user account",
             devOwnerGithubId: row[`${PREFIX.developerOwner}github_id`],
-            allDeveloperOwnerFields: Object.keys(row).filter((key) =>
-              key.startsWith(PREFIX.developerOwner),
-            ),
+            allDeveloperOwnerFields: Object.keys(row).filter((key) => key.startsWith(PREFIX.developerOwner)),
           });
           continue;
         }
 
-        processedDevelopersCount++;
+        _processedDevelopersCount++;
 
-        const developerProfile = DeveloperProfileCompanion.fromBackend(
-          row,
-          PREFIX.developerProfile,
-        );
+        const developerProfile = DeveloperProfileCompanion.fromBackend(row, PREFIX.developerProfile);
         if (developerProfile instanceof Error) {
           throw developerProfile;
         }
 
-        const developerProjectItem = DeveloperProjectItemCompanion.fromBackend(
-          row,
-          PREFIX.developerProjectItem,
-        );
+        const developerProjectItem = DeveloperProjectItemCompanion.fromBackend(row, PREFIX.developerProjectItem);
         if (developerProjectItem instanceof Error) {
           throw developerProjectItem;
         }
 
-        const developerOwner = OwnerCompanion.fromBackend(
-          row,
-          PREFIX.developerOwner,
-        );
+        const developerOwner = OwnerCompanion.fromBackend(row, PREFIX.developerOwner);
         if (developerOwner instanceof Error) {
           throw developerOwner;
         }
 
         const existingDeveloper = projectItemDetails.developers.find(
           (dev: { developerProfile: any; developerOwner: any }) =>
-            dev.developerProfile.id === developerProfile.id ||
-            dev.developerOwner.id.login === developerOwner.id.login,
+            dev.developerProfile.id === developerProfile.id || dev.developerOwner.id.login === developerOwner.id.login
         );
 
         if (existingDeveloper) {
           const beforeRoles = existingDeveloper.developerProjectItem.roles;
-          const beforeMergeRights =
-            existingDeveloper.developerProjectItem.mergeRights;
+          const beforeMergeRights = existingDeveloper.developerProjectItem.mergeRights;
 
           const mergeResult = DeveloperProjectItemCompanion.mergeRolesAndRights(
             existingDeveloper.developerProjectItem.roles,
             existingDeveloper.developerProjectItem.mergeRights,
             developerProjectItem.roles,
-            developerProjectItem.mergeRights,
+            developerProjectItem.mergeRights
           );
 
           if (mergeResult.hasChanges) {
-            existingDeveloper.developerProjectItem.roles =
-              mergeResult.mergedRoles;
-            existingDeveloper.developerProjectItem.mergeRights =
-              mergeResult.mergedMergeRights;
+            existingDeveloper.developerProjectItem.roles = mergeResult.mergedRoles;
+            existingDeveloper.developerProjectItem.mergeRights = mergeResult.mergedMergeRights;
 
             logger.info(
               `Deduplicating developer with conflicts: @${developerOwner.id.login} (${developerProfile.id}) ` +
@@ -704,9 +636,7 @@ class ProjectItemRepositoryImpl
                   id: projectItemId,
                   type: projectItemDetails.projectItem.projectItemType,
                   identifier:
-                    projectItemDetails.owner?.id.login ||
-                    projectItemDetails.repository?.id.ownerId.login ||
-                    "N/A",
+                    projectItemDetails.owner?.id.login || projectItemDetails.repository?.id.ownerId.login || "N/A",
                 },
                 merge: {
                   roles: {
@@ -722,9 +652,8 @@ class ProjectItemRepositoryImpl
                     added: mergeResult.addedMergeRights,
                   },
                 },
-                reason:
-                  "Developer registered at both organization and repository level",
-              },
+                reason: "Developer registered at both organization and repository level",
+              }
             );
           }
         } else {
@@ -737,21 +666,21 @@ class ProjectItemRepositoryImpl
       }
     }
 
-    let projectItems = Array.from(projectItemsMap.values());
+    const projectItems = Array.from(projectItemsMap.values());
 
     return projectItems;
   }
 
   async getAllWithDetails(
     projectItemType: ProjectItemType,
-    queryParams?: dto.ProjectItemQueryParams,
+    queryParams?: dto.ProjectItemQueryParams
   ): Promise<ProjectItemWithDetails[]> {
     const sortBy = queryParams?.sortBy;
     const sortOrder = queryParams?.sortOrder || dto.SortOrder.DESC;
     const limit = queryParams?.limit;
 
     // Define table prefixes for clarity and maintainability
-    const PREFIX = {
+    const _PREFIX = {
       projectItem: "pi_",
       owner: "", // No prefix for project item's owner
       repository: "repo_",
@@ -764,10 +693,7 @@ class ProjectItemRepositoryImpl
     let limitedProjectItemsSubquery: string;
 
     const sqlSortableFields: Partial<
-      Record<
-        dto.ProjectItemSortField,
-        { table: string; joinCondition: string; column: string }
-      >
+      Record<dto.ProjectItemSortField, { table: string; joinCondition: string; column: string }>
     > = {
       [dto.ProjectItemSortField.STARS]: {
         table: "github_repository r",
@@ -828,16 +754,11 @@ class ProjectItemRepositoryImpl
       ) pi`;
     }
 
-    const query = ProjectItemRepositoryImpl.buildProjectItemsWithDetailsQuery(
-      limitedProjectItemsSubquery,
-      mainOrderBy,
-    );
+    const query = ProjectItemRepositoryImpl.buildProjectItemsWithDetailsQuery(limitedProjectItemsSubquery, mainOrderBy);
 
     const result = await this.pool.query(query);
 
-    let projectItems = this.hydrateProjectItemsFromRows(result.rows).filter(
-      (item) => item.developers.length > 0,
-    );
+    const projectItems = this.hydrateProjectItemsFromRows(result.rows).filter((item) => item.developers.length > 0);
 
     if (limit !== undefined) {
       return projectItems.slice(0, limit);
@@ -846,9 +767,7 @@ class ProjectItemRepositoryImpl
     return projectItems;
   }
 
-  async getByIdWithDetails(
-    projectItemId: ProjectItemId,
-  ): Promise<ProjectItemWithDetails | null> {
+  async getByIdWithDetails(projectItemId: ProjectItemId): Promise<ProjectItemWithDetails | null> {
     const limitedProjectItemsSubquery = `(
       SELECT *
       FROM project_item pi
@@ -857,7 +776,7 @@ class ProjectItemRepositoryImpl
 
     const query = ProjectItemRepositoryImpl.buildProjectItemsWithDetailsQuery(
       limitedProjectItemsSubquery,
-      "pi.created_at DESC",
+      "pi.created_at DESC"
     );
 
     const result = await this.pool.query(query, [projectItemId]);
@@ -866,10 +785,7 @@ class ProjectItemRepositoryImpl
     return projectItems[0] ?? null;
   }
 
-  async getBySlugWithDetails(
-    ownerLogin: string,
-    repositoryName?: string,
-  ): Promise<ProjectItemWithDetails | null> {
+  async getBySlugWithDetails(ownerLogin: string, repositoryName?: string): Promise<ProjectItemWithDetails | null> {
     const isRepository = Boolean(repositoryName);
     const limitedProjectItemsSubquery = isRepository
       ? `(
@@ -892,7 +808,7 @@ class ProjectItemRepositoryImpl
 
     const query = ProjectItemRepositoryImpl.buildProjectItemsWithDetailsQuery(
       limitedProjectItemsSubquery,
-      "pi.created_at DESC",
+      "pi.created_at DESC"
     );
 
     const params = isRepository ? [ownerLogin, repositoryName] : [ownerLogin];
@@ -964,9 +880,7 @@ class ProjectItemRepositoryImpl
     };
   }
 
-  async getRepositoriesByOrganization(
-    organizationOwnerId: OwnerId,
-  ): Promise<ProjectItem[]> {
+  async getRepositoriesByOrganization(organizationOwnerId: OwnerId): Promise<ProjectItem[]> {
     const query = `
       SELECT ${ProjectItemRepositoryImpl.SELECT_COLUMNS} FROM project_item
       WHERE project_item_type = $1
@@ -974,10 +888,7 @@ class ProjectItemRepositoryImpl
         AND github_repository_id IS NOT NULL
       ORDER BY created_at DESC
     `;
-    const result = await this.pool.query(query, [
-      ProjectItemType.GITHUB_REPOSITORY,
-      organizationOwnerId.githubId,
-    ]);
+    const result = await this.pool.query(query, [ProjectItemType.GITHUB_REPOSITORY, organizationOwnerId.githubId]);
 
     return result.rows.map((row) => {
       const projectItem = ProjectItemCompanion.fromBackend(row);

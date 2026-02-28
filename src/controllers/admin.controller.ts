@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import * as dto from "@open-source-economy/api-types";
-import {
-  getDeveloperProfileRepository,
-  getProjectItemRepository,
-  getUserRepository,
-} from "../db";
+import { getDeveloperProfileRepository, getProjectItemRepository, getUserRepository } from "../db";
 import { createVerificationRecordRepository } from "../db/onboarding/VerificationRecord.repository";
 import { pool } from "../dbPool";
 import { checkAuthenticatedUser } from "../middlewares";
@@ -25,13 +21,7 @@ const githubService = getGitHubService();
 const ownerRepo = getOwnerRepository();
 const repositoryRepo = getRepositoryRepository();
 const projectRepo = getProjectRepository();
-const githubSyncService = getGithubSyncService(
-  githubService,
-  ownerRepo,
-  repositoryRepo,
-  projectRepo,
-  projectItemRepo,
-);
+const githubSyncService = getGithubSyncService(githubService, ownerRepo, repositoryRepo, projectRepo, projectItemRepo);
 
 export interface AdminController {
   getAllDeveloperProfiles(
@@ -41,7 +31,7 @@ export interface AdminController {
       {}, // GET request - no body
       dto.GetAllDeveloperProfilesQuery
     >,
-    res: Response<dto.GetAllDeveloperProfilesResponse>,
+    res: Response<dto.GetAllDeveloperProfilesResponse>
   ): Promise<void>;
 
   getDeveloperProfile(
@@ -51,7 +41,7 @@ export interface AdminController {
       {}, // GET request - no body
       dto.GetDeveloperProfileQuery
     >,
-    res: Response<dto.GetDeveloperProfileResponse>,
+    res: Response<dto.GetDeveloperProfileResponse>
   ): Promise<void>;
 
   createVerificationRecord(
@@ -61,7 +51,7 @@ export interface AdminController {
       dto.CreateVerificationRecordBody,
       dto.CreateVerificationRecordQuery
     >,
-    res: Response<dto.CreateVerificationRecordResponse>,
+    res: Response<dto.CreateVerificationRecordResponse>
   ): Promise<void>;
 
   syncOrganizationRepositories(
@@ -71,7 +61,7 @@ export interface AdminController {
       dto.SyncOrganizationRepositoriesBody,
       dto.SyncOrganizationRepositoriesQuery
     >,
-    res: Response<dto.SyncOrganizationRepositoriesResponse>,
+    res: Response<dto.SyncOrganizationRepositoriesResponse>
   ): Promise<void>;
 }
 
@@ -84,9 +74,7 @@ export const AdminController: AdminController = {
     // GitHub username comes from URL params
     const urlParams = req.params as { githubUsername: string };
 
-    const user = await userRepository.findByGithubLogin(
-      urlParams.githubUsername,
-    );
+    const user = await userRepository.findByGithubLogin(urlParams.githubUsername);
     if (!user) {
       const response: dto.GetDeveloperProfileResponse = {
         profile: null,
@@ -104,8 +92,7 @@ export const AdminController: AdminController = {
       return;
     }
 
-    const profile =
-      await developerProfileService.buildFullDeveloperProfile(existingProfile);
+    const profile = await developerProfileService.buildFullDeveloperProfile(existingProfile);
     const response: dto.GetDeveloperProfileResponse = { profile };
     res.status(StatusCodes.OK).send(response);
   },
@@ -124,7 +111,7 @@ export const AdminController: AdminController = {
       body.entityId,
       body.status,
       body.notes,
-      user.id,
+      user.id
     );
 
     res.status(StatusCodes.OK).send({ record });
@@ -144,10 +131,7 @@ export const AdminController: AdminController = {
     const profiles: dto.FullDeveloperProfile[] = [];
 
     for (const developerProfile of allProfiles) {
-      const fullProfile =
-        await developerProfileService.buildFullDeveloperProfile(
-          developerProfile,
-        );
+      const fullProfile = await developerProfileService.buildFullDeveloperProfile(developerProfile);
 
       profiles.push(fullProfile);
     }
@@ -161,12 +145,8 @@ export const AdminController: AdminController = {
 
       filteredProfiles = filteredProfiles.filter((profile) => {
         // Check profile verification status
-        if (
-          profile.profileEntry?.verificationRecords &&
-          profile.profileEntry?.verificationRecords.length > 0
-        ) {
-          const latestProfileRecord =
-            profile.profileEntry?.verificationRecords[0]; // Already sorted DESC
+        if (profile.profileEntry?.verificationRecords && profile.profileEntry?.verificationRecords.length > 0) {
+          const latestProfileRecord = profile.profileEntry?.verificationRecords[0]; // Already sorted DESC
           if (latestProfileRecord.status === targetStatus) {
             return true;
           }
@@ -191,22 +171,18 @@ export const AdminController: AdminController = {
 
         // Search in name
         const userName = profileEntry?.user?.name;
-        if (userName && userName.toLowerCase().includes(searchLower))
-          return true;
+        if (userName && userName.toLowerCase().includes(searchLower)) return true;
 
         // Search in email
         const contactEmail = profileEntry?.profile.contactEmail;
-        if (contactEmail && contactEmail.toLowerCase().includes(searchLower))
-          return true;
+        if (contactEmail && contactEmail.toLowerCase().includes(searchLower)) return true;
 
         // Search in GitHub username (assuming it's in the user data)
         // We need to get GitHub username from projects
-        const hasMatchingProject = profile.projects.some(
-          (p: dto.DeveloperProjectItemEntry) => {
-            const projectName = p.projectItem.sourceIdentifier;
-            return projectName?.toLowerCase().includes(searchLower);
-          },
-        );
+        const hasMatchingProject = profile.projects.some((p: dto.DeveloperProjectItemEntry) => {
+          const projectName = p.projectItem.sourceIdentifier;
+          return projectName?.toLowerCase().includes(searchLower);
+        });
 
         return hasMatchingProject;
       });
@@ -227,20 +203,14 @@ export const AdminController: AdminController = {
     const query: dto.SyncOrganizationRepositoriesQuery = req.query;
 
     // Get the project item and validate it's a GitHub organization
-    const projectItem = await projectItemRepo.getById(
-      params.projectItemId as dto.ProjectItemId,
-    );
+    const projectItem = await projectItemRepo.getById(params.projectItemId as dto.ProjectItemId);
 
     if (!projectItem) {
-      throw ApiError.notFound(
-        `ProjectItem not found with id ${params.projectItemId}`,
-      );
+      throw ApiError.notFound(`ProjectItem not found with id ${params.projectItemId}`);
     }
 
     if (projectItem.projectItemType !== dto.ProjectItemType.GITHUB_OWNER) {
-      throw ApiError.badRequest(
-        `ProjectItem must be of type GITHUB_OWNER, but got ${projectItem.projectItemType}`,
-      );
+      throw ApiError.badRequest(`ProjectItem must be of type GITHUB_OWNER, but got ${projectItem.projectItemType}`);
     }
 
     const ownerId = { login: projectItem.sourceIdentifier } as dto.OwnerId;
@@ -255,15 +225,14 @@ export const AdminController: AdminController = {
     }
 
     const ownerType = owner.type;
-    const ownerTypeLabel =
-      ownerType === dto.OwnerType.Organization ? "organization" : "user";
+    const ownerTypeLabel = ownerType === dto.OwnerType.Organization ? "organization" : "user";
 
     // Start sync in background (fire and forget)
     // Don't await - let it run asynchronously
     (async () => {
       try {
         console.log(
-          `[Background] Starting repository sync for ${ownerTypeLabel}: ${ownerId.login} (offset: ${offset}, batchSize: ${batchSize || "default"}, fetchDetails: ${fetchDetails})`,
+          `[Background] Starting repository sync for ${ownerTypeLabel}: ${ownerId.login} (offset: ${offset}, batchSize: ${batchSize || "default"}, fetchDetails: ${fetchDetails})`
         );
 
         // Sync repositories from the owner (organization or user)
@@ -272,26 +241,20 @@ export const AdminController: AdminController = {
           ownerType,
           offset,
           batchSize,
-          fetchDetails,
+          fetchDetails
         );
 
         // Create ProjectItems for each synced repository
-        const projectItemResult =
-          await AdminHelper.createProjectItemsForRepositories(
-            syncResult.syncedRepositories,
-          );
+        const projectItemResult = await AdminHelper.createProjectItemsForRepositories(syncResult.syncedRepositories);
 
         console.log(
           `[Background] Completed sync for ${ownerTypeLabel} ${ownerId.login}: ` +
             `${syncResult.totalFetched} total, ${projectItemResult.created} created, ` +
             `${projectItemResult.updated} already existed, ${syncResult.errors.length + projectItemResult.errors.length} errors. ` +
-            `Has more: ${syncResult.batchInfo.hasMore}, Next offset: ${syncResult.batchInfo.nextOffset || "N/A"}`,
+            `Has more: ${syncResult.batchInfo.hasMore}, Next offset: ${syncResult.batchInfo.nextOffset || "N/A"}`
         );
       } catch (error) {
-        console.error(
-          `[Background] Error in repository sync for ${ownerTypeLabel} ${ownerId.login}:`,
-          error,
-        );
+        console.error(`[Background] Error in repository sync for ${ownerTypeLabel} ${ownerId.login}:`, error);
       }
     })();
 
@@ -320,9 +283,7 @@ const AdminHelper = {
    * @param syncedRepositories - Array of repositories from GitHub sync
    * @returns Statistics about created and updated ProjectItems
    */
-  async createProjectItemsForRepositories(
-    syncedRepositories: dto.Repository[],
-  ): Promise<{
+  async createProjectItemsForRepositories(syncedRepositories: dto.Repository[]): Promise<{
     created: number;
     updated: number;
     errors: Array<{ repoName: string; error: string }>;
@@ -334,9 +295,7 @@ const AdminHelper = {
     for (const repository of syncedRepositories) {
       try {
         // Check if ProjectItem already exists
-        const existingProjectItem = await projectItemRepo.getByGithubRepository(
-          repository.id,
-        );
+        const existingProjectItem = await projectItemRepo.getByGithubRepository(repository.id);
 
         if (!existingProjectItem) {
           // Create new ProjectItem
@@ -350,8 +309,7 @@ const AdminHelper = {
         }
       } catch (error) {
         const repoName = `${repository.id.ownerId.login}/${repository.id.name}`;
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         errors.push({ repoName, error: errorMessage });
       }
     }

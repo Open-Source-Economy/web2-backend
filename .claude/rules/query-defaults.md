@@ -48,7 +48,7 @@ Internal limits that are not exposed to the API:
 const SYNC_BATCH_SIZE = 50;
 
 // OK — config value with Joi default
-GITHUB_SYNC_CHUNK_SIZE: Joi.number().default(50)
+GITHUB_SYNC_CHUNK_SIZE: Joi.number().default(50);
 ```
 
 These are implementation details, not API contract concerns.

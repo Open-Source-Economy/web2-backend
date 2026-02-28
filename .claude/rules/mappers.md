@@ -33,11 +33,7 @@ Orchestrate companion mappers to assemble complex response objects. Live alongsi
 
 ```typescript
 // Compose multiple companions into a response
-function buildFullProject(
-  project: Project,
-  repositories: Repository[],
-  issues: Issue[],
-): dto.FullProject {
+function buildFullProject(project: Project, repositories: Repository[], issues: Issue[]): dto.FullProject {
   return {
     project,
     repositories: repositories.map(mapRepository),
@@ -76,8 +72,8 @@ If data should exist, map it. If you're unsure whether data exists, **ask** — 
 ```typescript
 // WRONG — hiding missing data
 return {
-  emails: [],        // Bug: emails exist in DB but weren't queried
-  projects: [],      // Bug: silently dropping data
+  emails: [], // Bug: emails exist in DB but weren't queried
+  projects: [], // Bug: silently dropping data
 };
 
 // CORRECT — map what's available
@@ -88,7 +84,7 @@ return {
 
 // CORRECT — if truly optional and absent
 return {
-  avatar: user.avatarUrl ?? null,  // Nullable, not fake default
+  avatar: user.avatarUrl ?? null, // Nullable, not fake default
 };
 ```
 

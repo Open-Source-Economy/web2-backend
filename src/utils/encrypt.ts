@@ -1,6 +1,6 @@
 import { config } from "../config";
 
-var bcrypt = require("bcryptjs");
+const bcrypt = require("bcryptjs");
 
 export class encrypt {
   static async hashPassword(password: string) {

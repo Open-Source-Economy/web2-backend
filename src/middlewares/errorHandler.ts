@@ -12,12 +12,7 @@ class LegacyApiError extends Error {
   statusCode: number;
   isOperational: boolean;
 
-  constructor(
-    statusCode: number,
-    message: string,
-    isOperational: boolean = true,
-    stack?: string,
-  ) {
+  constructor(statusCode: number, message: string, isOperational: boolean = true, stack?: string) {
     super(message);
     this.name = "LegacyApiError";
     this.statusCode = statusCode;
@@ -46,19 +41,12 @@ interface ErrorResponse {
 /**
  * Catches new ApiError (from src/errors/api-error.ts) and returns ProblemDetails JSON.
  */
-export function problemDetailsErrorHandler(
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export function problemDetailsErrorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
   if (!(err instanceof ApiError)) {
     return next(err);
   }
 
-  logger.warn(
-    `${req.method} ${req.url} -> ${err.status} ${err.title}: ${err.detail}`,
-  );
+  logger.warn(`${req.method} ${req.url} -> ${err.status} ${err.title}: ${err.detail}`);
 
   res.status(err.status).json(err.toProblemDetails());
 }
@@ -71,7 +59,7 @@ export function tsRestValidationErrorHandler(
   err: Error & Record<string, unknown>,
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) {
   const errorSections: [string, string][] = [
     ["paramsResult", "path"],
@@ -102,9 +90,7 @@ export function tsRestValidationErrorHandler(
         code?: string;
       };
       const fieldPath =
-        Array.isArray(zodIssue.path) && zodIssue.path.length > 0
-          ? `${prefix}.${zodIssue.path.join(".")}`
-          : prefix;
+        Array.isArray(zodIssue.path) && zodIssue.path.length > 0 ? `${prefix}.${zodIssue.path.join(".")}` : prefix;
       const message = zodIssue.message ?? zodIssue.code ?? "invalid";
 
       if (!errors[fieldPath]) {
@@ -122,9 +108,7 @@ export function tsRestValidationErrorHandler(
     .map(([field, messages]) => `${field}: ${messages.join(", ")}`)
     .join(" | ");
 
-  logger.warn(
-    `${req.method} ${req.url} -> 400 Request Validation Error: ${errorSummary}`,
-  );
+  logger.warn(`${req.method} ${req.url} -> 400 Request Validation Error: ${errorSummary}`);
 
   const problemDetails: ProblemDetails = {
     type: "about:blank",
@@ -140,20 +124,14 @@ export function tsRestValidationErrorHandler(
 /**
  * Catch-all error handler. Returns ProblemDetails for any unhandled error.
  */
-export function globalErrorHandler(
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export function globalErrorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
   logger.error(`${req.method} ${req.url} -> 500: ${err.message}`, err.stack);
 
   const problemDetails: ProblemDetails = {
     type: "about:blank",
     title: "Internal Server Error",
     status: 500,
-    detail:
-      config.env === NodeEnv.Production ? "Internal Server Error" : err.message,
+    detail: config.env === NodeEnv.Production ? "Internal Server Error" : err.message,
   };
 
   res.status(500).json(problemDetails);
@@ -163,12 +141,7 @@ export function globalErrorHandler(
 // LEGACY error middleware (kept for old routes during migration)
 // =====================================================================
 
-export function errorConverter(
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export function errorConverter(err: Error, req: Request, res: Response, next: NextFunction) {
   let error = err;
   if (!(error instanceof LegacyApiError)) {
     const statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
@@ -178,23 +151,13 @@ export function errorConverter(
   next(error);
 }
 
-export function errorHandler(
-  err: LegacyApiError,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export function errorHandler(err: LegacyApiError, req: Request, res: Response, _next: NextFunction) {
   if (config.env === NodeEnv.Local) {
     logger.error(err);
-  } else if (
-    req.headers.origin === config.frontEndUrl ||
-    !(err.statusCode === StatusCodes.NOT_FOUND)
-  ) {
+  } else if (req.headers.origin === config.frontEndUrl || !(err.statusCode === StatusCodes.NOT_FOUND)) {
     logger.error(err);
   } else {
-    logger.warn(
-      `Non-frontend 404: ${req.method} ${req.originalUrl} from ${req.ip || "unknown"}`,
-    );
+    logger.warn(`Non-frontend 404: ${req.method} ${req.originalUrl} from ${req.ip || "unknown"}`);
   }
 
   let { statusCode, message } = err;

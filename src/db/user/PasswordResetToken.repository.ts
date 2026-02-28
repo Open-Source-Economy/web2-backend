@@ -46,9 +46,7 @@ class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepository {
     };
   }
 
-  async create(
-    token: CreatePasswordResetTokenBody,
-  ): Promise<PasswordResetToken> {
+  async create(token: CreatePasswordResetTokenBody): Promise<PasswordResetToken> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
@@ -57,7 +55,7 @@ class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepository {
         VALUES ($1, $2, $3)
         RETURNING *
         `,
-        [token.userEmail, token.token, token.expiresAt],
+        [token.userEmail, token.token, token.expiresAt]
       );
       return this.mapRow(result.rows[0]);
     } finally {
@@ -71,7 +69,7 @@ class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepository {
       SELECT * FROM password_reset_token
       WHERE token = $1
       `,
-      [token],
+      [token]
     );
 
     if (result.rows.length === 0) return null;
@@ -87,7 +85,7 @@ class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepository {
         SET has_been_used = TRUE
         WHERE token = $1
         `,
-        [token],
+        [token]
       );
       logger.debug(`Password reset token ${token} marked as used.`);
     } finally {
@@ -101,7 +99,7 @@ class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepository {
       DELETE FROM password_reset_token
       WHERE token = $1
       `,
-      [token],
+      [token]
     );
   }
 }

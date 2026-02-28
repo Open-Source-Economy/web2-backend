@@ -2,33 +2,15 @@ import { Owner, OwnerId, OwnerType } from "@open-source-economy/api-types";
 import { ValidationError, Validator } from "../Validator";
 
 export namespace OwnerIdCompanion {
-  export function fromBackendPrimaryKey(
-    row: any,
-    table_prefix: string = "",
-  ): OwnerId | ValidationError {
-    return fromAny(
-      row,
-      `${table_prefix}github_login`,
-      `${table_prefix}github_id`,
-    );
+  export function fromBackendPrimaryKey(row: any, table_prefix: string = ""): OwnerId | ValidationError {
+    return fromAny(row, `${table_prefix}github_login`, `${table_prefix}github_id`);
   }
 
-  export function fromBackendForeignKey(
-    row: any,
-    table_prefix: string = "",
-  ): OwnerId | ValidationError {
-    return fromAny(
-      row,
-      `${table_prefix}github_owner_login`,
-      `${table_prefix}github_owner_id`,
-    );
+  export function fromBackendForeignKey(row: any, table_prefix: string = ""): OwnerId | ValidationError {
+    return fromAny(row, `${table_prefix}github_owner_login`, `${table_prefix}github_owner_id`);
   }
 
-  function fromAny(
-    data: any,
-    loginKey: string,
-    idKey: string,
-  ): OwnerId | ValidationError {
+  function fromAny(data: any, loginKey: string, idKey: string): OwnerId | ValidationError {
     let json: any;
     if (typeof data === "object") {
       json = data;
@@ -65,37 +47,22 @@ export namespace OwnerCompanion {
    *
    * @returns A new `Owner` instance if validation succeeds, or a `ValidationError` otherwise.
    */
-  export function fromBackend(
-    json: any,
-    table_prefix: string = "",
-  ): Owner | ValidationError {
+  export function fromBackend(json: any, table_prefix: string = ""): Owner | ValidationError {
     const validator = new Validator(json);
 
     // @ts-ignore
     const type: OwnerType = validator.requiredEnum<OwnerType>(
       `${table_prefix}github_type`,
-      Object.values(OwnerType) as OwnerType[],
+      Object.values(OwnerType) as OwnerType[]
     );
     const htmlUrl = validator.requiredString(`${table_prefix}github_html_url`);
-    const avatarUrl = validator.requiredString(
-      `${table_prefix}github_avatar_url`,
-    );
-    const followers = validator.optionalNumber(
-      `${table_prefix}github_followers`,
-    );
-    const following = validator.optionalNumber(
-      `${table_prefix}github_following`,
-    );
-    const publicRepos = validator.optionalNumber(
-      `${table_prefix}github_public_repos`,
-    );
-    const publicGists = validator.optionalNumber(
-      `${table_prefix}github_public_gists`,
-    );
+    const avatarUrl = validator.requiredString(`${table_prefix}github_avatar_url`);
+    const followers = validator.optionalNumber(`${table_prefix}github_followers`);
+    const following = validator.optionalNumber(`${table_prefix}github_following`);
+    const publicRepos = validator.optionalNumber(`${table_prefix}github_public_repos`);
+    const publicGists = validator.optionalNumber(`${table_prefix}github_public_gists`);
     const name = validator.optionalString(`${table_prefix}github_name`);
-    const twitterUsername = validator.optionalString(
-      `${table_prefix}github_twitter_username`,
-    );
+    const twitterUsername = validator.optionalString(`${table_prefix}github_twitter_username`);
     const company = validator.optionalString(`${table_prefix}github_company`);
     const blog = validator.optionalString(`${table_prefix}github_blog`);
     const location = validator.optionalString(`${table_prefix}github_location`);

@@ -33,9 +33,7 @@ describe("StripeProductRepository", () => {
         fail("Expected a constraint violation error, but none was thrown.");
       } catch (error: any) {
         // Check that the error is related to a constraint violation
-        expect(error.message).toMatch(
-          /duplicate key value violates unique constraint/,
-        );
+        expect(error.message).toMatch(/duplicate key value violates unique constraint/);
       }
     });
   });

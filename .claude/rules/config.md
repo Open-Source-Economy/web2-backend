@@ -91,6 +91,7 @@ postgres: {
 ### Always Update `.env.example` for Every Config Change
 
 When adding a new env var:
+
 1. Add it to the Joi schema in `config.ts`
 2. Add the config interface field
 3. Add the mapping

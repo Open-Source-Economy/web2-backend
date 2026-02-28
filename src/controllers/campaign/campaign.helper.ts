@@ -11,7 +11,6 @@ import {
   StripeProduct,
   StripeProductId,
 } from "@open-source-economy/api-types";
-import { StatusCodes } from "http-status-codes";
 import { combinedStripeRepo, stripeProductRepo } from "../../db";
 import { stripe, StripeHelper } from "../stripe";
 import { currencyAPI } from "../../services";
@@ -41,7 +40,7 @@ const donationUnits: Record<Currency, number> = {
 export function getRoundedCreditAmount(
   price: number, // in cents
   currency: Currency,
-  priceType: CampaignPriceType,
+  priceType: CampaignPriceType
 ): number {
   const $amount = currencyAPI.convertPrice(price, currency, Currency.USD);
   if (priceType === CampaignPriceType.ONE_TIME) {
@@ -62,21 +61,13 @@ export interface CampaignHelper {
   createProductsAndPrices(project: Project): Promise<void>;
   getPrices(
     projectId: OwnerId | RepositoryId,
-    currencyPriceConfigs: CampaignProductPriceConfig,
-  ): Promise<
-    Record<
-      CampaignPriceType,
-      Record<Currency, Record<CampaignProductType, Price[]>>
-    >
-  >;
+    currencyPriceConfigs: CampaignProductPriceConfig
+  ): Promise<Record<CampaignPriceType, Record<Currency, Record<CampaignProductType, Price[]>>>>;
 }
 
 // Helper functions
 const CampaignHelpers = {
-  initializePrices(): Record<
-    CampaignPriceType,
-    Record<Currency, Record<CampaignProductType, Price[]>>
-  > {
+  initializePrices(): Record<CampaignPriceType, Record<Currency, Record<CampaignProductType, Price[]>>> {
     return Object.values(CampaignPriceType).reduce(
       (priceTypeAcc, priceType) => {
         priceTypeAcc[priceType] = Object.values(Currency).reduce(
@@ -86,18 +77,15 @@ const CampaignHelpers = {
                 productAcc[campaignProductType] = [];
                 return productAcc;
               },
-              {} as Record<CampaignProductType, Price[]>,
+              {} as Record<CampaignProductType, Price[]>
             );
             return currencyAcc;
           },
-          {} as Record<Currency, Record<CampaignProductType, Price[]>>,
+          {} as Record<Currency, Record<CampaignProductType, Price[]>>
         );
         return priceTypeAcc;
       },
-      {} as Record<
-        CampaignPriceType,
-        Record<Currency, Record<CampaignProductType, Price[]>>
-      >,
+      {} as Record<CampaignPriceType, Record<Currency, Record<CampaignProductType, Price[]>>>
     );
   },
 
@@ -106,15 +94,12 @@ const CampaignHelpers = {
     campaignProductType: CampaignProductType,
     params: Stripe.ProductCreateParams,
     recurringCentsPrices: Record<Currency, number>,
-    oneTimeCentsPrices: Record<Currency, number>,
+    oneTimeCentsPrices: Record<Currency, number>
   ): Promise<void> {
     const product: Stripe.Product = await stripe.products.create(params);
 
     // Serialize projectId as a string for storage
-    const projectIdStr =
-      "ownerId" in projectId
-        ? `${projectId.ownerId.login}/${projectId.name}`
-        : projectId.login;
+    const projectIdStr = "ownerId" in projectId ? `${projectId.ownerId.login}/${projectId.name}` : projectId.login;
 
     await stripeProductRepo.insert({
       id: product.id as unknown as StripeProductId,
@@ -127,11 +112,7 @@ const CampaignHelpers = {
     };
 
     // --- recurring price ---
-    await StripeHelper.createAndStoreStripePrices(
-      product,
-      recurringCentsPrices,
-      recurringOptions,
-    );
+    await StripeHelper.createAndStoreStripePrices(product, recurringCentsPrices, recurringOptions);
 
     // --- one time price ---
     await StripeHelper.createAndStoreStripePrices(product, oneTimeCentsPrices);
@@ -145,14 +126,10 @@ export const CampaignHelper: CampaignHelper = {
     let repoName = `${project.owner.id.login}`;
     if (project.repository) repoName += `/${project.repository.id.name}`;
 
-    const images = project.owner.avatarUrl
-      ? [project.owner.avatarUrl]
-      : undefined;
+    const images = project.owner.avatarUrl ? [project.owner.avatarUrl] : undefined;
 
     // Construct the projectId from the project
-    const projectId: OwnerId | RepositoryId = project.repository
-      ? project.repository.id
-      : project.owner.id;
+    const projectId: OwnerId | RepositoryId = project.repository ? project.repository.id : project.owner.id;
 
     // --- credit product ---
 
@@ -171,7 +148,7 @@ export const CampaignHelper: CampaignHelper = {
       CampaignProductType.CREDIT,
       creditParams,
       currencyAPI.getConvertedPrices(creditRecurring$CentsPrice),
-      currencyAPI.getConvertedPrices(creditOneTime$CentsPrice),
+      currencyAPI.getConvertedPrices(creditOneTime$CentsPrice)
     );
 
     const donationParams: Stripe.ProductCreateParams = {
@@ -188,19 +165,14 @@ export const CampaignHelper: CampaignHelper = {
       CampaignProductType.DONATION,
       donationParams,
       donationUnits,
-      donationUnits,
+      donationUnits
     );
   },
 
   async getPrices(
     projectId: OwnerId | RepositoryId,
-    currencyPriceConfigs: CampaignProductPriceConfig,
-  ): Promise<
-    Record<
-      CampaignPriceType,
-      Record<Currency, Record<CampaignProductType, Price[]>>
-    >
-  > {
+    currencyPriceConfigs: CampaignProductPriceConfig
+  ): Promise<Record<CampaignPriceType, Record<Currency, Record<CampaignProductType, Price[]>>>> {
     const prices = CampaignHelpers.initializePrices();
 
     // Get campaign products with their prices

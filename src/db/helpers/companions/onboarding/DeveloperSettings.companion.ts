@@ -10,48 +10,32 @@ import {
 import { ValidationError, Validator } from "../Validator";
 
 export namespace DeveloperSettingsCompanion {
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): DeveloperSettings | ValidationError {
+  export function fromBackend(row: any, table_prefix: string = ""): DeveloperSettings | ValidationError {
     const validator = new Validator(row);
     const id = validator.requiredString(`${table_prefix}id`);
-    const developerProfileId = validator.requiredString(
-      `${table_prefix}developer_profile_id`,
-    );
+    const developerProfileId = validator.requiredString(`${table_prefix}developer_profile_id`);
     const royaltiesPreference = validator.optionalEnum(
       `${table_prefix}royalties_preference`,
-      Object.values(PreferenceType) as PreferenceType[],
+      Object.values(PreferenceType) as PreferenceType[]
     );
     const servicesPreference = validator.optionalEnum(
       `${table_prefix}services_preference`,
-      Object.values(PreferenceType) as PreferenceType[],
+      Object.values(PreferenceType) as PreferenceType[]
     );
     const communitySupporterPreference = validator.optionalEnum(
       `${table_prefix}community_supporter_preference`,
-      Object.values(PreferenceType) as PreferenceType[],
+      Object.values(PreferenceType) as PreferenceType[]
     );
-    const hourlyWeeklyCommitment = validator.optionalNumber(
-      `${table_prefix}hourly_weekly_commitment`,
-    );
-    const hourlyWeeklyCommitmentComment = validator.optionalString(
-      `${table_prefix}hourly_weekly_commitment_comment`,
-    );
+    const hourlyWeeklyCommitment = validator.optionalNumber(`${table_prefix}hourly_weekly_commitment`);
+    const hourlyWeeklyCommitmentComment = validator.optionalString(`${table_prefix}hourly_weekly_commitment_comment`);
     const openToOtherOpportunity = validator.optionalEnum(
       `${table_prefix}open_to_other_opportunity`,
-      Object.values(OpenToOtherOpportunityType) as OpenToOtherOpportunityType[],
+      Object.values(OpenToOtherOpportunityType) as OpenToOtherOpportunityType[]
     );
-    const openToOtherOpportunityComment = validator.optionalString(
-      `${table_prefix}open_to_other_opportunity_comment`,
-    );
+    const openToOtherOpportunityComment = validator.optionalString(`${table_prefix}open_to_other_opportunity_comment`);
     const hourlyRate = validator.optionalNumber(`${table_prefix}hourly_rate`);
-    const hourlyRateComment = validator.optionalString(
-      `${table_prefix}hourly_rate_comment`,
-    );
-    const currency = validator.optionalEnum(
-      `${table_prefix}currency`,
-      Object.values(Currency) as Currency[],
-    );
+    const hourlyRateComment = validator.optionalString(`${table_prefix}hourly_rate_comment`);
+    const currency = validator.optionalEnum(`${table_prefix}currency`, Object.values(Currency) as Currency[]);
     const createdAt = validator.requiredDate(`${table_prefix}created_at`);
     const updatedAt = validator.requiredDate(`${table_prefix}updated_at`);
 

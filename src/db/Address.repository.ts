@@ -1,10 +1,5 @@
 import { Pool } from "pg";
-import {
-  Address,
-  AddressId,
-  CompanyId,
-  UserId,
-} from "@open-source-economy/api-types";
+import { Address, AddressId, CompanyId, UserId } from "@open-source-economy/api-types";
 import { pool } from "../dbPool";
 import { AddressCompanion } from "./helpers/companions";
 
@@ -79,7 +74,7 @@ class AddressRepositoryImpl implements AddressRepository {
       JOIN company c ON a.id = c.address_id
       WHERE c.id = $1
       `,
-      [id],
+      [id]
     );
 
     return this.getOptionalAddress(result.rows);
@@ -94,7 +89,7 @@ class AddressRepositoryImpl implements AddressRepository {
       JOIN address a ON c.address_id = a.id
       WHERE uc.user_id = $1
       `,
-      [id],
+      [id]
     );
 
     return this.getOptionalAddress(result.rows);
@@ -116,7 +111,7 @@ class AddressRepositoryImpl implements AddressRepository {
       FROM address
       WHERE id = $1
       `,
-      [id],
+      [id]
     );
 
     return this.getOptionalAddress(result.rows);
@@ -141,7 +136,7 @@ class AddressRepositoryImpl implements AddressRepository {
           address.state ?? null,
           address.postalCode ?? null,
           address.country ?? null,
-        ],
+        ]
       );
 
       return this.getOneAddress(result.rows);
@@ -177,7 +172,7 @@ class AddressRepositoryImpl implements AddressRepository {
           address.postalCode,
           address.country,
           address.id,
-        ],
+        ]
       );
 
       return this.getOneAddress(result.rows);

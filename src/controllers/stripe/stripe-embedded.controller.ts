@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Stripe from "stripe";
-import * as dto from "@open-source-economy/api-types";
 import { StripeHelper } from "./stripe.helper";
 import { stripe } from "./index";
 import { ApiError } from "../../errors";
@@ -20,33 +19,20 @@ interface CreatePaymentIntentBody {
 }
 
 export interface StripeEmbeddedController {
-  createSubscription(
-    req: Request<{}, any, CreateSubscriptionBody, {}>,
-    res: Response<any>,
-  ): Promise<void>;
+  createSubscription(req: Request<{}, any, CreateSubscriptionBody, {}>, res: Response<any>): Promise<void>;
 
-  createPaymentIntentWIP(
-    req: Request<{}, any, CreatePaymentIntentBody, {}>,
-    res: Response<any>,
-  ): Promise<void>;
+  createPaymentIntentWIP(req: Request<{}, any, CreatePaymentIntentBody, {}>, res: Response<any>): Promise<void>;
 }
 
 export const StripeEmbeddedController: StripeEmbeddedController = {
   // Build-subscriptions: https://docs.stripe.com/billing/subscriptions/build-subscriptions?lang=node
   // 1. createCustomer
   // 2. createSubscription
-  async createSubscription(
-    req: Request<{}, any, CreateSubscriptionBody, {}>,
-    res: Response<any>,
-  ) {
+  async createSubscription(req: Request<{}, any, CreateSubscriptionBody, {}>, res: Response<any>) {
     if (!req.user) {
       throw ApiError.unauthorized("User not authenticated");
     } else {
-      const stripeCustomerUser =
-        await StripeHelper.getOrCreateStripeCustomerUser(
-          req.user,
-          req.body.countryCode,
-        );
+      const stripeCustomerUser = await StripeHelper.getOrCreateStripeCustomerUser(req.user, req.body.countryCode);
       if (stripeCustomerUser instanceof Error) {
         throw stripeCustomerUser;
       }
@@ -59,14 +45,13 @@ export const StripeEmbeddedController: StripeEmbeddedController = {
       // Create the subscription.
       // Note we're expanding the Subscription's latest invoice and that invoice's payment_intent,
       // so we can pass it to the front end to confirm the payment
-      const subscription: Stripe.Subscription =
-        await stripe.subscriptions.create({
-          customer: stripeCustomerUser.stripeCustomerId,
-          items: items,
-          payment_behavior: "default_incomplete",
-          payment_settings: { save_default_payment_method: "on_subscription" },
-          expand: ["latest_invoice.payment_intent"],
-        });
+      const subscription: Stripe.Subscription = await stripe.subscriptions.create({
+        customer: stripeCustomerUser.stripeCustomerId,
+        items: items,
+        payment_behavior: "default_incomplete",
+        payment_settings: { save_default_payment_method: "on_subscription" },
+        expand: ["latest_invoice.payment_intent"],
+      });
 
       const response = {
         subscription: subscription,
@@ -78,21 +63,17 @@ export const StripeEmbeddedController: StripeEmbeddedController = {
   },
 
   // this function in is WIP
-  async createPaymentIntentWIP(
-    req: Request<{}, any, CreatePaymentIntentBody, {}>,
-    res: Response<any>,
-  ) {
+  async createPaymentIntentWIP(req: Request<{}, any, CreatePaymentIntentBody, {}>, res: Response<any>) {
     // Step 1: Create an invoice
     // Step 2: Create an invoice item
     // Step 3: Finalize the invoice and get the payment intent
     // Step 4: Request the payment intent for the invoice.
-    const invoice: Stripe.Response<Stripe.Invoice> =
-      await stripe.invoices.create({
-        customer: req.body.stripeCustomerId.id,
-        automatic_tax: {
-          enabled: false,
-        },
-      });
+    const invoice: Stripe.Response<Stripe.Invoice> = await stripe.invoices.create({
+      customer: req.body.stripeCustomerId.id,
+      automatic_tax: {
+        enabled: false,
+      },
+    });
 
     for (const item of req.body.priceItems) {
       await stripe.invoiceItems.create({
@@ -104,11 +85,9 @@ export const StripeEmbeddedController: StripeEmbeddedController = {
     }
 
     // TODO: should not happen, but just for compilation issue
-    if (invoice.id === undefined)
-      throw ApiError.badRequest("Invoice ID is undefined");
+    if (invoice.id === undefined) throw ApiError.badRequest("Invoice ID is undefined");
 
-    const finalizedInvoice: Stripe.Response<Stripe.Invoice> =
-      await stripe.invoices.finalizeInvoice(invoice.id);
+    const finalizedInvoice: Stripe.Response<Stripe.Invoice> = await stripe.invoices.finalizeInvoice(invoice.id);
 
     const paymentIntentId: string = finalizedInvoice.payment_intent as string;
 

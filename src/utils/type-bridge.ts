@@ -126,22 +126,17 @@ export function bridgeManagedIssue(old: OldManagedIssue): NewManagedIssue {
     githubIssueId: bridgeIssueId(old.githubIssueId),
     requestedCreditAmount: old.requestedCreditAmount,
     managerId: old.managerId as unknown as NewUserId,
-    contributorVisibility:
-      old.contributorVisibility as string as NewManagedIssue["contributorVisibility"],
+    contributorVisibility: old.contributorVisibility as string as NewManagedIssue["contributorVisibility"],
     state: old.state as string as NewManagedIssue["state"],
   };
 }
 
-export function bridgeFinancialIssue(
-  old: OldFinancialIssue,
-): NewFinancialIssue {
+export function bridgeFinancialIssue(old: OldFinancialIssue): NewFinancialIssue {
   return {
     owner: bridgeOwner(old.owner),
     repository: bridgeRepository(old.repository),
     issue: bridgeIssue(old.issue),
-    managedIssue: old.managedIssue
-      ? bridgeManagedIssue(old.managedIssue)
-      : undefined,
+    managedIssue: old.managedIssue ? bridgeManagedIssue(old.managedIssue) : undefined,
     issueFundings: old.issueFundings.map(bridgeIssueFunding),
   };
 }
@@ -159,8 +154,7 @@ export function bridgeUser(old: OldUser): NewUser {
     id: old.id as unknown as NewUserId,
     name: old.name,
     role: old.role as string as NewUser["role"],
-    preferredCurrency:
-      old.preferredCurrency as string as NewUser["preferredCurrency"],
+    preferredCurrency: old.preferredCurrency as string as NewUser["preferredCurrency"],
     termsAcceptedVersion: old.termsAcceptedVersion,
   };
 }

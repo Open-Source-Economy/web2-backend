@@ -11,14 +11,9 @@ export const usersRouter = s.router(contract.users, {
     handler: async ({ query, req }) => {
       const user = getAuthUser(req);
       const userId = user.id;
-      const companyId = query.companyId
-        ? (query.companyId as CompanyId)
-        : undefined;
+      const companyId = query.companyId ? (query.companyId as CompanyId) : undefined;
 
-      const creditAmount = await planAndCreditsRepo.getAvailableCredit(
-        userId as any,
-        companyId,
-      );
+      const creditAmount = await planAndCreditsRepo.getAvailableCredit(userId as any, companyId);
 
       return {
         status: 200 as const,
@@ -32,9 +27,7 @@ export const usersRouter = s.router(contract.users, {
     handler: async ({ query, req }) => {
       const user = getAuthUser(req);
       const userId = user.id;
-      const companyId = query.companyId
-        ? (query.companyId as CompanyId)
-        : undefined;
+      const companyId = query.companyId ? (query.companyId as CompanyId) : undefined;
 
       const types = await planAndCreditsRepo.getPlan(userId as any, companyId);
 

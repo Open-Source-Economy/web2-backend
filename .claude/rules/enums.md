@@ -44,6 +44,7 @@ if (!apiRole) throw ApiError.internal(`Unknown role: ${dbRow.role}`);
 ```
 
 Benefits:
+
 - Adding a new enum value to `UserRole` causes a **compile-time error** in `API_TO_DB_ROLE` if the mapping is missing
 - No risk of typos in string comparisons
 - All mappings in one place, easy to audit

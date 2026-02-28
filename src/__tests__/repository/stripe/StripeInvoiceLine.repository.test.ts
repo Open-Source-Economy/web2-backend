@@ -20,10 +20,7 @@ describe("StripeInvoiceLineRepository", () => {
   beforeEach(async () => {
     const stripeCustomer = Fixture.stripeCustomer(validCustomerId);
     await stripeCustomerRepo.insert(stripeCustomer);
-    await stripeInvoiceRepo.insert(
-      Fixture.stripeInvoice(validInvoiceId, validCustomerId, []),
-      [],
-    );
+    await stripeInvoiceRepo.insert(Fixture.stripeInvoice(validInvoiceId, validCustomerId, []), []);
 
     const product = Fixture.stripeProduct(validProductId, null);
     await stripeProductRepo.insert(product);
@@ -39,7 +36,7 @@ describe("StripeInvoiceLineRepository", () => {
         validInvoiceId,
         validCustomerId,
         validProductId,
-        validPriceId,
+        validPriceId
       );
       const created = await stripeInvoiceLineRepo.insert(invoiceLine);
       expect(created).toEqual(invoiceLine);
@@ -57,20 +54,12 @@ describe("StripeInvoiceLineRepository", () => {
       await stripeProductRepo.insert(Fixture.stripeProduct(productId, null));
 
       const invoiceLineId = Fixture.stripeInvoiceLineId();
-      const invoiceLine = Fixture.stripeInvoiceLine(
-        invoiceLineId,
-        invoiceId,
-        customerId,
-        productId,
-        validPriceId,
-      );
+      const invoiceLine = Fixture.stripeInvoiceLine(invoiceLineId, invoiceId, customerId, productId, validPriceId);
 
       try {
         await stripeInvoiceLineRepo.insert(invoiceLine);
         // If the insertion doesn't throw, fail the test
-        fail(
-          "Expected foreign key constraint violation, but no error was thrown.",
-        );
+        fail("Expected foreign key constraint violation, but no error was thrown.");
       } catch (error: any) {
         // Check if the error is related to foreign key constraint
         expect(error.message).toMatch(/violates foreign key constraint/);
@@ -81,9 +70,7 @@ describe("StripeInvoiceLineRepository", () => {
   describe("getById", () => {
     it("should return null if invoice line not found", async () => {
       const nonExistentInvoiceLineId = "non-existent-id" as StripeInvoiceLineId;
-      const found = await stripeInvoiceLineRepo.getById(
-        nonExistentInvoiceLineId,
-      );
+      const found = await stripeInvoiceLineRepo.getById(nonExistentInvoiceLineId);
 
       expect(found).toBeNull();
     });
@@ -98,14 +85,14 @@ describe("StripeInvoiceLineRepository", () => {
         validInvoiceId,
         validCustomerId,
         validProductId,
-        validPriceId,
+        validPriceId
       );
       const invoiceLine2 = Fixture.stripeInvoiceLine(
         invoiceLineId2,
         validInvoiceId,
         validCustomerId,
         validProductId,
-        validPriceId,
+        validPriceId
       );
 
       await stripeInvoiceLineRepo.insert(invoiceLine1);

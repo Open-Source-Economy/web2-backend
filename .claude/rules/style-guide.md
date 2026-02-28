@@ -23,16 +23,16 @@ The project uses `"strict": true` with `"noImplicitAny": true` and `"strictNullC
 
 ## Naming Conventions
 
-| Thing | Convention | Example |
-|-------|-----------|---------|
-| Files | `camelCase.ts` or `PascalCase.ts` for classes | `config.ts`, `BaseRepository.ts` |
-| Variables, functions | `camelCase` | `getUserById`, `isAuthenticated` |
-| Classes, interfaces, types | `PascalCase` | `UserRepository`, `Config` |
-| Enums | `PascalCase` (type), `PascalCase` (values) | `UserRole.SuperAdmin` |
-| DB tables | `snake_case` | `app_user`, `github_repository` |
-| DB columns | `snake_case` | `created_at`, `user_id` |
-| Env vars | `SCREAMING_SNAKE_CASE` | `DATABASE_URL`, `STRIPE_SECRET_KEY` |
-| API routes | `kebab-case` | `/api/v1/available-credit` |
+| Thing                      | Convention                                    | Example                             |
+| -------------------------- | --------------------------------------------- | ----------------------------------- |
+| Files                      | `camelCase.ts` or `PascalCase.ts` for classes | `config.ts`, `BaseRepository.ts`    |
+| Variables, functions       | `camelCase`                                   | `getUserById`, `isAuthenticated`    |
+| Classes, interfaces, types | `PascalCase`                                  | `UserRepository`, `Config`          |
+| Enums                      | `PascalCase` (type), `PascalCase` (values)    | `UserRole.SuperAdmin`               |
+| DB tables                  | `snake_case`                                  | `app_user`, `github_repository`     |
+| DB columns                 | `snake_case`                                  | `created_at`, `user_id`             |
+| Env vars                   | `SCREAMING_SNAKE_CASE`                        | `DATABASE_URL`, `STRIPE_SECRET_KEY` |
+| API routes                 | `kebab-case`                                  | `/api/v1/available-credit`          |
 
 ## No Dead Code
 

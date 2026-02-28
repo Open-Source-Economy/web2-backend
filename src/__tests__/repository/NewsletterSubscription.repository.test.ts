@@ -26,8 +26,7 @@ describe("NewsletterSubscriptionRepository", () => {
   describe("getByEmail", () => {
     it("should return null when the subscription does not exist", async () => {
       const nonExistentEmail = "nonexistent@example.com";
-      const subscription =
-        await newsletterSubscriptionRepo.getByEmail(nonExistentEmail);
+      const subscription = await newsletterSubscriptionRepo.getByEmail(nonExistentEmail);
       expect(subscription).toBeNull();
     });
 
@@ -57,10 +56,7 @@ describe("NewsletterSubscriptionRepository", () => {
 
       // Verify that both subscriptions are returned
       expect(allSubscriptions).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ email: email1 }),
-          expect.objectContaining({ email: email2 }),
-        ]),
+        expect.arrayContaining([expect.objectContaining({ email: email1 }), expect.objectContaining({ email: email2 })])
       );
     });
   });

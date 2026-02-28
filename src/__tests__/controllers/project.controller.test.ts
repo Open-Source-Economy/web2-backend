@@ -38,12 +38,12 @@ describe("ProjectController.getProjectDetails", () => {
     const thirdPartyUser = Fixture.thirdPartyUser(
       Fixture.uuid(),
       dto.Provider.Github,
-      `maintainer-${Fixture.uuid()}@example.com`,
+      `maintainer-${Fixture.uuid()}@example.com`
     );
     const user = await userRepo.insert(Fixture.createUser(thirdPartyUser));
     const developerProfile = await developerProfileRepo.create(
       user.id,
-      thirdPartyUser.email ?? `maintainer-${Fixture.uuid()}@example.com`,
+      thirdPartyUser.email ?? `maintainer-${Fixture.uuid()}@example.com`
     );
 
     await developerProjectItemRepo.create(
@@ -53,51 +53,40 @@ describe("ProjectController.getProjectDetails", () => {
       [] as dto.DeveloperRoleType[],
       undefined,
       [],
-      [] as dto.ProjectCategory[],
+      [] as dto.ProjectCategory[]
     );
 
     return { ownerId, repositoryId, repositoryItem, developerProfile };
   }
 
   it("returns repository project details including maintainers", async () => {
-    const { ownerId, repositoryId, repositoryItem, developerProfile } =
-      await seedRepositoryProject();
+    const { ownerId, repositoryId, repositoryItem, developerProfile } = await seedRepositoryProject();
 
-    const response = await request(app).get(
-      `/api/v1/projects/repos/${ownerId.login}/${repositoryId.name}/details`,
-    );
+    const response = await request(app).get(`/api/v1/projects/repos/${ownerId.login}/${repositoryId.name}/details`);
 
     expect(response.status).toBe(StatusCodes.OK);
     const payload = response.body.success as dto.GetProjectDetailsResponse;
 
     expect(payload.project.projectItem.id).toEqual(repositoryItem.id);
-    expect(payload.project.projectItem.projectItemType).toBe(
-      dto.ProjectItemType.GITHUB_REPOSITORY,
-    );
+    expect(payload.project.projectItem.projectItemType).toBe(dto.ProjectItemType.GITHUB_REPOSITORY);
     expect(payload.service).toEqual([]);
     expect(payload.serviceOfferings).toEqual({});
 
     const developerKeys = Object.keys(payload.developers ?? {});
     expect(developerKeys).toContain(developerProfile.id);
-    const developer =
-      payload.developers[developerProfile.id] ??
-      payload.developers[developerKeys[0]];
+    const developer = payload.developers[developerProfile.id] ?? payload.developers[developerKeys[0]];
     expect(developer.project).toBeDefined();
   });
 
   it("returns owner project details when repository slug is absent", async () => {
     const { ownerId, developerProfile } = await seedRepositoryProject();
 
-    const response = await request(app).get(
-      `/api/v1/projects/owners/${ownerId.login}/details`,
-    );
+    const response = await request(app).get(`/api/v1/projects/owners/${ownerId.login}/details`);
 
     expect(response.status).toBe(StatusCodes.OK);
     const payload = response.body.success as dto.GetProjectDetailsResponse;
 
-    expect(payload.project.projectItem.projectItemType).toBe(
-      dto.ProjectItemType.GITHUB_OWNER,
-    );
+    expect(payload.project.projectItem.projectItemType).toBe(dto.ProjectItemType.GITHUB_OWNER);
     expect(Object.keys(payload.developers)).toContain(developerProfile.id);
     expect(payload.serviceOfferings).toBeDefined();
   });

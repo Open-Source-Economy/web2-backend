@@ -16,10 +16,7 @@ export class secureToken {
    *
    * @returns token and the expiration date
    */
-  static generate(
-    data: TokenData,
-    setExpiration: boolean = false,
-  ): [string, Date] {
+  static generate(data: TokenData, setExpiration: boolean = false): [string, Date] {
     const expiresInSeconds = config.jwt.accessExpirationMinutes * 60;
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
 

@@ -10,11 +10,9 @@ import {
   userRepositoryRepo,
   passwordResetTokenRepo,
 } from "../../db";
-import { config, logger } from "../../config";
 import { ApiError } from "../../errors";
 import { secureToken } from "../../utils";
 import { MailService } from "../../services/mail.service";
-import { bridgeUser, bridgeRepositoryId } from "../../utils/type-bridge";
 import * as dto from "@open-source-economy/api-types";
 
 const mailService = new MailService();
@@ -35,9 +33,7 @@ async function getAuthInfo(user: dto.User): Promise<any> {
     companyRole = role;
   }
 
-  const userRepos: dto.UserRepository[] = await userRepositoryRepo.getAll(
-    user.id,
-  );
+  const userRepos: dto.UserRepository[] = await userRepositoryRepo.getAll(user.id);
   const repositories = userRepos.map((ur: dto.UserRepository) => {
     const info: dto.RepositoryInfo = {
       role: ur.repositoryUserRole,
@@ -47,10 +43,7 @@ async function getAuthInfo(user: dto.User): Promise<any> {
     return [ur.repositoryId, info];
   });
 
-  const serviceTokens = await planAndCreditsRepo.getAvailableCredit(
-    user.id,
-    company?.id,
-  );
+  const serviceTokens = await planAndCreditsRepo.getAvailableCredit(user.id, company?.id);
 
   return {
     authenticatedUser: {
@@ -95,8 +88,7 @@ export const authRouter = s.router(contract.auth, {
       };
     }
 
-    const provider =
-      (user as any).provider ?? (user as any).data?.provider ?? undefined;
+    const provider = (user as any).provider ?? (user as any).data?.provider ?? undefined;
     return {
       status: 200 as const,
       body: { exists: true, provider } as any,
@@ -127,11 +119,7 @@ export const authRouter = s.router(contract.auth, {
 
     const resetToken = await passwordResetTokenRepo.getByToken(token);
 
-    if (
-      !resetToken ||
-      resetToken.hasBeenUsed ||
-      resetToken.expiresAt < new Date()
-    ) {
+    if (!resetToken || resetToken.hasBeenUsed || resetToken.expiresAt < new Date()) {
       throw ApiError.badRequest("Invalid or expired token");
     }
 
@@ -147,8 +135,7 @@ export const authRouter = s.router(contract.auth, {
   },
 
   getCompanyUserInviteInfo: async ({ query }) => {
-    const companyUserPermissionToken =
-      await companyUserPermissionTokenRepo.getByToken(query.token);
+    const companyUserPermissionToken = await companyUserPermissionTokenRepo.getByToken(query.token);
 
     return {
       status: 200 as const,
@@ -160,15 +147,13 @@ export const authRouter = s.router(contract.auth, {
   },
 
   getRepositoryUserInviteInfo: async ({ query }) => {
-    const repositoryUserPermissionToken =
-      await repositoryUserPermissionTokenRepo.getByToken(query.token);
+    const repositoryUserPermissionToken = await repositoryUserPermissionTokenRepo.getByToken(query.token);
 
     return {
       status: 200 as const,
       body: {
         userName: repositoryUserPermissionToken?.userName,
-        userGithubOwnerLogin:
-          repositoryUserPermissionToken?.userGithubOwnerLogin,
+        userGithubOwnerLogin: repositoryUserPermissionToken?.userGithubOwnerLogin,
         repositoryId: repositoryUserPermissionToken?.repositoryId,
       } as any,
     };

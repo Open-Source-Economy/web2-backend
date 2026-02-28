@@ -11,10 +11,10 @@ User-submitted data must pass full validation. All required fields enforced.
 ```typescript
 // API contract for creating a developer profile
 interface CreateDeveloperProfileBody {
-  displayName: string;       // Required
-  bio: string;               // Required
-  hourlyRate: number;         // Required
-  currency: Currency;         // Required
+  displayName: string; // Required
+  bio: string; // Required
+  hourlyRate: number; // Required
+  currency: Currency; // Required
 }
 ```
 
@@ -27,8 +27,8 @@ Data returned from the database or synced from external providers may have nulla
 interface DeveloperProfileResponse {
   id: string;
   displayName: string;
-  bio: string | null;         // May not be set yet
-  hourlyRate: number | null;  // May not be set yet
+  bio: string | null; // May not be set yet
+  hourlyRate: number | null; // May not be set yet
   githubLogin: string | null; // From GitHub sync, may be absent
 }
 ```
@@ -57,7 +57,7 @@ function mapDeveloperProfile(row: any): DeveloperProfileResponse {
   return {
     id: row.id,
     displayName: row.display_name,
-    bio: row.bio ?? null,                    // NULL stays null
+    bio: row.bio ?? null, // NULL stays null
     hourlyRate: row.hourly_rate ?? null,
     githubLogin: row.github_login ?? null,
   };
@@ -68,7 +68,7 @@ function mapDeveloperProfile(row: any): DeveloperProfileResponse {
   return {
     id: row.id,
     displayName: row.display_name,
-    bio: row.bio || "",              // Hiding null behind empty string
+    bio: row.bio || "", // Hiding null behind empty string
     hourlyRate: row.hourly_rate || 0, // Hiding null behind zero
   };
 }

@@ -7,9 +7,7 @@ import { ApiError } from "../../errors";
 
 export const miscRouter = s.router(contract.misc, {
   subscribeNewsletter: async ({ body }) => {
-    const existingSubscription = await newsletterSubscriptionRepo.getByEmail(
-      body.email,
-    );
+    const existingSubscription = await newsletterSubscriptionRepo.getByEmail(body.email);
 
     if (!existingSubscription) {
       const subscription = { email: body.email } as any;
@@ -17,7 +15,7 @@ export const miscRouter = s.router(contract.misc, {
 
       mailService.sendWebsiteAdminNotification(
         "New newsletter subscription",
-        `${body.email} just subscribed to the newsletter`,
+        `${body.email} just subscribed to the newsletter`
       );
     }
 
@@ -28,9 +26,9 @@ export const miscRouter = s.router(contract.misc, {
     try {
       await mailService.sendContactFormEmail(body);
       return { status: 201 as const, body: {} };
-    } catch (error) {
+    } catch (_error) {
       throw ApiError.internal(
-        "Failed to send contact form. Please try again or email us directly at contact@open-source-economy.com",
+        "Failed to send contact form. Please try again or email us directly at contact@open-source-economy.com"
       );
     }
   },

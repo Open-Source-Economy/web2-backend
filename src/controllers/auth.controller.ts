@@ -16,7 +16,6 @@ import {
   companyRepo,
   planAndCreditsRepo,
   companyUserPermissionTokenRepo,
-  getUserRepository,
   repositoryUserPermissionTokenRepo,
   userCompanyRepo,
   userRepo,
@@ -31,85 +30,45 @@ const mailService = new MailService();
 
 export interface AuthController {
   status(
-    req: Request<
-      dto.GetStatusParams,
-      dto.GetStatusResponse,
-      {},
-      dto.GetStatusQuery
-    >,
-    res: Response<dto.GetStatusResponse>,
+    req: Request<dto.GetStatusParams, dto.GetStatusResponse, {}, dto.GetStatusQuery>,
+    res: Response<dto.GetStatusResponse>
   ): Promise<void>;
 
   verifyCompanyToken(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
     res: Response<dto.RegisterResponse>,
-    next: NextFunction,
+    next: NextFunction
   ): Promise<void>;
 
   registerAsCompany(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
-    res: Response<dto.RegisterResponse>,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.RegisterResponse>
   ): Promise<void>;
 
   verifyRepositoryToken(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
     res: Response<dto.RegisterResponse>,
-    next: NextFunction,
+    next: NextFunction
   ): Promise<void>;
 
   registerForRepository(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
-    res: Response<dto.RegisterResponse>,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.RegisterResponse>
   ): Promise<void>;
 
   register(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
-    res: Response<dto.RegisterResponse>,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.RegisterResponse>
   ): Promise<void>;
 
   login(
-    req: Request<
-      dto.LoginParams,
-      dto.LoginResponse,
-      dto.LoginBody,
-      dto.LoginQuery
-    >,
-    res: Response<dto.LoginResponse>,
+    req: Request<dto.LoginParams, dto.LoginResponse, dto.LoginBody, dto.LoginQuery>,
+    res: Response<dto.LoginResponse>
   ): Promise<void>;
 
   logout(
-    req: Request<
-      dto.LogoutParams,
-      dto.LogoutResponse,
-      dto.LogoutBody,
-      dto.LogoutQuery
-    >,
-    res: Response<dto.LogoutResponse>,
+    req: Request<dto.LogoutParams, dto.LogoutResponse, dto.LogoutBody, dto.LogoutQuery>,
+    res: Response<dto.LogoutResponse>
   ): Promise<void>;
 
   getCompanyUserInviteInfo(
@@ -119,7 +78,7 @@ export interface AuthController {
       {},
       dto.GetCompanyUserInviteInfoQuery
     >,
-    res: Response<dto.GetCompanyUserInviteInfoResponse>,
+    res: Response<dto.GetCompanyUserInviteInfoResponse>
   ): Promise<void>;
 
   getRepositoryUserInviteInfo(
@@ -129,32 +88,22 @@ export interface AuthController {
       {},
       dto.GetRepositoryUserInviteInfoQuery
     >,
-    res: Response<dto.GetRepositoryUserInviteInfoResponse>,
+    res: Response<dto.GetRepositoryUserInviteInfoResponse>
   ): Promise<void>;
 
   checkEmail(
-    req: Request<
-      dto.CheckEmailParams,
-      dto.CheckEmailResponse,
-      {},
-      dto.CheckEmailQuery
-    >,
-    res: Response<dto.CheckEmailResponse>,
+    req: Request<dto.CheckEmailParams, dto.CheckEmailResponse, {}, dto.CheckEmailQuery>,
+    res: Response<dto.CheckEmailResponse>
   ): Promise<void>;
 
   forgotPassword(
     req: Request<{}, dto.ForgotPasswordResponse, dto.ForgotPasswordBody, {}>,
-    res: Response<dto.ForgotPasswordResponse>,
+    res: Response<dto.ForgotPasswordResponse>
   ): Promise<void>;
 
   resetPassword(
-    req: Request<
-      {},
-      dto.ResetPasswordResponse,
-      dto.ResetPasswordBody,
-      dto.ResetPasswordQuery
-    >,
-    res: Response<dto.ResetPasswordResponse>,
+    req: Request<{}, dto.ResetPasswordResponse, dto.ResetPasswordBody, dto.ResetPasswordQuery>,
+    res: Response<dto.ResetPasswordResponse>
   ): Promise<void>;
 }
 
@@ -162,9 +111,7 @@ export interface AuthController {
 const AuthHelpers = {
   // TODO: probably put info of the company in the session, to to much avoid request to the DB.
   //       Now, it is not the best implementation, but it works for now
-  async getCompanyRoles(
-    userId: UserId,
-  ): Promise<[Company | null, CompanyUserRole | null]> {
+  async getCompanyRoles(userId: UserId): Promise<[Company | null, CompanyUserRole | null]> {
     let company: Company | null = null;
     let companyRole: CompanyUserRole | null = null;
 
@@ -180,9 +127,7 @@ const AuthHelpers = {
     return [company, companyRole];
   },
 
-  async getRepositoryInfos(
-    userId: UserId,
-  ): Promise<[RepositoryId, dto.RepositoryInfo][]> {
+  async getRepositoryInfos(userId: UserId): Promise<[RepositoryId, dto.RepositoryInfo][]> {
     const userRepos: UserRepository[] = await userRepositoryRepo.getAll(userId);
     return userRepos.map((userRepo) => {
       const info: dto.RepositoryInfo = {
@@ -197,10 +142,7 @@ const AuthHelpers = {
   async getAuthInfo(user: User): Promise<dto.GetStatusResponse> {
     const [company, companyRole] = await AuthHelpers.getCompanyRoles(user.id);
     const repositories = await AuthHelpers.getRepositoryInfos(user.id);
-    const serviceTokens = await planAndCreditsRepo.getAvailableCredit(
-      user.id,
-      company?.id,
-    );
+    const serviceTokens = await planAndCreditsRepo.getAvailableCredit(user.id, company?.id);
 
     return {
       authenticatedUser: {
@@ -216,18 +158,11 @@ const AuthHelpers = {
 
 export const AuthController: AuthController = {
   async status(
-    req: Request<
-      dto.GetStatusParams,
-      dto.GetStatusResponse,
-      {},
-      dto.GetStatusQuery
-    >,
-    res: Response<dto.GetStatusResponse>,
+    req: Request<dto.GetStatusParams, dto.GetStatusResponse, {}, dto.GetStatusQuery>,
+    res: Response<dto.GetStatusResponse>
   ) {
     if (req.isAuthenticated() && req.user) {
-      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(
-        req.user as User,
-      );
+      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(req.user as User);
       res.status(StatusCodes.OK).send(response); // TODO: json instead of send ?
     } else {
       const response: dto.GetStatusResponse = {
@@ -238,33 +173,23 @@ export const AuthController: AuthController = {
   },
 
   async verifyCompanyToken(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
     res: Response<dto.RegisterResponse>,
-    next: NextFunction,
+    next: NextFunction
   ) {
     const token = req.query.companyToken;
 
     if (token) {
-      const companyUserPermissionToken =
-        await companyUserPermissionTokenRepo.getByToken(token);
+      const companyUserPermissionToken = await companyUserPermissionTokenRepo.getByToken(token);
       const tokenData = await secureToken.verify(token);
 
       const error = ApiError.badRequest("Token expired or invalid");
       if (companyUserPermissionToken === null) next(error);
       else if (companyUserPermissionToken.hasBeenUsed) next(error);
-      else if (companyUserPermissionToken?.userEmail !== req.body.email)
-        next(error);
+      else if (companyUserPermissionToken?.userEmail !== req.body.email) next(error);
       else if (companyUserPermissionToken?.userEmail !== tokenData.email) {
         next(ApiError.internal("Tokens are not matching"));
-      } else if (
-        new Date(companyUserPermissionToken.expiresAt as string) < new Date()
-      )
-        next(error);
+      } else if (new Date(companyUserPermissionToken.expiresAt as string) < new Date()) next(error);
       else {
         // @ts-ignore
         req.companyUserPermissionToken = companyUserPermissionToken;
@@ -276,13 +201,8 @@ export const AuthController: AuthController = {
   },
 
   async registerAsCompany(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
-    res: Response<dto.RegisterResponse>,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.RegisterResponse>
   ) {
     if (req.isAuthenticated() && req.user) {
       // @ts-ignore
@@ -292,17 +212,13 @@ export const AuthController: AuthController = {
       await userCompanyRepo.insert(
         req.user.id,
         companyUserPermissionToken.companyId,
-        companyUserPermissionToken.companyUserRole,
+        companyUserPermissionToken.companyUserRole
       );
 
       if (companyUserPermissionToken.token) {
-        await companyUserPermissionTokenRepo.use(
-          companyUserPermissionToken.token,
-        );
+        await companyUserPermissionTokenRepo.use(companyUserPermissionToken.token);
       }
-      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(
-        req.user as User,
-      );
+      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(req.user as User);
       res.status(StatusCodes.CREATED).send(response);
     } else {
       res.sendStatus(StatusCodes.UNAUTHORIZED);
@@ -310,27 +226,18 @@ export const AuthController: AuthController = {
   },
 
   async verifyRepositoryToken(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
     res: Response<dto.RegisterResponse>,
-    next: NextFunction,
+    next: NextFunction
   ) {
     const token = req.query.repositoryToken;
     if (token) {
-      const repositoryUserPermissionToken =
-        await repositoryUserPermissionTokenRepo.getByToken(token);
-      const tokenData = await secureToken.verify(token);
+      const repositoryUserPermissionToken = await repositoryUserPermissionTokenRepo.getByToken(token);
+      const _tokenData = await secureToken.verify(token);
 
       const error = ApiError.badRequest("Token expired or invalid");
       if (repositoryUserPermissionToken === null) next(error);
-      else if (
-        new Date(repositoryUserPermissionToken.expiresAt as string) < new Date()
-      )
-        next(error);
+      else if (new Date(repositoryUserPermissionToken.expiresAt as string) < new Date()) next(error);
       else {
         // @ts-ignore
         req.repositoryUserPermissionToken = repositoryUserPermissionToken;
@@ -342,23 +249,17 @@ export const AuthController: AuthController = {
   },
 
   async registerForRepository(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
-    res: Response<dto.RegisterResponse>,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.RegisterResponse>
   ) {
     // User no longer has .data property; access provider data differently
     const user = req.user as any;
     const userId = req.user?.id!; // TODO: improve
 
     // TODO: could be not only one
-    const repositoryUserPermissionToken =
-      await repositoryUserPermissionTokenRepo.getByUserGithubOwnerLogin(
-        user?.providerData?.owner?.id?.login ?? user?.githubLogin,
-      );
+    const repositoryUserPermissionToken = await repositoryUserPermissionTokenRepo.getByUserGithubOwnerLogin(
+      user?.providerData?.owner?.id?.login ?? user?.githubLogin
+    );
 
     if (repositoryUserPermissionToken) {
       const userRepository: UserRepository = {
@@ -372,29 +273,18 @@ export const AuthController: AuthController = {
       await userRepositoryRepo.create(userRepository);
 
       if (repositoryUserPermissionToken.token) {
-        await repositoryUserPermissionTokenRepo.use(
-          repositoryUserPermissionToken.token,
-        );
+        await repositoryUserPermissionTokenRepo.use(repositoryUserPermissionToken.token);
       }
     }
-    res.redirect(
-      ensureNoEndingTrailingSlash(config.frontEndUrl) + "/developer-onboarding",
-    );
+    res.redirect(ensureNoEndingTrailingSlash(config.frontEndUrl) + "/developer-onboarding");
   },
 
   async register(
-    req: Request<
-      dto.RegisterParams,
-      dto.RegisterResponse,
-      dto.RegisterBody,
-      dto.RegisterQuery
-    >,
-    res: Response<dto.RegisterResponse>,
+    req: Request<dto.RegisterParams, dto.RegisterResponse, dto.RegisterBody, dto.RegisterQuery>,
+    res: Response<dto.RegisterResponse>
   ) {
     if (req.isAuthenticated() && req.user) {
-      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(
-        req.user as User,
-      );
+      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(req.user as User);
       res.status(StatusCodes.CREATED).send(response);
     } else {
       res.sendStatus(StatusCodes.UNAUTHORIZED);
@@ -402,18 +292,11 @@ export const AuthController: AuthController = {
   },
 
   async login(
-    req: Request<
-      dto.LoginParams,
-      dto.LoginResponse,
-      dto.LoginBody,
-      dto.LoginQuery
-    >,
-    res: Response<dto.LoginResponse>,
+    req: Request<dto.LoginParams, dto.LoginResponse, dto.LoginBody, dto.LoginQuery>,
+    res: Response<dto.LoginResponse>
   ) {
     if (req.isAuthenticated() && req.user) {
-      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(
-        req.user as User,
-      );
+      const response: dto.GetStatusResponse = await AuthHelpers.getAuthInfo(req.user as User);
       res.status(StatusCodes.OK).send(response); // TODO: json instead of send ?
     } else {
       res.sendStatus(StatusCodes.UNAUTHORIZED);
@@ -421,13 +304,8 @@ export const AuthController: AuthController = {
   },
 
   async logout(
-    req: Request<
-      dto.LogoutParams,
-      dto.LogoutResponse,
-      dto.LogoutBody,
-      dto.LogoutQuery
-    >,
-    res: Response<dto.LogoutResponse>,
+    req: Request<dto.LogoutParams, dto.LogoutResponse, dto.LogoutBody, dto.LogoutQuery>,
+    res: Response<dto.LogoutResponse>
   ) {
     if (!req.user) {
       res.status(StatusCodes.OK).send({});
@@ -454,7 +332,7 @@ export const AuthController: AuthController = {
       {},
       dto.GetCompanyUserInviteInfoQuery
     >,
-    res: Response<dto.GetCompanyUserInviteInfoResponse>,
+    res: Response<dto.GetCompanyUserInviteInfoResponse>
   ) {
     const query: dto.GetCompanyUserInviteInfoQuery = req.query;
 
@@ -475,7 +353,7 @@ export const AuthController: AuthController = {
       {},
       dto.GetRepositoryUserInviteInfoQuery
     >,
-    res: Response<dto.GetRepositoryUserInviteInfoResponse>,
+    res: Response<dto.GetRepositoryUserInviteInfoResponse>
   ) {
     const query: dto.GetRepositoryUserInviteInfoQuery = req.query;
 
@@ -491,13 +369,8 @@ export const AuthController: AuthController = {
   },
 
   async checkEmail(
-    req: Request<
-      dto.CheckEmailParams,
-      dto.CheckEmailResponse,
-      {},
-      dto.CheckEmailQuery
-    >,
-    res: Response<dto.CheckEmailResponse>,
+    req: Request<dto.CheckEmailParams, dto.CheckEmailResponse, {}, dto.CheckEmailQuery>,
+    res: Response<dto.CheckEmailResponse>
   ) {
     const query: dto.CheckEmailQuery = req.query;
     const { email } = query;
@@ -532,7 +405,7 @@ export const AuthController: AuthController = {
 
   async forgotPassword(
     req: Request<{}, dto.ForgotPasswordResponse, dto.ForgotPasswordBody, {}>,
-    res: Response<dto.ForgotPasswordResponse>,
+    res: Response<dto.ForgotPasswordResponse>
   ) {
     const { email } = req.body;
     const user = await userRepo.findOne(email);
@@ -555,13 +428,8 @@ export const AuthController: AuthController = {
   },
 
   async resetPassword(
-    req: Request<
-      {},
-      dto.ResetPasswordResponse,
-      dto.ResetPasswordBody,
-      dto.ResetPasswordQuery
-    >,
-    res: Response<dto.ResetPasswordResponse>,
+    req: Request<{}, dto.ResetPasswordResponse, dto.ResetPasswordBody, dto.ResetPasswordQuery>,
+    res: Response<dto.ResetPasswordResponse>
   ) {
     const { token } = req.query;
     const { password } = req.body;
@@ -569,11 +437,7 @@ export const AuthController: AuthController = {
     const resetToken = await passwordResetTokenRepo.getByToken(token);
 
     // Validate token existence and expiry
-    if (
-      !resetToken ||
-      resetToken.hasBeenUsed ||
-      resetToken.expiresAt < new Date()
-    ) {
+    if (!resetToken || resetToken.hasBeenUsed || resetToken.expiresAt < new Date()) {
       throw ApiError.badRequest("Invalid or expired token");
     }
 

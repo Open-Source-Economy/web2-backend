@@ -11,7 +11,6 @@ import {
   RepositoryId,
 } from "@open-source-economy/api-types";
 import fs from "fs";
-import { logger } from "../../../config";
 import { issueRepo, ownerRepo, repositoryRepo } from "../../../db";
 
 // Local parsing helpers (replace the old static fromGithubApi methods)
@@ -21,8 +20,7 @@ function parseOwnerFromGithubApi(json: any): Owner {
   }
   return {
     id: { login: json.login, githubId: json.id } as OwnerId,
-    type:
-      json.type === "Organization" ? OwnerType.Organization : OwnerType.User,
+    type: json.type === "Organization" ? OwnerType.Organization : OwnerType.User,
     htmlUrl: json.html_url,
     avatarUrl: json.avatar_url,
     followers: json.followers,
@@ -96,9 +94,7 @@ describe("IssueRepository", () => {
         try {
           await issueRepo.createOrUpdate(issue);
           // If the insertion doesn't throw, fail the test
-          fail(
-            "Expected foreign key constraint violation, but no error was thrown.",
-          );
+          fail("Expected foreign key constraint violation, but no error was thrown.");
         } catch (error: any) {
           // Check if the error is related to foreign key constraint
           expect(error.message).toMatch(/violates foreign key constraint/);
@@ -106,20 +102,11 @@ describe("IssueRepository", () => {
       });
 
       it("should work with real GitHub data", async () => {
-        const ownerData = fs.readFileSync(
-          `src/__tests__/__data__/github/owner-org.json`,
-          "utf8",
-        );
+        const ownerData = fs.readFileSync(`src/__tests__/__data__/github/owner-org.json`, "utf8");
 
-        const repoData = fs.readFileSync(
-          `src/__tests__/__data__/github/repository.json`,
-          "utf8",
-        );
+        const repoData = fs.readFileSync(`src/__tests__/__data__/github/repository.json`, "utf8");
 
-        const issueData = fs.readFileSync(
-          `src/__tests__/__data__/github/issue.json`,
-          "utf8",
-        );
+        const issueData = fs.readFileSync(`src/__tests__/__data__/github/issue.json`, "utf8");
 
         const ownerJson = JSON.parse(ownerData);
         const repoJson = JSON.parse(repoData);

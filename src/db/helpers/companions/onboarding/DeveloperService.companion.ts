@@ -9,20 +9,15 @@ import {
 import { ValidationError, Validator } from "../Validator";
 
 export namespace DeveloperServiceCompanion {
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): DeveloperService | ValidationError {
+  export function fromBackend(row: any, table_prefix: string = ""): DeveloperService | ValidationError {
     const validator = new Validator(row);
     const id = validator.requiredString(`${table_prefix}id`);
-    const developerProfileId = validator.requiredString(
-      `${table_prefix}developer_profile_id`,
-    );
+    const developerProfileId = validator.requiredString(`${table_prefix}developer_profile_id`);
     const serviceId = validator.requiredString(`${table_prefix}service_id`);
     const hourlyRate = validator.optionalNumber(`${table_prefix}hourly_rate`);
     const responseTimeHours = validator.optionalEnum(
       `${table_prefix}response_time_type`,
-      Object.values(ResponseTimeType) as ResponseTimeType[],
+      Object.values(ResponseTimeType) as ResponseTimeType[]
     );
     const comment = validator.optionalString(`${table_prefix}comment`);
     const createdAt = validator.requiredDate(`${table_prefix}created_at`);

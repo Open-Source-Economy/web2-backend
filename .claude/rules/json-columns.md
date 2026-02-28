@@ -2,12 +2,12 @@
 
 ## When to Use JSON vs Relations
 
-| Use JSON | Use a Relation Table |
-|----------|---------------------|
+| Use JSON                                  | Use a Relation Table                     |
+| ----------------------------------------- | ---------------------------------------- |
 | Value objects (no identity, no lifecycle) | Entities with their own ID and lifecycle |
-| Always read/written as a group | Queried/filtered independently |
-| Schema rarely changes | Schema evolves with the domain |
-| No foreign keys needed | Has relationships to other tables |
+| Always read/written as a group            | Queried/filtered independently           |
+| Schema rarely changes                     | Schema evolves with the domain           |
+| No foreign keys needed                    | Has relationships to other tables        |
 
 ```sql
 -- JSON is appropriate: metadata blob, always read/written together

@@ -9,7 +9,7 @@ import {
   projectItemRepo,
   projectRepo,
 } from "../../db";
-import { DeveloperProfileService, githubSyncService } from "../../services";
+import { DeveloperProfileService } from "../../services";
 import { pool } from "../../dbPool";
 import { requireAuth, getAuthUser } from "../../middlewares/auth/ts-rest-auth";
 import { ApiError } from "../../errors";
@@ -30,9 +30,7 @@ export const projectsRouter = s.router(contract.projects, {
 
   getProject: async ({ params }) => {
     const projectId = (
-      params.repo
-        ? { ownerId: { login: params.owner }, name: params.repo }
-        : { login: params.owner }
+      params.repo ? { ownerId: { login: params.owner }, name: params.repo } : { login: params.owner }
     ) as any;
     const project = await projectRepo.getById(projectId);
     if (!project) {
@@ -45,10 +43,7 @@ export const projectsRouter = s.router(contract.projects, {
   },
 
   getProjectDetails: async ({ params }) => {
-    const projectItemDetails = await projectItemRepo.getBySlugWithDetails(
-      params.owner,
-      params.repo,
-    );
+    const projectItemDetails = await projectItemRepo.getBySlugWithDetails(params.owner, params.repo);
 
     if (!projectItemDetails) {
       throw ApiError.notFound("Project not found");
@@ -59,28 +54,19 @@ export const projectsRouter = s.router(contract.projects, {
     const targetItem = projectItemDetails.projectItem;
     const targetItemId = targetItem.id;
     // sourceIdentifier is now a string; get owner/repo from project details
-    const ownerLoginLower =
-      projectItemDetails.owner?.id.login.toLowerCase() ?? undefined;
-    const repositoryNameLower =
-      projectItemDetails.repository?.id.name.toLowerCase() ?? undefined;
+    const ownerLoginLower = projectItemDetails.owner?.id.login.toLowerCase() ?? undefined;
+    const repositoryNameLower = projectItemDetails.repository?.id.name.toLowerCase() ?? undefined;
 
     const isProjectRelevant = (projectItem: dto.ProjectItem): boolean => {
       if (projectItem.id === targetItemId) return true;
       const identifier = projectItem.sourceIdentifier;
-      if (
-        ownerLoginLower &&
-        projectItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER
-      ) {
+      if (ownerLoginLower && projectItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER) {
         return identifier.toLowerCase() === ownerLoginLower;
       }
-      if (
-        ownerLoginLower &&
-        projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY
-      ) {
+      if (ownerLoginLower && projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY) {
         const parts = identifier.split("/");
         if (parts.length >= 2 && parts[0].toLowerCase() === ownerLoginLower) {
-          if (targetItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER)
-            return true;
+          if (targetItem.projectItemType === dto.ProjectItemType.GITHUB_OWNER) return true;
           if (!repositoryNameLower) return false;
           return parts[1].toLowerCase() === repositoryNameLower;
         }
@@ -89,21 +75,14 @@ export const projectsRouter = s.router(contract.projects, {
     };
 
     const dedupedDevelopers = Array.from(
-      new Map(
-        projectItemDetails.developers.map((developer) => [
-          developer.developerProfile.id,
-          developer,
-        ]),
-      ).values(),
+      new Map(projectItemDetails.developers.map((developer) => [developer.developerProfile.id, developer])).values()
     );
 
     const hydratedDevelopers = await Promise.all(
       dedupedDevelopers.map(async (developer) => ({
         developer,
-        fullProfile: await developerProfileService.buildFullDeveloperProfile(
-          developer.developerProfile,
-        ),
-      })),
+        fullProfile: await developerProfileService.buildFullDeveloperProfile(developer.developerProfile),
+      }))
     );
 
     const developersResponse: Record<string, dto.ProjectDeveloperProfile> = {};
@@ -111,8 +90,7 @@ export const projectsRouter = s.router(contract.projects, {
     const serviceOfferingsMap = new Map<string, dto.ProjectServiceOffering[]>();
 
     for (const { developer, fullProfile } of hydratedDevelopers) {
-      const profileId =
-        fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
+      const profileId = fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
 
       const sortedProjects = [...fullProfile.projects].sort((a, b) => {
         const aRelevant = isProjectRelevant(a.projectItem);
@@ -120,14 +98,9 @@ export const projectsRouter = s.router(contract.projects, {
         if (aRelevant && bRelevant) {
           const aIsTarget = a.projectItem.id === targetItemId;
           const bIsTarget = b.projectItem.id === targetItemId;
-          if (aIsTarget || bIsTarget)
-            return aIsTarget === bIsTarget ? 0 : aIsTarget ? -1 : 1;
-          const aIsRepository =
-            a.projectItem.projectItemType ===
-            dto.ProjectItemType.GITHUB_REPOSITORY;
-          const bIsRepository =
-            b.projectItem.projectItemType ===
-            dto.ProjectItemType.GITHUB_REPOSITORY;
+          if (aIsTarget || bIsTarget) return aIsTarget === bIsTarget ? 0 : aIsTarget ? -1 : 1;
+          const aIsRepository = a.projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY;
+          const bIsRepository = b.projectItem.projectItemType === dto.ProjectItemType.GITHUB_REPOSITORY;
           if (aIsRepository !== bIsRepository) return aIsRepository ? -1 : 1;
           return 0;
         }
@@ -148,20 +121,17 @@ export const projectsRouter = s.router(contract.projects, {
         const developerService = serviceEntry.developerService;
         if (!developerService) continue;
         const isLinkedToProject = developerService.developerProjectItemIds.some(
-          (dpiId) => dpiId === relevantProjectItemId,
+          (dpiId) => dpiId === relevantProjectItemId
         );
         if (!isLinkedToProject) continue;
         const serviceId = serviceEntry.service.id;
         developerServices[serviceId] = developerService;
         servicesMap.set(serviceId, serviceEntry.service);
 
-        const developerProfileId =
-          fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
+        const developerProfileId = fullProfile.profileEntry?.profile.id ?? developer.developerProfile.id;
         const offering: dto.ProjectServiceOffering = {};
         if (developerService.responseTimeHours) {
-          offering.responseTimeHours = [
-            [developerService.responseTimeHours, developerProfileId],
-          ];
+          offering.responseTimeHours = [[developerService.responseTimeHours, developerProfileId]];
         }
         const offerings = serviceOfferingsMap.get(serviceId);
         if (offerings) offerings.push(offering);
@@ -185,9 +155,7 @@ export const projectsRouter = s.router(contract.projects, {
           repository: projectItemDetails.repository,
         },
         developers: developersResponse,
-        service: Array.from(servicesMap.values()).sort((a, b) =>
-          a.name.localeCompare(b.name),
-        ),
+        service: Array.from(servicesMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
         serviceOfferings: Object.fromEntries(serviceOfferingsMap.entries()),
       } as any,
     };
@@ -195,18 +163,9 @@ export const projectsRouter = s.router(contract.projects, {
 
   getProjectItemsWithDetails: async ({ query }) => {
     const [repositories, owners, urls, stats] = await Promise.all([
-      projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_REPOSITORY,
-        query.repositories as any,
-      ),
-      projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.GITHUB_OWNER,
-        query.owners as any,
-      ),
-      projectItemRepo.getAllWithDetails(
-        dto.ProjectItemType.URL,
-        query.urls as any,
-      ),
+      projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_REPOSITORY, query.repositories as any),
+      projectItemRepo.getAllWithDetails(dto.ProjectItemType.GITHUB_OWNER, query.owners as any),
+      projectItemRepo.getAllWithDetails(dto.ProjectItemType.URL, query.urls as any),
       projectItemRepo.getProjectItemsStats(),
     ]);
 
@@ -218,10 +177,8 @@ export const projectsRouter = s.router(contract.projects, {
 
   getCampaign: async ({ params }) => {
     // Campaign logic - delegate to existing repo
-    const projectId = (
-      params.repo
-        ? { ownerId: { login: params.owner }, name: params.repo }
-        : { login: params.owner }
+    const _projectId = (
+      params.repo ? { ownerId: { login: params.owner }, name: params.repo } : { login: params.owner }
     ) as any;
     // TODO: Implement campaign endpoint
     throw ApiError.notFound("Campaign not found");
@@ -252,7 +209,7 @@ export const projectsRouter = s.router(contract.projects, {
   fundIssue: {
     middleware: [requireAuth],
     handler: async ({ params, body, req }) => {
-      const user = getAuthUser(req);
+      const _user = getAuthUser(req);
       const ownerId = { login: params.owner } as dto.OwnerId;
       const repositoryId = { ownerId, name: params.repo } as dto.RepositoryId;
       const issue = await issueRepo.getById({
@@ -262,20 +219,13 @@ export const projectsRouter = s.router(contract.projects, {
       if (!issue) {
         throw ApiError.notFound("Issue not found");
       }
-      const companyId = body.companyId
-        ? (body.companyId as dto.CompanyId)
-        : undefined;
+      const companyId = body.companyId ? (body.companyId as dto.CompanyId) : undefined;
       const creditAmount = body.creditAmount;
       const managedIssue = await managedIssueRepo.getByIssueId(issue.id);
       if (managedIssue?.state === dto.ManagedIssueState.REJECTED) {
-        throw ApiError.forbidden(
-          "Cannot fund an issue where funding was rejected before.",
-        );
+        throw ApiError.forbidden("Cannot fund an issue where funding was rejected before.");
       }
-      const availableCredit = await planAndCreditsRepo.getAvailableCredit(
-        req.user!.id,
-        companyId,
-      );
+      const availableCredit = await planAndCreditsRepo.getAvailableCredit(req.user!.id, companyId);
       if (creditAmount > availableCredit) {
         throw ApiError.paymentRequired("Not enough credits");
       }
@@ -295,7 +245,7 @@ export const projectsRouter = s.router(contract.projects, {
   requestIssueFunding: {
     middleware: [requireAuth],
     handler: async ({ params, body, req }) => {
-      const user = getAuthUser(req);
+      const _user = getAuthUser(req);
       const ownerId = { login: params.owner } as dto.OwnerId;
       const repositoryId = { ownerId, name: params.repo } as dto.RepositoryId;
       const issue = await issueRepo.getById({
@@ -321,9 +271,7 @@ export const projectsRouter = s.router(contract.projects, {
       } else if (managedIssue.managerId !== req.user!.id) {
         throw ApiError.forbidden("Someone else is already managing this issue");
       } else if (managedIssue.state !== dto.ManagedIssueState.OPEN) {
-        throw ApiError.forbidden(
-          "This issue funding is already being REJECTED or SOLVED",
-        );
+        throw ApiError.forbidden("This issue funding is already being REJECTED or SOLVED");
       } else {
         managedIssue.requestedCreditAmount = body.creditAmount;
         await managedIssueRepo.update(managedIssue);
@@ -332,7 +280,7 @@ export const projectsRouter = s.router(contract.projects, {
     },
   },
 
-  getProjectServices: async ({ params }) => {
+  getProjectServices: async ({ params: _params }) => {
     // TODO: Implement project services endpoint
     return {
       status: 200 as const,

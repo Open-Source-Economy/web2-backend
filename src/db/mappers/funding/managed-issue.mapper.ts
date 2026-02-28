@@ -1,19 +1,9 @@
-import type {
-  ManagedIssue,
-  ManagedIssueId,
-  UserId,
-} from "@open-source-economy/api-types";
-import {
-  ContributorVisibility,
-  ManagedIssueState,
-} from "@open-source-economy/api-types";
+import type { ManagedIssue, ManagedIssueId, UserId } from "@open-source-economy/api-types";
+import { ContributorVisibility, ManagedIssueState } from "@open-source-economy/api-types";
 import { mapIssueIdFromForeignKey } from "../github/issue.mapper";
 import { requireEnum } from "../../../utils/enum-utils";
 
-export function mapManagedIssueFromRow(
-  row: Record<string, any>,
-  prefix = "",
-): ManagedIssue {
+export function mapManagedIssueFromRow(row: Record<string, any>, prefix = ""): ManagedIssue {
   const id = row[`${prefix}id`];
   if (!id) throw new Error(`Missing ${prefix}id`);
 
@@ -23,14 +13,10 @@ export function mapManagedIssueFromRow(
   const contributorVisibility = requireEnum(
     row[`${prefix}contributor_visibility`],
     Object.values(ContributorVisibility),
-    "managed_issue.contributor_visibility",
+    "managed_issue.contributor_visibility"
   );
 
-  const state = requireEnum(
-    row[`${prefix}state`],
-    Object.values(ManagedIssueState),
-    "managed_issue.state",
-  );
+  const state = requireEnum(row[`${prefix}state`], Object.values(ManagedIssueState), "managed_issue.state");
 
   return {
     id: id as ManagedIssueId,

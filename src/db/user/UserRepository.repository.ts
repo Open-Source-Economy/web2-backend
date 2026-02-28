@@ -1,9 +1,5 @@
 import { Pool } from "pg";
-import {
-  RepositoryId,
-  UserId,
-  UserRepository,
-} from "@open-source-economy/api-types";
+import { RepositoryId, UserId, UserRepository } from "@open-source-economy/api-types";
 import { pool } from "../../dbPool";
 import { UserRepositoryCompanion } from "../helpers/companions";
 
@@ -13,10 +9,7 @@ export function getUserRepositoryRepository(): UserRepositoryRepository {
 
 export interface UserRepositoryRepository {
   create(userRepository: UserRepository): Promise<UserRepository>;
-  getById(
-    userId: UserId,
-    repositoryId: RepositoryId,
-  ): Promise<UserRepository | null>;
+  getById(userId: UserId, repositoryId: RepositoryId): Promise<UserRepository | null>;
   getAll(userId: UserId): Promise<UserRepository[]>;
   update(userRepository: UserRepository): Promise<UserRepository>;
   delete(userId: UserId, repositoryId: RepositoryId): Promise<void>;
@@ -83,7 +76,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
           userRepository.repositoryUserRole,
           userRepository.rate ?? null,
           userRepository.currency,
-        ],
+        ]
       );
       return this.getOne(result.rows);
     } finally {
@@ -91,15 +84,12 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
     }
   }
 
-  async getById(
-    userId: UserId,
-    repositoryId: RepositoryId,
-  ): Promise<UserRepository | null> {
+  async getById(userId: UserId, repositoryId: RepositoryId): Promise<UserRepository | null> {
     const result = await this.pool.query(
       `
         SELECT * FROM user_repository WHERE user_id = $1 AND github_owner_login = $2 AND github_repository_name = $3
       `,
-      [userId, repositoryId.ownerId.login, repositoryId.name],
+      [userId, repositoryId.ownerId.login, repositoryId.name]
     );
     return this.getOptional(result.rows);
   }
@@ -109,7 +99,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
       `
             SELECT * FROM user_repository WHERE user_id = $1
         `,
-      [userId],
+      [userId]
     );
     return this.getList(result.rows);
   }
@@ -131,7 +121,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
           userRepository.userId,
           userRepository.repositoryId.ownerId.login,
           userRepository.repositoryId.name,
-        ],
+        ]
       );
       return this.getOne(result.rows);
     } finally {
@@ -144,7 +134,7 @@ class UserRepositoryRepositoryImpl implements UserRepositoryRepository {
       `
         DELETE FROM user_repository WHERE user_id = $1 AND github_owner_login = $2 AND github_repository_name = $3
       `,
-      [userId, repositoryId.ownerId.login, repositoryId.name],
+      [userId, repositoryId.ownerId.login, repositoryId.name]
     );
   }
 }

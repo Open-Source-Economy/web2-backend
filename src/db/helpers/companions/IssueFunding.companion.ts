@@ -1,20 +1,10 @@
-import {
-  IssueFunding,
-  IssueFundingId,
-  UserId,
-} from "@open-source-economy/api-types";
+import { IssueFunding, IssueFundingId, UserId } from "@open-source-economy/api-types";
 import { ValidationError, Validator } from "./Validator";
 import { IssueIdCompanion } from "./github";
 
 export namespace IssueFundingCompanion {
-  export function fromBackend(
-    row: any,
-    table_prefix: string = "",
-  ): IssueFunding | ValidationError {
-    const githubIssueId = IssueIdCompanion.fromBackendForeignKey(
-      row,
-      table_prefix,
-    );
+  export function fromBackend(row: any, table_prefix: string = ""): IssueFunding | ValidationError {
+    const githubIssueId = IssueIdCompanion.fromBackendForeignKey(row, table_prefix);
     if (githubIssueId instanceof ValidationError) {
       return githubIssueId;
     }

@@ -8,8 +8,7 @@ function parseOwnerFromGithubApi(json: any): Owner {
   }
   return {
     id: { login: json.login, githubId: json.id } as OwnerId,
-    type:
-      json.type === "Organization" ? OwnerType.Organization : OwnerType.User,
+    type: json.type === "Organization" ? OwnerType.Organization : OwnerType.User,
     htmlUrl: json.html_url,
     avatarUrl: json.avatar_url,
     followers: json.followers,
@@ -27,10 +26,7 @@ function parseOwnerFromGithubApi(json: any): Owner {
 
 describe("Owner", () => {
   it("fromGithubApi does not throw an error", () => {
-    const data = fs.readFileSync(
-      `src/__tests__/__data__/github/owner-org.json`,
-      "utf8",
-    );
+    const data = fs.readFileSync(`src/__tests__/__data__/github/owner-org.json`, "utf8");
     const json = JSON.parse(data);
     const object = parseOwnerFromGithubApi(json);
 
