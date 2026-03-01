@@ -33,6 +33,24 @@ feature: {
 
 ## Rules
 
+### All Config Values Always Required — Even with Mock Mode
+
+Never make a config field optional just because mocks don't use it. This ensures production environments always have all credentials configured.
+
+```typescript
+// WRONG — optional because "mocks don't use it"
+STRIPE_SECRET_KEY: Joi.string().when("STRIPE_MOCK_MODE", {
+  is: true,
+  then: Joi.optional(),
+  otherwise: Joi.required(),
+}),
+
+// CORRECT — always required
+STRIPE_SECRET_KEY: Joi.string().required(),
+```
+
+See also: [mock-mode.md](./mock-mode.md) for the full mock mode policy.
+
 ### All Env Vars Are Required Unless They Have a Safe Default
 
 ```typescript
@@ -90,9 +108,11 @@ postgres: {
 
 ### Always Update `.env.example` for Every Config Change
 
-When adding a new env var:
+When adding a new env var, follow this checklist — every step is required:
 
-1. Add it to the Joi schema in `config.ts`
+1. Add it to the Joi schema in `config.ts` (with `.required()` or a safe `.default()`)
 2. Add the config interface field
-3. Add the mapping
+3. Add the mapping (pure pass-through, no logic)
 4. Add it to `.env.example` with a placeholder value
+
+Missing any step will cause runtime failures or config drift between environments.

@@ -67,6 +67,39 @@ export class GitHubService {
 }
 ```
 
+### Advanced: Auth Layer for OAuth Integrations
+
+When a provider requires token management (refresh tokens, expiration), add an auth layer between the API client and the HTTP client:
+
+```
+Service → API Client → Auth Service → HTTP Client
+```
+
+```typescript
+// src/services/provider-auth.service.ts
+export class ProviderAuthService {
+  constructor(
+    private tokenRepo: TokenRepository,
+    private http: HttpClient
+  ) {}
+
+  async getValidToken(userId: UserId): Promise<string> {
+    const token = await this.tokenRepo.getByUserId(userId);
+    if (!token) throw ApiError.unauthorized("No token found");
+    if (token.expiresAt > new Date()) return token.accessToken;
+    // Refresh the token
+    const refreshed = await this.http.post<TokenResponse>("/oauth/token", {
+      grant_type: "refresh_token",
+      refresh_token: token.refreshToken,
+    });
+    await this.tokenRepo.update(userId, refreshed);
+    return refreshed.access_token;
+  }
+}
+```
+
+Not all integrations need this — GitHub with a static PAT doesn't. Use this pattern when the provider's auth has token expiration.
+
 ## Rules
 
 ### Never Call External APIs Directly from Controllers/Routes
@@ -121,6 +154,43 @@ async getRepository(params: GetRepositoryParams): Promise<...>
 
 Exception: single-parameter methods where the type is obvious (e.g., `getById(id: UserId)`).
 
+### Mock Client for Every Integration
+
+Every API client must have a mock implementation that shares the same interface. This enables local development without real API keys and makes tests deterministic.
+
+```typescript
+// Interface (in the same file as the real client)
+export interface IGitHubApiClient {
+  getRepository(params: GetRepositoryParams): Promise<GitHubRepository>;
+  listIssues(params: ListIssuesParams): Promise<GitHubIssueResponse[]>;
+}
+
+// Real implementation
+export class GitHubApiClient implements IGitHubApiClient { ... }
+
+// Mock implementation
+export class MockGitHubApiClient implements IGitHubApiClient {
+  async getRepository(params: GetRepositoryParams): Promise<GitHubRepository> {
+    return {
+      id: 12345,
+      full_name: `${params.owner}/${params.repo}`,
+      description: "Mock repository",
+      stargazers_count: 42,
+    };
+  }
+
+  async listIssues(params: ListIssuesParams): Promise<GitHubIssueResponse[]> {
+    return []; // Return realistic mock data
+  }
+}
+```
+
+Rules:
+
+- Mock and real implementations share the **same interface**
+- Mock should return **realistic data**, not empty objects
+- Service wiring selects implementation based on config (see [mock-mode.md](./mock-mode.md))
+
 ### Error Classification
 
 Wrap external API errors into typed error classes:
@@ -148,3 +218,19 @@ export class HttpClientError extends Error {
   }
 }
 ```
+
+## New Integration Checklist
+
+Before considering a new integration complete, verify every item:
+
+- [ ] API docs reviewed for all endpoints used
+- [ ] Parameter types created (named objects, not raw primitives)
+- [ ] Response types created with Zod validation
+- [ ] API client class with typed methods implementing an interface
+- [ ] Mock client implementing the same interface
+- [ ] Service class orchestrating client calls and business logic
+- [ ] Error classification (auth, notFound, server → typed errors)
+- [ ] Mapper for external response → domain model (Tier 4 mapper)
+- [ ] Config entry for API credentials (Joi `.required()`)
+- [ ] `.env.example` updated with placeholder values
+- [ ] Mock mode toggle in config (defaults to `false`)

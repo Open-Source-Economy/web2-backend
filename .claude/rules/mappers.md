@@ -4,7 +4,16 @@
 
 Mappers transform data between layers. They are organized in tiers:
 
-### Tier 1 — Companion Mappers (`src/db/helpers/companions/`)
+| Tier | Name                | Location                                                      | Purpose                                   |
+| ---- | ------------------- | ------------------------------------------------------------- | ----------------------------------------- |
+| 1    | Companion Mappers   | `src/db/helpers/companions/<entity>/`                         | Raw DB row → typed domain object          |
+| 2    | Enum Mappers        | `src/db/helpers/companions/` (alongside companions)           | DB string ↔ API enum value               |
+| 3    | Feature Mappers     | `src/routes/ts-rest/` or `src/services/` (alongside consumer) | Compose domain objects into API responses |
+| 4    | Integration Mappers | `src/services/` (in the service calling the external API)     | External provider response → domain model |
+
+### Tier 1 — Companion Mappers
+
+Location: `src/db/helpers/companions/<entity>/<Entity>.companion.ts`
 
 Transform raw database rows into typed domain objects. One companion per entity.
 
@@ -25,11 +34,15 @@ export namespace UserCompanion {
 
 ### Tier 2 — Enum Mappers
 
+Location: `src/db/helpers/companions/` (alongside the companion that uses them)
+
 Mapping tables between DB string values and API enum values. See [enums.md](./enums.md).
 
-### Tier 3 — Service/Feature Mappers
+### Tier 3 — Feature Mappers
 
-Orchestrate companion mappers to assemble complex response objects. Live alongside the service or router that uses them.
+Location: `src/routes/ts-rest/` or `src/services/` (same directory as the consuming router or service)
+
+Orchestrate companion mappers to assemble complex response objects.
 
 ```typescript
 // Compose multiple companions into a response
@@ -44,7 +57,9 @@ function buildFullProject(project: Project, repositories: Repository[], issues: 
 
 ### Tier 4 — Integration Mappers
 
-Transform data from external providers (GitHub API, Stripe). Live in the service that calls the external API.
+Location: `src/services/` (in the service file that calls the external API)
+
+Transform data from external providers (GitHub API, Stripe). See [integrations.md](./integrations.md) and [data-sync-mappers.md](./data-sync-mappers.md).
 
 ## Rules
 
@@ -67,7 +82,7 @@ function mapUserToResponse(user: BackendUser): dto.User {
 
 ### Never Default to Empty Arrays
 
-If data should exist, map it. If you're unsure whether data exists, **ask** — don't silently default to `[]`.
+If data should exist, map it. If you're unsure whether data exists, **ASK the user** — don't silently default to `[]`. This is a critical rule: defaulting to empty arrays hides bugs where data was expected but wasn't queried.
 
 ```typescript
 // WRONG — hiding missing data

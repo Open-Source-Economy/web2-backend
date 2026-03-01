@@ -4,6 +4,7 @@ Coding rules for the web2-backend live in `.claude/rules/`:
 
 | Rule                       | File                                                                     |
 | -------------------------- | ------------------------------------------------------------------------ |
+| **AI Quick Reference**     | [rules/INDEX.md](./rules/INDEX.md)                                       |
 | Error handling             | [rules/errors.md](./rules/errors.md)                                     |
 | Error class organization   | [rules/errors-organization.md](./rules/errors-organization.md)           |
 | Import conventions         | [rules/imports.md](./rules/imports.md)                                   |

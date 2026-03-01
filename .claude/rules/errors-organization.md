@@ -81,6 +81,43 @@ export class AuthError extends Error {
 - Export everything from `src/errors/index.ts` so consumers import from one place
 - Error codes use the format `DOMAIN_ERROR_NAME` (e.g., `AUTH_TOKEN_EXPIRED`)
 
+## Import Patterns
+
+Import domain errors from the barrel or from the specific file:
+
+```typescript
+// CORRECT — import from barrel (preferred for consumers)
+import { AuthError, AuthErrorCode } from "../errors";
+
+// CORRECT — import from specific file (when barrel would cause circular dependency)
+import { AuthError } from "../errors/auth/auth.error";
+import { AuthErrorCode } from "../errors/auth/auth.error";
+```
+
+The barrel `src/errors/index.ts` must re-export everything. If adding a new error class, always add it to the barrel.
+
+## Testing Domain Errors
+
+Verify both the error type and the specific error code in tests:
+
+```typescript
+// CORRECT — assert on type AND code
+it("should throw TokenExpired when token is invalid", async () => {
+  await expect(authService.validate(expiredToken)).rejects.toThrow(AuthError);
+
+  try {
+    await authService.validate(expiredToken);
+  } catch (error) {
+    expect(error).toBeInstanceOf(AuthError);
+    expect((error as AuthError).code).toBe(AuthErrorCode.TokenExpired);
+    expect((error as AuthError).statusCode).toBe(401);
+  }
+});
+
+// WRONG — only checking message string (fragile, breaks on rewording)
+await expect(authService.validate(expiredToken)).rejects.toThrow("Token has expired");
+```
+
 ## Error Middleware Mapping
 
 The error handler middleware in `src/middlewares/errorHandler.ts` should handle domain errors by mapping them to ProblemDetails:
