@@ -30,7 +30,7 @@
   "author": "",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "@open-source-economy/api-types": "2.1.13-alpha.9ae5d58",
+    "@open-source-economy/api-types": "^2.1.13-alpha.8b2b2d9",
     "@ts-rest/express": "^3.53.0-rc.1",
     "bcryptjs": "^2.4.3",
     "connect-ensure-login": "^0.1.1",

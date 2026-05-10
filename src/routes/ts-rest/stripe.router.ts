@@ -2,8 +2,10 @@ import { s } from "../../ts-rest";
 import { contract } from "@open-source-economy/api-types";
 import Stripe from "stripe";
 import { StripeHelper, stripe } from "../../controllers/stripe";
+import { stripeCustomerUserRepo } from "../../db/";
 import { ApiError } from "../../errors";
 import { logger } from "../../config";
+import { requireAuth, getAuthUser } from "../../middlewares/auth/ts-rest-auth";
 
 export const stripeRouter = s.router(contract.stripe, {
   checkout: async ({ body, req }) => {
@@ -54,5 +56,32 @@ export const stripeRouter = s.router(contract.stripe, {
       logger.error("Failed to create checkout session", error);
       throw ApiError.internal("Failed to create checkout session");
     }
+  },
+
+  createPortalSession: {
+    middleware: [requireAuth],
+    handler: async ({ body, req }) => {
+      const user = getAuthUser(req);
+
+      const customerUser = await stripeCustomerUserRepo.getByUserId(user.id as any);
+      if (!customerUser) {
+        throw ApiError.badRequest("No Stripe customer found. Please make a purchase first.");
+      }
+
+      try {
+        const session = await stripe.billingPortal.sessions.create({
+          customer: customerUser.stripeCustomerId as string,
+          return_url: body.returnUrl,
+        });
+
+        return {
+          status: 201 as const,
+          body: { url: session.url },
+        };
+      } catch (error) {
+        logger.error("Failed to create billing portal session", error);
+        throw ApiError.internal("Failed to create billing portal session");
+      }
+    },
   },
 });
