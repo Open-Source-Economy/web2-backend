@@ -24,6 +24,7 @@
     "test:audit": "npm run test:unit:audit && npm run test:e2e:audit",
     "db-migrate": "ts-node -T scripts/migrate.ts",
     "db-drop": "ts-node -T scripts/drop.ts",
+    "db-seed": "ts-node -T seeds/seed.ts",
     "prepare": "husky"
   },
   "keywords": [],
